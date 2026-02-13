@@ -1,0 +1,144 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Header -->
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Create your account
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Join the Claims and Collections Management System
+      </p>
+    </div>
+
+    <!-- Success Alert -->
+    <app-alert
+      *ngIf="showSuccess"
+      type="success"
+      title="Registration Successful"
+      [dismissible]="true"
+      (closed)="onSuccessClose()"
+    >
+      {{ successMessage }}
+    </app-alert>
+
+    <!-- Error Alert -->
+    <app-alert
+      *ngIf="showError"
+      type="error"
+      title="Registration Failed"
+      [dismissible]="true"
+      (closed)="onErrorClose()"
+    >
+      {{ errorMessage }}
+    </app-alert>
+
+    <!-- Registration Form -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
+      <div class="space-y-4">
+        <!-- First Name -->
+        <app-input
+          id="firstName"
+          label="First Name"
+          type="text"
+          placeholder="Enter your first name"
+          formControlName="firstName"
+          [required]="true"
+          [error]="getFieldError('firstName')"
+        ></app-input>
+
+        <!-- Last Name -->
+        <app-input
+          id="lastName"
+          label="Last Name"
+          type="text"
+          placeholder="Enter your last name"
+          formControlName="lastName"
+          [required]="true"
+          [error]="getFieldError('lastName')"
+        ></app-input>
+
+        <!-- Email Field -->
+        <app-input
+          id="email"
+          label="Email Address"
+          type="email"
+          placeholder="Enter your email"
+          formControlName="email"
+          [required]="true"
+          [error]="getFieldError('email')"
+        ></app-input>
+
+        <!-- Password Field -->
+        <app-input
+          id="password"
+          label="Password"
+          type="password"
+          placeholder="Create a password"
+          formControlName="password"
+          [required]="true"
+          [error]="getFieldError('password')"
+          hint="Must be at least 8 characters with uppercase, lowercase, number, and special character"
+        ></app-input>
+
+        <!-- Confirm Password Field -->
+        <app-input
+          id="confirmPassword"
+          label="Confirm Password"
+          type="password"
+          placeholder="Re-enter your password"
+          formControlName="confirmPassword"
+          [required]="true"
+          [error]="getFieldError('confirmPassword')"
+        ></app-input>
+      </div>
+
+      <!-- Terms and Conditions -->
+      <div class="flex items-start">
+        <div class="flex items-center h-5">
+          <input
+            id="agreeToTerms"
+            formControlName="agreeToTerms"
+            type="checkbox"
+            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+        </div>
+        <div class="ml-3 text-sm">
+          <label for="agreeToTerms" class="text-gray-700">
+            I agree to the
+            <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Terms of Service</a>
+            and
+            <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Privacy Policy</a>
+          </label>
+          <p *ngIf="registerForm.get('agreeToTerms')?.touched && registerForm.get('agreeToTerms')?.invalid" 
+             class="mt-1 text-red-600 text-xs">
+            You must agree to the terms and conditions
+          </p>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div>
+        <app-button
+          type="submit"
+          variant="primary"
+          size="lg"
+          [fullWidth]="true"
+          [loading]="isSubmitting"
+          [disabled]="registerForm.invalid"
+        >
+          {{ isSubmitting ? 'Creating account...' : 'Create account' }}
+        </app-button>
+      </div>
+
+      <!-- Login Link -->
+      <div class="text-center">
+        <p class="text-sm text-gray-600">
+          Already have an account?
+          <a routerLink="/auth/login" class="font-medium text-blue-600 hover:text-blue-500">
+            Sign in here
+          </a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Online Discharge | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: white;
+        }
+
+        .custom-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: #f8fafc;
+            padding: 0.35rem 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.35rem 0.5rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+            font-size: 0.65rem;
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        /* --- UI Elements --- */
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 140px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+
+        .selected-row {
+            background-color: #0078d7 !important;
+            color: white !important;
+        }
+
+        .selected-row td {
+            background-color: #0078d7 !important;
+            color: white !important;
+        }
+
+        /* Footer / Button bar */
+        .footer-bar {
+            background: #f1f5f9;
+            padding: 0.6rem 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn-discharge {
+            background: white;
+            border: 1px solid #94a3b8;
+            padding: 0.25rem 1.25rem;
+            font-size: 0.75rem;
+            border-radius: 2px;
+            color: #334155;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-discharge:hover {
+            background: #f8fafc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="header-bar">
+        <div class="d-flex align-items-center">
+            <i class="far fa-folder-open me-2" style="font-size: 1rem; color: #64748b;"></i>
+            <select class="search-select me-2" id="searchBy">
+                <option value="all">ALL</option>
+            </select>
+            <input type="text" class="search-box">
+            <span class="blue-go">Go</span>
+        </div>
+        <button class="btn btn-sm btn-outline-danger px-3 fw-bold"
+            onclick="window.parent.postMessage('closeDischargeModal', '*')">
+            <i class="fas fa-times me-1"></i> Close
+        </button>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="table-wrap">
+            <table class="custom-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;"></th>
+                        <th>CLAIM FILENO</th>
+                        <th>FILE #</th>
+                        <th>CLAIM ID</th>
+                        <th>IC</th>
+                        <th>FULL NAME</th>
+                        <th>HOSPITAL NAME</th>
+                        <th>SERVICE REQUIRED</th>
+                        <th>ADMISSION STATUS</th>
+                        <th>ATTENDING PHYSICIAN/SURG NAME</th>
+                        <th>DATE & TIME OF ADMISSION</th>
+                        <th>STATUS</th>
+                    </tr>
+                </thead>
+                <tbody id="gridBody">
+                    <!-- Sample data based on screenshot -->
+                    <tr class="selected-row">
+                        <td class="text-center"><i class="fas fa-caret-right text-white"></i></td>
+                        <td>0/2025/11/9767</td>
+                        <td>OL112996</td>
+                        <td>CS/251124/C/1...</td>
+                        <td>230209020306</td>
+                        <td>NUR QALESYA ...</td>
+                        <td>PANTAI HOSPIT...</td>
+                        <td>Admission</td>
+                        <td>APPROVED</td>
+                        <td>MEDICAL OFFIC...</td>
+                        <td>11/24/2025 7:32...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9649</td>
+                        <td>OL112879</td>
+                        <td>CS/251120/C/1...</td>
+                        <td>921026065774</td>
+                        <td>NUR IZZATI BIN...</td>
+                        <td>KUANTAN MEDI...</td>
+                        <td>Admission</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>DATO DR.MOH...</td>
+                        <td>11/20/2025 7:39...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9671</td>
+                        <td>OL112901</td>
+                        <td>CS/251121/C/1...</td>
+                        <td>160304100645</td>
+                        <td>ABDURRAHMA...</td>
+                        <td>PANTAI KLANG ...</td>
+                        <td>Admission</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>DR SHALIZAN B...</td>
+                        <td>11/21/2025 1:30...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9623</td>
+                        <td>OL112853</td>
+                        <td>CS/251120/C/1...</td>
+                        <td>800120035140</td>
+                        <td>SITI NUR ERMA...</td>
+                        <td>KUANTAN MEDI...</td>
+                        <td>Admission</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>DR MOHAMED ...</td>
+                        <td>11/20/2025 10:1...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9646</td>
+                        <td>OL112876</td>
+                        <td>CS/251120/C/1...</td>
+                        <td>220222120126</td>
+                        <td>ADEENA FALIS...</td>
+                        <td>KPJ KAJANG SP...</td>
+                        <td>Admission</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>DR MEENAKSHI...</td>
+                        <td>11/20/2025 4:50...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td></td>
+                        <td>OL10410</td>
+                        <td>CS/131221/C/1...</td>
+                        <td>070507010595</td>
+                        <td>MUHAMMAD AS...</td>
+                        <td>PUTERI SPECIA...</td>
+                        <td>Admission</td>
+                        <td>APPROVED</td>
+                        <td>DR AHMAD FAUZI</td>
+                        <td>12/20/2013 11:0...</td>
+                        <td>CLOSED</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9699</td>
+                        <td>OL112928</td>
+                        <td>CS/251122/C/1...</td>
+                        <td>C820427025703</td>
+                        <td>MUHAMMAD ZU...</td>
+                        <td>KEDAH MEDICA...</td>
+                        <td>Admission</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>DR MAHFUDZ Z...</td>
+                        <td>11/26/2025 8:43...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9662</td>
+                        <td>OL112892</td>
+                        <td>CS/251121/C/1...</td>
+                        <td>701126025505</td>
+                        <td>MOHAMAD ZAI...</td>
+                        <td>PANTAI HOSPIT...</td>
+                        <td>Admission</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>MEDICAL OFFIC...</td>
+                        <td>11/21/2025 3:00...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9741</td>
+                        <td>OL112970</td>
+                        <td>CS/251124/C/1...</td>
+                        <td>110420020233</td>
+                        <td>MUHAMMAD U...</td>
+                        <td>KEDAH MEDICA...</td>
+                        <td>Admission</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>DR ABDUL RAZI...</td>
+                        <td>11/24/2025 11:5...</td>
+                        <td>OPEN</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td>0/2025/11/9744</td>
+                        <td>OL112973</td>
+                        <td>CS/251124/C/1...</td>
+                        <td>671101025002</td>
+                        <td>NORLIZA BINTI ...</td>
+                        <td>PANTAI HOSPIT...</td>
+                        <td>Day Care</td>
+                        <td>DECLINE/APPR...</td>
+                        <td>DR MOHD SARF...</td>
+                        <td>11/26/2025 8:00...</td>
+                        <td>OPEN</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- FOOTER BAR -->
+        <div class="footer-bar">
+            <button class="btn-discharge" onclick="window.parent.postMessage('openDischargePA', '*')">Discharge</button>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Optional: logic to handle row selection
+        document.querySelectorAll('.custom-grid tbody tr').forEach(tr => {
+            tr.addEventListener('click', function () {
+                document.querySelectorAll('.custom-grid tbody tr').forEach(r => {
+                    r.classList.remove('selected-row');
+                    const icon = r.querySelector('.fa-caret-right');
+                    if (icon) {
+                        icon.classList.remove('text-white');
+                        icon.classList.add('text-muted');
+                    }
+                });
+                this.classList.add('selected-row');
+                const icon = this.querySelector('.fa-caret-right');
+                if (icon) {
+                    icon.classList.remove('text-muted');
+                    icon.classList.add('text-white');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

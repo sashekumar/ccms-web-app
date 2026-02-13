@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQ Reminder Questionnaire | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem 0 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            gap: 2px;
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid transparent;
+            border-bottom: none;
+            padding: 0.35rem 0.6rem;
+            color: #475569;
+            font-weight: 500;
+            font-size: 0.73rem;
+            background: #f8fafc;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            border-color: #e2e8f0;
+            border-bottom: 2px solid white;
+            margin-bottom: -2px;
+            font-weight: 700;
+            z-index: 5;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-pane {
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: #9ca3af;
+            /* Matches gray background in screenshots */
+        }
+
+        .custom-grid {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: white;
+            padding: 0.35rem 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.35rem 0.5rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+            font-size: 0.65rem;
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        /* --- UI Elements --- */
+        .btn-link-sm {
+            font-size: 0.65rem;
+            text-decoration: underline;
+            padding: 0;
+            background: none;
+            border: none;
+            color: #0d6efd;
+        }
+
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 120px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .record-count {
+            color: #2563eb;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+
+        .text-xs {
+            font-size: 0.65rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP NAV / TABS -->
+    <header class="header-bar d-flex justify-content-between align-items-end">
+        <ul class="nav nav-tabs" id="mqTabs">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#mq-req"
+                    onclick="updateCount(164)">MQ Requirement</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#reminder-1"
+                    onclick="updateCount(0)">First Reminder</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#reminder-2"
+                    onclick="updateCount(0)">Second Reminder</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#reminder-3"
+                    onclick="updateCount(0)">Third Reminder</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#reminder-final"
+                    onclick="updateCount(0)">Final Reminder</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#report"
+                    onclick="updateCount(0)">Report</button></li>
+        </ul>
+
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="grid-controls">
+            <div class="d-flex align-items-center">
+                <span class="search-by-text">Search By :</span>
+                <select class="search-select" id="searchBy">
+                    <option value="patient">PATIENT NAME</option>
+                    <option value="claim">CLAIM FILENO</option>
+                    <option value="ic">PATIENT IC</option>
+                </select>
+                <input type="text" class="search-box">
+                <span class="blue-go">GO..</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="record-count" id="recCount">164 records</span>
+                <div class="d-flex align-items-center gap-1 clickable" title="Export to Excel">
+                    <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                    <span class="text-xs">Export</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content">
+
+            <!-- T1: MQ Requirement -->
+            <div class="tab-pane fade show active" id="mq-req">
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>MQ TYPE</th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>DATE DISABILITY</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>PH IC</th>
+                                <th>PH NAME</th>
+                                <th>PH MOBILE</th>
+                                <th>REMINDER STATUS</th>
+                                <th>DATE REMINDER</th>
+                                <th>DURATION</th>
+                                <th>MQ DOCUMENT</th>
+                                <th>DATE RECEIVED</th>
+                                <th>REMARKS</th>
+                                <th>QUESTIONNAIRE REPLY</th>
+                                <th>CLOSE</th>
+                                <th>REMINDER_RECID</th>
+                                <th>CLAIMREG_ID</th>
+                                <th>PHID</th>
+                                <th>PID</th>
+                                <th>PATIENT_ID</th>
+                                <th>REF_DOC_FILEID</th>
+                                <th>DOC FILENAME</th>
+                                <th>REF_DOC_REFID</th>
+                                <th>REF_DOC_REFTYPE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mqReqBody">
+                            <!-- Data injected via JS to mimic the 164 records -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T2: First Reminder -->
+            <div class="tab-pane fade" id="reminder-1">
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr id="reminder1Header"></tr>
+                        </thead>
+                        <tbody id="reminder1Body">
+                            <tr>
+                                <td colspan="29" class="text-center py-5 text-muted">No records found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T3: Second Reminder -->
+            <div class="tab-pane fade" id="reminder-2">
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr id="reminder2Header"></tr>
+                        </thead>
+                        <tbody id="reminder2Body">
+                            <tr>
+                                <td colspan="29" class="text-center py-5 text-muted">No records found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T4: Third Reminder -->
+            <div class="tab-pane fade" id="reminder-3">
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr id="reminder3Header"></tr>
+                        </thead>
+                        <tbody id="reminder3Body">
+                            <tr>
+                                <td colspan="29" class="text-center py-5 text-muted">No records found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T5: Final Reminder -->
+            <div class="tab-pane fade" id="reminder-final">
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr id="reminderFinalHeader"></tr>
+                        </thead>
+                        <tbody id="reminderFinalBody">
+                            <tr>
+                                <td colspan="29" class="text-center py-5 text-muted">No records found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T6: Report -->
+            <div class="tab-pane fade" id="report">
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr id="reportHeader"></tr>
+                        </thead>
+                        <tbody id="reportBody">
+                            <tr>
+                                <td colspan="29" class="text-center py-5 text-muted">No records found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const headers = [
+            "", "MQ TYPE", "CLAIM FILENO", "REG REFNO", "MODE", "ADMISSION TYPE", "DATE DISABILITY", "PATIENT IC", "PATIENT NAME",
+            "PH IC", "PH NAME", "PH MOBILE", "REMINDER STATUS", "DATE REMINDER", "DURATION",
+            "MQ DOCUMENT", "DATE RECEIVED", "REMARKS", "QUESTIONNAIRE REPLY", "CLOSE",
+            "REMINDER_RECID", "CLAIMREG_ID", "PHID", "PID", "PATIENT_ID", "REF_DOC_FILEID", "DOC FILENAME", "REF_DOC_REFID", "REF_DOC_REFTYPE"
+        ];
+
+        // Inject headers into all tables
+        document.querySelectorAll('thead tr').forEach(tr => {
+            if (tr.id !== '') { // Only for reminder/report headers
+                headers.forEach(h => {
+                    const th = document.createElement('th');
+                    th.innerText = h;
+                    tr.appendChild(th);
+                });
+            }
+        });
+
+        const sampleData = [
+            {
+                mqType: "MQ SEND - PH",
+                claimNo: "O/2025/11/9761",
+                regRef: "OL/213203",
+                mode: "OL",
+                admType: "IP",
+                dateDis: "11/24/2025 3:30 PM",
+                pIc: "C910829015283",
+                pName: "MOHAMMAD ZULKIFFLI BIN ABDUL HUJAH",
+                phIc: "C910829015283",
+                phName: "MOHAMMAD ZULKIFFLI BIN ABDUL HUJAH",
+                phMobile: "0177208524",
+                status: "MQ REQUIREMENT",
+                dateRem: "11/24/2025",
+                duration: "57"
+            },
+            {
+                mqType: "MQ SEND - PH",
+                claimNo: "O/2025/11/9764",
+                regRef: "OL/213211",
+                mode: "OL",
+                admType: "IP",
+                dateDis: "11/24/2025 4:30 PM",
+                pIc: "850731335076",
+                pName: "SITI ROBIAH BINTI AB AZIZ",
+                phIc: "C780916065745",
+                phName: "SAWALRUDIN BIN ABU HASSAN",
+                phMobile: "0192574684",
+                status: "MQ REQUIREMENT",
+                dateRem: "11/24/2025",
+                duration: "57"
+            },
+            {
+                mqType: "MQ SEND - PH",
+                claimNo: "O/2025/11/9712",
+                regRef: "OL/213134",
+                mode: "OL",
+                admType: "DAYCARE",
+                dateDis: "11/23/2025 7:05 PM",
+                pIc: "C790111025104",
+                pName: "WAN ADIDATUN HANIM BINTI ABD WAHAT",
+                phIc: "C790111025104",
+                phName: "WAN ADIDATUN HANIM BINTI ABD WAHAT",
+                phMobile: "0194457535",
+                status: "MQ REQUIREMENT",
+                dateRem: "11/22/2025",
+                duration: "59"
+            },
+            {
+                mqType: "MQ SEND - PH",
+                claimNo: "O/2025/11/9685",
+                regRef: "OL/213106",
+                mode: "OL",
+                admType: "IP",
+                dateDis: "11/21/2025 6:07 PM",
+                pIc: "691210055225",
+                pName: "NORSHAM BIN AB RAHMAN",
+                phIc: "C760924086492",
+                phName: "FUZIATUL EKMAL RIZA BINTI AHMAD RIDZUAN",
+                phMobile: "0162884774",
+                status: "MQ REQUIREMENT",
+                dateRem: "11/21/2025",
+                duration: "60"
+            }
+        ];
+
+        function renderData() {
+            const tbody = document.getElementById('mqReqBody');
+            tbody.innerHTML = '';
+
+            // Generate some variations to make it look like 164 records
+            for (let i = 0; i < 40; i++) {
+                const item = sampleData[i % sampleData.length];
+                const tr = document.createElement('tr');
+                if (i % 2 !== 0) tr.className = 'row-alt';
+
+                tr.innerHTML = `
+                    <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                    <td>${item.mqType}</td>
+                    <td>${item.claimNo}</td>
+                    <td>${item.regRef}</td>
+                    <td>${item.mode}</td>
+                    <td>${item.admType}</td>
+                    <td>${item.dateDis}</td>
+                    <td>${item.pIc}</td>
+                    <td class="fw-bold">${item.pName}</td>
+                    <td>${item.phIc}</td>
+                    <td>${item.phName}</td>
+                    <td>${item.phMobile}</td>
+                    <td>${item.status}</td>
+                    <td>${item.dateRem}</td>
+                    <td>${item.duration}</td>
+                    <td><button class="btn-link-sm">View</button></td>
+                    <td></td>
+                    <td></td>
+                    <td><button class="btn-link-sm">Upload</button></td>
+                    <td><button class="btn-link-sm text-danger">Close</button></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function updateCount(count) {
+            document.getElementById('recCount').innerText = count + ' records';
+        }
+
+        window.onload = renderData;
+    </script>
+</body>
+
+</html>

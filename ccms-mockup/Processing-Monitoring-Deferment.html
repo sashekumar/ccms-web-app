@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Monitoring Deferment | CCMS</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            font-size: 0.72rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        /* --- Header / Tabs --- */
+        .tab-header {
+            background: #e9ecef;
+            border-bottom: 1px solid #dee2e6;
+            flex-shrink: 0;
+            padding: 0 10px;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            padding: 8px 15px;
+            color: #495057;
+            font-weight: 500;
+            border-radius: 0;
+            border-right: 1px solid #dee2e6;
+            background: #e9ecef;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: #0d6efd;
+            font-weight: 600;
+            border-bottom: 2px solid #0d6efd;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: white;
+        }
+
+        .grid-toolbar {
+            padding: 5px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .custom-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .custom-grid thead th {
+            background: #f8f9fa;
+            color: #1e293b;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            padding: 8px 10px;
+            border-right: 1px solid #dee2e6;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 6px 10px;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            font-size: 0.65rem;
+        }
+
+        .custom-grid tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .btn-action-sm {
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            text-decoration: underline;
+            color: #0d6efd;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-action-sm:hover {
+            color: #0a58ca;
+        }
+
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.6rem;
+        }
+
+        .row-red {
+            background-color: #fee2e2 !important;
+        }
+
+        .row-cyan {
+            background-color: #cffafe !important;
+        }
+
+        /* --- Footer --- */
+        .footer-bar {
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 5px 15px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .search-box select,
+        .search-box input {
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            border: 1px solid #ced4da;
+            border-radius: 2px;
+        }
+
+        .go-btn {
+            color: #0d6efd;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="tab-header">
+        <ul class="nav nav-tabs" id="defermentTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="mq-tab" data-bs-toggle="tab" data-bs-target="#mq-pane" type="button"
+                    role="tab">Admission MQ</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="confirmation-tab" data-bs-toggle="tab" data-bs-target="#confirmation-pane"
+                    type="button" role="tab">Deferment Confirmation</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring-pane"
+                    type="button" role="tab">Deferment Monitoring</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reminder-tab" data-bs-toggle="tab" data-bs-target="#reminder-pane"
+                    type="button" role="tab">Deferment Reminder</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="closed-tab" data-bs-toggle="tab" data-bs-target="#closed-pane"
+                    type="button" role="tab">Closed Deferment</button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="tab-content workspace" id="defermentTabsContent">
+        <!-- Admission MQ -->
+        <div class="tab-pane fade show active h-100" id="mq-pane" role="tabpanel">
+            <div class="table-container">
+                <table class="custom-grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>CLAIM FILENO</th>
+                            <th>PATIENT NAME</th>
+                            <th>PATIENT IC</th>
+                            <th>ADMISSION DATE</th>
+                            <th>HOSPITAL</th>
+                            <th>ISSUED BY</th>
+                            <th>ISSUED ON</th>
+                            <th>TIME TAKEN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td class="text-primary fw-bold">O/2025/11/9612</td>
+                            <td>B.JEYA RANI A/P V.BIMAN</td>
+                            <td>760929045112</td>
+                            <td>11/25/2025 10:00 AM</td>
+                            <td>PANTAI HOSPITAL AYER KEROH</td>
+                            <td>Norhaswani</td>
+                            <td>11/19/2025 6:06 PM</td>
+                            <td>1266:3:43</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td class="text-primary fw-bold">O/2025/11/9756</td>
+                            <td>NOORUL FITRI BIN MD SALLEH</td>
+                            <td>780902095011</td>
+                            <td>11/27/2025 7:30 AM</td>
+                            <td>KPJ KLANG SPECIALIST HOSPITAL</td>
+                            <td>fatin</td>
+                            <td>11/24/2025 3:43 PM</td>
+                            <td>1148:27:36</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td class="text-primary fw-bold">O/2025/11/9766</td>
+                            <td>KHAIRIL AMRI BIN MOHAMAD</td>
+                            <td>881116075219</td>
+                            <td>11/24/2025 7:05 PM</td>
+                            <td>HOSPITAL LAM WAH EE</td>
+                            <td>Darren</td>
+                            <td>11/24/2025 7:18 PM</td>
+                            <td>1144:52:42</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Deferment Confirmation -->
+        <div class="tab-pane fade h-100" id="confirmation-pane" role="tabpanel">
+            <div class="table-container">
+                <table class="custom-grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>MONITORING START BY</th>
+                            <th>START ON</th>
+                            <th>ISSUED BY</th>
+                            <th>ADMISSION TYPE</th>
+                            <th>PATIENT IC</th>
+                            <th>PATIENT NAME</th>
+                            <th>HOSPITAL</th>
+                            <th>ADMISSION DATE</th>
+                            <th>TIMETAKEN</th>
+                            <th>DOCUMENT</th>
+                            <th>ACTION</th>
+                            <th>SUBMIT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>KRISHNA</td>
+                            <td>11/22/2025 2:32 PM</td>
+                            <td>Krishna</td>
+                            <td>IP</td>
+                            <td>101114040290</td>
+                            <td>AISYAH HUMAYRAH BINTI MOHD SHAHARUDIN</td>
+                            <td>PANTAI HOSPITAL AYER KEROH</td>
+                            <td>11/19/2025 1:17 PM</td>
+                            <td>71861</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><select class="form-select form-select-sm"
+                                    style="font-size: 0.65rem; height: 24px; padding: 0 5px; width: 100px;">
+                                    <option></option>
+                                </select></td>
+                            <td><button class="btn-action-sm">Submit</button></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>SAMALA</td>
+                            <td>11/22/2025 5:10 PM</td>
+                            <td>Samala</td>
+                            <td>IP</td>
+                            <td>840111016040</td>
+                            <td>ALWIZAH BINTI PAWET</td>
+                            <td>KPJ KAJANG SPECIALIST HOSPITAL</td>
+                            <td>11/20/2025 8:00 AM</td>
+                            <td>71702</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><select class="form-select form-select-sm"
+                                    style="font-size: 0.65rem; height: 24px; padding: 0 5px; width: 100px;">
+                                    <option></option>
+                                </select></td>
+                            <td><button class="btn-action-sm">Submit</button></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>S ARSYAD</td>
+                            <td>11/24/2025 2:47 PM</td>
+                            <td>Arsyad</td>
+                            <td>IP</td>
+                            <td>191119140196</td>
+                            <td>RHEA AZZAHRA BINTI MOHAMAD RAIMI</td>
+                            <td>KPJ KAJANG SPECIALIST HOSPITAL</td>
+                            <td>11/23/2025 4:19 AM</td>
+                            <td>68966</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><select class="form-select form-select-sm"
+                                    style="font-size: 0.65rem; height: 24px; padding: 0 5px; width: 100px;">
+                                    <option></option>
+                                </select></td>
+                            <td><button class="btn-action-sm">Submit</button></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>S ARSYAD</td>
+                            <td>11/24/2025 3:54 PM</td>
+                            <td>Arsyad</td>
+                            <td>IP</td>
+                            <td>180924020724</td>
+                            <td>ADALIA NAFISA BINTI ZAINAL ABIDIN</td>
+                            <td>KPJ PENANG SPECIALIST HOSPITAL</td>
+                            <td>11/20/2025 6:28 PM</td>
+                            <td>68899</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><select class="form-select form-select-sm"
+                                    style="font-size: 0.65rem; height: 24px; padding: 0 5px; width: 100px;">
+                                    <option></option>
+                                </select></td>
+                            <td><button class="btn-action-sm">Submit</button></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>VINODINI</td>
+                            <td>11/24/2025 4:12 PM</td>
+                            <td>VINODINI</td>
+                            <td>DAYCARE</td>
+                            <td>C870808045199</td>
+                            <td>VIJAYAN A/L SIVARAJAH</td>
+                            <td>COLUMBIA ASIA MEDICAL CENTRE - SEREMBAN</td>
+                            <td>11/22/2025 8:00 AM</td>
+                            <td>68880</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><select class="form-select form-select-sm"
+                                    style="font-size: 0.65rem; height: 24px; padding: 0 5px; width: 100px;">
+                                    <option></option>
+                                </select></td>
+                            <td><button class="btn-action-sm">Submit</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Deferment Monitoring -->
+        <div class="tab-pane fade h-100" id="monitoring-pane" role="tabpanel">
+            <div class="table-container">
+                <table class="custom-grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>PATIENT NAME</th>
+                            <th>HOSPITAL</th>
+                            <th>ADMISSION DATE</th>
+                            <th>TIMETAKEN</th>
+                            <th>DOCUMENT</th>
+                            <th>DATE RECEIVED</th>
+                            <th>REMARKS</th>
+                            <th>DEFERMENT REPLY</th>
+                            <th>DEFERMENT REPLY</th>
+                            <th>CLOSE</th>
+                            <th>ESCALATION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>YANAH BINTI NURHAFIDZ</td>
+                            <td>PANTAI HOSPITAL AYER KEROH</td>
+                            <td>10/13/2025</td>
+                            <td>92032</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td></td>
+                            <td></td>
+                            <td><button class="btn-action-sm">Upload</button></td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><button class="btn-action-sm">Close</button></td>
+                            <td><button class="btn-action-sm">Initiate</button></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>YANAH BINTI NURHAFIDZ</td>
+                            <td>PANTAI HOSPITAL AYER KEROH</td>
+                            <td>10/13/2025</td>
+                            <td>92028</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td></td>
+                            <td></td>
+                            <td><button class="btn-action-sm">Upload</button></td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><button class="btn-action-sm">Close</button></td>
+                            <td><button class="btn-action-sm">Initiate</button></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>MD HANAFI</td>
+                            <td>KPJ PERDANA SPECIALIST HOSPITAL</td>
+                            <td>11/11/2025 8:30 AM</td>
+                            <td>87500</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td></td>
+                            <td></td>
+                            <td><button class="btn-action-sm">Upload</button></td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><button class="btn-action-sm">Close</button></td>
+                            <td><button class="btn-action-sm">Initiate</button></td>
+                        </tr>
+                        <tr class="row-cyan">
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>INTI MANSOR</td>
+                            <td>KPJ SEREMBAN SPECIALIST HOSPITAL</td>
+                            <td>11/10/2025 3:08 PM</td>
+                            <td>82145</td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td></td>
+                            <td></td>
+                            <td><button class="btn-action-sm">Upload</button></td>
+                            <td><button class="btn-action-sm">View</button></td>
+                            <td><button class="btn-action-sm">Close</button></td>
+                            <td><button class="btn-action-sm">Initiate</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Deferment Reminder -->
+        <div class="tab-pane fade h-100" id="reminder-pane" role="tabpanel">
+            <div class="grid-toolbar">
+                <input type="checkbox" id="selectAll"> <label for="selectAll" style="font-size: 0.7rem;">Select
+                    All</label>
+                <button class="btn btn-sm btn-light border ms-4" style="font-size: 0.7rem;">Send Email</button>
+            </div>
+            <div class="table-container">
+                <table class="custom-grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>TICK</th>
+                            <th>CLAIM FILENO</th>
+                            <th>DEFERMENT CATEGORY</th>
+                            <th>MONITORING START BY</th>
+                            <th>START ON</th>
+                            <th>ISSUED BY</th>
+                            <th>ADMISSION TYPE</th>
+                            <th>PATIENT IC</th>
+                            <th>PATIENT NAME</th>
+                            <th>HOSPITAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td><input type="checkbox"></td>
+                            <td>O/2025/10/8178</td>
+                            <td>DEFERMENT - DOCTOR'S & HOSPITAL CHARGES</td>
+                            <td>ADLI</td>
+                            <td>11/8/2025 2:21 PM</td>
+                            <td>Adli</td>
+                            <td>IP</td>
+                            <td>180209040478</td>
+                            <td>SIDHRAH BAYANAH BINTI NURHAFIDZ</td>
+                            <td>PANTAI HOSPITAL AYER KEROH</td>
+                        </tr>
+                        <tr class="row-red">
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td><input type="checkbox"></td>
+                            <td>O/2025/11/9275</td>
+                            <td>DEFERMENT - HPE</td>
+                            <td>VINODINI</td>
+                            <td>11/11/2025 5:53 PM</td>
+                            <td>VINODINI</td>
+                            <td>DAYCARE</td>
+                            <td>C980315565548</td>
+                            <td>NAWAL BINTI MD HANAFI</td>
+                            <td>KPJ PERDANA SPECIALIST HOSPITAL</td>
+                        </tr>
+                        <tr class="row-red">
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td><input type="checkbox" checked></td>
+                            <td>O/2025/10/8673</td>
+                            <td>DEFERMENT - DOCTOR'S & HOSPITAL CHARGES</td>
+                            <td>SAMALA</td>
+                            <td>11/12/2025 10:46 AM</td>
+                            <td>Samala</td>
+                            <td>IP</td>
+                            <td>850217145325</td>
+                            <td>AZRUL SHAH BIN ZULKIFLY</td>
+                            <td>SALAM Specialist Hospital Kuala Terengganu</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Closed Deferment -->
+        <div class="tab-pane fade h-100" id="closed-pane" role="tabpanel">
+            <div class="grid-toolbar justify-content-between">
+                <div class="search-box">
+                    <span>Search By :</span>
+                    <select>
+                        <option>PATIENT NAME</option>
+                    </select>
+                    <input type="text" value="ali">
+                    <span class="go-btn">GO..</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-primary fw-bold">#478 Record(s)</span>
+                    <button class="btn btn-sm btn-light border"><i class="fas fa-file-export me-1"></i> Export</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="custom-grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>CLAIM FILENO</th>
+                            <th>DEFERMENT CATEGORY</th>
+                            <th>MONITORING START BY</th>
+                            <th>START ON</th>
+                            <th>VERIFY BY</th>
+                            <th>VERIFY ON</th>
+                            <th>CLOSED BY</th>
+                            <th>CLOSED ON</th>
+                            <th>DEFERMENT STATUS</th>
+                            <th>ISSUED BY</th>
+                            <th>ADMISSION TYPE</th>
+                            <th>PATIENT IC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td></td>
+                            <td>DEFERMENT - DOCTOR'S & HOSPITAL CHARGES</td>
+                            <td>ZAHIDAH</td>
+                            <td>5/31/2024 3:22 PM</td>
+                            <td>ZAHIDAH</td>
+                            <td>5/31/2024 4:09 PM</td>
+                            <td>ARSYAD</td>
+                            <td>9/26/2024 4:05 PM</td>
+                            <td>CLOSED</td>
+                            <td>Zahidah</td>
+                            <td>DAYCARE</td>
+                            <td>C66050501...</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                            <td>O/2025/07/4383</td>
+                            <td>DEFERMENT - DOCTOR'S & HOSPITAL CHARGES</td>
+                            <td>FATIN</td>
+                            <td>7/3/2025 5:55 PM</td>
+                            <td>FATIN</td>
+                            <td>7/3/2025 6:09 PM</td>
+                            <td>NUR AZEE</td>
+                            <td>10/14/2024 10:14 AM</td>
+                            <td>CLOSED</td>
+                            <td>fatin</td>
+                            <td>IP</td>
+                            <td>C85050613...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bar">
+        <button class="btn btn-sm btn-outline-danger py-1 px-3 fw-bold"
+            onclick="window.parent.postMessage('closeDeferment', '*')">
+            <i class="fas fa-times me-1"></i> CLOSE
+        </button>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

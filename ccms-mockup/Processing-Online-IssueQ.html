@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Online Issue Questionnaire | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: white;
+        }
+
+        .custom-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: white;
+            padding: 0.35rem 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.35rem 0.5rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+            font-size: 0.65rem;
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        /* --- UI Elements --- */
+        .btn-link-sm {
+            font-size: 0.65rem;
+            text-decoration: underline;
+            padding: 0;
+            background: none;
+            border: none;
+            color: #0d6efd;
+        }
+
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 140px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+
+        .issue-q-link {
+            color: #0d6efd;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .selected-row {
+            background-color: #e2e8f0 !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="header-bar">
+        <div class="d-flex align-items-center">
+            <span class="search-by-text">Search By :</span>
+            <select class="search-select" id="searchBy">
+                <option value="patient">PATIENT NAME</option>
+                <option value="claim">CLAIM FILENO</option>
+                <option value="ic">PATIENT IC</option>
+            </select>
+            <input type="text" class="search-box" value="ali">
+            <span class="blue-go">GO..</span>
+        </div>
+        <button class="btn btn-sm btn-outline-danger px-3 fw-bold"
+            onclick="window.parent.postMessage('closeIssueQ', '*')">
+            <i class="fas fa-times me-1"></i> Close
+        </button>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="table-wrap">
+            <table class="custom-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;"></th>
+                        <th>CLAIM FILENO</th>
+                        <th>REF NO</th>
+                        <th>PA REFNO</th>
+                        <th>PATIENT IC</th>
+                        <th>PATIENT NAME</th>
+                        <th>HOSPITAL</th>
+                        <th>ADMISSION DATE</th>
+                        <th>DIAGNOSIS</th>
+                        <th>DOCTOR</th>
+                        <th>MNO</th>
+                        <th>Issue Questionnaire</th>
+                    </tr>
+                </thead>
+                <tbody id="gridBody">
+                    <!-- Sample data based on screenshot -->
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td></td>
+                        <td>OL/81055</td>
+                        <td>PA63452</td>
+                        <td>C650101095374</td>
+                        <td>MAI SALINA BIN...</td>
+                        <td>AMANJAYA SPE...</td>
+                        <td>10/19/2018 5:30 PM</td>
+                        <td>ACUTE EXACER...</td>
+                        <td>DR CHAN WEI ...</td>
+                        <td>60125699821</td>
+                        <td><span class="issue-q-link" onclick="window.parent.postMessage('openMQ', '*')">Issue
+                                Questionnaire</span>
+                        </td>
+                    </tr>
+                    <tr class="selected-row">
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td></td>
+                        <td>OL/184977</td>
+                        <td>PA143270</td>
+                        <td>C791205055018</td>
+                        <td>ROSMARIA BIN...</td>
+                        <td>KPJ SEREMBAN...</td>
+                        <td>9/1/2024 8:34 AM</td>
+                        <td>UTERINE FIBRO...</td>
+                        <td>DR ISHAK ABD...</td>
+                        <td>0186672285</td>
+                        <td><span class="issue-q-link" onclick="window.parent.postMessage('openMQ', '*')">Issue
+                                Questionnaire</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td></td>
+                        <td>OL/184977</td>
+                        <td>PA147216</td>
+                        <td>C791205055018</td>
+                        <td>ROSMARIA BIN...</td>
+                        <td>KPJ SEREMBAN...</td>
+                        <td>9/1/2024 8:34 AM</td>
+                        <td>UTERINE FIBRO...</td>
+                        <td>DR ISHAK ABD...</td>
+                        <td>0186672285</td>
+                        <td><span class="issue-q-link" onclick="window.parent.postMessage('openMQ', '*')">Issue
+                                Questionnaire</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td></td>
+                        <td>OL/54713</td>
+                        <td>PA41825</td>
+                        <td>051117020487</td>
+                        <td>MUHAMMAD IR...</td>
+                        <td>PANTAI HOSPIT...</td>
+                        <td>11/23/2016 11:5...</td>
+                        <td>VIRAL FEVER,U...</td>
+                        <td>DR MOHAMAD ...</td>
+                        <td>60195236740</td>
+                        <td><span class="issue-q-link" onclick="window.parent.postMessage('openMQ', '*')">Issue
+                                Questionnaire</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td></td>
+                        <td>OL/60498</td>
+                        <td>PA46647</td>
+                        <td>120909010451</td>
+                        <td>KHALISH FURQ...</td>
+                        <td>KPJ JOHOR SPE...</td>
+                        <td>5/4/2017 1:08 PM</td>
+                        <td>VIRAL FEVER</td>
+                        <td>DR KATE CHAN ...</td>
+                        <td>60177728615</td>
+                        <td><span class="issue-q-link" onclick="window.parent.postMessage('openMQ', '*')">Issue
+                                Questionnaire</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                        <td></td>
+                        <td>OL/172593</td>
+                        <td></td>
+                        <td>C780610065160</td>
+                        <td>NORLELA BINTI...</td>
+                        <td>KUANTAN MEDI...</td>
+                        <td>2/14/2024 5:16 PM</td>
+                        <td>ROTATOR CUFF...</td>
+                        <td>DR MOHD NASI...</td>
+                        <td>0184056951</td>
+                        <td><span class="issue-q-link" onclick="window.parent.postMessage('openMQ', '*')">Issue
+                                Questionnaire</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add more rows to mimic the scrolling behavior and show data coverage
+        const tbody = document.getElementById('gridBody');
+        const extras = [
+            { ref: "OL/36022", pa: "PA26442", ic: "110220020191", name: "KHAALISH AMM...", hosp: "KEDAH MEDICA...", date: "5/17/2015 4:21 PM", dx: "1) BRONCHITIS ...", doc: "DR NAJIMU AL ...", mno: "0195110414" },
+            { ref: "OL/165682", pa: "PA128160", ic: "210625011240", name: "NUR IMAN DELI...", hosp: "KPJ PASIR GUD...", date: "10/26/2023 1:19...", dx: "VIRAL FEVER", doc: "DR FRIENKY CH...", mno: "0197256362" },
+            { ref: "OL/31390", pa: "PA22925", ic: "140117060627", name: "AMMAR KHALIS...", hosp: "KUANTAN SPEC...", date: "1/11/2015 9:38 ...", dx: "SIMPLE FEBRIL...", doc: "DR SITI NOOR ...", mno: "0199966806" },
+            { ref: "OL/3710", pa: "", ic: "620203075414", name: "PARAMESWAR...", hosp: "LOURDES MEDI...", date: "6/28/2012 5:23 ...", dx: "MOLAR PREGN...", doc: "DR.ALVINCE DEV", mno: "0133637384" },
+            { ref: "OL/106998", pa: "PA83050", ic: "120422010097", name: "MUHAMMAD AI...", hosp: "PUTRA SPECIA...", date: "6/26/2020 7:00 ...", dx: "ACUTE SINUSIT...", doc: "DR ZAINAL ABI...", mno: "0136450016" }
+        ];
+
+        extras.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                <td></td>
+                <td>${item.ref}</td>
+                <td>${item.pa}</td>
+                <td>${item.ic}</td>
+                <td>${item.name}</td>
+                <td>${item.hosp}</td>
+                <td>${item.date}</td>
+                <td>${item.dx}</td>
+                <td>${item.doc}</td>
+                <td>${item.mno}</td>
+                <td><span class="issue-q-link" onclick="window.parent.postMessage('openMQ', '*')">Issue Questionnaire</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    </script>
+</body>
+
+</html>

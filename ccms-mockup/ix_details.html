@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IX Case Details</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --bg-light: #f4f6f9;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .breadcrumb-legacy {
+            font-size: 0.75rem;
+            color: #666;
+            background: #eee;
+            padding: 2px 10px;
+            border-radius: 3px;
+        }
+
+        /* Main Layout */
+        .workspace {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .left-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+            background: white;
+            padding: 15px;
+        }
+
+        .right-pane {
+            width: 400px;
+            background: #fff;
+            overflow-y: auto;
+            padding: 15px;
+            flex-shrink: 0;
+        }
+
+        /* Labels and Inputs */
+        .form-label-sm {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0;
+            color: #555;
+        }
+
+        .form-control-xs {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            height: auto;
+        }
+
+        .form-select-xs {
+            font-size: 0.75rem;
+            padding: 0.25rem 1.5rem 0.25rem 0.5rem;
+            height: auto;
+        }
+
+        .info-row {
+            margin-bottom: 4px;
+        }
+
+        .nav-tabs .nav-link {
+            font-size: 0.8rem;
+            color: #666;
+            border-radius: 0;
+            padding: 8px 15px;
+        }
+
+        .nav-tabs .nav-link.active {
+            font-weight: 600;
+            color: var(--primary-color);
+            border-top: 2px solid var(--primary-color);
+            border-bottom: 1px solid white;
+        }
+
+        .tab-content {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            padding: 15px;
+            flex: 1;
+        }
+
+        .btn-toolbar-custom .btn {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+        }
+
+        table.table-xs th,
+        table.table-xs td {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.4rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="d-flex align-items-center gap-2 small">
+            <span class="fw-bold text-secondary">Search By :</span>
+            <select class="form-select form-select-xs" style="width: 120px;">
+                <option></option>
+            </select>
+            <span class="ms-2 fw-bold text-secondary">GO..</span>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="text-primary small fw-bold"><i class="fas fa-file-alt me-1"></i>0 Record(s)</div>
+            <button class="btn btn-sm btn-outline-secondary py-0" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="workspace">
+
+        <!-- LEFT PANE: CLAIM INFO & TABS -->
+        <div class="left-pane">
+
+            <!-- Claim Info Header -->
+            <div class="mb-4">
+                <h6 class="fw-bold border-bottom pb-2 mb-3 text-secondary">Claim Info</h6>
+                <div class="row info-row">
+                    <label class="col-sm-2 form-label-sm">Claim Ref No</label>
+                    <div class="col-sm-4 fw-bold small">: RE/194835</div>
+                    <label class="col-sm-2 form-label-sm">IX Status</label>
+                    <div class="col-sm-4 fw-bold small text-danger">: PENDING FULFILMENT</div>
+                </div>
+                <div class="row info-row">
+                    <label class="col-sm-2 form-label-sm">Patient IC</label>
+                    <div class="col-sm-10 small">: C851109015923</div>
+                </div>
+                <div class="row info-row">
+                    <label class="col-sm-2 form-label-sm">Patient Name</label>
+                    <div class="col-sm-10 small">: MOHAMMAD RASUL BIN ABDUL RAHMAN</div>
+                </div>
+                <div class="row mt-2">
+                    <label class="col-sm-2 form-label-sm">Investigate For</label>
+                    <div class="col-sm-6">
+                        <textarea class="form-control form-control-xs bg-light" rows="4"
+                            readonly>IX RESPIRATORY SYSTEM</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mt-auto" id="ixTabs" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
+                        data-bs-target="#tab-listing">Request Listing</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-form">Request
+                        Form</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-doc">Document
+                        Form</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-call">Call
+                        Log</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-mq">MQ
+                        Reply</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                        data-bs-target="#tab-auth">Authorisation Form</button></li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content bg-white h-100">
+
+                <!-- 1. Request Listing -->
+                <div class="tab-pane fade show active" id="tab-listing">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover table-xs">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:20px;"></th>
+                                    <th>IX_REQNO</th>
+                                    <th>CLINIC FOUND</th>
+                                    <th>CLINIC NAME</th>
+                                    <th>CONSENT STATUS</th>
+                                    <th>REQUEST STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="table-active">
+                                    <td><i class="fas fa-caret-right"></i></td>
+                                    <td><a href="#">IXR/33</a></td>
+                                    <td>Yes</td>
+                                    <td>KLINIK IBRAHIM DAN SURGERI</td>
+                                    <td>RECEIVED</td>
+                                    <td>PENDING CLINIC - MQ REPLY (HANDED OVER)</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td><a href="#">IXR/34</a></td>
+                                    <td>Yes</td>
+                                    <td>KLINIK ILHAM DAN SURGERI</td>
+                                    <td>RECEIVED</td>
+                                    <td>CLOSED</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td><a href="#">IXR/35</a></td>
+                                    <td>Yes</td>
+                                    <td>KLINIK MALAYA</td>
+                                    <td>RECEIVED</td>
+                                    <td>CLOSED</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. Request Form -->
+                <div class="tab-pane fade" id="tab-form">
+                    <div class="mb-2 text-primary small fw-bold">PENDING CLINIC - MQ REPLY (HANDED OVER) : <span
+                            class="text-decoration-underline">IXR/33</span></div>
+
+                    <div class="row align-items-center mb-1">
+                        <label class="col-sm-2 form-label-sm">Found Clinic?</label>
+                        <div class="col-sm-2 small">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="foundClinic" checked> Yes
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="foundClinic"> No
+                            </div>
+                        </div>
+                        <div class="col-sm-2"><button type="button" class="btn btn-light btn-sm border py-0">Populate
+                                Clinic to Call</button></div>
+                    </div>
+
+                    <div class="row align-items-center mb-1">
+                        <label class="col-sm-2 form-label-sm">Clinic Name</label>
+                        <div class="col-sm-6 text-uppercase small fw-bold">: KLINIK IBRAHIM DAN SURGERI</div>
+                    </div>
+
+                    <div class="row align-items-center mb-1">
+                        <label class="col-sm-2 form-label-sm">Consent Received?</label>
+                        <div class="col-sm-3 small">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="consentRec" checked> Yes
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="consentRec"> No
+                            </div>
+                        </div>
+                        <label class="col-sm-2 form-label-sm">Require Payment?</label>
+                        <div class="col-sm-3 small">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="reqPay" checked> Yes
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="reqPay"> No
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row align-items-center mb-1">
+                        <label class="col-sm-2 form-label-sm">Request Payment When?</label>
+                        <div class="col-sm-3 small">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="payWhen"> Before Report
+                            </div>
+                        </div>
+                        <div class="col-sm-7 small d-flex align-items-center">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="payWhen"> After Report
+                            </div>
+                            <label class="form-label-sm me-2">Amount</label>
+                            <input type="text" class="form-control form-control-xs" style="width: 80px;">
+                        </div>
+                    </div>
+
+                    <div class="row align-items-center mb-2">
+                        <label class="col-sm-2 form-label-sm">Payment Method</label>
+                        <div class="col-sm-10 small">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="payMethod"> Money Order
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="payMethod"> Cheque
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="payMethod"> Bank Transfer
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row align-items-center mb-2">
+                        <label class="col-sm-2 form-label-sm">Treating Doctor</label>
+                        <div class="col-sm-6 small fw-bold">: ST: STAFF FARID</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-2 form-label-sm">Remarks</label>
+                        <div class="col-sm-6">
+                            <textarea class="form-control form-control-xs"
+                                rows="3">-16/12/2024 BATUK URTI - 8/2/2018 ECZEMA</textarea>
+                        </div>
+                    </div>
+
+                    <div class="btn-toolbar-custom d-flex flex-wrap gap-1">
+                        <button class="btn btn-light border">Save</button>
+                        <button class="btn btn-light border">Request MQ</button>
+                        <button class="btn btn-light border">Email Clinic</button>
+                        <button class="btn btn-light border">Email Finance</button>
+                        <button class="btn btn-light border">Close Request</button>
+                    </div>
+                </div>
+
+                <!-- 3. Document Form -->
+                <div class="tab-pane fade" id="tab-doc">
+                    <div class="row align-items-center mb-3">
+                        <label class="col-auto form-label-sm">Document Name :</label>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-xs">
+                                <option>ACKNOWLEDGEMENT SLIP</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group input-group-sm">
+                                <input type="file" class="form-control form-control-xs">
+                                <button class="btn btn-secondary">Upload</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-xs">
+                            <thead class="table-light">
+                                <tr>
+                                    <th></th>
+                                    <th>FILE NAME</th>
+                                    <th>DOC NAME</th>
+                                    <th>UPLOADED ON</th>
+                                    <th>Document</th>
+                                    <th>Delete</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-caret-right"></i></td>
+                                    <td>Screenshot_2026-01-08.png</td>
+                                    <td>ACKNOWLEDGEMENT SLIP</td>
+                                    <td>1/8/2026 6:46 AM</td>
+                                    <td><a href="#">View</a></td>
+                                    <td><a href="#" class="text-danger">Delete</a></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>IXR33_COVER_LETTER.pdf</td>
+                                    <td>IX COVER LETTER</td>
+                                    <td>5/22/2025 12:38 PM</td>
+                                    <td><a href="#">View</a></td>
+                                    <td><a href="#" class="text-danger">Delete</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. Call Log -->
+                <div class="tab-pane fade" id="tab-call">
+                    <div class="row mb-2">
+                        <label class="col-sm-2 form-label-sm">Clinic Name</label>
+                        <div class="col-sm-6 small">: ALPRO CLINIC</div>
+                    </div>
+                    <div class="row mb-2 align-items-center">
+                        <label class="col-sm-2 form-label-sm">Call Status</label>
+                        <div class="col-sm-4">
+                            <select class="form-select form-select-xs">
+                                <option></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <label class="col-sm-2 form-label-sm">Call Remarks</label>
+                        <div class="col-sm-6">
+                            <textarea class="form-control form-control-xs" rows="4"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-2 form-label-sm">Record Found?</label>
+                        <div class="col-sm-4 small">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="recFound"> Yes
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="recFound"> No
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-light border btn-sm">Save</button>
+                        <button class="btn btn-light border btn-sm">Print Call Log</button>
+                    </div>
+                </div>
+
+                <!-- 5. MQ Reply -->
+                <div class="tab-pane fade" id="tab-mq">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-xs">
+                            <thead class="table-light">
+                                <tr>
+                                    <th></th>
+                                    <th>MQ TYPE</th>
+                                    <th>MQ DOCUMENT</th>
+                                    <th>DATE RECEIVED</th>
+                                    <th>REMARKS</th>
+                                    <th>MQ REPLY</th>
+                                    <th>CLOSE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="table-active">
+                                    <td><i class="fas fa-caret-right"></i></td>
+                                    <td>MQ SEND - HOSP</td>
+                                    <td><a href="#">View</a></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td><a href="#">Upload</a></td>
+                                    <td><a href="#">Close</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 6. Auth Form -->
+                <div class="tab-pane fade" id="tab-auth">
+                    <div class="row align-items-center mb-2">
+                        <label class="col-sm-3 form-label-sm">Representative Name :</label>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control form-control-xs">
+                        </div>
+                    </div>
+                    <div class="row align-items-center mb-3">
+                        <label class="col-sm-3 form-label-sm">Representative IC No. :</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control form-control-xs">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3 offset-sm-3 d-flex gap-2">
+                            <button class="btn btn-light border btn-sm text-center"
+                                style="width: 80px; font-size: 0.7rem;">Deliver<br>Form</button>
+                            <button class="btn btn-light border btn-sm text-center"
+                                style="width: 80px; font-size: 0.7rem;">Collect<br>Form</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT PANE: CLINIC INFO -->
+        <div class="right-pane border-start">
+            <h6 class="fw-bold border-bottom pb-2 mb-3 text-secondary">Clinic Info</h6>
+
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="newClinic">
+                <label class="form-check-label small" for="newClinic">New Clinic</label>
+            </div>
+
+            <form>
+                <div class="row info-row align-items-center">
+                    <label class="col-4 form-label-sm">Clinic Mode</label>
+                    <div class="col-8 small">
+                        :
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="cmode" checked> Government
+                        </div>
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="cmode"> Private
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row info-row align-items-center">
+                    <label class="col-4 form-label-sm">Clinic Type</label>
+                    <div class="col-8 small">
+                        :
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="ctype" checked> KKM
+                        </div>
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="ctype"> KPM
+                        </div>
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="ctype"> Clinic
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row info-row align-items-center">
+                    <label class="col-4 form-label-sm">Clinic Category</label>
+                    <div class="col-8 small">
+                        :
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="ccat"> Hospital
+                        </div>
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="ccat"> Community
+                        </div>
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="ccat" checked> Clinic
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Clinic Name</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs" value="KLINIK IBRAHIM DAN SURGERI">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Address Line 1</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs" value="599, JALAN SALLEH, TAMAN RIA">
+                    </div>
+                </div>
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Address Line 2</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs">
+                    </div>
+                </div>
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Address Line 3</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs">
+                    </div>
+                </div>
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Address Line 4</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Postcode</label>
+                    <div class="col-4 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs" value="84000">
+                    </div>
+                    <span class="col-1 small px-0">Town</span>
+                    <div class="col-3 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs" value="MUAR">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">State</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <select class="form-select form-select-xs">
+                            <option>JOHOR</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Phone (Clinic)</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs" value="069510518">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Phone (Mobile)</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Fax</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">General Email</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs" value="fikrihassan@gmail.com">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Contact Name</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs" value="DR FIKRI">
+                    </div>
+                </div>
+
+                <hr class="my-2">
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Payable To</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs">
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Bank Name</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <select class="form-select form-select-xs">
+                            <option>UOB</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Bank Account No</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <input type="text" class="form-control form-control-xs">
+                    </div>
+                </div>
+
+                <hr class="my-2">
+
+                <div class="row info-row align-items-center">
+                    <label class="col-4 form-label-sm">Consent Letter</label>
+                    <div class="col-8 small d-flex align-items-center gap-2">
+                        :
+                        <input class="form-check-input" type="checkbox" id="conYes"> Yes
+                        <button type="button" class="btn btn-secondary btn-sm py-0"
+                            style="font-size: 0.65rem;">Browse</button>
+                        <a href="#" class="small text-primary">View Letter</a>
+                    </div>
+                </div>
+
+                <div class="row info-row">
+                    <label class="col-4 form-label-sm">Default Consent Letter</label>
+                    <div class="col-8 d-flex text-nowrap align-items-center gap-1">
+                        : <select class="form-select form-select-xs">
+                            <option>CONSENT - CC4U</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-3 text-center">
+                    <button type="button" class="btn btn-light border btn-sm px-3">Update</button>
+                    <button type="button" class="btn btn-light border btn-sm px-3">Clear</button>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function closeModal() {
+            if (window.parent) {
+                window.parent.postMessage('closeIXDetails', '*');
+            }
+        }
+    </script>
+</body>
+
+</html>

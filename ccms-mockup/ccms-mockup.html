@@ -1,0 +1,3079 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCMS TPA System (With Reimbursement Workflow)</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-bg: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            font-size: 0.85rem;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* --- VIEW TRANSITIONS --- */
+        .view-section {
+            display: none !important;
+        }
+
+        .view-section.active {
+            display: block !important;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .role-landing {
+            display: none;
+        }
+
+        .role-landing.active {
+            display: block;
+        }
+
+        #view-login.active {
+            display: flex !important;
+        }
+
+        .console-layout.active {
+            display: flex !important;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- LOGIN --- */
+        .login-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        /* --- DASHBOARD --- */
+        .dashboard-layout {
+            padding-top: 80px;
+            min-height: 100vh;
+        }
+
+        .dash-stat-card {
+            background: white;
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            height: 100%;
+        }
+
+        .dash-stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .dash-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 600;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 10px 20px;
+        }
+
+        .dash-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+            background: transparent;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar-custom {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            height: 60px;
+            padding: 0 25px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1050;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e3c72;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .role-pill {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .role-staff {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #bbdefb;
+        }
+
+        .role-doctor {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #c8e6c9;
+        }
+
+        /* --- CONSOLES & FORMS --- */
+        .console-layout {
+            padding: 15px;
+            width: 100%;
+            height: calc(100vh - 60px);
+            margin-top: 60px;
+        }
+
+        .reg-container {
+            padding-top: 150px;
+            padding-bottom: 80px;
+            max-width: 100%;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .dash-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            margin-bottom: 15px;
+        }
+
+        /* --- SIDEBAR --- */
+        #sidebar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 240px;
+            height: calc(100vh - 60px);
+            background: #1e293b;
+            color: #f8fafc;
+            transition: all 0.3s ease;
+            z-index: 1045;
+            overflow-y: auto;
+            border-right: 1px solid #334155;
+            display: none;
+            /* Hidden by default till login */
+        }
+
+        #sidebar.collapsed {
+            width: 70px;
+        }
+
+        #sidebar .nav-link {
+            color: #cbd5e1;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-radius: 0;
+            transition: all 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            font-size: 0.72rem;
+            font-weight: 500;
+        }
+
+        #sidebar .nav-link:hover {
+            background-color: #334155;
+            color: #fff;
+        }
+
+        #sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+
+        #sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        #sidebar.collapsed .link-text {
+            display: none;
+        }
+
+        #sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 15px 0;
+        }
+
+        /* Layout modifications */
+        .workspace-content {
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        body.sidebar-expanded .workspace-content,
+        body.sidebar-expanded .wizard-header,
+        body.sidebar-expanded .sticky-footer {
+            width: calc(100% - 240px);
+            margin-left: 240px;
+        }
+
+        body.sidebar-collapsed .workspace-content,
+        body.sidebar-collapsed .wizard-header,
+        body.sidebar-collapsed .sticky-footer {
+            width: calc(100% - 70px);
+            margin-left: 70px;
+        }
+
+        /* Update left: 0 for fixed elements to respect the margin/width */
+        .wizard-header,
+        .sticky-footer {
+            left: 0;
+            transition: all 0.3s ease;
+        }
+
+        /* Prevent horizontal overflow on small screens or during transitions */
+        .dashboard-layout {
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Toggle Button in Navbar */
+        .sidebar-toggle {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: #1e3c72;
+            transition: background 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background: #f1f5f9;
+        }
+
+        .console-layout.active {
+            display: flex !important;
+            flex-direction: column;
+        }
+
+        .dash-header {
+            background: white;
+            border-bottom: 2px solid #f0f0f0;
+            padding: 10px 15px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dash-body {
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .limit-bar-bg {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .limit-bar-fill {
+            height: 100%;
+        }
+
+        /* Registration */
+        .reg-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            background: white;
+            scroll-margin-top: 160px;
+        }
+
+        .reg-card-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 700;
+            color: #495057;
+            text-transform: uppercase;
+        }
+
+        .reg-card-body {
+            padding: 15px;
+        }
+
+        .sticky-sidebar {
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+        }
+
+        .nav-pills .nav-link {
+            color: #6c757d;
+            font-weight: 500;
+            padding: 8px 15px;
+            margin-bottom: 5px;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            font-weight: 700;
+        }
+
+        .wizard-header {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background: white;
+            z-index: 1040;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+        }
+
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 15px 30px;
+            border-top: 1px solid #dee2e6;
+            z-index: 1060;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Hide footer when modal is open to prevent overlapping */
+        body.modal-open .sticky-footer {
+            display: none !important;
+        }
+
+        /* Form Components */
+        .form-label {
+            font-weight: 600;
+            font-size: 0.75rem;
+            margin-bottom: 2px;
+            color: #555;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.5rem;
+        }
+
+        .cause-toggle-group {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .sub-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #0d6efd;
+            border-bottom: 1px solid #dee2e6;
+            margin: 15px 0 10px 0;
+            padding-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        /* GL & Reimb Components */
+        .col-history-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            gap: 10px;
+        }
+
+        .card-static {
+            flex: 0 0 auto;
+        }
+
+        .card-fill {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .monitoring-box {
+            background: #fdfdfd;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .bill-table th {
+            background: #f8f9fa;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        .bill-table td {
+            vertical-align: middle;
+        }
+
+        .bill-input {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 2px 5px;
+            width: 80px;
+            text-align: right;
+            font-size: 0.8rem;
+        }
+
+        .doc-thumbnail {
+            width: 40px;
+            height: 40px;
+            background: #eee;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body tabindex="0" data-bs-spy="scroll" data-bs-target="#wizardNav" data-bs-offset="150">
+
+    <!-- GLOBAL NAVBAR -->
+    <nav class="navbar-custom shadow-sm" id="mainNavbar" style="display: none;">
+        <div class="nav-brand">
+            <div class="sidebar-toggle me-2" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </div>
+            <i class="fas fa-shield-alt text-primary fa-lg"></i>
+            <span>CCMS TPA Portal</span>
+            <span class="role-pill bg-light text-dark border" id="navRoleBadge">Role</span>
+        </div>
+        <ul class="nav me-auto ms-4">
+            <li class="nav-item">
+                <a class="nav-link text-secondary small fw-bold" href="#" onclick="openMonitoringModal()"><i
+                        class="fas fa-clock me-1"></i>8H Monitoring</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-secondary small fw-bold" href="#" onclick="openMonitoringLOSModal()"><i
+                        class="fas fa-procedures me-1"></i>LOS Monitoring</a>
+            </li>
+        </ul>
+        <div class="d-flex align-items-center gap-3">
+            <select class="form-select form-select-sm" id="navRoleSelect" style="width: auto; cursor: pointer;"
+                onchange="switchRole(this.value)">
+                <option value="assessor">Assessor</option>
+                <option value="manager">Claims Manager</option>
+                <option value="audit">Audit Team</option>
+                <option value="ix">IX Team</option>
+                <option value="submission">Submission Team</option>
+                <option value="settlement">Settlement Team</option>
+                <option value="cs">Customer Service</option>
+            </select>
+            <div class="text-end lh-1">
+                <div class="fw-bold small" id="navUser">User</div>
+                <div class="text-muted small" style="font-size: 0.7rem;" id="navRoleLabel">Internal TPA</div>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="logout()"><i
+                    class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </nav>
+
+    <!-- LEFT SIDEBAR -->
+    <div id="sidebar">
+        <div class="py-3">
+            <div class="nav flex-column" id="sidebarMenu">
+                <!-- Menu items injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 1: LOGIN SCREEN -->
+    <!-- ================================================================================= -->
+    <div id="view-login" class="view-section active login-wrapper">
+        <div class="login-card">
+            <div class="text-center mb-4">
+                <i class="fas fa-shield-alt text-primary" style="font-size: 3rem;"></i>
+                <h3 class="fw-bold mt-2" style="color: #1e3c72;">CCMS TPA</h3>
+                <p class="text-muted">Unified Claims Platform</p>
+            </div>
+            <form onsubmit="event.preventDefault(); handleLogin();">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-control" value="admin" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" value="123456">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" id="loginRole">
+                        <option value="assessor">Assessor</option>
+                        <option value="manager">Claims Manager</option>
+                        <option value="audit">Audit Team</option>
+                        <option value="ix">IX Team</option>
+                        <option value="submission">Submission Team</option>
+                        <option value="settlement">Settlement Team</option>
+                        <option value="cs">Customer Service</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 2: MAIN DASHBOARD -->
+    <!-- ================================================================================= -->
+    <div id="view-dashboard-landing" class="view-section dashboard-layout container-fluid px-4 workspace-content">
+
+        <!-- DASHBOARD FOR: ASSESSOR / SUBMISSION TEAM -->
+        <div id="landing-assessor" class="role-landing active">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">Assessor Dashboard</h4>
+                    <p class="text-muted small mb-0">Manage pending GL requests and hospital admissions.</p>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning me-2"><i
+                                    class="fas fa-clock"></i></div>
+                            <span class="text-muted small">Pending GL</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">12</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary me-2"><i
+                                    class="fas fa-hospital"></i></div>
+                            <span class="text-muted small">Active Admissions</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">45</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-tasks me-2"></i> Pending GL Queue</span>
+                    <select class="form-select form-select-sm w-auto" id="cashlessFilter"
+                        onchange="filterCashlessTable()">
+                        <option value="ALL">All Statuses</option>
+                        <option value="Pending MO">Pending MO</option>
+                    </select>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Patient Name</th>
+                                <th>Ref ID</th>
+                                <th>Hospital</th>
+                                <th>Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cashlessTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD FOR: CUSTOMER SERVICE / SETTLEMENT -->
+        <div id="landing-cs" class="role-landing">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">Customer Service & Operations Console</h4>
+                    <p class="text-muted small mb-0">Manage Medical Questionnaires (MQ) and Reimbursement lifecycle.</p>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3 border-bottom border-3 border-info">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-info bg-opacity-10 text-info me-2"><i
+                                    class="fas fa-file-invoice"></i></div>
+                            <span class="text-muted small">New Claims</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">28</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3 border-bottom border-3 border-warning">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning me-2"><i
+                                    class="fas fa-question-circle"></i></div>
+                            <span class="text-muted small">MQ Pending Issue</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">8</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3 border-bottom border-3 border-danger">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-danger bg-opacity-10 text-danger me-2"><i
+                                    class="fas fa-exclamation-circle"></i></div>
+                            <span class="text-muted small">Incomplete Docs</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">15</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MQ PENDING QUEUE -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div
+                    class="card-header bg-white fw-bold py-3 text-primary d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-envelope-open-text me-2"></i> Pending Medical Questionnaires (MQ)</span>
+                    <span class="badge bg-primary">Action Required</span>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Patient Name</th>
+                                <th>GL Ref</th>
+                                <th>Assessor Note</th>
+                                <th>SLA</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="ps-4 fw-bold">Ismail Bin Musirim</td>
+                                <td>GL-2025-001</td>
+                                <td class="small text-muted">Awaiting medical history for hypertension...</td>
+                                <td><span class="text-danger"><i class="fas fa-clock"></i> 2h 15m</span></td>
+                                <td><button class="btn btn-sm btn-primary" onclick="openMQModal()">Issue MQ</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-clipboard-list me-2"></i> Reimbursement Work Queue</span>
+                    <select class="form-select form-select-sm w-auto" id="reimbFilter" onchange="filterReimbTable()">
+                        <option value="ALL">All Statuses</option>
+                        <option value="REGISTERED">Registered</option>
+                        <option value="PENDING REGISTRATION">Pending Registration</option>
+                    </select>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Claimant</th>
+                                <th>Policy No</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reimbTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD FOR: CLAIMS MANAGER -->
+        <div id="landing-manager" class="role-landing">
+            <div class="mb-4">
+                <h4 class="fw-bold text-dark mb-1">Medical Manager Console</h4>
+                <p class="text-muted small">Review and adjudicate pending medical claims.</p>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="dash-stat-card p-3 border-start border-4 border-danger">
+                        <span class="text-muted small fw-bold d-block mb-1">PENDING ADJUDICATION</span>
+                        <div class="h3 fw-bold mb-0 text-danger">18</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="dash-stat-card p-3 border-start border-4 border-success">
+                        <span class="text-muted small fw-bold d-block mb-1">APPROVED TODAY</span>
+                        <div class="h3 fw-bold mb-0 text-success">32</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold py-3 text-primary">
+                    <i class="fas fa-gavel me-2"></i> Claims Awaiting Approval
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Patient/Claimant</th>
+                                <th>Type</th>
+                                <th>Hospital/Provider</th>
+                                <th>Amount</th>
+                                <th>Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="managerTableBody">
+                            <tr>
+                                <td class="ps-4 fw-bold">John Doe</td>
+                                <td><span class="badge bg-secondary">REIMB</span></td>
+                                <td>Pantai Hospital</td>
+                                <td>RM 450.00</td>
+                                <td>2 hrs ago</td>
+                                <td><button class="btn btn-sm btn-primary"
+                                        onclick="openReimbConsole()">Adjudicate</button></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4 fw-bold">Ismail Bin Musirim</td>
+                                <td><span class="badge bg-info text-dark">GL</span></td>
+                                <td>Hospital Kuala Lumpur</td>
+                                <td>-</td>
+                                <td>45 mins ago</td>
+                                <td><button class="btn btn-sm btn-primary" onclick="openGLConsole()">Review GL</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD FOR: IX TEAM -->
+        <div id="landing-ix" class="role-landing">
+            <div class="mb-4">
+                <h4 class="fw-bold text-dark mb-1">IX Team Investigation Console</h4>
+                <p class="text-muted small">Manage policy lifecycle actions, re-underwriting, and claim
+                    rejections.</p>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <!-- IX Stats -->
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3 border-start border-4 border-info">
+                        <span class="text-muted small fw-bold d-block mb-1">DOWNGRADES PENDING</span>
+                        <div class="h3 fw-bold mb-0 text-info">14</div>
+                        <small class="text-muted">CC+ to CC</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3 border-start border-4 border-primary">
+                        <span class="text-muted small fw-bold d-block mb-1">RE-UNDERWRITING (CC)</span>
+                        <div class="h3 fw-bold mb-0 text-primary">22</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3 border-start border-4 border-danger">
+                        <span class="text-muted small fw-bold d-block mb-1">REJECTIONS PENDING</span>
+                        <div class="h3 fw-bold mb-0 text-danger">9</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dash-stat-card p-3 border-start border-4 border-dark">
+                        <span class="text-muted small fw-bold d-block mb-1">CANCELLATIONS (CC+)</span>
+                        <div class="h3 fw-bold mb-0 text-dark">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <!-- Workflow Tags Header -->
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex gap-2 overflow-auto pb-1" id="ixWorkflowTags" style="white-space: nowrap;">
+                        <button class="btn btn-sm btn-outline-primary active rounded-pill fw-bold px-3"
+                            onclick="loadIXData('Screening')">IX Screening</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('Assignment')">IX Assignment</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('InProgressNew')">IX In Progress (New)</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('InProgressReassign')">IX In Progress (Reassign)</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="loadIXData('MQ')">IX
+                            MQ</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('Fulfilment')">IX Fulfillment</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('Supervisor')">IX Supervisor Approval</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('Decision')">IX Decision</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('Closed')">IX Closed</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('ClinicDB')">IX Clinic Database</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            onclick="loadIXData('ManualUpload')">IX Case Update - Upload</button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Table Section -->
+                <div class="card-body p-0 table-responsive">
+                    <div class="bg-light px-4 py-2 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold small text-muted" id="ixTableTitle">SCREENING QUEUE</span>
+                        <div class="small text-muted"><span id="ixCount" class="fw-bold text-dark">4</span> Cases Found
+                        </div>
+                    </div>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light" id="ixTableHead">
+                            <!-- Injected via JS -->
+                        </thead>
+                        <tbody id="ixTableBody">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD FOR: AUDIT TEAM -->
+        <div id="landing-audit" class="role-landing">
+            <div class="mb-4">
+                <h4 class="fw-bold text-dark mb-1">Compliance & Quality Audit Console</h4>
+                <p class="text-muted small">Post-approval review of GLs, PAs, and rejection compliance.</p>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="dash-stat-card p-3 border-bottom border-3 border-success">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-success bg-opacity-10 text-success me-2"><i
+                                    class="fas fa-check-double"></i></div>
+                            <span class="text-muted small fw-bold">APPROVED GL AUDIT</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">124</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="dash-stat-card p-3 border-bottom border-3 border-primary">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary me-2"><i
+                                    class="fas fa-file-medical"></i></div>
+                            <span class="text-muted small fw-bold">APPROVED PA AUDIT</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">45</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="dash-stat-card p-3 border-bottom border-3 border-danger">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-danger bg-opacity-10 text-danger me-2"><i
+                                    class="fas fa-times-circle"></i></div>
+                            <span class="text-muted small fw-bold">REJECTED CLAIMS AUDIT</span>
+                        </div>
+                        <div class="h3 fw-bold mb-0">12</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div
+                    class="card-header bg-white fw-bold py-3 text-dark d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-clipboard-check me-2"></i> Audit Work Queue</span>
+                    <select class="form-select form-select-sm w-auto">
+                        <option>All Audit Types</option>
+                        <option>Appproved GL</option>
+                        <option>Approved PA</option>
+                        <option>Rejected Claims</option>
+                    </select>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Reference No</th>
+                                <th>Subject/Provider</th>
+                                <th>Decision Type</th>
+                                <th>Original Decision By</th>
+                                <th>Action Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="ps-4 fw-bold">GL-2025-0881</td>
+                                <td>Wong Mei Ling / Sunway Medical</td>
+                                <td><span class="badge bg-success">Approved GL</span></td>
+                                <td>DR_KHALID</td>
+                                <td>2h ago</td>
+                                <td><button class="btn btn-sm btn-outline-primary">Run Audit</button></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4 fw-bold">PA-2025-0042</td>
+                                <td>Ali bin Abu / Pantai Hospital</td>
+                                <td><span class="badge bg-primary">Approved PA</span></td>
+                                <td>STAFF_ASSESSOR</td>
+                                <td>5h ago</td>
+                                <td><button class="btn btn-sm btn-outline-primary">Run Audit</button></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4 fw-bold">REJ-2025-0012</td>
+                                <td>S. Devi / Columbia Asia</td>
+                                <td><span class="badge bg-danger">Rejected Claim</span></td>
+                                <td>CLAIMS_MGR</td>
+                                <td>Yesterday</td>
+                                <td><button class="btn btn-sm btn-outline-danger">Compliance Audit</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 3: ADMISSION REGISTRATION WIZARD (HOSPITAL VIEW) -->
+    <!-- ================================================================================= -->
+    <div id="view-registration" class="view-section reg-container workspace-content">
+        <!-- Wizard Header -->
+        <div class="wizard-header">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center px-4 mb-2">
+                    <h6 class="mb-0 fw-bold text-primary">New Admission Registration</h6>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="goBackToDashboard()">Close</button>
+                </div>
+                <nav id="wizardNav" class="wizard-steps nav nav-pills">
+                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#sec-step1" type="button"><i
+                            class="fas fa-file-alt"></i> 1. Admission Form</button>
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#sec-step2" type="button"><i
+                            class="fas fa-user-md"></i> 2. Admission Medical Report</button>
+                </nav>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="row">
+                <!-- MAIN FORM COLUMN -->
+                <div class="col-lg-9">
+                    <div class="tab-content pt-4">
+                        <!-- STEP 1 -->
+                        <div id="sec-step1" class="reg-card tab-pane fade show active" role="tabpanel">
+                            <div class="reg-card-header">Step 1: Admission Form</div>
+                            <div class="reg-card-body">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-5"><label class="form-label">Patient Name</label><input
+                                            type="text" class="form-control bg-light" value="ISMAIL BIN MUSIRIM"
+                                            readonly></div>
+                                    <div class="col-md-4"><label class="form-label">Patient IC</label><input type="text"
+                                            class="form-control bg-light" value="C660906015967" readonly></div>
+                                    <div class="col-md-3">
+                                        <label class="form-label d-block">Sex</label>
+                                        <div class="form-check form-check-inline"><input type="radio" name="sex"
+                                                checked> Male
+                                        </div>
+                                        <div class="form-check form-check-inline"><input type="radio" name="sex"> Female
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"><label class="form-label">Hospital</label><input type="text"
+                                            class="form-control" value="BUKIT TINGGI MEDICAL CENTRE"></div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Services Required</label>
+                                        <select class="form-select">
+                                            <option>Admission</option>
+                                            <option>Accident Emergency</option>
+                                            <option>Day Care</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-4"><label class="form-label">Admission Date</label><input
+                                            type="datetime-local" class="form-control" value="2025-12-27T14:26">
+                                    </div>
+                                    <div class="col-md-2"><label class="form-label d-block">Student?</label><input
+                                            type="checkbox">
+                                        Yes</div>
+                                    <div class="col-md-4">
+                                        <label class="form-label d-block">Race</label>
+                                        <div class="form-check form-check-inline"><input type="radio" name="race"
+                                                checked> Malay
+                                        </div>
+                                        <div class="form-check form-check-inline"><input type="radio" name="race">
+                                            Chinese</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Age Group</label>
+                                        <select class="form-select">
+                                            <option>51 - 60</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <hr class="my-4">
+                                <div class="cause-toggle-group">
+                                    <label class="fw-bold text-uppercase small text-muted me-2">Cause:</label>
+                                    <div class="form-check form-check-inline"><input class="form-check-input"
+                                            type="radio" name="admCause" id="causeIllness" value="illness" checked
+                                            onchange="toggleCause()"><label
+                                            class="form-check-label fw-bold">Illness</label>
+                                    </div>
+                                    <div class="form-check form-check-inline"><input class="form-check-input"
+                                            type="radio" name="admCause" id="causeAccident" value="accident"
+                                            onchange="toggleCause()"><label
+                                            class="form-check-label fw-bold">Accident</label></div>
+                                </div>
+                                <div id="sectionIllness">
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-8"><label class="form-label">Symptoms</label><textarea
+                                                class="form-control" rows="2"></textarea></div>
+                                        <div class="col-md-4"><label class="form-label">Duration</label><input
+                                                type="text" class="form-control"></div>
+                                    </div>
+                                    <div class="bg-light p-3 rounded border">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="chkAdvice"
+                                                onchange="toggleConsultation()">
+                                            <label class="form-check-label fw-bold">Sought advice for same
+                                                illness?</label>
+                                        </div>
+                                        <div id="consultationDetails" style="display: none;"
+                                            class="mt-2 border-top pt-2">
+                                            <div class="row g-3">
+                                                <div class="col-md-4"><label class="form-label">Date</label><input
+                                                        type="date" class="form-control"></div>
+                                                <div class="col-md-4"><label class="form-label">Doctor</label><input
+                                                        type="text" class="form-control"></div>
+                                                <div class="col-md-4"><label class="form-label">Clinic</label><input
+                                                        type="text" class="form-control"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="sectionAccident" style="display:none;"
+                                    class="bg-warning bg-opacity-10 p-3 rounded border border-warning">
+                                    <div class="row g-3">
+                                        <div class="col-md-4"><label class="form-label">Accident
+                                                Time</label><input type="datetime-local" class="form-control">
+                                        </div>
+                                        <div class="col-md-8"><label class="form-label">Cause</label><textarea
+                                                class="form-control" rows="1"></textarea></div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+
+                        <!-- STEP 2 (Now Step 2 + Step 3 + Step 4) -->
+                        <div id="sec-step2" class="reg-card tab-pane fade" role="tabpanel">
+                            <div class="reg-card-header">Step 2: Admission Medical Report</div>
+                            <div class="reg-card-body">
+                                <!-- Diagnosis Section -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold small text-muted border-bottom pb-2 mb-3">Diagnosis Info
+                                    </h6>
+                                    <div class="mb-3"><label class="form-label">Diagnosis</label><input type="text"
+                                            class="form-control fw-bold" value="Acute Gastroenteritis"></div>
+                                </div>
+
+                                <!-- Medical History Section -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold small text-muted border-bottom pb-2 mb-3">Illness History
+                                        Information
+                                    </h6>
+                                    <div class="p-3 bg-light rounded border">
+                                        <p class="mb-0 small text-muted">History Checklist placeholder...</p>
+                                    </div>
+                                </div>
+
+                                <!-- Cost & Validation Section -->
+                                <div>
+                                    <h6 class="fw-bold small text-muted border-bottom pb-2 mb-3">Cost Estimation
+                                    </h6>
+                                    <div class="row g-3 bg-light p-3 rounded border">
+                                        <div class="col-md-6"><label class="form-label">Est. Cost</label><input
+                                                type="text" class="form-control text-end" value="3,500.00">
+                                        </div>
+                                        <div class="col-md-6"><label class="form-label">Est. Stay</label><input
+                                                type="text" class="form-control" value="3"></div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT SIDEBAR: COMMUNICATION -->
+                <div class="col-lg-3">
+                    <div class="card border-0 shadow-sm"
+                        style="position: sticky; top: 150px; height: calc(100vh - 250px); overflow-y: auto;">
+                        <div class="card-header bg-white border-bottom fw-bold py-3">
+                            <i class="fas fa-phone-alt me-2 text-primary"></i> Communication
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Caller Name</label>
+                                <input type="text" id="commCallerName" class="form-control form-control-sm"
+                                    placeholder="e.g. Dr. Tan / Staff Nurse Siti">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Phone Number</label>
+                                <input type="text" id="commPhone" class="form-control form-control-sm"
+                                    placeholder="e.g. 012-3456789">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Notes</label>
+                                <textarea id="commNotes" class="form-control form-control-sm" rows="6"
+                                    placeholder="Enter communication notes here..."></textarea>
+                            </div>
+                            <button class="btn btn-primary btn-sm w-100" onclick="saveCommunicationNote()"><i
+                                    class="fas fa-save me-1"></i> Save
+                                Note</button>
+
+                            <hr class="my-3">
+
+                            <h6 class="fw-bold small text-muted mb-2">History</h6>
+                            <div id="commHistoryList" class="list-group list-group-flush small">
+                                <div class="list-group-item px-0 border-bottom">
+                                    <div class="d-flex justify-content-between text-muted mb-1"
+                                        style="font-size: 0.75rem;">
+                                        <span>Today 10:30 AM</span><span>You</span>
+                                    </div>
+                                    <div class="mb-0">Called hospital to verify admission time.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- End Row -->
+
+            <div class="sticky-footer">
+                <button class="btn btn-outline-danger" onclick="goBackToDashboard()">Cancel</button>
+                <button class="btn btn-success fw-bold px-5" onclick="submitAdmission()">Submit Admission</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 4: REIMBURSEMENT REGISTRATION (NEW SCREEN) -->
+    <!-- ================================================================================= -->
+    <div id="view-reimb-registration" class="view-section reg-container workspace-content">
+
+        <div class="wizard-header">
+            <div class="container-fluid d-flex justify-content-between align-items-center px-4">
+                <ul class="nav nav-tabs border-bottom-0">
+                    <li class="nav-item">
+                        <a class="nav-link active fw-bold text-dark bg-light" href="#"
+                            style="border: 1px solid #ddd; border-bottom: none;">Claim Registration</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="goBackToDashboard()">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid pt-2">
+            <div class="row g-3">
+                <!-- LEFT COLUMN -->
+                <div class="col-lg-7">
+                    <div class="card border shadow-sm mb-3">
+                        <div class="card-body p-4">
+                            <!-- Patient Info -->
+                            <div class="row mb-1">
+                                <div class="col-sm-3 text-muted small fw-bold">Patient IC</div>
+                                <div class="col-sm-9 text-primary fw-bold">: C700810015261</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3 text-muted small fw-bold">Patient Name</div>
+                                <div class="col-sm-9 text-primary fw-bold">: A AZIS BIN BAJURI</div>
+                            </div>
+
+                            <!-- Mode & Date -->
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-auto small text-muted fw-bold me-2">Mode <span class="mx-2">:
+                                        REIM</span></div>
+                                <div class="col-auto d-flex align-items-center">
+                                    <span class="small text-muted fw-bold me-2">Doc Received Date</span>
+                                    <div class="input-group input-group-sm">
+                                        <input type="datetime-local" class="form-control" value="2026-01-04T18:59">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Disability Date & Checks -->
+                            <div class="row g-2 mb-3 align-items-center">
+                                <div class="col-auto d-flex align-items-center">
+                                    <span class="small text-muted fw-bold me-2">Disability Date</span>
+                                    <input type="datetime-local" class="form-control form-control-sm"
+                                        value="2026-01-04T18:59">
+                                </div>
+                                <div class="col-auto ms-3 small">
+                                    <span class="fw-bold me-2">Is it Elective Case?</span>
+                                    <span class="mx-1">:</span>
+                                    <input type="checkbox" checked> Yes
+                                </div>
+                                <div class="col-auto ms-3 small">
+                                    <span class="fw-bold me-2">Verify Mailing Address :</span>
+                                    <input type="checkbox">
+                                </div>
+                            </div>
+
+                            <!-- Pending Documents -->
+                            <h6 class="fw-bold fst-italic text-dark mb-2" style="font-family: serif;">Pending
+                                Documents
+                            </h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Duly Completed and Signed Claim
+                                            Form</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox" checked>
+                                        <label class="form-check-label">Original Medical Report With
+                                            Diagnosis</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Discharge Note</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Original Bill/Invoice</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Original Official Receipt</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Pensioner Card</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Discharge Summary With Diagnosis,
+                                            Admission
+                                            Date, Discharge Date</label>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2 small">
+                                        <input class="form-check-input me-2" type="checkbox">
+                                        <label class="me-2">Others</label>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Student ID (for child aged 18-23
+                                            years)</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Medical Questionnaire (Attached)</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Copy of Bank Book (First Page) or Bank
+                                            Statement</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Duly Completed and Stamped E-Payment
+                                            Form</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">A Copy of Policyholder IC</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Type -->
+                            <div class="mb-3 d-flex align-items-center">
+                                <span class="small fw-bold me-3">Payment Type :</span>
+                                <div class="form-check form-check-inline small">
+                                    <input class="form-check-input" type="radio" name="payType">
+                                    <label class="form-check-label">Cheque</label>
+                                </div>
+                                <div class="form-check form-check-inline small">
+                                    <input class="form-check-input" type="radio" name="payType" checked>
+                                    <label class="form-check-label">E-Payment</label>
+                                </div>
+                            </div>
+
+                            <!-- Bank Details -->
+                            <h6 class="fw-bold fst-italic text-dark mb-2" style="font-family: serif;">Bank
+                                Details
+                            </h6>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Bank Name :</label>
+                                <div class="col-sm-9">
+                                    <select class="form-select form-select-sm">
+                                        <option></option>
+                                        <option>MAYBANK</option>
+                                        <option>CIMB</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">A/c No :</label>
+                                <div class="col-sm-9"><input type="text" class="form-control form-control-sm">
+                                </div>
+                            </div>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Payee IC :</label>
+                                <div class="col-sm-9"><input type="text" class="form-control form-control-sm">
+                                </div>
+                            </div>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Payee Name :</label>
+                                <div class="col-sm-9"><input type="text" class="form-control form-control-sm">
+                                </div>
+                            </div>
+                            <div class="row mb-3 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Confirmation :</label>
+                                <div class="col-sm-9">
+                                    <div class="form-check form-check-inline small">
+                                        <input class="form-check-input" type="radio" name="bankVer">
+                                        <label class="form-check-label">Bank A/c Number Verified</label>
+                                    </div>
+                                    <div class="form-check form-check-inline small">
+                                        <input class="form-check-input" type="radio" name="bankVer">
+                                        <label class="form-check-label">Bank A/c Number Not Verified</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Remarks -->
+                            <div class="row align-items-start">
+                                <label class="col-sm-3 col-form-label small fw-bold">Remarks :</label>
+                                <div class="col-sm-9">
+                                    <textarea class="form-control form-control-sm bg-light" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="col-lg-5">
+                    <!-- Claim Listing -->
+                    <div class="mb-2">
+                        <small class="fw-bold text-dark">Claim Listing</small>
+                        <div class="border" style="height: 250px; background-color: #999; overflow-y: auto;">
+                            <!-- The screenshot shows this exact header style -->
+                            <table class="table table-bordered table-sm small mb-0 bg-white">
+                                <thead>
+                                    <tr>
+                                        <th>ADMISSION TYPE</th>
+                                        <th>VISIT DATE</th>
+                                        <th>HOSPITAL NAME</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="height: 20px;">
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Claim Form -->
+                    <div class="card border rounded-0 mb-3">
+                        <div class="card-header bg-white small fw-bold py-1">Claim Form</div>
+                        <div class="card-body p-2">
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-sm-4 text-end small fw-bold">Admission Type :</div>
+                                <div class="col-sm-8"><select class="form-select form-select-sm">
+                                        <option>IP</option>
+                                    </select></div>
+                            </div>
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-sm-4 text-end small fw-bold">Visit Date :</div>
+                                <div class="col-sm-8"><input type="datetime-local" class="form-control form-control-sm"
+                                        value="2026-01-04T18:59"></div>
+                            </div>
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-sm-4 text-end small fw-bold">Hospital :</div>
+                                <div class="col-sm-8">
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control">
+                                        <button class="btn btn-outline-secondary">...</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <button class="btn btn-sm btn-light border px-4">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itemised Items (New Section) -->
+                    <div class="card border rounded-0 shadow-sm">
+                        <div
+                            class="card-header bg-white small fw-bold py-1 d-flex justify-content-between align-items-center">
+                            <span>Itemised Billing</span>
+                            <button class="btn btn-xs btn-primary py-0" style="font-size: 0.7rem;">+ Add
+                                Line</button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm small mb-0 table-striped">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="text-end">Amount</th>
+                                            <th class="text-center">Act</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemizedTableBody">
+                                        <tr>
+                                            <td>Room & Board</td>
+                                            <td class="text-end">180.00</td>
+                                            <td class="text-center text-danger"><i class="fas fa-trash"></i>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Medical Supplies</td>
+                                            <td class="text-end">45.50</td>
+                                            <td class="text-center text-danger"><i class="fas fa-trash"></i>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-bold">
+                                            <td class="text-end">TOTAL</td>
+                                            <td class="text-end">225.50</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="sticky-footer">
+            <button class="btn btn-outline-danger" onclick="goBackToDashboard()">Cancel</button>
+            <button class="btn btn-success fw-bold px-5" onclick="submitReimbursement()">Submit Claim</button>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 5: GL DECISION CONSOLE -->
+    <!-- ================================================================================= -->
+    <div id="view-gl-console" class="view-section console-layout workspace-content"
+        style="background-color: #f4f6f9; padding-bottom: 80px;">
+        <!-- ROW 1: TITLE & STATUS (Matches Screenshot) -->
+        <div class="bg-white px-3 py-2 border-bottom d-flex justify-content-between align-items-center mb-0">
+            <div class="d-flex align-items-center text-primary fw-bold" style="font-size: 0.9rem;">
+                <button class="btn btn-sm btn-link text-decoration-none me-2 p-0" onclick="goBackToDashboard()"><i
+                        class="fas fa-arrow-left"></i></button>
+                <i class="fas fa-globe me-2"></i> FAST-TRACK GL DECISION CONSOLE
+            </div>
+            <span class="badge bg-warning text-dark rounded-pill"
+                style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px;">STATUS: NEW REQUEST</span>
+        </div>
+
+        <!-- ROW 2: PATIENT BANNER (Matches Screenshot) -->
+        <div class="bg-white px-4 py-3 border-bottom shadow-sm mb-3">
+            <div class="row align-items-center">
+                <!-- COL 1: PATIENT -->
+                <div class="col-md-3 border-end">
+                    <small class="text-uppercase text-muted fw-bold"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">PATIENT</small>
+                    <h5 class="mb-0 fw-bold text-dark mt-1">ISMAIL BIN MUSIRIM</h5>
+                    <div class="text-muted small mt-1" style="font-size: 0.75rem;">IC: 880101-14-5566 | Age: 59
+                    </div>
+                </div>
+
+                <!-- COL 2: ACTIVE POLICY (New Section) -->
+                <div class="col-md-3 border-end ps-4">
+                    <small class="text-uppercase text-muted fw-bold"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">ACTIVE POLICY</small>
+                    <h6 class="mb-0 fw-bold text-success mt-1" style="font-size: 0.9rem;">CUEPACSCARE (GAKUM)
+                    </h6>
+                    <div class="text-muted small mt-1" style="font-size: 0.75rem;">Effective: 15/06/2019</div>
+                </div>
+
+                <!-- COL 3: LIMITS -->
+                <div class="col-md-6 ps-4">
+                    <div class="row">
+                        <div class="col-md-6 border-end pe-4">
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">ANNUAL
+                                    BAL</small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-success" style="font-size: 0.85rem;">RM 45k</span>
+                                <span class="fw-bold text-success" style="font-size: 0.8rem;">75%</span>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: #f0f0f0;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 ps-4">
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">ADM
+                                    LIMIT</small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-warning" style="font-size: 0.85rem;">RM 5k</span>
+                                <span class="fw-bold text-warning" style="font-size: 0.8rem;">Low</span>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: #f0f0f0;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 20%">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN 3-COLUMN CONTENT -->
+        <div class="row g-3" style="flex: 1; min-height: 0;">
+
+            <!-- LEFT COLUMN: HISTORY & VALIDATION -->
+            <div class="col-lg-3 d-flex flex-column gap-3">
+
+                <!-- Auto-Validation -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                        <i class="fas fa-robot text-primary"></i>
+                        <span class="fw-bold text-primary small">Auto-Validation</span>
+                    </div>
+                    <div class="card-body small">
+                        <div class="d-flex justify-content-between mb-1"><span>Policy</span><span
+                                class="text-success fw-bold">Active</span></div>
+                        <div class="d-flex justify-content-between mb-2"><span>Readmission</span><span
+                                class="text-danger fw-bold">Alert!</span></div>
+                        <div class="alert alert-warning border-0 p-2 mb-0"
+                            style="background-color: #fff3cd; color: #856404; font-size: 0.75rem;">
+                            Patient admitted 45 days ago.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Declared Exclusions (Red Header) -->
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-danger text-white fw-bold small py-2">
+                        <i class="fas fa-ban me-2"></i> Declared Exclusions
+                    </div>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item text-danger border-0 py-2"><i class="fas fa-times me-2"></i>Right
+                            Knee Surgery</li>
+                    </ul>
+                </div>
+
+                <!-- PEC (Red Header) -->
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-danger text-white fw-bold small py-2">
+                        <i class="fas fa-exclamation-circle me-2"></i> Pre-existing (PEC)
+                    </div>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item text-danger border-0 py-2"><i
+                                class="fas fa-exclamation-circle me-2"></i>Hypertension (2019)</li>
+                    </ul>
+                </div>
+
+                <!-- History -->
+                <div class="card border-0 shadow-sm flex-fill d-flex flex-column">
+                    <div class="card-header bg-white pt-3 pb-2 border-bottom-0">
+                        <span class="fw-bold small text-muted">History</span>
+                    </div>
+                    <div class="px-2 pb-2">
+                        <div class="row g-1 mb-2">
+                            <div class="col-6"><select class="form-select form-select-sm small-text">
+                                    <option>All Claimants</option>
+                                </select></div>
+                            <div class="col-6"><select class="form-select form-select-sm small-text">
+                                    <option>All Time</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="table-responsive flex-fill">
+                        <table class="table table-hover mb-0 small" style="font-size: 0.75rem;">
+                            <thead class="bg-light sticky-top">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Dx</th>
+                                    <th class="text-end">Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="background-color: #fff3cd;">
+                                    <td>12/11/25</td>
+                                    <td>Acute Gastritis</td>
+                                    <td class="text-end">3.2k</td>
+                                </tr>
+                                <tr>
+                                    <td>05/06/24</td>
+                                    <td>Hypertension</td>
+                                    <td class="text-end">150</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MIDDLE COLUMN: ASSESSMENT -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                        <i class="fas fa-file-medical text-primary"></i>
+                        <span class="fw-bold text-primary small">Current Assessment</span>
+                    </div>
+                    <div class="card-body overflow-auto">
+                        <!-- Diagnosis -->
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Diagnosis</label>
+                            <input type="text" class="form-control fw-bold" value="Acute Gastroenteritis">
+                        </div>
+
+                        <!-- Stay & MQ -->
+                        <div class="row align-items-end mb-3">
+                            <div class="col-8">
+                                <label class="form-label small text-muted">Stay</label>
+                                <input type="number" class="form-control" value="3">
+                            </div>
+                            <div class="col-4 text-end pb-2">
+                                <div class="form-check d-inline-block">
+                                    <input class="form-check-input" type="checkbox" id="mqCheck">
+                                    <label class="form-check-label fw-bold text-danger small" for="mqCheck">MQ
+                                        Required?</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Checkboxes Grid (Restored) -->
+                        <div class="row g-2 mb-3 px-1">
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk1"><label class="form-check-label text-muted" for="chk1">Related
+                                        PEC?</label></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk2"><label class="form-check-label text-muted"
+                                        for="chk2">Congenital?</label></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk3"><label class="form-check-label text-muted"
+                                        for="chk3">Cosmetic?</label></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk4"><label class="form-check-label text-muted" for="chk4">Invest.
+                                        Only?</label></div>
+                            </div>
+                        </div>
+
+                        <!-- Investigation -->
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Investigation</label>
+                            <input type="text" class="form-control form-control-sm text-muted" placeholder="e.g. MRI">
+                        </div>
+
+                        <!-- Cost -->
+                        <div class="bg-light p-2 rounded mb-3 border">
+                            <small class="fw-bold text-dark d-block mb-1">Cost</small>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted">Hospital Est:</span>
+                                <span class="fw-bold">3,500.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between small text-primary">
+                                <span>Approved GL:</span>
+                                <span class="fw-bold">3,000.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Remarks -->
+                        <div class="mb-0">
+                            <label class="form-label small text-muted">Assessment Remarks</label>
+                            <textarea class="form-control" rows="4"
+                                placeholder="Enter final clinical assessment remarks..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: DECISION -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                        <i class="fas fa-gavel text-primary"></i>
+                        <span class="fw-bold text-primary small">Decision</span>
+                    </div>
+                    <div class="card-body d-flex flex-column gap-3 overflow-auto">
+
+                        <!-- Monitoring Section -->
+                        <div class="border rounded p-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-warning fw-bold small">+8 Hours Monitoring</span>
+                                <input class="form-check-input" type="checkbox">
+                            </div>
+                            <input type="text" class="form-control form-control-sm" placeholder="Monitoring Remarks...">
+                        </div>
+
+                        <!-- LOS Log Section -->
+                        <div class="border rounded p-2 flex-grow-1 d-flex flex-column">
+                            <span class="text-info fw-bold small mb-2 border-bottom pb-1">LOS Log</span>
+                            <div class="flex-grow-1 overflow-auto mb-2" style="max-height: 150px;">
+                                <div class="d-flex justify-content-between small fw-bold text-primary mb-1">
+                                    <span>10:00 AM</span><span>SYS</span>
+                                </div>
+                                <div class="small text-muted border-bottom pb-1 mb-1">Initial: 3 Days</div>
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="logInput" placeholder="Add note...">
+                                <button class="btn btn-outline-primary" onclick="addLog()">Add</button>
+                            </div>
+                        </div>
+
+                        <!-- Communication History for GL -->
+                        <div class="border rounded p-2 flex-grow-1 d-flex flex-column">
+                            <span class="text-primary fw-bold small mb-2 border-bottom pb-1"><i
+                                    class="fas fa-history me-1"></i> Communication History</span>
+                            <div id="glCommList" class="overflow-auto" style="max-height: 250px; font-size: 0.75rem;">
+                                <div class="border-bottom pb-2 mb-2">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="fw-bold">Staff Assessor</span>
+                                        <span class="text-muted text-xs">Today 10:45 AM</span>
+                                    </div>
+                                    <div class="text-dark">Called Dr. Tan. Dr. Tan confirmed the diagnosis and mentioned
+                                        the patient has a history of similar episodes.</div>
+                                </div>
+                                <div class="pb-1">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="fw-bold">Hospital (Siti)</span>
+                                        <span class="text-muted text-xs">Today 10:15 AM</span>
+                                    </div>
+                                    <div class="text-dark">Hospital submitted admission documents. Verification of
+                                        benefits completed via portal.</div>
+                                </div>
+                            </div>
+                            <div class="mt-2 border-top pt-2">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="glCommInput" placeholder="Add note...">
+                                    <button class="btn btn-primary" onclick="addGLCommNote()">Add</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Decision Support Info -->
+                        <div class="bg-light p-2 rounded border border-info">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-info-circle text-info me-1 small"></i>
+                                <span class="fw-bold text-info" style="font-size: 0.7rem;">Decision Support</span>
+                            </div>
+                            <p class="text-muted mb-0" style="font-size: 0.65rem;">Verify all medical records and logs
+                                before selection.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STICKY FOOTER FOR GL ACTIONS -->
+        <div class="sticky-footer"
+            style="padding: 12px 30px; background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-center gap-2">
+                    <button class="btn btn-success fw-bold px-4 shadow-sm" onclick="alert('GL Approved!')">1. Approve
+                        GL</button>
+                    <button class="btn btn-primary fw-bold px-4 shadow-sm"
+                        onclick="alert('GL Approved & IX (Normal) Referred')">2. Approve GL & IX (Normal)</button>
+                    <button class="btn btn-info fw-bold px-4 shadow-sm text-white" onclick="openMQModal()">3.
+                        MQ</button>
+                    <button class="btn btn-danger fw-bold px-4 shadow-sm"
+                        onclick="alert('Urgent Investigation Triggered')">4. Urgent Investigation</button>
+                    <button class="btn btn-dark fw-bold px-4 shadow-sm" onclick="openRejectGLModal()">5. Reject
+                        GL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 6: REIMBURSEMENT ADJUDICATION CONSOLE -->
+    <!-- ================================================================================= -->
+    <div id="view-reimb-console" class="view-section console-layout workspace-content">
+        <!-- Header -->
+        <div class="dash-card mb-3" style="flex: 0 0 auto;">
+            <div class="dash-header py-2 bg-light">
+                <div class="d-flex justify-content-between w-100 align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="goBackToDashboard()"><i
+                                class="fas fa-arrow-left"></i> Back</button>
+                        <span class="text-success fw-bold">REIMBURSEMENT ADJUDICATION</span>
+                    </div>
+                    <span class="badge bg-info text-dark">CLAIM #REM-992</span>
+                </div>
+            </div>
+            <div class="dash-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-3 border-end"><small class="text-muted d-block">Claimant</small>
+                        <h6 class="mb-0 fw-bold">John Doe</h6>
+                    </div>
+                    <div class="col-md-3 text-end"><small class="text-muted d-block">Total Claimed</small>
+                        <h4 class="text-primary mb-0 fw-bold">RM 450.00</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3" style="flex: 1; min-height: 0;">
+            <div class="col-lg-3 d-flex flex-column gap-3">
+                <div class="dash-card" style="flex: 1;">
+                    <div class="dash-header"><span>Documents</span></div>
+                    <div class="dash-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="doc-thumbnail border-primary text-primary"><i class="fas fa-file-invoice"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="dash-card h-100">
+                    <div class="dash-header text-primary">Bill Adjudication</div>
+                    <div class="dash-body p-0">
+                        <table class="table table-hover bill-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="40%">Item</th>
+                                    <th width="20%" class="text-end">Claimed</th>
+                                    <th width="20%" class="text-end">Payable</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Consultation</td>
+                                    <td class="text-end">50.00</td>
+                                    <td class="text-end"><input type="text" class="bill-input" value="50.00">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Supplements</td>
+                                    <td class="text-end">250.00</td>
+                                    <td class="text-end"><input type="text" class="bill-input" value="0.00"
+                                            style="color:red;"></td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-light fw-bold">
+                                <tr>
+                                    <td class="text-end">TOTAL</td>
+                                    <td class="text-end">450.00</td>
+                                    <td class="text-end text-success">200.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="dash-card h-100 border-success">
+                    <div class="dash-header bg-white text-success">Approval</div>
+                    <div class="dash-body">
+                        <div class="mb-3"><label class="form-label small fw-bold">Remarks</label><textarea
+                                class="form-control" rows="4">Non-payable deducted.</textarea></div>
+                        <button class="btn btn-success w-100 fw-bold shadow-sm"
+                            onclick="alert('Claim Approved!')">APPROVE PAYMENT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loadingOverlay">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+        <h4 class="fw-light">Processing...</h4>
+    </div>
+
+    <!-- ERROR MODAL -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-0 fw-bold" id="errorModalMessage">Something went wrong.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MQ MODAL (IFRAME) -->
+    <div class="modal fade" id="mqModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-dark text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-file-medical-alt me-2"></i> Medical Questionnaire
+                        Builder</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="mq.html" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLINIC DB MODAL (IFRAME) -->
+    <div class="modal fade" id="clinicDBModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="ix_clinic_db.html" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IX DETAILS MODAL (IFRAME) -->
+    <div class="modal fade" id="ixDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="ix_details.html" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MONITORING MODAL (IFRAME) -->
+    <div class="modal fade" id="monitoringModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="monitoring_8hours.html" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MONITORING LOS MODAL (IFRAME) -->
+    <div class="modal fade" id="monitoringLOSModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="monitoring_LOS.html" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT SUBMISSION MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-dark text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Settlement Online
+                        Submission Console (Approved)</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-Online-Submission-Approved.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT DECLINED MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementDeclinedModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-danger text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Settlement Online
+                        Submission Console (Declined)</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-Online-Submission-Declined.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT REMINDER QUESTIONNAIRE MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementReminderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-clipboard-question me-2"></i> Settlement Online
+                        Reminder Questionnaire</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-Online-Reminder-Questionnaire.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT REIM BANK ACC VERIFY MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementBankVerifyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-university me-2"></i> Reimbursement Bank Account
+                        Verification</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-reim-bankaccverify.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT REIM SUB APPROVED MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementReimApprovedModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-dark text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-check-to-slot me-2"></i> Settlement Reimbursement
+                        Submission Approved</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-Reimbursement-Submission-Approved.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT REIM SUB DECLINED MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementReimDeclinedModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-dark text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-circle-xmark me-2"></i> Settlement Reimbursement
+                        Submission Declined</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-Reimbursement-Submission-Declined.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT REIM REMINDER INCOMPLETE DOC MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementReimReminderIncompleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-file-circle-exclamation me-2"></i> Settlement
+                        Reimbursement Reminder - Incomplete Document</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-Reimbursement-Reminder-IncompleteDocument.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTLEMENT REIM INCOMPLETE DOC POSTING MODAL (IFRAME) -->
+    <div class="modal fade" id="settlementReimIncompletePostingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-file-export me-2"></i> Settlement Reimbursement -
+                        Incomplete Document Posting</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="overflow: hidden;">
+                    <iframe src="Settlement-Reimbursement-IncompleteDocumentPosting.html"
+                        style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- PROCESSING ONLINE ISSUEQ MODAL (IFRAME) -->
+    <div class="modal fade" id="issueQModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-clipboard-list me-2"></i> Processing Online Issue
+                        Questionnaire</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 d-flex flex-column" style="overflow: hidden; height: calc(100vh - 50px);">
+                    <iframe src="Processing-Online-IssueQ.html" class="flex-grow-1"
+                        style="width: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- PROCESSING MONITORING DEFERMENT MODAL (IFRAME) -->
+    <div class="modal fade" id="defermentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-desktop me-2"></i> Processing Monitoring Deferment
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 d-flex flex-column" style="overflow: hidden; height: calc(100vh - 50px);">
+                    <iframe src="Processing-Monitoring-Deferment.html" class="flex-grow-1"
+                        style="width: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- PROCESSING ONLINE DISCHARGE MODAL (IFRAME) -->
+    <div class="modal fade" id="dischargeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-sign-out-alt me-2"></i> Processing Online Discharge
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 d-flex flex-column" style="overflow: hidden; height: calc(100vh - 50px);">
+                    <iframe src="Processing-Online-Discharge.html" class="flex-grow-1"
+                        style="width: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- REJECT GL REMARKS MODAL -->
+    <div class="modal fade" id="rejectGLModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-ban me-2"></i> Reject GL Case</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Rejection Remarks <span class="text-danger">*</span></label>
+                        <textarea id="rejectRemarks" class="form-control" rows="4"
+                            placeholder="Please enter the reason for rejection (mandatory)..." required></textarea>
+                        <div id="rejectRemarksError" class="text-danger small mt-2 fw-bold" style="display: none;">
+                            <i class="fas fa-exclamation-circle me-1"></i> Please enter remarks to proceed with
+                            rejection.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger px-4 fw-bold" onclick="confirmRejectGL()">Confirm
+                        Rejection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- PROCESSING ONLINE DISCHARGE PA MODAL (IFRAME) -->
+    <div class="modal fade" id="dischargePAModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-sign-out-alt me-2"></i> Processing Online Discharge
+                        PA
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 d-flex flex-column" style="overflow: hidden; height: calc(100vh - 50px);">
+                    <iframe src="Processing-Online-Discharge-PA.html" class="flex-grow-1"
+                        style="width: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ESCALATION INITIATE MODAL (IFRAME) -->
+    <div class="modal fade" id="escalationInitiateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Escalation Initiate
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 d-flex flex-column" style="overflow: hidden; height: calc(100vh - 50px);">
+                    <iframe src="Escalation-Initiate.html" class="flex-grow-1"
+                        style="width: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentUserRole = '';
+        const STAFF_ROLES = ['assessor', 'submission', 'settlement', 'cs'];
+
+        const MENU_ITEMS = [
+            { id: 'dash', icon: 'fa-th-large', label: 'Dashboard', action: 'goBackToDashboard()', roles: ['all'], active: true },
+            { id: 'adm', icon: 'fa-hospital-user', label: 'New Admission', action: 'openRegistration()', roles: ['assessor', 'submission'] },
+            { id: 'reimb', icon: 'fa-file-invoice-dollar', label: 'New Claim Reg', action: 'openReimbRegistration()', roles: ['cs', 'settlement'] },
+            { id: 'settlement', icon: 'fa-coins', label: 'Settlement Console (Appr)', action: 'openSettlementConsole()', roles: ['settlement', 'cs'] },
+            { id: 'reim-approved', icon: 'fa-check-to-slot', label: 'Reim Sub Approved', action: 'openSettlementReimApprovedConsole()', roles: ['settlement', 'cs'] },
+            { id: 'reim-declined', icon: 'fa-circle-xmark', label: 'Reim Sub Declined', action: 'openSettlementReimDeclinedConsole()', roles: ['settlement', 'cs'] },
+            { id: 'settlement-declined', icon: 'fa-file-circle-xmark', label: 'Settlement Console (Decl)', action: 'openSettlementDeclinedConsole()', roles: ['settlement', 'cs'] },
+            { id: 'settlement-reminder', icon: 'fa-clipboard-question', label: 'Reminder Questionnaire', action: 'openSettlementReminderConsole()', roles: ['settlement', 'cs'] },
+            { id: 'reim-bankaccverify', icon: 'fa-university', label: 'Reim Bank Acc Verify', action: 'openReimBankAccVerify()', roles: ['settlement', 'cs'] },
+            { id: 'reim-reminder-incomplete', icon: 'fa-file-circle-exclamation', label: 'Incomplete Doc Reminder', action: 'openSettlementReminderIncompleteConsole()', roles: ['settlement', 'cs'] },
+            { id: 'reim-incomplete-posting', icon: 'fa-file-export', label: 'Incomplete Doc Posting', action: 'openSettlementIncompletePostingConsole()', roles: ['settlement', 'cs'] },
+            { id: 'issue-q', icon: 'fa-clipboard-list', label: "Issue Questionnaire's", action: 'openIssueQModal()', roles: ['assessor'] },
+            { id: 'deferment', icon: 'fa-desktop', label: "Monitoring Deferment", action: 'openDefermentModal()', roles: ['assessor'] },
+            { id: 'online-discharge', icon: 'fa-sign-out-alt', label: "Online Discharge", action: 'openProcessingOnlineDischargeModal()', roles: ['assessor'] },
+            { id: 'escalation-initiate', icon: 'fa-exclamation-triangle', label: "Escalation Initiate", action: 'openEscalationInitiateModal()', roles: ['assessor'] },
+            { id: 'mon8', icon: 'fa-clock', label: '8H Monitoring', action: 'openMonitoringModal()', roles: ['assessor', 'submission'] },
+            { id: 'monLOS', icon: 'fa-procedures', label: 'LOS Monitoring', action: 'openMonitoringLOSModal()', roles: ['assessor', 'submission'] },
+            { id: 'clinic', icon: 'fa-hospital-alt', label: 'Clinic Database', action: 'loadIXData("ClinicDB")', roles: ['ix'] },
+            { id: 'search', icon: 'fa-magnifying-glass', label: 'Search Case', action: '', roles: ['all'] },
+            { id: 'members', icon: 'fa-id-card', label: 'Policy Members', action: '', roles: ['all'] },
+            { id: 'reports', icon: 'fa-chart-line', label: 'Reports', action: '', roles: ['manager', 'audit', 'ix'] },
+            { type: 'divider', label: 'Admin', roles: ['all'] },
+            { id: 'settings', icon: 'fa-gears', label: 'Settings', action: '', roles: ['all'] },
+            { id: 'logout', icon: 'fa-right-from-bracket', label: 'Logout', action: 'logout()', roles: ['all', 'danger'], class: 'text-danger' }
+        ];
+
+        function updateSidebarMenu(role) {
+            const menuContainer = document.getElementById('sidebarMenu');
+            menuContainer.innerHTML = '';
+
+            MENU_ITEMS.forEach(item => {
+                if (item.roles.includes('all') || item.roles.includes(role)) {
+                    if (item.type === 'divider') {
+                        const divider = document.createElement('div');
+                        divider.className = 'mt-4 px-3 mb-2 text-muted small link-text';
+                        divider.style.cssText = 'font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;';
+                        divider.innerText = item.label;
+                        menuContainer.appendChild(divider);
+                    } else {
+                        const link = document.createElement('a');
+                        link.href = '#';
+                        link.className = `nav-link ${item.active ? 'active' : ''} ${item.class || ''}`;
+                        link.onclick = function (e) {
+                            e.preventDefault();
+                            // Handle active state
+                            document.querySelectorAll('#sidebarMenu .nav-link').forEach(el => el.classList.remove('active'));
+                            link.classList.add('active');
+                            // Execute action
+                            if (item.action) eval(item.action);
+                        };
+
+                        link.innerHTML = `
+                            <i class="fa-solid ${item.icon}"></i>
+                            <span class="link-text">${item.label}</span>
+                        `;
+                        menuContainer.appendChild(link);
+                    }
+                }
+            });
+        }
+
+        function updateUIForRole(role) {
+            currentUserRole = role;
+            updateSidebarMenu(role);
+
+            // Sync Navbar Select
+            const navSelect = document.getElementById('navRoleSelect');
+            if (navSelect && navSelect.value !== role) navSelect.value = role;
+
+            // UI Text Mapping
+            let userText = 'USER';
+            let roleText = 'Role';
+            let roleClass = 'role-staff';
+
+            switch (role) {
+                case 'assessor': userText = 'STAFF_ASSESSOR'; roleText = 'Assessor'; break;
+                case 'manager': userText = 'CLAIMS_MGR'; roleText = 'Claims Manager'; roleClass = 'role-doctor'; break;
+                case 'audit': userText = 'AUDIT_LEAD'; roleText = 'Audit Team'; roleClass = 'role-doctor'; break;
+                case 'ix': userText = 'IX_SPECIALIST'; roleText = 'IX Team'; roleClass = 'role-doctor'; break;
+                case 'submission': userText = 'SUBMISSION_TB'; roleText = 'Submission Team'; break;
+                case 'settlement': userText = 'FINANCE_EXEC'; roleText = 'Settlement Team'; break;
+                case 'cs': userText = 'CS_AGENT'; roleText = 'Customer Service'; break;
+            }
+
+            document.getElementById('navUser').innerText = userText;
+            document.getElementById('navRoleBadge').innerText = roleText;
+            document.getElementById('navRoleBadge').className = 'role-pill border ' + roleClass;
+
+            // 1. Hide all landing pages
+            document.querySelectorAll('.role-landing').forEach(el => el.classList.remove('active'));
+
+            // 2. Show correct landing page and Load data
+            if (['assessor', 'submission'].includes(role)) {
+                document.getElementById('landing-assessor').classList.add('active');
+                filterCashlessTable();
+            } else if (['cs', 'settlement'].includes(role)) {
+                document.getElementById('landing-cs').classList.add('active');
+                filterReimbTable();
+            } else if (role === 'manager') {
+                document.getElementById('landing-manager').classList.add('active');
+            } else if (role === 'audit') {
+                document.getElementById('landing-audit').classList.add('active');
+            } else if (role === 'ix') {
+                document.getElementById('landing-ix').classList.add('active');
+                loadIXData('Screening'); // Load default IX tab
+            }
+        }
+
+        function handleLogin() {
+            const role = document.getElementById('loginRole').value;
+            document.getElementById('mainNavbar').style.display = 'flex';
+            document.getElementById('sidebar').style.display = 'block';
+            document.body.classList.add('sidebar-expanded');
+
+            document.getElementById('view-login').classList.remove('active');
+            document.getElementById('view-dashboard-landing').classList.add('active');
+
+            updateUIForRole(role);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const body = document.body;
+            if (sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                body.classList.remove('sidebar-collapsed');
+                body.classList.add('sidebar-expanded');
+            } else {
+                sidebar.classList.add('collapsed');
+                body.classList.remove('sidebar-expanded');
+                body.classList.add('sidebar-collapsed');
+            }
+        }
+
+        function switchRole(role) {
+            updateUIForRole(role);
+            goBackToDashboard();
+        }
+
+        function logout() {
+            document.getElementById('sidebar').style.display = 'none';
+            document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+            location.reload();
+        }
+        function goBackToDashboard() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-dashboard-landing').classList.add('active');
+        }
+        function openRegistration() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-registration').classList.add('active');
+
+            // Reset to Step 1 using Bootstrap Tab instance if preferred, or just click triggering
+            const firstTabEl = document.querySelector('#wizardNav .nav-link');
+            if (firstTabEl) {
+                // Use Bootstrap API to show tab
+                const tab = new bootstrap.Tab(firstTabEl);
+                tab.show();
+            }
+
+            window.scrollTo(0, 0);
+        }
+        function openReimbRegistration() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-reimb-registration').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        function openGLConsole() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-gl-console').classList.add('active');
+        }
+        function openReimbConsole() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-reimb-console').classList.add('active');
+        }
+        function toggleCause() {
+            const cause = document.querySelector('input[name="admCause"]:checked').value;
+            document.getElementById('sectionAccident').style.display = cause === 'accident' ? 'block' : 'none';
+            document.getElementById('sectionIllness').style.display = cause === 'illness' ? 'block' : 'none';
+        }
+        function toggleConsultation() {
+            const chk = document.getElementById('chkAdvice');
+            document.getElementById('consultationDetails').style.display = chk.checked ? 'block' : 'none';
+        }
+        function submitAdmission() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                openGLConsole();
+                document.getElementById('navUser').innerText = "DR_KHALID";
+                document.getElementById('navRoleBadge').innerText = "Medical Officer";
+                document.getElementById('navRoleBadge').className = 'role-pill border role-doctor';
+                window.scrollTo(0, 0);
+            }, 1500);
+        }
+        function submitReimbursement() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                openReimbConsole();
+                window.scrollTo(0, 0);
+            }, 1500);
+        }
+
+        function openProcessingOnlineDischargeModal() {
+            const modal = new bootstrap.Modal(document.getElementById('dischargeModal'));
+            modal.show();
+        }
+        function openProcessingOnlineDischargePAModal() {
+            const modal = new bootstrap.Modal(document.getElementById('dischargePAModal'));
+            modal.show();
+        }
+        function openEscalationInitiateModal() {
+            const modal = new bootstrap.Modal(document.getElementById('escalationInitiateModal'));
+            modal.show();
+        }
+        function saveCommunicationNote() {
+            const caller = document.getElementById('commCallerName').value;
+            const phone = document.getElementById('commPhone').value;
+            const notes = document.getElementById('commNotes').value;
+            const list = document.getElementById('commHistoryList');
+
+            if (!notes.trim()) {
+                document.getElementById('errorModalMessage').innerText = 'Please enter a note before saving.';
+                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorModal.show();
+                return;
+            }
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateString = "Today";
+
+            const newItem = document.createElement('div');
+            newItem.className = 'list-group-item px-0 border-bottom';
+
+            let callerInfo = '';
+            if (caller || phone) {
+                callerInfo = `<div class="mb-1 text-dark fw-bold small">${caller} ${phone ? '(' + phone + ')' : ''}</div>`;
+            }
+
+            newItem.innerHTML = `
+                    <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 0.75rem;">
+                        <span>${dateString} ${timeString}</span><span>You</span>
+                    </div>
+                    ${callerInfo}
+                    <div class="mb-0">${notes}</div>
+                `;
+
+            if (list.firstChild) {
+                list.insertBefore(newItem, list.firstChild);
+            } else {
+                list.appendChild(newItem);
+            }
+
+            // Clear inputs
+            document.getElementById('commCallerName').value = '';
+            document.getElementById('commPhone').value = '';
+            document.getElementById('commNotes').value = '';
+        }
+
+        // Message Listener for Iframe Modals
+        window.addEventListener('message', function (event) {
+            if (event.data === 'closeIssueQ') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('issueQModal'));
+                if (modal) modal.hide();
+            }
+            if (event.data === 'closeDeferment') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('defermentModal'));
+                if (modal) modal.hide();
+            }
+            if (event.data === 'closeDischarge') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('dischargeModal'));
+                if (modal) modal.hide();
+            }
+            if (event.data === 'closeDischargePA') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('dischargePAModal'));
+                if (modal) modal.hide();
+            }
+            if (event.data === 'closeEscalation') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('escalationInitiateModal'));
+                if (modal) modal.hide();
+            }
+            if (event.data === 'openMQ') {
+                openMQModal();
+            }
+            if (event.data === 'openDischargePA') {
+                openProcessingOnlineDischargePAModal();
+            }
+        });
+    </script>
+    <script>
+        const cashlessData = [
+            { name: "Ismail Bin Musirim", ref: "GL-2025-001", hosp: "Pantai KL", status: "Pending MO", badge: "bg-warning text-dark", btn: "View" },
+            { name: "Wong Mei Ling", ref: "GL-2025-002", hosp: "Sunway Medical", status: "Withdrawn", badge: "bg-secondary", btn: "View" },
+            { name: "Ahmad Razak", ref: "GL-2025-003", hosp: "Gleneagles", status: "Sent MQ", badge: "bg-info text-dark", btn: "Reply" },
+            { name: "S. Devi", ref: "GL-2025-004", hosp: "Columbia Asia", status: "Decline", badge: "bg-danger", btn: "View" },
+            { name: "Tan Ah Hock", ref: "GL-2025-005", hosp: "KPJ Damansara", status: "Approved", badge: "bg-success", btn: "Letter" },
+            { name: "Robert Lim", ref: "GL-2025-006", hosp: "Assunta", status: "Cancelled", badge: "bg-dark", btn: "View" },
+            { name: "Fatimah Yasin", ref: "GL-2025-007", hosp: "Prince Court", status: "Decline/Approved", badge: "bg-success", btn: "Letter" }
+        ];
+
+        function filterCashlessTable() {
+            if (!STAFF_ROLES.includes(currentUserRole)) return;
+            const filter = document.getElementById('cashlessFilter').value;
+            const tbody = document.getElementById('cashlessTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = filter === 'ALL' ? cashlessData : cashlessData.filter(d => d.status === filter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">No records found</td></tr>';
+                return;
+            }
+
+            filtered.forEach(d => {
+                const row = `<tr>
+                    <td class="ps-4 fw-bold">${d.name}</td>
+                    <td>${d.ref}</td>
+                    <td>${d.hosp}</td>
+                    <td><span class="badge ${d.badge}">${d.status}</span></td>
+                    <td><button class="btn btn-sm btn-light border">${d.btn}</button></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+    </script>
+    <script>
+        const reimbData = [
+            { name: "Ali bin Abu", pol: "POL-1001", date: "01 Jan", amt: "1,200.00", status: "INCOMPLETE", badge: "bg-danger", action: "RequestDocs" },
+            { name: "Sarah Lee", pol: "POL-1002", date: "05 Jan", amt: "350.00", status: "FIRST REMINDER", badge: "bg-warning text-dark" },
+            { name: "Muthu Kumar", pol: "POL-1003", date: "10 Jan", amt: "800.00", status: "SECOND REMINDER", badge: "bg-warning text-dark" },
+            { name: "Chong Wei", pol: "POL-1004", date: "15 Dec", amt: "150.00", status: "CLOSED", badge: "bg-dark" },
+            { name: "Nurul Huda", pol: "POL-1005", date: "20 Dec", amt: "2,400.00", status: "INCOMPLETE CLOSED", badge: "bg-secondary" },
+            { name: "John Doe", pol: "POL-1006", date: "09 Jan", amt: "450.00", status: "PENDING REGISTRATION", badge: "bg-info text-dark", action: "Entry" },
+            { name: "Jessica Tan", pol: "POL-1007", date: "08 Jan", amt: "180.00", status: "REGISTERED", badge: "bg-primary" },
+        ];
+
+        function filterReimbTable() {
+            if (!STAFF_ROLES.includes(currentUserRole)) return;
+            const filter = document.getElementById('reimbFilter').value;
+            const tbody = document.getElementById('reimbTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const filtered = filter === 'ALL' ? reimbData : reimbData.filter(d => d.status === filter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No records found</td></tr>';
+                return;
+            }
+
+            filtered.forEach(d => {
+                let btn = `<button class="btn btn-sm btn-light border">View</button>`;
+                if (d.action === 'Entry') {
+                    btn = `<button class="btn btn-sm btn-outline-primary" onclick="openReimbConsole()">Entry</button>`;
+                } else if (d.action === 'RequestDocs') {
+                    btn = `<button class="btn btn-sm btn-outline-danger" onclick="openMQModal()"><i class="fas fa-paper-plane me-1"></i> Request Docs</button>`;
+                }
+                const row = `<tr>
+                    <td class="ps-4 fw-bold">${d.name}</td>
+                    <td>${d.pol}</td>
+                    <td>${d.date}</td>
+                    <td>${d.amt}</td>
+                    <td><span class="badge ${d.badge}">${d.status}</span></td>
+                    <td>${btn}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // --- IX TEAM LOGIC ---
+        function loadIXData(stage) {
+            // Update active button state
+            document.querySelectorAll('#ixWorkflowTags .btn').forEach(btn => {
+                btn.classList.remove('btn-outline-primary', 'active', 'fw-bold');
+                btn.classList.add('btn-outline-secondary');
+                if (btn.innerText.includes(stage) || btn.getAttribute('onclick').includes(stage)) {
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-outline-primary', 'active', 'fw-bold');
+                }
+            });
+
+            // Update Header Title
+            const titleMap = {
+                'Screening': 'SCREENING QUEUE',
+                'Assignment': 'PENDING ASSIGNMENT',
+                'InProgressNew': 'IN PROGRESS (NEW CASES)',
+                'InProgressReassign': 'IN PROGRESS (RE-ASSIGNED)',
+                'MQ': 'PENDING MQ REPLIES',
+                'Fulfilment': 'FULFILMENT CHECKS',
+                'Supervisor': 'SUPERVISOR APPROVAL',
+                'Decision': 'FINAL DECISION PENDING',
+                'Closed': 'CLOSED CASES ARCHIVE',
+                'Closed': 'CLOSED CASES ARCHIVE',
+                'ClinicDB': 'CLINIC DATABASE MANAGEMENT',
+                'ManualUpload': 'MANUAL CASE UPLOADS'
+            };
+
+            // If ClinicDB is selected, open the modal instead of just showing the table row
+            if (stage === 'ClinicDB') {
+                const clinicModal = new bootstrap.Modal(document.getElementById('clinicDBModal'));
+                clinicModal.show();
+                // Optionally keep the "active" state or revert it? 
+                // Let's leave the UI update so the user sees they clicked it.
+            }
+
+            document.getElementById('ixTableTitle').innerText = titleMap[stage] || stage;
+
+            // Define Columns & Data based on Stage
+            let columns = [];
+            let rows = [];
+
+            if (stage === 'Screening') {
+                columns = ['Case ID', 'Member', 'Flagged Reason', 'Risk Score', 'Date Flagged', 'Action'];
+                rows = [
+                    ['IX-2025-001', 'Lee Chong Wei', 'High freq. claims', '<span class="text-danger fw-bold">HIGH</span>', '10 Jan 2025', '<button class="btn btn-sm btn-primary" onclick="openIXDetailsModal()">Screen</button>'],
+                    ['IX-2025-004', 'Tan Ah Hock', 'Billing irregularity', '<span class="text-warning fw-bold">MED</span>', '09 Jan 2025', '<button class="btn btn-sm btn-primary" onclick="openIXDetailsModal()">Screen</button>']
+                ];
+            } else if (stage === 'Assignment') {
+                columns = ['Case ID', 'Type', 'Complexity', 'Suggested IX', 'Workload', 'Action'];
+                rows = [
+                    ['IX-2025-008', 'Field Visit', 'Complex', 'Investigator A', '3 Active', '<button class="btn btn-sm btn-success">Assign</button>'],
+                    ['IX-2025-009', 'Desktop Rvw', 'Simple', 'Investigator B', '1 Active', '<button class="btn btn-sm btn-success">Assign</button>']
+                ];
+            } else if (stage === 'InProgressNew') {
+                columns = ['Case ID', 'Member', 'Investigation Type', 'Assigned To', 'SLA Remaining', 'Action'];
+                rows = [
+                    ['IX-2025-012', 'Siti Aminah', 'Field Visit', 'Investigator A', '2 Days', '<button class="btn btn-sm btn-info text-white">Update</button>'],
+                    ['IX-2025-015', 'John Wong', 'Desktop Review', 'Investigator C', '1 Day', '<button class="btn btn-sm btn-info text-white">Update</button>']
+                ];
+            } else if (stage === 'InProgressReassign') {
+                columns = ['Case ID', 'Member', 'Prev. Investigator', 'Re-assign Reason', 'Priority', 'Action'];
+                rows = [
+                    ['IX-2025-003', 'Ravi Kumar', 'Investigator B', 'Workload Balance', '<span class="text-danger fw-bold">High</span>', '<button class="btn btn-sm btn-primary">Re-Assign</button>']
+                ];
+            } else if (stage === 'MQ') {
+                columns = ['Case ID', 'Member', 'MQ Sent Date', 'Pending Since', 'Follow-up', 'Action'];
+                rows = [
+                    ['IX-2025-020', 'Lim Ah Kow', '01 Jan 2025', '10 Days', '2nd Sent', '<button class="btn btn-sm btn-warning text-dark">Remind</button>']
+                ];
+            } else if (stage === 'Fulfilment') {
+                columns = ['Case ID', 'Member', 'Pending Doc', 'Source', 'Due Date', 'Action'];
+                rows = [
+                    ['IX-2025-022', 'Maria Lopez', 'Original Receipt', 'Clinic A', '15 Jan 2025', '<button class="btn btn-sm btn-primary">Receive</button>']
+                ];
+            } else if (stage === 'Supervisor') {
+                columns = ['Case ID', 'Member', 'Recommendation', 'Risk Lvl', 'Submitted By', 'Action'];
+                rows = [
+                    ['IX-2025-018', 'Lee Wei', 'Decline', 'High', 'Inv. A', '<button class="btn btn-sm btn-success">Approve</button>']
+                ];
+            } else if (stage === 'Decision') {
+                columns = ['Case ID', 'Member', 'Final Outcome', 'Justification', 'Date', 'Action'];
+                rows = [
+                    ['IX-2025-010', 'Abu Bakar', 'Approved', 'Valid Evidence', 'Today', '<button class="btn btn-sm btn-primary">Publish</button>']
+                ];
+            } else if (stage === 'Closed') {
+                columns = ['Case ID', 'Member', 'Outcome', 'Closed Date', 'TAT', 'Action'];
+                rows = [
+                    ['IX-2024-999', 'Old Case', 'Declined', '30 Dec 2024', '5 Days', '<button class="btn btn-sm btn-light border">View</button>']
+                ];
+            } else if (stage === 'ClinicDB') {
+                columns = ['Clinic Name', 'Location', 'Flag Count', 'Status', 'Last Audit', 'Action'];
+                rows = [
+                    ['Klinik Mesra', 'Cheras', '12', '<span class="badge bg-danger">Blacklisted</span>', 'Oct 2024', '<button class="btn btn-sm btn-dark">Profile</button>'],
+                    ['Sunlight Dental', 'PJ', '0', '<span class="badge bg-success">Active</span>', 'Jan 2025', '<button class="btn btn-sm btn-light border">View</button>']
+                ];
+            } else if (stage === 'ManualUpload') {
+                columns = ['Batch ID', 'Upload Date', 'User', 'Record Count', 'Status', 'Action'];
+                rows = [
+                    ['BATCH-001', 'Today 09:00', 'Admin', '50', 'Processed', '<button class="btn btn-sm btn-light border">Log</button>']
+                ];
+            } else {
+                // Fallback
+                columns = ['Case ID', 'Subject', 'Status', 'Action'];
+                rows = [];
+            }
+
+            // Render Table Head
+            const thead = document.getElementById('ixTableHead');
+            let headHtml = '<tr>';
+            columns.forEach((col, i) => {
+                headHtml += `<th class="${i === 0 ? 'ps-4' : ''}">${col}</th>`;
+            });
+            headHtml += '</tr>';
+            thead.innerHTML = headHtml;
+
+            // Render Table Body
+            const tbody = document.getElementById('ixTableBody');
+            tbody.innerHTML = '';
+            rows.forEach(r => {
+                let rowHtml = '<tr>';
+                r.forEach((cell, i) => {
+                    rowHtml += `<td class="${i === 0 ? 'ps-4 fw-bold' : ''}">${cell}</td>`;
+                });
+                rowHtml += '</tr>';
+                tbody.innerHTML += rowHtml;
+            });
+
+            document.getElementById('ixCount').innerText = rows.length;
+        }
+
+        // Init IX Table on load if needed, or when tab is switched
+        // We hook into updateUIForRole to trigger this if role is IX
+        function openMQModal() {
+            const modalEl = document.getElementById('mqModal');
+            let mqModal = bootstrap.Modal.getInstance(modalEl);
+            if (!mqModal) mqModal = new bootstrap.Modal(modalEl);
+
+            // Ensure this modal stays on top of any other open modals (like the fullscreen issueQModal)
+            modalEl.style.zIndex = '2100';
+
+            mqModal.show();
+
+            // Adjust backdrop z-index to be just below the modal
+            setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                if (backdrops.length > 0) {
+                    backdrops[backdrops.length - 1].style.zIndex = '2090';
+                }
+            }, 50);
+        }
+
+        // Listen for messages from iframe (e.g., to close modal)
+        window.addEventListener('message', function (event) {
+            if (event.data === 'closeMQModal') {
+                const modalEl = document.getElementById('mqModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeClinicDB') {
+                const modalEl = document.getElementById('clinicDBModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeIXDetails') {
+                const modalEl = document.getElementById('ixDetailsModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeMonitoring') {
+                const modalEl = document.getElementById('monitoringModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeMonitoringLOS') {
+                const modalEl = document.getElementById('monitoringLOSModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeIssueQ') {
+                const modalEl = document.getElementById('issueQModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeDischargeModal') {
+                const modalEl = document.getElementById('dischargeModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeDischargePAModal') {
+                const modalEl = document.getElementById('dischargePAModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'closeDeferment') {
+                const modalEl = document.getElementById('defermentModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+            } else if (event.data === 'openMQ') {
+                openMQModal();
+            } else if (event.data === 'openDischargePA') {
+                openProcessingOnlineDischargePAModal();
+            }
+        });
+
+        function openIXDetailsModal() {
+            const modal = new bootstrap.Modal(document.getElementById('ixDetailsModal'));
+            modal.show();
+        }
+
+        function openMonitoringModal() {
+            const modal = new bootstrap.Modal(document.getElementById('monitoringModal'));
+            modal.show();
+        }
+
+        function openMonitoringLOSModal() {
+            const modal = new bootstrap.Modal(document.getElementById('monitoringLOSModal'));
+            modal.show();
+        }
+
+        function openSettlementConsole() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementModal'));
+            modal.show();
+        }
+
+        function openSettlementDeclinedConsole() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementDeclinedModal'));
+            modal.show();
+        }
+
+        function openSettlementReminderConsole() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementReminderModal'));
+            modal.show();
+        }
+
+        function openReimBankAccVerify() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementBankVerifyModal'));
+            modal.show();
+        }
+
+        function openSettlementReimApprovedConsole() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementReimApprovedModal'));
+            modal.show();
+        }
+
+        function openSettlementReimDeclinedConsole() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementReimDeclinedModal'));
+            modal.show();
+        }
+
+        function openSettlementReminderIncompleteConsole() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementReimReminderIncompleteModal'));
+            modal.show();
+        }
+
+        function openSettlementIncompletePostingConsole() {
+            const modal = new bootstrap.Modal(document.getElementById('settlementReimIncompletePostingModal'));
+            modal.show();
+        }
+
+        function openIssueQModal() {
+            const modal = new bootstrap.Modal(document.getElementById('issueQModal'));
+            modal.show();
+        }
+
+        function openProcessingOnlineDischargeModal() {
+            const modal = new bootstrap.Modal(document.getElementById('dischargeModal'));
+            modal.show();
+        }
+
+        function openProcessingOnlineDischargePAModal() {
+            const modal = new bootstrap.Modal(document.getElementById('dischargePAModal'));
+            modal.show();
+        }
+
+        function openDefermentModal() {
+            const modal = new bootstrap.Modal(document.getElementById('defermentModal'));
+            modal.show();
+        }
+
+        function openMQWizard() {
+            openMQModal();
+        }
+
+        function openRejectGLModal() {
+            document.getElementById('rejectRemarks').value = '';
+            document.getElementById('rejectRemarks').classList.remove('is-invalid');
+            document.getElementById('rejectRemarksError').style.display = 'none';
+            const modal = new bootstrap.Modal(document.getElementById('rejectGLModal'));
+            modal.show();
+        }
+
+        function confirmRejectGL() {
+            const remarksInput = document.getElementById('rejectRemarks');
+            const errorMsg = document.getElementById('rejectRemarksError');
+            const remarks = remarksInput.value.trim();
+
+            if (!remarks) {
+                remarksInput.classList.add('is-invalid');
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            remarksInput.classList.remove('is-invalid');
+            errorMsg.style.display = 'none';
+
+            // Logic for rejection
+            const modalEl = document.getElementById('rejectGLModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert('GL Case Rejected Successfully.');
+                goBackToDashboard();
+            }, 1000);
+        }
+
+        function addGLCommNote() {
+            const input = document.getElementById('glCommInput');
+            const note = input.value.trim();
+            if (!note) return;
+
+            const list = document.getElementById('glCommList');
+            const now = new Date();
+            const timeString = "Today " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Assume current user is the one adding it (Claims Manager or whatever role is active)
+            // For mockup, we can just use "You" or "Claims Manager"
+            const user = "Claims Manager";
+
+            const newItem = document.createElement('div');
+            newItem.className = 'border-bottom pb-2 mb-2 bg-light p-2 rounded'; // Highlight new items slightly
+            newItem.innerHTML = `
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-bold">${user}</span>
+                    <span class="text-muted text-xs">${timeString}</span>
+                </div>
+                <div class="text-dark">${note}</div>
+            `;
+
+            // Prepend or Append? Usually newest at bottom if scrolling down, or newest at top.
+            // The existing list has 10:45 AM (top) then 10:15 AM (bottom)?? 
+            // Wait, 10:45 is "Called...", 10:15 is "Hospital submitted...". So 10:45 is newer.
+            // So Newest is at the TOP.
+            list.insertBefore(newItem, list.firstChild);
+
+            input.value = '';
+        }
+    </script>
+</body>
+
+</html>

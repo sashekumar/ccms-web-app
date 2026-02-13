@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escalation Initiate | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-tabs {
+            background: #eee;
+            padding: 0;
+            border-bottom: 2px solid #ddd;
+            flex-shrink: 0;
+            display: flex;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            background: #e0e0e0;
+            margin-right: 2px;
+            font-weight: 500;
+            color: #555;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #000;
+            font-weight: 700;
+            border-color: #ddd;
+            margin-bottom: -2px;
+            z-index: 5;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: white;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: white;
+        }
+
+        .custom-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: #f8fafc;
+            padding: 0.35rem 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.35rem 0.5rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+            font-size: 0.65rem;
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        /* --- Form View --- */
+        .form-view {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .section-title {
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .label-cell {
+            color: #555;
+            width: 150px;
+            padding: 5px 0;
+        }
+
+        .value-cell {
+            font-weight: 600;
+            padding: 5px 10px;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 2px;
+        }
+
+        .btn-submit {
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+            padding: 4px 20px;
+            font-size: 0.75rem;
+            margin-top: 20px;
+        }
+
+        .claim-details-box {
+            border-left: 1px solid #eee;
+            padding-left: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .detail-label {
+            width: 130px;
+            color: #666;
+        }
+
+        .detail-value {
+            font-weight: 500;
+            flex: 1;
+        }
+
+        /* --- UI Elements --- */
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 120px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+
+        .clickable:hover {
+            background-color: #f1f5f9 !important;
+        }
+
+        .btn-close-custom {
+            position: absolute;
+            right: 15px;
+            top: 8px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .record-count {
+            font-size: 0.65rem;
+            color: #0d6efd;
+            font-style: italic;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="btn-close-custom" onclick="window.parent.postMessage('closeEscalation', '*')">
+        <i class="fas fa-times"></i>
+    </button>
+
+    <!-- HEADER TABS -->
+    <div class="header-tabs">
+        <div class="tab-btn active" id="tabPending" onclick="showView('pending')">Pending</div>
+        <div class="tab-btn" id="tabForm" onclick="showView('form')">Escalation Form</div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="workspace">
+
+        <!-- VIEW: PENDING GRID -->
+        <div id="viewPending" class="d-flex flex-column h-100">
+            <div class="grid-controls">
+                <div class="d-flex align-items-center">
+                    <span class="search-by-text">Search By :</span>
+                    <select class="search-select">
+                        <option>CLAIM REFNO</option>
+                        <option>PATIENT NAME</option>
+                    </select>
+                    <input type="text" class="search-box">
+                    <span class="blue-go">GO..</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="record-count">284 Record(s)</span>
+                    <button class="btn btn-sm btn-light border-0 p-0" title="Export">
+                        <img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" width="16" alt="excel">
+                        <span class="small text-muted ms-1">Export</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="custom-grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 20px;"></th>
+                            <th>REFTYPE</th>
+                            <th>CLAIM REFNO</th>
+                            <th>PHIC</th>
+                            <th>PHNAME</th>
+                            <th>PATIENT IC</th>
+                            <th>PATIENT NAME</th>
+                            <th>DATE DISABILITY</th>
+                            <th>CREATED BY</th>
+                            <th>CREATED ON</th>
+                            <th>MODIFIED BY</th>
+                            <th>MOD</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gridBody">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: ESCALATION FORM -->
+        <div id="viewForm" class="form-view d-none">
+            <div class="row">
+                <!-- Left Side: Form -->
+                <div class="col-8">
+                    <div class="section-title">Form</div>
+
+                    <div class="detail-row">
+                        <div class="detail-label">Escalation Source</div>
+                        <div class="detail-value text-uppercase fw-bold">: SUPERVISOR_ADMISSION</div>
+                    </div>
+
+                    <div class="detail-row align-items-center">
+                        <div class="detail-label">Any Issue With This Claim?</div>
+                        <div class="detail-value">
+                            :
+                            <div class="form-check form-check-inline ms-2">
+                                <input class="form-check-input" type="radio" name="claimIssue" id="issueYes" value="yes"
+                                    checked>
+                                <label class="form-check-label" for="issueYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="claimIssue" id="issueNo" value="no">
+                                <label class="form-check-label" for="issueNo">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-row align-items-center">
+                        <div class="detail-label">Nature of Issue</div>
+                        <div class="detail-value d-flex align-items-center">
+                            :
+                            <select class="form-select ms-2" style="max-width: 250px;">
+                                <option value="">-- Select --</option>
+                                <option value="1">Medical Discrepancy</option>
+                                <option value="2">Billing Issue</option>
+                                <option value="3">Policy Exclusion</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="detail-row align-items-center">
+                        <div class="detail-label">Issue Type</div>
+                        <div class="detail-value">: </div>
+                    </div>
+
+                    <div class="detail-row">
+                        <div class="detail-label">Issue Remarks</div>
+                        <div class="detail-value d-flex">
+                            :
+                            <textarea class="form-control ms-2" rows="5" style="max-width: 400px;"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="detail-row">
+                        <div class="detail-label"></div>
+                        <div class="detail-value ms-2">
+                            <button class="btn btn-submit" onclick="submitEscalation()">Submit</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Claim Details -->
+                <div class="col-4 claim-details-box">
+                    <div class="section-title">Claim Details</div>
+
+                    <div class="detail-row">
+                        <div class="detail-label">Claim Ref No.</div>
+                        <div class="detail-value" id="detailRef">: OL/212404</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Patient IC</div>
+                        <div class="detail-value" id="detailIC">: 080314030062</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Patient Name</div>
+                        <div class="detail-value text-uppercase" id="detailName">: ANISA BALQIS BINTI ALAUDIN</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Policyholder IC</div>
+                        <div class="detail-value" id="detailPHIC">: C890805035196</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Policyholder Name</div>
+                        <div class="detail-value text-uppercase" id="detailPHName">: HABIBI SYABILA BINTI MAT JUSOH
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Date Disability</div>
+                        <div class="detail-value" id="detailDate">: 10/11/2025 23:15</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Diagnosis</div>
+                        <div class="detail-value" id="detailDiagnosis">: PNEUMONIA, PULMONARY TUBERCULOSIS...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const sampleData = [
+            { type: "ADMISSION", ref: "OL/212404", phic: "C890805035196", phname: "HABIBI SYABILA BINTI MAT JUSOH", ic: "080314030062", name: "ANISA BALQIS BINTI ALAUDIN", date: "11/10/2025 11:15 PM", createdBy: "faez", createdOn: "11/11/2025 12:29 AM", modifiedBy: "dadhiani", mod: "11/12" },
+            { type: "ADMISSION", ref: "OL/212405", phic: "C760926025845", phname: "KHAIRUL RIZAL BIN MD HASSIM", ic: "181027020403", name: "MUHAMMAD AIMAN WAFIY BIN KHAIRUL RIZAL", date: "11/10/2025 11:50 PM", createdBy: "faez", createdOn: "11/11/2025 12:57 AM", modifiedBy: "faez", mod: "11/11" },
+            { type: "ADMISSION", ref: "OL/212406", phic: "C801214035752", phname: "NORMADURA BINTI ZAWAWI", ic: "150503030337", name: "MUHAMMAD HAFIZ IRSYAD BIN MOHD KAMIL", date: "11/10/2025 11:23 PM", createdBy: "faez", createdOn: "11/11/2025 1:26 AM", modifiedBy: "faez", mod: "11/11" },
+            { type: "ADMISSION", ref: "OL/212407", phic: "C900613015330", phname: "NOR SYAHIDAH BINTI MUTAZA", ic: "C900613015330", name: "NOR SYAHIDAH BINTI MUTAZA", date: "11/10/2025 10:00 AM", createdBy: "Darren", createdOn: "11/11/2025 1:31 AM", modifiedBy: "Samala", mod: "" },
+            { type: "ADMISSION", ref: "OL/212408", phic: "C606002307127", phname: "MOHAMAD YUSRI BIN MOHAMAD NAZRI", ic: "161010000354", name: "NUR AMNI AQILAH BINTI MOHAMAD YUSRI", date: "11/10/2025 11:50 PM", createdBy: "faez", createdOn: "11/11/2025 1:45 AM", modifiedBy: "faez", mod: "11/11" },
+            { type: "ADMISSION", ref: "OL/212436", phic: "C910324115297", phname: "KHAIRUL RIDHWAN BIN MOHD NASIR", ic: "C910324115297", name: "KHAIRUL RIDHWAN BIN MOHD NASIR", date: "11/10/2025 11:50 AM", createdBy: "Adli", createdOn: "11/11/2025 2:03 PM", modifiedBy: "Adli", mod: "11/11" },
+            { type: "PA", ref: "OL/212290", phic: "C821222075197", phname: "AHMAD KAMAL IZARDY BIN MD RODHI", ic: "160922070295", name: "PUTRA YASSIER ARDANY BIN AHMAD KAMAL IZARDY", date: "11/8/2025 10:00 PM", createdBy: "Adli", createdOn: "11/11/2025 2:27 PM", modifiedBy: "", mod: "" },
+            { type: "ADMISSION", ref: "OL/212441", phic: "C940810115281", phname: "MUHAMMAD ASBULLAH BIN ISMAIL", ic: "C940810115281", name: "MUHAMMAD ASBULLAH BIN ISMAIL", date: "11/11/2025 2:15 PM", createdBy: "Sivanesh", createdOn: "11/11/2025 2:54 PM", modifiedBy: "Sivanesh", mod: "11/11" },
+            { type: "ADMISSION", ref: "OL/212445", phic: "C790525005940", phname: "UMHADEVI A/P SITHAMBARAM", ic: "C790525005940", name: "UMHADEVI A/P SITHAMBARAM", date: "11/11/2025 6:30 AM", createdBy: "Sivanesh", createdOn: "11/11/2025 3:44 PM", modifiedBy: "Sivanesh", mod: "11/11" },
+            { type: "PA", ref: "OL/212299", phic: "C870420085143", phname: "MUHAMMAD HAFIZAL BIN MAT RADZI", ic: "240227140546", name: "LAILA BINTI MUHAMMAD HAFIZAL", date: "11/9/2025 12:40 AM", createdBy: "Adli", createdOn: "11/11/2025 3:48 PM", modifiedBy: "gauselyal", mod: "11/21" },
+            { type: "ADMISSION", ref: "OL/212446", phic: "C780110026333", phname: "MAHATHIR BIN MOHAMMAD", ic: "C780110026333", name: "MAHATHIR BIN MOHAMMAD", date: "11/11/2025 4:14 PM", createdBy: "Sivanesh", createdOn: "11/11/2025 4:23 PM", modifiedBy: "Sivanesh", mod: "11/11" },
+            { type: "PA", ref: "OL/212264", phic: "C840124105800", phname: "NURLUL WAHIDAH BINTI JAINI", ic: "101013100380", name: "NUR HANA INSYIRAH BINTI ROSMAN", date: "11/7/2025 11:30 PM", createdBy: "Adli", createdOn: "11/11/2025 4:52 PM", modifiedBy: "", mod: "" },
+            { type: "ADMISSION", ref: "OL/212450", phic: "C680724015892", phname: "NORSA'IDAH BINTI MOHAMED", ic: "C680724015892", name: "NORSA'IDAH BINTI MOHAMED", date: "11/11/2025 9:00 PM", createdBy: "Darren", createdOn: "11/11/2025 5:34 PM", modifiedBy: "Adli", mod: "11/11" },
+            { type: "ADMISSION", ref: "OL/212452", phic: "C870311035024", phname: "NORHAYATI BINTI DAUD", ic: "C870311035024", name: "NORHAYATI BINTI DAUD", date: "11/11/2025 12:07 PM", createdBy: "Samala", createdOn: "11/11/2025 6:12 PM", modifiedBy: "Sivanesh", mod: "11/11" }
+        ];
+
+        function initGrid() {
+            const tbody = document.getElementById('gridBody');
+            tbody.innerHTML = '';
+            sampleData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'clickable' + (index % 2 === 1 ? ' row-alt' : '');
+                tr.onclick = () => loadForm(item);
+                tr.innerHTML = `
+                    <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                    <td>${item.type}</td>
+                    <td class="fw-bold text-primary">${item.ref}</td>
+                    <td>${item.phic}</td>
+                    <td>${item.phname}</td>
+                    <td>${item.ic}</td>
+                    <td>${item.name}</td>
+                    <td>${item.date}</td>
+                    <td>${item.createdBy}</td>
+                    <td>${item.createdOn}</td>
+                    <td>${item.modifiedBy}</td>
+                    <td>${item.mod}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showView(view) {
+            document.getElementById('viewPending').classList.add('d-none');
+            document.getElementById('viewForm').classList.add('d-none');
+            document.getElementById('tabPending').classList.remove('active');
+            document.getElementById('tabForm').classList.remove('active');
+
+            if (view === 'pending') {
+                document.getElementById('viewPending').classList.remove('d-none');
+                document.getElementById('tabPending').classList.add('active');
+            } else {
+                document.getElementById('viewForm').classList.remove('d-none');
+                document.getElementById('tabForm').classList.add('active');
+            }
+        }
+
+        function loadForm(item) {
+            // Update detail panel
+            document.getElementById('detailRef').innerText = ': ' + item.ref;
+            document.getElementById('detailIC').innerText = ': ' + item.ic;
+            document.getElementById('detailName').innerText = ': ' + item.name;
+            document.getElementById('detailPHIC').innerText = ': ' + item.phic;
+            document.getElementById('detailPHName').innerText = ': ' + item.phname;
+            document.getElementById('detailDate').innerText = ': ' + item.date;
+
+            // Fixed diagnosis for demo
+            document.getElementById('detailDiagnosis').innerText = ': ACUTE GASTROENTERITIS, DEHYDRATION';
+
+            showView('form');
+        }
+
+        function submitEscalation() {
+            alert('Escalation submitted successfully!');
+            showView('pending');
+        }
+
+        // Initialize
+        window.onload = initGrid;
+    </script>
+</body>
+
+</html>

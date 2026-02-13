@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reimbursement Bank Account Verification | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem 0 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            gap: 2px;
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid transparent;
+            border-bottom: none;
+            padding: 0.35rem 0.6rem;
+            color: #475569;
+            font-weight: 500;
+            font-size: 0.73rem;
+            background: #f8fafc;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            border-color: #e2e8f0;
+            border-bottom: 2px solid white;
+            margin-bottom: -2px;
+            font-weight: 700;
+            z-index: 5;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: #9ca3af;
+            /* Gray background from screenshot */
+        }
+
+        .custom-grid {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: white;
+            padding: 0.4rem 0.6rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.4rem 0.6rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+            font-size: 0.68rem;
+            color: #333;
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        /* --- UI Elements --- */
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 150px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .record-count {
+            color: #2563eb;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+
+        .text-xs {
+            font-size: 0.65rem;
+        }
+
+        .btn-verify {
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP NAV / TABS -->
+    <header class="header-bar d-flex justify-content-between align-items-end">
+        <ul class="nav nav-tabs" id="mainTabs">
+            <li class="nav-item">
+                <button class="nav-link active">Reimb Bank Acc Verification</button>
+            </li>
+        </ul>
+
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="grid-controls">
+            <div class="d-flex align-items-center">
+                <span class="search-by-text">Search By :</span>
+                <select class="search-select">
+                    <option value="claim">CLAIM FILENO</option>
+                    <option value="patient">PATIENT NAME</option>
+                    <option value="ic">PATIENT IC</option>
+                </select>
+                <input type="text" class="search-box">
+                <span class="blue-go">GO..</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="record-count">10 records</span>
+                <div class="d-flex align-items-center gap-1 clickable" title="Export to Excel">
+                    <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                    <span class="text-xs">Export</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="custom-grid">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>CLAIM FILENO</th>
+                        <th>REG REFNO</th>
+                        <th>PA REFNO</th>
+                        <th>MODE</th>
+                        <th>ADMISSION TYPE</th>
+                        <th>PH IC</th>
+                        <th>PH NAME</th>
+                        <th>PATIENT IC</th>
+                        <th>PATIENT NAME</th>
+                        <th>HOSPITAL</th>
+                        <th>PAYMENT TYPE</th>
+                        <th>BANK NAME</th>
+                        <th>BANK ACC NO</th>
+                        <th>PAYEE IC</th>
+                        <th>PAYEE NAME</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody id="bankVerifyBody">
+                    <!-- Data injected via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const sampleData = [
+            {
+                claimNo: "R/2025/12/6245",
+                regRef: "RE/213329",
+                paRef: "PA165107",
+                mode: "REIM",
+                admType: "POST",
+                phIc: "C840207086203",
+                phName: "MOHD SABKI BIN HAMZAH",
+                pIc: "171117101339",
+                pName: "MUHAMMAD RAYYAN BIN MOHD SABKI",
+                hospital: "Hospital Sungai Buloh",
+                paymentType: "E-PAYMENT",
+                bankName: "CIMB Bank Berhad",
+                bankAcc: "7016632921",
+                payeeIc: "C840207086203",
+                payeeName: "MOHD SABKI BIN HAMZAH"
+            },
+            {
+                claimNo: "R/2025/11/6124",
+                regRef: "RE/213006",
+                paRef: "PA165043",
+                mode: "REIM",
+                admType: "PRE",
+                phIc: "C570516045635",
+                phName: "BOK SWEE LIM",
+                pIc: "C570516045635",
+                pName: "BOK SWEE LIM",
+                hospital: "VISTA EYE SPECIALIST",
+                paymentType: "E-PAYMENT",
+                bankName: "RHB Bank Berhad",
+                bankAcc: "11207700707114",
+                payeeIc: "C570516045635",
+                payeeName: "BOK SWEE LIM"
+            },
+            {
+                claimNo: "R/2025/11/5921",
+                regRef: "RE/212434",
+                paRef: "PA164433",
+                mode: "REIM",
+                admType: "POST",
+                phIc: "C800903035569",
+                phName: "KAMARUL HAMIZI BIN ZAKARIA",
+                pIc: "090612030297",
+                pName: "NUFAIL IZZ BIN KAMARUL HAMIZI",
+                hospital: "KPJ PERDANA SPECIALIST HOSPITAL",
+                paymentType: "E-PAYMENT",
+                bankName: "Malayan Bank Berhad",
+                bankAcc: "163046526567",
+                payeeIc: "C800903035569",
+                payeeName: "KAMARUL HAMIZI BIN ZAKARIA"
+            },
+            {
+                claimNo: "R/2025/11/5920",
+                regRef: "RE/212432",
+                paRef: "PA164436",
+                mode: "REIM",
+                admType: "POST",
+                phIc: "C800903035569",
+                phName: "KAMARUL HAMIZI BIN ZAKARIA",
+                pIc: "090612030297",
+                pName: "NUFAIL IZZ BIN KAMARUL HAMIZI",
+                hospital: "KPJ PERDANA SPECIALIST HOSPITAL",
+                paymentType: "E-PAYMENT",
+                bankName: "Malayan Bank Berhad",
+                bankAcc: "163046526567",
+                payeeIc: "C800903035569",
+                payeeName: "KAMARUL HAMIZI BIN ZAKARIA"
+            },
+            {
+                claimNo: "R/2025/11/5920",
+                regRef: "RE/212433",
+                paRef: "PA164435",
+                mode: "REIM",
+                admType: "POST",
+                phIc: "C800903035569",
+                phName: "KAMARUL HAMIZI BIN ZAKARIA",
+                pIc: "090612030297",
+                pName: "NUFAIL IZZ BIN KAMARUL HAMIZI",
+                hospital: "KPJ PERDANA SPECIALIST HOSPITAL",
+                paymentType: "E-PAYMENT",
+                bankName: "Malayan Bank Berhad",
+                bankAcc: "163046526567",
+                payeeIc: "C800903035569",
+                payeeName: "KAMARUL HAMIZI BIN ZAKARIA"
+            },
+            {
+                claimNo: "R/2025/11/5920",
+                regRef: "RE/212430",
+                paRef: "PA164434",
+                mode: "REIM",
+                admType: "POST",
+                phIc: "C800903035569",
+                phName: "KAMARUL HAMIZI BIN ZAKARIA",
+                pIc: "090612030297",
+                pName: "NUFAIL IZZ BIN KAMARUL HAMIZI",
+                hospital: "KPJ PERDANA SPECIALIST HOSPITAL",
+                paymentType: "E-PAYMENT",
+                bankName: "Malayan Bank Berhad",
+                bankAcc: "163046526567",
+                payeeIc: "C800903035569",
+                payeeName: "KAMARUL HAMIZI BIN ZAKARIA"
+            },
+            {
+                claimNo: "R/2025/09/4833",
+                regRef: "RE/208505",
+                paRef: "PA165040",
+                mode: "REIM",
+                admType: "PRE",
+                phIc: "C580614025899",
+                phName: "SOBRI BIN KHALID",
+                pIc: "570216135292",
+                pName: "LAMANI BINTI ALI",
+                hospital: "PANTAI HOSPITAL SUNGAI PETANI",
+                paymentType: "E-PAYMENT",
+                bankName: "Bank Islam Malaysia Berhad",
+                bankAcc: "02020020585595",
+                payeeIc: "C580614025899",
+                payeeName: "SOBRI BIN KHALID"
+            },
+            {
+                claimNo: "R/2025/09/4833",
+                regRef: "RE/208507",
+                paRef: "PA165041",
+                mode: "REIM",
+                admType: "POST",
+                phIc: "C580614025899",
+                phName: "SOBRI BIN KHALID",
+                pIc: "570216135292",
+                pName: "LAMANI BINTI ALI",
+                hospital: "PANTAI HOSPITAL SUNGAI PETANI",
+                paymentType: "E-PAYMENT",
+                bankName: "Bank Islam Malaysia Berhad",
+                bankAcc: "02020020585595",
+                payeeIc: "C580614025899",
+                payeeName: "SOBRI BIN KHALID"
+            },
+            {
+                claimNo: "R/2025/09/4833",
+                regRef: "RE/208504",
+                paRef: "PA165039",
+                mode: "REIM",
+                admType: "DAYCARE",
+                phIc: "C580614025899",
+                phName: "SOBRI BIN KHALID",
+                pIc: "570216135292",
+                pName: "LAMANI BINTI ALI",
+                hospital: "PANTAI HOSPITAL SUNGAI PETANI",
+                paymentType: "E-PAYMENT",
+                bankName: "Bank Islam Malaysia Berhad",
+                bankAcc: "02020020585595",
+                payeeIc: "C580614025899",
+                payeeName: "SOBRI BIN KHALID"
+            },
+            {
+                claimNo: "R/2025/09/4833",
+                regRef: "RE/208506",
+                paRef: "PA165042",
+                mode: "REIM",
+                admType: "POST",
+                phIc: "C580614025899",
+                phName: "SOBRI BIN KHALID",
+                pIc: "570216135292",
+                pName: "LAMANI BINTI ALI",
+                hospital: "PANTAI HOSPITAL SUNGAI PETANI",
+                paymentType: "E-PAYMENT",
+                bankName: "Bank Islam Malaysia Berhad",
+                bankAcc: "02020020585595",
+                payeeIc: "C580614025899",
+                payeeName: "SOBRI BIN KHALID"
+            }
+        ];
+
+        function renderData() {
+            const tbody = document.getElementById('bankVerifyBody');
+            tbody.innerHTML = '';
+
+            sampleData.forEach((item, i) => {
+                const tr = document.createElement('tr');
+                if (i % 2 !== 0) tr.className = 'row-alt';
+
+                tr.innerHTML = `
+                    <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                    <td>${item.claimNo}</td>
+                    <td>${item.regRef}</td>
+                    <td>${item.paRef}</td>
+                    <td>${item.mode}</td>
+                    <td>${item.admType}</td>
+                    <td>${item.phIc}</td>
+                    <td>${item.phName}</td>
+                    <td>${item.pIc}</td>
+                    <td>${item.pName}</td>
+                    <td>${item.hospital}</td>
+                    <td>${item.paymentType}</td>
+                    <td>${item.bankName}</td>
+                    <td>${item.bankAcc}</td>
+                    <td>${item.payeeIc}</td>
+                    <td>${item.payeeName}</td>
+                    <td class="text-center">
+                        <button class="btn btn-primary btn-verify" onclick="verifyRow(this)">Verified</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function verifyRow(btn) {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-success');
+            btn.innerText = 'Verified ✓';
+            btn.disabled = true;
+        }
+
+        window.onload = renderData;
+    </script>
+</body>
+
+</html>

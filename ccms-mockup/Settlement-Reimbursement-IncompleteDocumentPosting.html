@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incomplete Document Posting | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #2563eb;
+            --bg-gray: #f0f2f5;
+            --border-color: #cbd5e1;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin: 0;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .submit-posting {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: #9ca3af;
+        }
+
+        .custom-grid {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: white;
+            padding: 0.4rem 0.6rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.4rem 0.6rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+            font-size: 0.68rem;
+            color: #333;
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        .row-selected {
+            background-color: #e0f2fe !important;
+        }
+
+        /* --- UI Elements --- */
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 120px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .record-count {
+            color: #2563eb;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+
+        .text-xs {
+            font-size: 0.65rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="header-bar d-flex justify-content-between align-items-center">
+        <h1 class="page-title">Incomplete Document Posting</h1>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="grid-controls">
+            <div class="d-flex align-items-center">
+                <span class="search-by-text">Search By :</span>
+                <select class="search-select">
+                    <option value="claim">CLAIM FILENO</option>
+                    <option value="patient">PATIENT NAME</option>
+                    <option value="ic">PATIENT IC</option>
+                </select>
+                <input type="text" class="search-box">
+                <span class="blue-go">GO..</span>
+            </div>
+
+            <div class="submit-posting">Submit for Posting</div>
+
+            <div class="d-flex align-items-center gap-3">
+                <span class="record-count" id="recordCountText">3 records</span>
+                <div class="d-flex align-items-center gap-1 clickable" title="Export to Excel">
+                    <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                    <span class="text-xs">Export</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="custom-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;"></th>
+                        <th>Tick</th>
+                        <th>REFTYPE</th>
+                        <th>CLAIM FILENO</th>
+                        <th>REG REFNO</th>
+                        <th>ADMISSION TYPE</th>
+                        <th>PATIENT IC</th>
+                        <th>PATIENT NAME</th>
+                        <th>PH NAME</th>
+                        <th>PH IC</th>
+                        <th>DATE ADMISSION</th>
+                        <th>HOSPITAL</th>
+                        <th>REIM STATUS</th>
+                        <th>CREATED_ON</th>
+                    </tr>
+                </thead>
+                <tbody id="gridBody">
+                    <!-- Data will be injected via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const tableData = [
+            {
+                selected: true,
+                reftype: "REGISTERED",
+                claimNo: "R/2025/06/3280",
+                regNo: "RE/203076",
+                adminType: "IP",
+                patientIc: "080423020488",
+                patientName: "NURUL BALQIS BINTI AHMAD ZUBIR",
+                phName: "ROSLIZA BINTI ALIS",
+                phIc: "C710626025426",
+                dateAdmin: "6/5/2025 5:12 PM",
+                hospital: "KPJ PENANG SPECIALIST HOSPITAL",
+                reimStatus: "PROCEED FOR KIV",
+                createdOn: "6/20/2025 5:14 PM"
+            },
+            {
+                selected: false,
+                reftype: "REGISTERED",
+                claimNo: "R/2025/06/3280",
+                regNo: "RE/203077",
+                adminType: "POST",
+                patientIc: "080423020488",
+                patientName: "NURUL BALQIS BINTI AHMAD ZUBIR",
+                phName: "ROSLIZA BINTI ALIS",
+                phIc: "C710626025426",
+                dateAdmin: "6/5/2025 5:12 PM",
+                hospital: "KPJ PENANG SPECIALIST HOSPITAL",
+                reimStatus: "PROCEED FOR KIV",
+                createdOn: "6/20/2025 5:14 PM"
+            },
+            {
+                selected: false,
+                reftype: "REGISTERED",
+                claimNo: "R/2025/06/3280",
+                regNo: "RE/203078",
+                adminType: "POST",
+                patientIc: "080423020488",
+                patientName: "NURUL BALQIS BINTI AHMAD ZUBIR",
+                phName: "ROSLIZA BINTI ALIS",
+                phIc: "C710626025426",
+                dateAdmin: "6/5/2025 5:12 PM",
+                hospital: "KPJ PENANG SPECIALIST HOSPITAL",
+                reimStatus: "PROCEED FOR KIV",
+                createdOn: "6/20/2025 5:14 PM"
+            }
+        ];
+
+        function renderGrid() {
+            const tbody = document.getElementById('gridBody');
+            tbody.innerHTML = '';
+
+            tableData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                if (index % 2 !== 0) tr.classList.add('row-alt');
+                if (item.selected) tr.classList.add('row-selected');
+
+                tr.innerHTML = `
+                    <td class="text-center"><i class="fas fa-caret-right text-muted"></i></td>
+                    <td class="text-center"><input type="checkbox" ${item.selected ? 'checked' : ''}></td>
+                    <td>${item.reftype}</td>
+                    <td>${item.claimNo}</td>
+                    <td>${item.regNo}</td>
+                    <td>${item.adminType}</td>
+                    <td>${item.patientIc}</td>
+                    <td>${item.patientName}</td>
+                    <td>${item.phName}</td>
+                    <td>${item.phIc}</td>
+                    <td>${item.dateAdmin}</td>
+                    <td>${item.hospital}</td>
+                    <td>${item.reimStatus}</td>
+                    <td>${item.createdOn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.onload = renderGrid;
+    </script>
+</body>
+
+</html>

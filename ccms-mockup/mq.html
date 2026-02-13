@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart TPA Query Builder</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --bg-light: #f4f6f9;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Top Bar --- */
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        /* Role Switcher */
+        .role-tabs {
+            background: #f1f3f5;
+            padding: 3px;
+            border-radius: 6px;
+            display: flex;
+        }
+
+        .role-tab {
+            padding: 5px 15px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .role-tab.active-hospital {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .role-tab.active-policy {
+            background: white;
+            color: var(--success-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar (Library) --- */
+        .library-panel {
+            width: 380px;
+            background: white;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .library-header {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .library-content {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Accordion Styling */
+        .accordion-button {
+            font-size: 0.9rem;
+            font-weight: 600;
+            background-color: #fcfcfc;
+            padding: 12px 15px;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #f0f7ff;
+            color: var(--primary-color);
+            box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .125);
+        }
+
+        /* Question Item in Sidebar */
+        .lib-question-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lib-question-item:hover {
+            background-color: #f8fbff;
+        }
+
+        /* ADDED STATE STYLING */
+        .lib-question-item.item-added {
+            background-color: #e8f5e9;
+            /* Light Green Background */
+            color: #1e4620;
+            cursor: default;
+        }
+
+        .lib-text {
+            font-size: 0.85rem;
+            color: #555;
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        .item-added .lib-text {
+            color: #198754;
+            /* Dark Green text */
+            font-weight: 500;
+        }
+
+        /* The (+)/Check Button */
+        .status-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Hover state for unadded items */
+        .lib-question-item:not(.item-added):hover .status-icon {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Added state for icon */
+        .item-added .status-icon {
+            background: #198754;
+            border-color: #198754;
+            color: white;
+        }
+
+        /* --- Canvas --- */
+        .builder-canvas {
+            flex: 1;
+            background: #f0f2f5;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .document-page {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            min-height: 800px;
+            padding: 50px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        .question-block {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            background: #fff;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .badge-lines {
+            font-size: 0.7rem;
+            color: #888;
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="d-flex align-items-center gap-3">
+            <h6 class="mb-0 fw-bold"><i class="fas fa-clipboard-check me-2 text-primary"></i>Query Builder</h6>
+            <div class="vr mx-2"></div>
+
+            <div class="role-tabs">
+                <button class="role-tab active-hospital" id="tab-hospital" onclick="switchRole('hospital')">
+                    <i class="fas fa-hospital me-1"></i> Hospital
+                </button>
+                <button class="role-tab" id="tab-policy" onclick="switchRole('policyholder')">
+                    <i class="fas fa-user-injured me-1"></i> Policy Holder
+                </button>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger btn-sm px-3" onclick="closeMQ()"><i
+                    class="fas fa-times me-2"></i>Cancel</button>
+            <button class="btn btn-light border btn-sm" onclick="clearAll()"><i
+                    class="fas fa-eraser me-2"></i>Reset</button>
+            <button class="btn btn-outline-primary btn-sm px-3" onclick="preview()"><i
+                    class="fas fa-print me-2"></i>Preview</button>
+            <button class="btn btn-primary btn-sm px-3" onclick="generateMQ()"><i
+                    class="fas fa-cog me-2"></i>Generate</button>
+            <button class="btn btn-success btn-sm px-3" onclick="emailMQ()"><i
+                    class="fas fa-envelope me-2"></i>Email</button>
+        </div>
+    </div>
+
+    <!-- WORKSPACE -->
+    <div class="workspace">
+
+        <!-- SIDEBAR -->
+        <div class="library-panel">
+            <div class="library-header">
+                <input type="text" class="form-control form-control-sm" placeholder="Search templates...">
+            </div>
+            <div class="library-content accordion accordion-flush" id="templateAccordion">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+
+        <!-- CANVAS -->
+        <div class="builder-canvas">
+            <div class="document-page">
+                <div class="d-flex justify-content-between border-bottom pb-3 mb-4">
+                    <div>
+                        <h5 class="fw-bold mb-0">Clarification Request</h5>
+                        <small class="text-muted">Ref: #CLM-992-001</small>
+                    </div>
+                    <div id="canvas-badge">
+                        <span class="badge bg-primary">Hospital</span>
+                    </div>
+                </div>
+
+                <div id="questions-container">
+                    <!-- Questions injected here -->
+                    <div class="text-center text-muted py-5 mt-5" id="empty-state">
+                        <i class="fas fa-arrow-left fa-lg mb-3 opacity-50"></i>
+                        <p class="small">Click questions in the sidebar to add them.</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 text-center border-top">
+                    <button class="btn btn-sm btn-outline-secondary border-dashed" onclick="addCustomQuestion()">
+                        <i class="fas fa-pen me-2"></i> Write Custom Question
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREVIEW MODAL -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div class="bg-white p-5 mx-auto" style="max-width: 210mm;">
+                        <h4 class="fw-bold text-center mb-4">MEDICAL QUERY</h4>
+                        <div id="preview-content"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-dark" onclick="window.print()">Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- DATA WITH UNIQUE IDs ---
+        const data = {
+            hospital: [
+                {
+                    category: "Kemasukan (Admission)",
+                    items: [
+                        { id: 'h_adm_1', text: "Sila berikan justifikasi keperluan kemasukan wad berbanding rawatan harian.", lines: 5 },
+                        { id: 'h_adm_2', text: "Sila lampirkan nota kemasukan dan borang penilaian awal.", lines: 1 },
+                        { id: 'h_adm_3', text: "Sila jelaskan tempoh gejala sebelum kemasukan.", lines: 3 }
+                    ]
+                },
+                {
+                    category: "Pebilan (Billing)",
+                    items: [
+                        { id: 'h_bill_1', text: "Sila berikan perincian caj Farmasi.", lines: 10 },
+                        { id: 'h_bill_2', text: "Sila berikan justifikasi kos bahan guna habis yang tinggi.", lines: 5 },
+                        { id: 'h_bill_3', text: "Sila lampirkan inbois asal untuk implan.", lines: 1 }
+                    ]
+                }
+            ],
+            policyholder: [
+                {
+                    category: "Kemalangan (Accident)",
+                    items: [
+                        { id: 'p_acc_1', text: "Sila jelaskan keadaan sebenar kemalangan.", lines: 10 },
+                        { id: 'p_acc_2', text: "Adakah laporan polis dibuat? Jika ya, sila lampirkan salinan.", lines: 1 }
+                    ]
+                },
+                {
+                    category: "Dokumen (Docs)",
+                    items: [
+                        { id: 'p_kyc_1', text: "Sila lampirkan salinan Kad Pengenalan (NRIC).", lines: 1 },
+                        { id: 'p_kyc_2', text: "Sila lampirkan penyata bank atau salinan muka depan buku bank untuk tujuan pembayaran.", lines: 1 }
+                    ]
+                }
+            ]
+        };
+
+        let currentRole = 'hospital';
+        // STATE: Tracks which IDs are currently in the canvas
+        let activeIds = new Set();
+
+        // --- INITIALIZE ---
+        window.onload = () => renderSidebar('hospital');
+
+        // --- RENDER SIDEBAR ---
+        function renderSidebar(role) {
+            const container = document.getElementById('templateAccordion');
+            container.innerHTML = '';
+
+            const sets = data[role];
+
+            sets.forEach((set, idx) => {
+                const headingId = `heading${idx}`;
+                const collapseId = `collapse${idx}`;
+
+                let itemsHtml = '';
+                set.items.forEach(item => {
+                    // Check if already active to apply class/icon immediately
+                    const isActive = activeIds.has(item.id);
+                    const activeClass = isActive ? 'item-added' : '';
+                    const iconClass = isActive ? 'fa-check' : 'fa-plus';
+
+                    // Escape quotes for JS function
+                    const safeText = item.text.replace(/'/g, "&apos;");
+
+                    itemsHtml += `
+                        <div class="lib-question-item ${activeClass}" id="sidebar-${item.id}" onclick="addFromSidebar('${item.id}', '${safeText}', ${item.lines})">
+                            <div class="lib-text">${item.text}</div>
+                            <div class="status-icon"><i class="fas ${iconClass}"></i></div>
+                        </div>
+                    `;
+                });
+
+                const html = `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="${headingId}">
+                            <button class="accordion-button ${idx !== 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                                ${set.category}
+                            </button>
+                        </h2>
+                        <div id="${collapseId}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#templateAccordion">
+                            <div class="accordion-body">
+                                ${itemsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // --- ADD QUESTION ---
+        function addFromSidebar(id, text, lines) {
+            // 1. Check duplicate
+            if (activeIds.has(id)) return;
+
+            // 2. Add to State
+            activeIds.add(id);
+
+            // 3. Update Visuals in Sidebar
+            updateSidebarItemState(id, true);
+
+            // 4. Add to Canvas (pass 'id' as originId)
+            addToCanvas(text, lines, id);
+        }
+
+        function addCustomQuestion() {
+            // Custom questions don't track back to the sidebar, pass null as originId
+            addToCanvas("", 3, null);
+        }
+
+        function addToCanvas(text, lines, originId) {
+            const empty = document.getElementById('empty-state');
+            if (empty) empty.remove();
+
+            const uniqueCanvasId = 'canvas-q-' + Date.now();
+            const container = document.getElementById('questions-container');
+
+            // Store originId in a data attribute so we know what to uncheck if deleted
+            const originAttr = originId ? `data-origin="${originId}"` : '';
+
+            const html = `
+                <div class="question-block" id="${uniqueCanvasId}" ${originAttr}>
+                    <div class="d-flex gap-2">
+                        <span class="fw-bold text-muted numbering">#</span>
+                        <textarea class="form-control" rows="2">${text}</textarea>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge-lines"><i class="fas fa-ruler-vertical"></i> Space:</span>
+                            <select class="form-select form-select-sm py-0" style="width: auto; font-size: 0.8rem;" id="lines-${uniqueCanvasId}">
+                                <option value="1" ${lines === 1 ? 'selected' : ''}>1 Line</option>
+                                <option value="3" ${lines === 3 ? 'selected' : ''}>3 Lines</option>
+                                <option value="5" ${lines === 5 ? 'selected' : ''}>5 Lines</option>
+                                <option value="10" ${lines === 10 ? 'selected' : ''}>10 Lines</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-link btn-sm text-danger p-0" onclick="removeQuestion('${uniqueCanvasId}')"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            updateNumbering();
+
+            // Auto scroll
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- REMOVE QUESTION ---
+        function removeQuestion(canvasId) {
+            const element = document.getElementById(canvasId);
+
+            // 1. Check if it had an origin ID (was from sidebar)
+            const originId = element.getAttribute('data-origin');
+
+            // 2. If yes, remove from state and update sidebar
+            if (originId) {
+                activeIds.delete(originId);
+                updateSidebarItemState(originId, false);
+            }
+
+            // 3. Remove DOM element
+            element.remove();
+            updateNumbering();
+
+            // 4. Restore empty state if needed
+            if (document.querySelectorAll('.question-block').length === 0) {
+                document.getElementById('questions-container').innerHTML = `
+                    <div class="text-center text-muted py-5 mt-5" id="empty-state">
+                        <i class="fas fa-arrow-left fa-lg mb-3 opacity-50"></i>
+                        <p class="small">Click questions in the sidebar to add them.</p>
+                    </div>`;
+            }
+        }
+
+        // --- HELPER: UPDATE SIDEBAR VISUALS ---
+        function updateSidebarItemState(id, isAdded) {
+            const sidebarItem = document.getElementById(`sidebar-${id}`);
+            if (!sidebarItem) return; // Might be in a different category tab (rare but safe check)
+
+            const icon = sidebarItem.querySelector('.status-icon i');
+
+            if (isAdded) {
+                sidebarItem.classList.add('item-added');
+                icon.classList.remove('fa-plus');
+                icon.classList.add('fa-check');
+            } else {
+                sidebarItem.classList.remove('item-added');
+                icon.classList.remove('fa-check');
+                icon.classList.add('fa-plus');
+            }
+        }
+
+        function updateNumbering() {
+            document.querySelectorAll('.numbering').forEach((el, i) => el.innerText = (i + 1) + ".");
+        }
+
+        function clearAll() {
+            if (activeIds.size > 0 || document.querySelectorAll('.question-block').length > 0) {
+                if (!confirm("Clear current draft?")) return;
+            }
+
+            // Reset Canvas
+            document.getElementById('questions-container').innerHTML = `
+                <div class="text-center text-muted py-5 mt-5" id="empty-state">
+                    <i class="fas fa-arrow-left fa-lg mb-3 opacity-50"></i>
+                    <p class="small">Click questions in the sidebar to add them.</p>
+                </div>`;
+
+            // Reset Sidebar Visuals
+            activeIds.forEach(id => updateSidebarItemState(id, false));
+            activeIds.clear();
+        }
+
+        // --- ROLE SWITCHING ---
+        function switchRole(role) {
+            if (activeIds.size > 0 || document.querySelectorAll('.question-block').length > 0) {
+                if (!confirm("Switching roles will reset your selection. Continue?")) return;
+            }
+
+            currentRole = role;
+            activeIds.clear(); // Clear state
+
+            // Update Tabs
+            if (role === 'hospital') {
+                document.getElementById('tab-hospital').classList.add('active-hospital');
+                document.getElementById('tab-policy').classList.remove('active-policy');
+                document.getElementById('canvas-badge').innerHTML = '<span class="badge bg-primary">Hospital</span>';
+            } else {
+                document.getElementById('tab-policy').classList.add('active-policy');
+                document.getElementById('tab-hospital').classList.remove('active-hospital');
+                document.getElementById('canvas-badge').innerHTML = '<span class="badge bg-success">Policy Holder</span>';
+            }
+
+            // Reset Canvas and Re-render Sidebar
+            document.getElementById('questions-container').innerHTML = `
+                <div class="text-center text-muted py-5 mt-5" id="empty-state">
+                    <i class="fas fa-arrow-left fa-lg mb-3 opacity-50"></i>
+                    <p class="small">Click questions in the sidebar to add them.</p>
+                </div>`;
+            renderSidebar(role);
+        }
+
+        // --- ACTIONS ---
+        function generateMQ() {
+            const blocks = document.querySelectorAll('.question-block');
+            if (blocks.length === 0) return alert("Please add at least one question.");
+            preview();
+        }
+
+        function emailMQ() {
+            const blocks = document.querySelectorAll('.question-block');
+            if (blocks.length === 0) return alert("Please add at least one question.");
+            alert('Opening Email Draft with Generated MQ...');
+        }
+
+        function closeMQ() {
+            // 1. Try postMessage (Modern, robust cross-origin/iframe way)
+            if (window.parent) {
+                window.parent.postMessage('closeMQModal', '*');
+            }
+
+            // 2. Fallback: Try direct access if same-origin
+            try {
+                if (window.parent && window.parent.document) {
+                    const parentDoc = window.parent.document;
+                    const closeBtn = parentDoc.querySelector('#mqModal .btn-close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    } else {
+                        const modalEl = parentDoc.getElementById('mqModal');
+                        if (modalEl && window.parent.bootstrap) {
+                            const modal = window.parent.bootstrap.Modal.getInstance(modalEl) || new window.parent.bootstrap.Modal(modalEl);
+                            modal.hide();
+                        }
+                    }
+                }
+            } catch (e) {
+                // Direct access fails if cross-origin or same-origin restricted in some browsers
+            }
+        }
+
+        // --- PREVIEW ---
+        function preview() {
+            const content = document.getElementById('preview-content');
+            content.innerHTML = '';
+
+            const blocks = document.querySelectorAll('.question-block');
+            if (blocks.length === 0) return alert("Please add at least one question.");
+
+            blocks.forEach((block, i) => {
+                const text = block.querySelector('textarea').value;
+                const lines = document.getElementById('lines-' + block.id).value;
+
+                const wrap = document.createElement('div');
+                wrap.className = "mb-4";
+                wrap.innerHTML = `<div class="fw-bold mb-2">${i + 1}. ${text}</div>`;
+
+                if (lines > 0) {
+                    for (let k = 0; k < lines; k++) {
+                        wrap.innerHTML += `<div style="border-bottom:1px solid #000; height:25px; margin-bottom:5px;"></div>`;
+                    }
+                }
+                content.appendChild(wrap);
+            });
+
+            new bootstrap.Modal(document.getElementById('previewModal')).show();
+        }
+    </script>
+</body>
+
+</html>

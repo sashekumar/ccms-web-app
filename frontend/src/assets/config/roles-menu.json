@@ -1,0 +1,329 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-02-10",
+  "roles": [
+    {
+      "roleId": 1,
+      "roleName": "Assessor",
+      "roleDisplayName": "ASSESSOR",
+      "description": "Assessment and evaluation of claims",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "claims",
+          "label": "Claims",
+          "icon": "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "children": [
+            {
+              "id": "claims-list",
+              "label": "All Claims",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-pending",
+              "label": "Pending Review",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-assessed",
+              "label": "Assessed",
+              "route": "/dashboard"
+            }
+          ]
+        },
+        {
+          "id": "collections",
+          "label": "Collections",
+          "icon": "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
+          "route": "/collections"
+        },
+        {
+          "id": "settings",
+          "label": "Settings",
+          "icon": "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+          "route": "/settings"
+        }
+      ]
+    },
+    {
+      "roleId": 2,
+      "roleName": "Manager",
+      "roleDisplayName": "MANAGER",
+      "description": "Manage and oversee all operations",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "claims",
+          "label": "Claims",
+          "icon": "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "children": [
+            {
+              "id": "claims-list",
+              "label": "All Claims",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-pending",
+              "label": "Pending Review",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-approved",
+              "label": "Approved",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-rejected",
+              "label": "Rejected",
+              "route": "/dashboard"
+            }
+          ]
+        },
+        {
+          "id": "policies",
+          "label": "Policies",
+          "icon": "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "children": [
+            {
+              "id": "policies-list",
+              "label": "All Policies",
+              "route": "/dashboard"
+            },
+            {
+              "id": "policies-active",
+              "label": "Active Policies",
+              "route": "/dashboard"
+            },
+            {
+              "id": "policies-expired",
+              "label": "Expired",
+              "route": "/dashboard"
+            }
+          ]
+        },
+        {
+          "id": "collections",
+          "label": "Collections",
+          "icon": "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
+          "route": "/collections"
+        },
+        {
+          "id": "reports",
+          "label": "Reports",
+          "icon": "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "route": "/reports"
+        },
+        {
+          "id": "settings",
+          "label": "Settings",
+          "icon": "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+          "route": "/settings"
+        }
+      ]
+    },
+    {
+      "roleId": 3,
+      "roleName": "Claims Manager",
+      "roleDisplayName": "CLAIMS MANAGER",
+      "description": "Manage and oversee claims processing",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "claims",
+          "label": "Claims",
+          "icon": "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "children": [
+            {
+              "id": "claims-list",
+              "label": "All Claims",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-pending",
+              "label": "Pending Review",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-approved",
+              "label": "Approved",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-rejected",
+              "label": "Rejected",
+              "route": "/dashboard"
+            },
+            {
+              "id": "claims-archived",
+              "label": "Archived",
+              "route": "/dashboard"
+            }
+          ]
+        },
+        {
+          "id": "reports",
+          "label": "Reports",
+          "icon": "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "route": "/reports"
+        },
+        {
+          "id": "settings",
+          "label": "Settings",
+          "icon": "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+          "route": "/settings"
+        }
+      ]
+    },
+    {
+      "roleId": 4,
+      "roleName": "Audit Team",
+      "roleDisplayName": "AUDIT TEAM",
+      "description": "Audit and compliance verification",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "claims-audit",
+          "label": "Claims Audit",
+          "icon": "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
+          "route": "/dashboard"
+        },
+        {
+          "id": "reports",
+          "label": "Audit Reports",
+          "icon": "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "route": "/reports"
+        }
+      ]
+    },
+    {
+      "roleId": 5,
+      "roleName": "IX Team",
+      "roleDisplayName": "IX TEAM",
+      "description": "Information Exchange team",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "data-exchange",
+          "label": "Data Exchange",
+          "icon": "M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4",
+          "route": "/dashboard"
+        },
+        {
+          "id": "reports",
+          "label": "Reports",
+          "icon": "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "route": "/reports"
+        }
+      ]
+    },
+    {
+      "roleId": 6,
+      "roleName": "Submission Team",
+      "roleDisplayName": "SUBMISSION TEAM",
+      "description": "Handle claim submissions and initial processing",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "submissions",
+          "label": "New Submissions",
+          "icon": "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z",
+          "route": "/dashboard"
+        },
+        {
+          "id": "claims",
+          "label": "Claims",
+          "icon": "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "route": "/dashboard"
+        }
+      ]
+    },
+    {
+      "roleId": 7,
+      "roleName": "Settlement Team",
+      "roleDisplayName": "SETTLEMENT TEAM",
+      "description": "Process settlements and payments",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "settlements",
+          "label": "Settlements",
+          "icon": "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
+          "route": "/dashboard"
+        },
+        {
+          "id": "payments",
+          "label": "Payments",
+          "icon": "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+          "route": "/dashboard"
+        },
+        {
+          "id": "reports",
+          "label": "Reports",
+          "icon": "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+          "route": "/reports"
+        }
+      ]
+    },
+    {
+      "roleId": 8,
+      "roleName": "Customer Service",
+      "roleDisplayName": "CUSTOMER SERVICE",
+      "description": "Customer support and service",
+      "menuItems": [
+        {
+          "id": "dashboard",
+          "label": "Dashboard",
+          "icon": "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+          "route": "/dashboard"
+        },
+        {
+          "id": "inquiries",
+          "label": "Customer Inquiries",
+          "icon": "M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+          "route": "/dashboard"
+        },
+        {
+          "id": "claims-view",
+          "label": "View Claims",
+          "icon": "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z",
+          "route": "/dashboard"
+        }
+      ]
+    }
+  ]
+}

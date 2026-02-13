@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settlement Online Submission - Declined | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem 0 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            gap: 2px;
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid transparent;
+            border-bottom: none;
+            padding: 0.35rem 0.6rem;
+            color: #475569;
+            font-weight: 500;
+            font-size: 0.73rem;
+            background: #f8fafc;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            border-color: #e2e8f0;
+            border-bottom: 2px solid white;
+            margin-bottom: -2px;
+            font-weight: 700;
+            z-index: 5;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-pane {
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: #9ca3af;
+        }
+
+        .custom-grid {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: white;
+            padding: 0.35rem 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.35rem 0.5rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+        }
+
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            background: white !important;
+            z-index: 10;
+            border-right: 2px solid #cbd5e1 !important;
+        }
+
+        /* --- UI Elements --- */
+        .btn-link-sm {
+            font-size: 0.65rem;
+            text-decoration: underline;
+            padding: 0;
+            background: none;
+            border: none;
+            color: #0d6efd;
+        }
+
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 80px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .record-count {
+            color: #2563eb;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        .auto-submission-msg {
+            color: red;
+            font-weight: 900;
+            font-size: 0.9rem;
+            margin: 0 auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP NAV / TABS -->
+    <header class="header-bar d-flex justify-content-between align-items-end">
+        <ul class="nav nav-tabs" id="settlementTabs">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pending-upload">Pending Submission
+                    Doc Upload</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pending-insurer">Pending Claim Submission
+                    to Insurer</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#submitted-claims">Submitted
+                    Claims</button>
+            </li>
+        </ul>
+
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="tab-content">
+
+            <!-- T1: PENDING SUBMISSION DOC UPLOAD -->
+            <div class="tab-pane fade show active" id="pending-upload">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <input type="text" class="search-box">
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">67 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                            <span class="text-xs">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">PHID</th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>DATE ADMISSION</th>
+                                <th>CREATED BY</th>
+                                <th>CREATED ON</th>
+                                <th>MODIFIED BY</th>
+                                <th>UPLOAD DOCUMENT</th>
+                                <th>VIEW DOCUMENT</th>
+                                <th>ACTION</th>
+                                <th>ESCALATION</th>
+                                <th>MODIFIED ON</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left">442cd911-c173-4ac3-b8fa-d74722e8a387</td>
+                                <td>O/2025/11/9639</td>
+                                <td>OL/148042</td>
+                                <td>OL78884</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td>080728050389</td>
+                                <td>DANIEL IZHAR BIN MOHD ZAIPPULLAH</td>
+                                <td>KPJ SEREMBAN SPECIALIST HOSPITAL</td>
+                                <td>1/13/2023 7:24 PM</td>
+                                <td>selva</td>
+                                <td>1/13/2023 7:28 PM</td>
+                                <td>Badrul</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm">Initiate</button></td>
+                                <td>1/14/2023 12:21 PM</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">83e4930f-d006-4b07-9b2c-d968255fabfb</td>
+                                <td>O/2025/11/9585</td>
+                                <td>OL/148479</td>
+                                <td>OL79090</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td>C880419075506</td>
+                                <td>NOR AZIMAH BINTI HASSIM</td>
+                                <td>HOSPITAL LAM WAH EE</td>
+                                <td>1/20/2023 3:51 PM</td>
+                                <td>Badrul</td>
+                                <td>1/20/2023 4:01 PM</td>
+                                <td>Badrul</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm">Initiate</button></td>
+                                <td>1/20/2023 4:09 PM</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">90d3df0a-ea0f-4140-857a-3bc541347321</td>
+                                <td>O/2025/11/9545</td>
+                                <td>OL/148480</td>
+                                <td>OL79092</td>
+                                <td>OL</td>
+                                <td>DAYCARE</td>
+                                <td>C740705036769</td>
+                                <td>MOHAMMAD KHALIL BIN KHALID</td>
+                                <td>KPJ IPOH SPECIALIST HOSPITAL</td>
+                                <td>1/25/2023 7:30 AM</td>
+                                <td>Dr Nur Hafizah</td>
+                                <td>1/20/2023 4:25 PM</td>
+                                <td>hasyimah</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm">Initiate</button></td>
+                                <td>1/31/2023 10:26 AM</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T2: PENDING CLAIM SUBMISSION TO INSURER -->
+            <div class="tab-pane fade" id="pending-insurer">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <input type="text" class="search-box">
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="auto-submission-msg">AUTO SUBMISSION!!!</div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">30 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                            <span class="text-xs">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">INSURER</th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>INSURER CLAIM NO</th>
+                                <th>POLICY NO</th>
+                                <th>CLIENT NO</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>PH NAME</th>
+                                <th>PH IC</th>
+                                <th>PLAN CODE</th>
+                                <th>DATE ADMISSION</th>
+                                <th>HOSPITAL</th>
+                                <th>DIAGNOSIS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left">FWD</td>
+                                <td>O/2025/05/2866</td>
+                                <td>OL/200942</td>
+                                <td>OL105114</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td></td>
+                                <td>GC000001-B7891</td>
+                                <td>50403338</td>
+                                <td>C861206135094</td>
+                                <td>DAYANG AFIQAH BINTI AWGKU ISA</td>
+                                <td>DAYANG AFIQAH BINTI AWGKU ISA</td>
+                                <td>C861206135094</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>5/15/2025 1:15 PM</td>
+                                <td>KUCHING SPECIALIST HOSPITAL</td>
+                                <td>3RD DEGREE HAEMORRHOIDS</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">FWD</td>
+                                <td>O/2025/07/5174</td>
+                                <td>OL/205121</td>
+                                <td>OL108409</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td></td>
+                                <td>GC000009-00127</td>
+                                <td>50376012</td>
+                                <td>C860324335676</td>
+                                <td>NORAINI BINTI ZULKAFLI @ ZULKIFLI</td>
+                                <td>NORAINI BINTI ZULKAFLI @ ZULKIFLI</td>
+                                <td>C860324335676</td>
+                                <td>CUEPACSCARE PLUS (GAKUM)-0417</td>
+                                <td>7/25/2025 8:14 AM</td>
+                                <td>KPJ KAJANG SPECIALIST HOSPITAL</td>
+                                <td>RIGHT PELVI-URETERIC JUNCTION, LEFT RENAL STONE</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">FWD</td>
+                                <td>O/2025/07/5182</td>
+                                <td>OL/205137</td>
+                                <td>OL108418</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td></td>
+                                <td>GC000001-26639</td>
+                                <td>50113337</td>
+                                <td>C840702075273</td>
+                                <td>ABDUL WAHAB BIN ABDULLAH</td>
+                                <td>NORSURIANA BINTI SULIMAN</td>
+                                <td>C830418075476</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>7/25/2025 8:30 AM</td>
+                                <td>HOSPITAL LAM WAH EE</td>
+                                <td>CORONARY ARTERY DISEASE...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T3: SUBMITTED CLAIMS -->
+            <div class="tab-pane fade" id="submitted-claims">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <input type="text" class="search-box">
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">100 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                            <span class="text-xs">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">INSURER</th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>INSURER CLAIM NO</th>
+                                <th>POLICY NO</th>
+                                <th>CLIENT NO</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>PH NAME</th>
+                                <th>PH IC</th>
+                                <th>PLAN CODE</th>
+                                <th>DATE ADMISSION</th>
+                                <th>HOSPITAL</th>
+                                <th>DIAGNOSIS</th>
+                                <th>View Admission</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left">FWD</td>
+                                <td>O/2025/11/9639</td>
+                                <td>OL/213019</td>
+                                <td>OL112871</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td>CC087287-00</td>
+                                <td>GC000001-53803</td>
+                                <td>50213461</td>
+                                <td>C820306025723</td>
+                                <td>SHUHERI BIN A...</td>
+                                <td>SHUHERI BIN A...</td>
+                                <td>C820306025723</td>
+                                <td>CUEPACSCARE...</td>
+                                <td>11/20/2025 3:43...</td>
+                                <td>KPJ PENANG S...</td>
+                                <td>RIGHT GREAT ...</td>
+                                <td><button class="btn-link-sm">View</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

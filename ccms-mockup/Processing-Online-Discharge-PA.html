@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Online Discharge PA | CCMS</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f2f4f7;
+            --border-color: #cbd5e1;
+            --text-main: #334155;
+            --tab-bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            font-size: 0.72rem;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Tabs --- */
+        .main-tabs {
+            background: #e2e8f0;
+            padding: 0 10px;
+            display: flex;
+            gap: 2px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .main-tab {
+            padding: 6px 15px;
+            background: #cbd5e1;
+            border: 1px solid #94a3b8;
+            border-bottom: none;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #475569;
+            margin-top: 5px;
+        }
+
+        .main-tab.active {
+            background: white;
+            color: var(--accent-blue);
+            border-color: var(--border-color);
+            border-bottom: 1px solid white;
+            z-index: 10;
+        }
+
+        .tab-content {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+            padding: 15px;
+            position: relative;
+        }
+
+        /* --- Sections / Cards --- */
+        .section-box {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            position: relative;
+        }
+
+        .section-title {
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: white;
+            padding: 0 5px;
+            font-weight: 700;
+            font-size: 0.68rem;
+            color: #1e293b;
+            text-transform: uppercase;
+        }
+
+        .form-label-custom {
+            font-weight: 500;
+            width: 120px;
+            margin-bottom: 0;
+        }
+
+        .form-control-custom {
+            font-size: 0.72rem;
+            padding: 2px 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            width: 100%;
+        }
+
+        .form-select-custom {
+            font-size: 0.72rem;
+            padding: 2px 25px 2px 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+        }
+
+        /* --- Grids --- */
+        .grid-header {
+            background: #e2e8f0;
+            border: 1px solid var(--border-color);
+            display: flex;
+        }
+
+        .grid-tab {
+            padding: 4px 12px;
+            cursor: pointer;
+            border-right: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .grid-tab.active {
+            background: white;
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.68rem;
+        }
+
+        .custom-table th {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .custom-table td {
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            background: #d4d4d4;
+            /* Gray background for empty grids as seen in screenshot */
+            height: 25px;
+        }
+
+        /* --- Specialized UI --- */
+        .patient-details-box {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 4px;
+            height: 100%;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 4px;
+            align-items: center;
+        }
+
+        .detail-label {
+            width: 130px;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .detail-value {
+            flex: 1;
+            padding: 2px 8px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        .avg-stats {
+            color: red;
+            font-weight: 700;
+            text-align: right;
+            font-size: 0.8rem;
+        }
+
+        .btn-custom {
+            padding: 2px 12px;
+            font-size: 0.72rem;
+            border-radius: 2px;
+        }
+
+        .uncovered-total {
+            background: red;
+            color: white;
+            width: 80px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .sub-tabs {
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .sub-tab {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            margin-right: 2px;
+        }
+
+        .sub-tab.active {
+            background: white;
+            border-color: var(--border-color);
+            font-weight: 600;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+
+        .checklist-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .checklist-q {
+            width: 280px;
+            font-weight: 500;
+        }
+
+        /* Top Close Button */
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="btn btn-sm btn-outline-danger close-btn"
+        onclick="window.parent.postMessage('closeDischargePAModal', '*')">
+        <i class="fas fa-times me-1"></i> Close
+    </button>
+
+    <!-- MAIN TABS -->
+    <div class="main-tabs">
+        <div class="main-tab active" onclick="showTab('payment-advice')">Payment Advice</div>
+        <div class="main-tab" onclick="showTab('remarks')">Remarks</div>
+        <div class="main-tab" onclick="showTab('documents')">Documents</div>
+        <div class="main-tab" onclick="showTab('insurer-discount')">Insurer Discount</div>
+        <div class="main-tab" onclick="showTab('discharge-checklist')">Discharge Checklist</div>
+        <div class="main-tab" onclick="showTab('treatment-checklist')">Treatment Checklist</div>
+    </div>
+
+    <!-- TAB CONTENT: PAYMENT ADVICE -->
+    <div id="payment-advice" class="tab-content">
+        <div class="row g-3">
+            <div class="col-md-7">
+                <!-- Payment Advice Details -->
+                <div class="section-box mt-2">
+                    <span class="section-title">Payment Advice Details</span>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Hospital Invoice #:</span>
+                                <input type="text" class="form-control-custom">
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Nature of Disability:</span>
+                                <input type="text" class="form-control-custom"
+                                    value="LEFT KNEE SEPTIC ARTHRITIS WITH EFFUSION">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Discharge Date:</span>
+                                <input type="text" class="form-control-custom" value="21/01/2026 12:00 A">
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Pending Documents?</span>
+                                <input type="checkbox" checked class="ms-2"> <span class="ms-1">Yes</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Claim #:</span>
+                                <input type="text" class="form-control-custom">
+                                <button class="btn btn-sm btn-light border ms-1"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Discharging Doctor:</span>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" value="MEDICAL OFFICER">
+                                    <button class="btn btn-outline-secondary">...</button>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Amt Under Review:</span>
+                                <input type="text" class="form-control-custom" style="width: 100px;">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Fax Doc Name:</span>
+                                <select class="form-select-custom w-100">
+                                    <option></option>
+                                </select>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Fax Docs Received:</span>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" value="21/01/2026 06:44 A">
+                                    <button class="btn btn-outline-secondary">Browse</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Payment Details -->
+                <div class="section-box">
+                    <span class="section-title">Add Payment Details</span>
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Type:</span>
+                                <select class="form-select-custom w-100"></select>
+                                <input type="checkbox" class="ms-2"> <span class="ms-1">Lock</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Description:</span>
+                                <select class="form-select-custom w-100"></select>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="avg-stats">
+                                <div>AVG Claim Size : 4,684.21</div>
+                                <div>AVG Length of Stay : 2.00</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Number of Days:</span>
+                                <input type="text" class="form-control-custom" style="background: #eee;">
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom">Incurred Expenses:</span>
+                                <input type="text" class="form-control-custom">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom" style="width: 150px;">Rate per Day:</span>
+                                <input type="text" class="form-control-custom" style="background: #eee;">
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="form-label-custom" style="width: 150px;">Expenses Not Reimbursable:</span>
+                                <input type="text" class="form-control-custom">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="form-label-custom">Remark:</span>
+                        <input type="text" class="form-control-custom ms-1">
+                        <button class="btn btn-sm btn-light border ms-2" style="padding: 2px 20px;">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="patient-details-box mt-2">
+                    <div class="fw-bold mb-2">Patient/Policy Details</div>
+                    <div class="detail-row">
+                        <div class="detail-label">Full Name As in NRIC</div>
+                        <div class="detail-value text-uppercase">NUR QALESYA QAISARA BINTI MOHAMMAD NA</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">IC #</div>
+                        <div class="detail-value">230209020306</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Plan Code</div>
+                        <div class="detail-value">CUEPACSCARE PLUS (MONTHLY)-0515</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Policy No</div>
+                        <div class="detail-value">GC000009-08694</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Effective Date</div>
+                        <div class="detail-value">7/15/2025</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Hospital Name</div>
+                        <div class="detail-value text-uppercase">PANTAI HOSPITAL LAGUNA MERBOK</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Admission Ref. No</div>
+                        <div class="detail-value">OL112996</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Co-Payment Description</div>
+                        <div class="detail-value">% Co-Payment Borne by Patient</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Grid -->
+        <div class="section-box p-0 mt-3" style="min-height: 200px;">
+            <span class="section-title" style="top:-8px; left: 10px;">Payment Details</span>
+            <div class="grid-header">
+                <div class="grid-tab active">Billing Details</div>
+                <div class="grid-tab">Summary</div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;"></th>
+                            <th>SOB</th>
+                            <th>SOB Description</th>
+                            <th>No of Days</th>
+                            <th>Rate Per Day</th>
+                            <th>Incurred Amount</th>
+                            <th>Not Reimburseable Amount</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Empty gray rows as shown in screenshot -->
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: REMARKS (Includes Consultation Breakdown) -->
+    <div id="remarks" class="tab-content" style="display: none;">
+        <!-- UNCOVERED CHARGES -->
+        <div class="section-box mt-2 p-0">
+            <span class="section-title">UNCOVERED CHARGES</span>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">No</th>
+                        <th>ITEM</th>
+                        <th>AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="d-flex justify-content-center align-items-center p-2">
+                <span class="me-2 fw-bold">Total :</span>
+                <div class="uncovered-total">0.00</div>
+            </div>
+        </div>
+
+        <!-- CONSULTATION BREAKDOWN -->
+        <div class="section-box">
+            <span class="section-title">CONSULTATION BREAKDOWN</span>
+
+            <!-- Search Procedure -->
+            <div class="border p-2 mb-3">
+                <span class="fw-bold small d-block mb-1">Search Procedure</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span>Search By :</span>
+                    <select class="form-select-custom" style="width: 120px;"></select>
+                    <span>Search Text :</span>
+                    <input type="text" class="form-control-custom" style="width: 300px;">
+                    <button class="btn btn-sm btn-light border">Go</button>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="border p-2" style="height: 100%;">
+                        <span class="fw-bold small d-block mb-1">View Procedure</span>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="form-label-custom">Select Procedure :</span>
+                            <select class="form-select-custom w-100"></select>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="form-label-custom">Procedure Name :</span>
+                            <textarea class="form-control-custom" rows="3" style="background:#f8fafc;"></textarea>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="form-label-custom">MMA Code :</span>
+                            <input type="text" class="form-control-custom" style="background:#f8fafc;">
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="form-label-custom">Specialty :</span>
+                            <input type="text" class="form-control-custom" style="background:#f8fafc;">
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="form-label-custom">Procedure Category:</span>
+                            <input type="text" class="form-control-custom" style="background:#f8fafc;">
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="form-label-custom">Surgeon/Physician Fees:</span>
+                            <input type="text" class="form-control-custom" style="background:#f8fafc; width: 100px;">
+                            <span class="ms-3 me-2">Anaesthetist Fees :</span>
+                            <input type="text" class="form-control-custom" style="background:#f8fafc; width: 100px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border p-2" style="height: 100%;">
+                        <span class="fw-bold small d-block mb-1">Add Procedure</span>
+                        <div class="row g-2">
+                            <div class="col-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="form-label-custom">Date :</span>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control" value="21/01/2026">
+                                        <button class="btn btn-outline-secondary"><i
+                                                class="fas fa-calendar-alt"></i></button>
+                                    </div>
+                                    <input type="checkbox" class="ms-2"> <span class="ms-1">Lock</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="form-label-custom">Doctor Name :</span>
+                                    <select class="form-select-custom w-100">
+                                        <option>DR AHMAD BAZLI BIN MOHAMAD</option>
+                                    </select>
+                                    <input type="checkbox" class="ms-2"> <span class="ms-1">Lock</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="form-label-custom">Incurred Amount :</span>
+                                    <input type="text" class="form-control-custom text-end" value="0">
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="form-label-custom">Uncovered Amount :</span>
+                                    <input type="text" class="form-control-custom text-end" value="0">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="form-label-custom">Covered Amount :</span>
+                                    <input type="text" class="form-control-custom text-end" value="0"
+                                        style="background: #e2e8f0;">
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="form-label-custom">Exceed Limit Amount :</span>
+                                    <input type="text" class="form-control-custom text-end" value="0"
+                                        style="background: #e2e8f0;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="form-label-custom">Remarks 1 :</span>
+                            <select class="form-select-custom w-100">
+                                <option>CONSULTATION OH</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="form-label-custom">Remarks 2 :</span>
+                            <textarea class="form-control-custom" rows="2"></textarea>
+                        </div>
+                        <div class="d-flex justify-content-center gap-2 mt-2">
+                            <button class="btn btn-sm btn-light border px-4">Add</button>
+                            <button class="btn btn-sm btn-light border px-4">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="mt-3">
+                <span class="fw-bold small d-block mb-1">Details</span>
+                <div style="overflow-x: auto;">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>DOCTOR'S NAME</th>
+                                <th>REMARKS</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>UNCOVERED AMOUNT</th>
+                                <th>EXCEED LIMIT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-end align-items-center p-2 gap-4">
+                    <div class="d-flex align-items-center"><span class="me-2">Total :</span>
+                        <div class="uncovered-total">0.00</div>
+                    </div>
+                    <div class="uncovered-total">0.00</div>
+                    <div class="uncovered-total">0.00</div>
+                    <div class="uncovered-total">0.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: DOCUMENTS -->
+    <div id="documents" class="tab-content" style="display: none;">
+        <div class="section-box mt-2">
+            <span class="section-title">Upload Bills</span>
+            <div class="d-flex align-items-center gap-3">
+                <span>Select File :</span>
+                <div class="flex-grow-1" style="max-width:300px; height:22px; border:1px solid #ddd; background:#eee;">
+                </div>
+                <button class="btn btn-sm btn-light border">Browse</button>
+                <span class="ms-4">Document Name :</span>
+                <select class="form-select-custom" style="width: 250px;"></select>
+                <button class="btn btn-sm btn-light border">Upload</button>
+            </div>
+        </div>
+
+        <div class="section-box" style="min-height: 300px;">
+            <span class="section-title">List of Bills Uploaded</span>
+            <div style="background: #ccc; height: 260px; border: 1px solid #999;"></div>
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: INSURER DISCOUNT -->
+    <div id="insurer-discount" class="tab-content" style="display: none;">
+        <div class="section-box mt-2">
+            <span class="section-title">Discount</span>
+            <div class="w-25">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Room and Board :</span>
+                    <input type="text" class="form-control-custom">
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Consultant Procedure :</span>
+                    <input type="text" class="form-control-custom">
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Consultant Ward Visit :</span>
+                    <input type="text" class="form-control-custom">
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Hospital :</span>
+                    <input type="text" class="form-control-custom">
+                </div>
+                <div class="d-flex align-items-center mb-2 mt-4">
+                    <span class="form-label-custom">Total Amount :</span>
+                    <input type="text" class="form-control-custom" style="background:#eee;">
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <span class="section-title">Cost Saving Discount</span>
+            <div class="w-50">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Total :</span>
+                    <input type="text" class="form-control-custom" style="width: 100px;">
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Discount Type :</span>
+                    <select class="form-select-custom w-100"></select>
+                </div>
+                <div class="d-flex align-items-start">
+                    <span class="form-label-custom">Remarks :</span>
+                    <textarea class="form-control-custom" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <span class="section-title">Audit Discount</span>
+            <div class="w-50">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Total :</span>
+                    <input type="text" class="form-control-custom" style="width: 100px;">
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="form-label-custom">Discount Type :</span>
+                    <select class="form-select-custom w-100"></select>
+                </div>
+                <div class="d-flex align-items-start">
+                    <span class="form-label-custom">Remarks :</span>
+                    <textarea class="form-control-custom" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-4 mt-3">
+            <div class="text-center">
+                <div class="small fw-bold">Insurer Total</div>
+                <div class="uncovered-total py-1 mx-auto">0.00</div>
+            </div>
+            <div class="text-center">
+                <div class="small fw-bold">Cost Saving Total</div>
+                <div class="uncovered-total py-1 mx-auto">0.00</div>
+            </div>
+            <div class="text-center">
+                <div class="small fw-bold">Audit Total</div>
+                <div class="uncovered-total py-1 mx-auto">0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: DISCHARGE CHECKLIST -->
+    <div id="discharge-checklist" class="tab-content" style="display: none;">
+        <div class="sub-tabs">
+            <div class="sub-tab active">Online Discharge Approval</div>
+            <div class="sub-tab">Deferment Follow Up</div>
+            <div class="sub-tab">Continuous Deferment Monitor</div>
+            <div class="sub-tab">Escalation Follow-Up</div>
+            <div class="sub-tab">Closing & Final Update</div>
+        </div>
+
+        <div class="mt-3 ps-4">
+            <div class="checklist-row">
+                <div class="checklist-q">Summary, Itemised, DMR Complete</div>
+                <div class="me-3">: <input type="radio" name="q1" class="ms-2"> Yes <input type="radio" name="q1"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">Investigation Reports Complete</div>
+                <div class="me-3">: <input type="radio" name="q2" class="ms-2"> Yes <input type="radio" name="q2"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">MODE, Bill Number, Diagnosis, Date Correct</div>
+                <div class="me-3">: <input type="radio" name="q3" class="ms-2"> Yes <input type="radio" name="q3"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">Investigations Treatment Medically Necessary</div>
+                <div class="me-3">: <input type="radio" name="q4" class="ms-2"> Yes <input type="radio" name="q4"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">Charges Customary and Reasonable</div>
+                <div class="me-3">: <input type="radio" name="q5" class="ms-2"> Yes <input type="radio" name="q5"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">Doctor's Procedure, Code Price Correct</div>
+                <div class="me-3">: <input type="radio" name="q6" class="ms-2"> Yes <input type="radio" name="q6"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">Uncovered Charges</div>
+                <div class="me-3">: <input type="radio" name="q7" class="ms-2"> Yes <input type="radio" name="q7"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">Discounts Entered</div>
+                <div class="me-3">: <input type="radio" name="q8" class="ms-2"> Yes <input type="radio" name="q8"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row">
+                <div class="checklist-q">Checklist Documents Uploaded in System</div>
+                <div class="me-3">: <input type="radio" name="q9" class="ms-2"> Yes <input type="radio" name="q9"
+                        class="ms-3"> No</div>
+                <input type="text" class="form-control-custom" style="width: 400px;">
+            </div>
+            <div class="checklist-row mt-3">
+                <div class="checklist-q">Require Investigation?</div>
+                <div class="ms-2">
+                    <input type="checkbox"> Urgent IX
+                    <input type="checkbox" class="ms-2"> Non-Urgent IX
+                    <input type="checkbox" class="ms-2"> Pay n IX
+                </div>
+            </div>
+            <div class="checklist-row mt-2 align-items-start">
+                <div class="checklist-q">Investigation Remarks</div>
+                <textarea class="form-control-custom mx-3" rows="2" style="width: 500px;"></textarea>
+            </div>
+            <button class="btn btn-sm btn-light border mt-3 px-3">Save</button>
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: TREATMENT CHECKLIST -->
+    <div id="treatment-checklist" class="tab-content" style="display: none;">
+        <div class="d-flex align-items-center mb-4">
+            <span style="width: 100px; font-weight: 500;">Authorized by :</span>
+            <input type="text" class="form-control-custom" style="width: 250px;">
+        </div>
+
+        <div class="row gx-5">
+            <!-- DISCREPANCY -->
+            <div class="col-4">
+                <h6 class="fw-bold mb-3" style="font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">DISCREPANCY
+                </h6>
+                <div class="d-flex flex-column gap-2">
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">TREATMENT</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">INVESTIGATIONS</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">LENGTH OF STAY</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">ADDITIONAL DR</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">ADDITIONAL PROCEDURE</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">MEDICAL REPORT</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">PRE EXISTING CONDITION</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">OTHERS</span></label>
+                </div>
+            </div>
+
+            <!-- HOSPITAL FEES -->
+            <div class="col-4">
+                <h6 class="fw-bold mb-3" style="font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">HOSPITAL FEES
+                </h6>
+                <div class="d-flex flex-column gap-2">
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">UNRELATED ITEMS</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">OVERCHARGED QUANTITY</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">CHARGED BUT NOT USED/PERFORMED</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">AOH CHARGES NOT JUSTIFIED</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">NON REASONABLE PRICE</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">NON CUSTOMARY ITEMS</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">CORPORATE DISCOUNT MISSING</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">OTHERS</span></label>
+                </div>
+            </div>
+
+            <!-- DOCTORS FEES -->
+            <div class="col-4">
+                <h6 class="fw-bold mb-3" style="font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">DOCTORS FEES
+                </h6>
+                <div class="d-flex flex-column gap-2">
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">UNRELATED ITEMS</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">OVERCHARGED FEES</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">CHARGED BUT NOT PERFORMED</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">AOH CHARGES NOT JUSTIFIED</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">NON REASONABLE PRICE</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">NON CUSTOMARY PROCEDURE</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">UNBUNDLING</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">WRONG CODES</span></label>
+                    <label class="d-flex align-items-center"><input type="checkbox" class="me-2 text-uppercase"> <span
+                            class="text-uppercase">OTHERS</span></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.main-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            event.currentTarget.classList.add('active');
+        }
+
+        // Sub-tabs logic
+        document.querySelectorAll('.sub-tab').forEach(tab => {
+            tab.onclick = function () {
+                document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    </script>
+</body>
+
+</html>

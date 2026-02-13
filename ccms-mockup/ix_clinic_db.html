@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IX Clinic Database</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --bg-light: #f4f6f9;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Top Bar --- */
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        /* --- Content Area --- */
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .nav-tabs .nav-link {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .tab-content {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            padding: 20px;
+            min-height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="d-flex align-items-center gap-3">
+            <h6 class="mb-0 fw-bold"><i class="fas fa-clinic-medical me-2 text-primary"></i>IX Clinic Database</h6>
+        </div>
+        <div>
+            <button class="btn btn-outline-danger btn-sm" onclick="closeModal()"><i
+                    class="fas fa-times me-2"></i>Close</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="content-area">
+        <div class="container-fluid">
+
+            <!-- TABS -->
+            <ul class="nav nav-tabs" id="clinicTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="listing-tab" data-bs-toggle="tab" data-bs-target="#listing"
+                        type="button" role="tab" aria-controls="listing" aria-selected="true">Clinic Listing</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#form" type="button"
+                        role="tab" aria-controls="form" aria-selected="false">Clinic Form</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="template-tab" data-bs-toggle="tab" data-bs-target="#template"
+                        type="button" role="tab" aria-controls="template" aria-selected="false">Clinic Template</button>
+                </li>
+            </ul>
+
+            <!-- TAB CONTENT -->
+            <div class="tab-content shadow-sm" id="clinicTabsContent">
+
+                <!-- 1. CLINIC LISTING -->
+                <div class="tab-pane fade show active" id="listing" role="tabpanel" aria-labelledby="listing-tab">
+
+                    <!-- Search Bar -->
+                    <div class="bg-light p-2 mb-3 border rounded d-flex align-items-center gap-2">
+                        <label class="fw-bold small mb-0 text-nowrap text-secondary">Search By :</label>
+                        <select class="form-select form-select-sm" style="width: 180px;">
+                            <option>Clinic Name</option>
+                            <option>Postcode</option>
+                            <option>Town</option>
+                            <option>State</option>
+                        </select>
+                        <input type="text" class="form-control form-control-sm" placeholder="">
+                        <button class="btn btn-sm btn-secondary fw-bold px-3">GO..</button>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive border bg-white" style="height: 65vh;">
+                        <table class="table table-bordered table-hover table-sm small mb-0 text-nowrap"
+                            style="font-size: 0.8rem;">
+                            <thead class="table-light sticky-top" style="z-index: 1;">
+                                <tr>
+                                    <th style="width: 30px;"></th>
+                                    <th>CLINIC MODE</th>
+                                    <th>CLINIC TYPE</th>
+                                    <th>CLINIC CATEGORY</th>
+                                    <th>CLINIC NAME</th>
+                                    <th>ADD1</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>(CAWANGAN SG DUA) KLINIK PUTRA</td>
+                                    <td>3, TINGKAT BAWAH</td>
+                                </tr>
+                                <tr class="bg-primary text-white">
+                                    <td class="text-center"><i class="fas fa-caret-right"></i></td>
+                                    <td>GOVERNMENT</td>
+                                    <td>KKM</td>
+                                    <td>HOSPITAL</td>
+                                    <td>?HOSPITAL TUARAN</td>
+                                    <td>PETI SURAT 590</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>02 KLINIK</td>
+                                    <td>52-00-1 (G/F)</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>1 SIGNATURE CLINIC</td>
+                                    <td>NO 40, GRD FLR</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>10TH MILE MEDICAL CLINIC</td>
+                                    <td>LOT 1732, BATU 10</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>111 CLINIC</td>
+                                    <td>LEVEL 1, 111</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>123 CHILD SPECIALIST CLINIC</td>
+                                    <td>NO. 36-G, JALAN</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>16 JAM KLINIK MEDIVIRON BUKIT SENTOSA</td>
+                                    <td>NO. 23 (GRD FLR)</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>16 JAM KLINIK MEDIVIRON SALAK TINGGI</td>
+                                    <td>NO 4, TINGKAT BWH</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>168 MEDICAL CLINIC</td>
+                                    <td>B-G-3, BLK B</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>16 JAM KLINIK MEDIVIRON TASIK PUTERI</td>
+                                    <td>NO. 33 JALAN 8/3</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>17TH MILES FAMILY CLINIC</td>
+                                    <td>GROUND FLOOR</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>PRIVATE</td>
+                                    <td>CLINIC</td>
+                                    <td>CLINIC</td>
+                                    <td>23 CENTURY CLINIC</td>
+                                    <td>1ST FLOOR, NO 12</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <!-- 2. CLINIC FORM -->
+                <div class="tab-pane fade" id="form" role="tabpanel" aria-labelledby="form-tab">
+                    <form class="p-3">
+                        <!-- Row 1: Clinic Mode -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Clinic Mode :</label>
+                            <div class="col-md-9">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicMode" id="modeGov"
+                                        value="gov">
+                                    <label class="form-check-label" for="modeGov">Government</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicMode" id="modePriv"
+                                        value="private" checked>
+                                    <label class="form-check-label" for="modePriv">Private</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Clinic Type -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Clinic Type :</label>
+                            <div class="col-md-9">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicType" id="typeKKM"
+                                        value="kkm">
+                                    <label class="form-check-label" for="typeKKM">KKM</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicType" id="typeKPM"
+                                        value="kpm">
+                                    <label class="form-check-label" for="typeKPM">KPM</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicType" id="typeClinic"
+                                        value="clinic" checked>
+                                    <label class="form-check-label" for="typeClinic">Clinic</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Clinic Category -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Clinic Category :</label>
+                            <div class="col-md-9">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicCat" id="catHosp"
+                                        value="hospital">
+                                    <label class="form-check-label" for="catHosp">Hospital</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicCat" id="catComm"
+                                        value="community">
+                                    <label class="form-check-label" for="catComm">Community</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinicCat" id="catClin"
+                                        value="clinic" checked>
+                                    <label class="form-check-label" for="catClin">Clinic</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Clinic Name -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Clinic Name :</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" value="24 JAM POLIKLINIK YAP">
+                            </div>
+                        </div>
+
+                        <!-- Address Lines -->
+                        <div class="row mb-1 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Address Line 1 :</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control"
+                                    value="NO. 114, JALAN PERWIRA 1, TAMAN TUN AMINAH">
+                            </div>
+                        </div>
+                        <div class="row mb-1 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Address Line 2 :</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row mb-1 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Address Line 3 :</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Address Line 4 :</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Postcode & Town -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Postcode :</label>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" value="81300">
+                            </div>
+                            <label class="col-md-1 col-form-label fw-bold text-end">Town :</label>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" value="JOHOR BAHRU">
+                            </div>
+                        </div>
+
+                        <!-- State -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">State :</label>
+                            <div class="col-md-9">
+                                <select class="form-select">
+                                    <option>JOHOR</option>
+                                    <option>SELANGOR</option>
+                                    <option>KUALA LUMPUR</option>
+                                    <option>PENANG</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Phone Numbers -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Phone (Clinic) :</label>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" value="07-558 3303">
+                            </div>
+                            <label class="col-md-2 col-form-label fw-bold text-end">Phone (Mobile) :</label>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" value="07-5583303">
+                            </div>
+                        </div>
+
+                        <!-- Fax -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Fax :</label>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" value="607-558 3303">
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">General Email :</label>
+                            <div class="col-md-9">
+                                <input type="email" class="form-control" value="yapcf@rocketmail.com">
+                            </div>
+                        </div>
+
+                        <!-- Contact Name -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Contact Name :</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" value="LEE PHEY SAN">
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted">
+
+                        <!-- Bank Info -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Payable To :</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Bank Name :</label>
+                            <div class="col-md-9">
+                                <select class="form-select">
+                                    <option selected disabled></option>
+                                    <option>Arab-Malaysian Bank Berhad</option>
+                                    <option>Affin Bank Berhad</option>
+                                    <option>Alliance Bank Berhad</option>
+                                    <option>Alliance Islamic Bank Berhad</option>
+                                    <option>Bank Muamalat Malaysia Berhad</option>
+                                    <option>Bank Pertanian Malaysia Berhad (Agrobank)</option>
+                                    <option>Bank Islam Malaysia Berhad</option>
+                                    <option>Bank Kerjasama Rakyat Berhad</option>
+                                    <option>Bank Simpanan Nasional</option>
+                                    <option>CIMB Bank Berhad</option>
+                                    <option>Citibank Berhad</option>
+                                    <option>Commerce Terjari Bank Berhad</option>
+                                    <option>Deuteche Bank (Malaysia) Berhad</option>
+                                    <option>EON Bank Berhad/EON Finance Berhad</option>
+                                    <option>Hong Leong Bank Berhad/Hong Leong Finance</option>
+                                    <option>HSBC Bank Berhad</option>
+                                    <option>Kuwait Finance House (Malaysia Berhad)</option>
+                                    <option>Malayan Bank Berhad</option>
+                                    <option>OCBC Bank Berhad</option>
+                                    <option>POS Malaysia</option>
+                                    <option>Public Bank Berhad/Public Finance Berhad</option>
+                                    <option>RHB Bank Berhad</option>
+                                    <option>Standard Chartered Bank Berhad</option>
+                                    <option>The Royal Bank of Scotland (RBS)</option>
+                                    <option>UOB</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Bank Account No :</label>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control">
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted">
+
+                        <!-- Consent -->
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Consent Letter :</label>
+                            <div class="col-md-9 d-flex align-items-center gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="consentYes">
+                                    <label class="form-check-label" for="consentYes">Yes</label>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary px-3">Browse</button>
+                                <a href="#" class="text-decoration-underline text-primary">View Letter</a>
+                            </div>
+                        </div>
+                        <div class="row mb-2 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Default Consent Letter :</label>
+                            <div class="col-md-9">
+                                <select class="form-select">
+                                    <option>CONSENT - CC4U</option>
+                                    <option>CONSENT - KKM</option>
+                                    <option>CONSENT - KPM</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="row mb-4 align-items-center">
+                            <label class="col-md-3 col-form-label fw-bold">Status :</label>
+                            <div class="col-md-9">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="status" id="statusActive"
+                                        value="active" checked>
+                                    <label class="form-check-label" for="statusActive">Active</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="status" id="statusInactive"
+                                        value="inactive">
+                                    <label class="form-check-label" for="statusInactive">Inactive</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <button type="button" class="btn btn-secondary px-4 me-2">Update</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- 3. CLINIC TEMPLATE -->
+                <div class="tab-pane fade" id="template" role="tabpanel" aria-labelledby="template-tab">
+                    <div class="row h-100">
+                        <!-- Left Pane: Listing -->
+                        <div class="col-md-8 border-end">
+                            <h6 class="fw-bold text-secondary mb-3 small border-bottom pb-2">Template Listing</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-sm small"
+                                    style="font-size: 0.75rem;">
+                                    <thead class="table-light text-nowrap">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>TEMPLATE FOR</th>
+                                            <th>TEMPLATE NAME</th>
+                                            <th>TEMPLATE TYPE</th>
+                                            <th>CLINIC MODE</th>
+                                            <th>CLINIC TYPE</th>
+                                            <th>CLINIC CATEGORY</th>
+                                            <th class="text-center">STATUS</th>
+                                            <th>CREATED BY</th>
+                                            <th>CREATED DATE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="align-middle">
+                                        <tr class="table-active">
+                                            <td><i class="fas fa-caret-right text-dark"></i></td>
+                                            <td>Consent Letter</td>
+                                            <td>CONSENT - CC4U</td>
+                                            <td>CR</td>
+                                            <td>PRIVATE</td>
+                                            <td>CLINIC</td>
+                                            <td>CLINIC</td>
+                                            <td class="text-center"><input type="checkbox" checked disabled></td>
+                                            <td>ADMIN</td>
+                                            <td>6/16/2025</td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td>Consent Letter</td>
+                                            <td>CONSENT - KPM</td>
+                                            <td>CR</td>
+                                            <td>GOVERNMENT</td>
+                                            <td>KPM</td>
+                                            <td>HOSPITAL</td>
+                                            <td class="text-center"><input type="checkbox" checked disabled></td>
+                                            <td>ADMIN</td>
+                                            <td>6/16/2025</td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td>Consent Letter</td>
+                                            <td>CONSENT - KKM</td>
+                                            <td>CR</td>
+                                            <td>GOVERNMENT</td>
+                                            <td>KKM</td>
+                                            <td>HOSPITAL</td>
+                                            <td class="text-center"><input type="checkbox" checked disabled></td>
+                                            <td>ADMIN</td>
+                                            <td>6/22/2025</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Right Pane: Form -->
+                        <div class="col-md-4">
+                            <h6 class="fw-bold text-secondary mb-3 small border-bottom pb-2">Template Form</h6>
+                            <form style="font-size: 0.8rem;">
+
+                                <div class="row mb-2 align-items-center">
+                                    <label class="col-md-4 col-form-label fw-bold">Template For :</label>
+                                    <div class="col-md-8">
+                                        <select class="form-select form-select-sm">
+                                            <option>Consent Letter</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2 align-items-center">
+                                    <label class="col-md-4 col-form-label fw-bold">Template Name :</label>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+
+                                <!-- Clinic Mode -->
+                                <div class="row mb-2">
+                                    <label class="col-md-4 col-form-label fw-bold">Clinic Mode :</label>
+                                    <div class="col-md-8 pt-1">
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempMode" id="tmGov"
+                                                value="gov">
+                                            <label class="form-check-label" for="tmGov">Government</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempMode" id="tmPriv"
+                                                value="priv">
+                                            <label class="form-check-label" for="tmPriv">Private</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Clinic Type -->
+                                <div class="row mb-2">
+                                    <label class="col-md-4 col-form-label fw-bold">Clinic Type :</label>
+                                    <div class="col-md-8 pt-1">
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempType" id="ttKKM"
+                                                value="kkm">
+                                            <label class="form-check-label" for="ttKKM">KKM</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempType" id="ttKPM"
+                                                value="kpm">
+                                            <label class="form-check-label" for="ttKPM">KPM</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempType" id="ttClin"
+                                                value="clinic">
+                                            <label class="form-check-label" for="ttClin">Clinic</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Clinic Category -->
+                                <div class="row mb-2">
+                                    <label class="col-md-4 col-form-label fw-bold">Clinic Category :</label>
+                                    <div class="col-md-8 pt-1">
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempCat" id="tcHosp"
+                                                value="hosp">
+                                            <label class="form-check-label" for="tcHosp">Hospital</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempCat" id="tcComm"
+                                                value="comm">
+                                            <label class="form-check-label" for="tcComm">Community</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempCat" id="tcClin"
+                                                value="clinic">
+                                            <label class="form-check-label" for="tcClin">Clinic</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Template Type -->
+                                <div class="row mb-2">
+                                    <label class="col-md-4 col-form-label fw-bold">Template Type :</label>
+                                    <div class="col-md-8 pt-1">
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempFormat" id="tfPDF"
+                                                value="pdf" checked>
+                                            <label class="form-check-label" for="tfPDF"><i
+                                                    class="fas fa-file-pdf text-danger me-1"></i>PDF</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempFormat" id="tfCR"
+                                                value="cr">
+                                            <label class="form-check-label" for="tfCR">Crystal Report</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Template File -->
+                                <div class="row mb-2 align-items-center">
+                                    <label class="col-md-4 col-form-label fw-bold">Template File :</label>
+                                    <div class="col-md-8">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button type="button" class="btn btn-sm btn-secondary">Browse</button>
+                                            <a href="#" class="text-decoration-underline text-primary small">View
+                                                Template</a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Template Status -->
+                                <div class="row mb-3">
+                                    <label class="col-md-4 col-form-label fw-bold">Template Status :</label>
+                                    <div class="col-md-8 pt-1">
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempStatus" id="tsActive"
+                                                value="active" checked>
+                                            <label class="form-check-label" for="tsActive">Active</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tempStatus"
+                                                id="tsInactive" value="inactive">
+                                            <label class="form-check-label" for="tsInactive">Inactive</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12 mt-2">
+                                        <button type="button"
+                                            class="btn btn-sm btn-secondary px-4 shadow-sm">Add</button>
+                                    </div>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function closeModal() {
+            // Setup postMessage to parent to close this modal if needed
+            if (window.parent) {
+                window.parent.postMessage('closeClinicDB', '*');
+            }
+        }
+    </script>
+</body>
+
+</html>

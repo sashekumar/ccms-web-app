@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCMS TPA System (With Reimbursement Workflow)</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-bg: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            font-size: 0.85rem;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* --- VIEW TRANSITIONS --- */
+        .view-section {
+            display: none !important;
+        }
+
+        .view-section.active {
+            display: block !important;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        #view-login.active {
+            display: flex !important;
+        }
+
+        .console-layout.active {
+            display: flex !important;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- LOGIN --- */
+        .login-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        /* --- DASHBOARD --- */
+        .dashboard-layout {
+            padding-top: 80px;
+            min-height: 100vh;
+        }
+
+        .dash-stat-card {
+            background: white;
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            height: 100%;
+        }
+
+        .dash-stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .dash-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 600;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 10px 20px;
+        }
+
+        .dash-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+            background: transparent;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar-custom {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            height: 60px;
+            padding: 0 25px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1050;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e3c72;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .role-pill {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .role-staff {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #bbdefb;
+        }
+
+        .role-doctor {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #c8e6c9;
+        }
+
+        /* --- CONSOLES & FORMS --- */
+        .console-layout {
+            padding: 15px;
+            width: 100%;
+            height: calc(100vh - 60px);
+            margin-top: 60px;
+        }
+
+        .reg-container {
+            padding-top: 140px;
+            padding-bottom: 80px;
+            max-width: 100%;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .dash-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dash-header {
+            background: white;
+            border-bottom: 2px solid #f0f0f0;
+            padding: 10px 15px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dash-body {
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .limit-bar-bg {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .limit-bar-fill {
+            height: 100%;
+        }
+
+        /* Registration */
+        .reg-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            background: white;
+            scroll-margin-top: 140px;
+        }
+
+        .reg-card-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 700;
+            color: #495057;
+            text-transform: uppercase;
+        }
+
+        .reg-card-body {
+            padding: 15px;
+        }
+
+        .sticky-sidebar {
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+        }
+
+        .nav-pills .nav-link {
+            color: #6c757d;
+            font-weight: 500;
+            padding: 8px 15px;
+            margin-bottom: 5px;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            font-weight: 700;
+        }
+
+        .wizard-header {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background: white;
+            z-index: 1040;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+        }
+
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 15px 30px;
+            border-top: 1px solid #dee2e6;
+            z-index: 1060;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Form Components */
+        .form-label {
+            font-weight: 600;
+            font-size: 0.75rem;
+            margin-bottom: 2px;
+            color: #555;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.5rem;
+        }
+
+        .cause-toggle-group {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .sub-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #0d6efd;
+            border-bottom: 1px solid #dee2e6;
+            margin: 15px 0 10px 0;
+            padding-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        /* GL & Reimb Components */
+        .col-history-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            gap: 10px;
+        }
+
+        .card-static {
+            flex: 0 0 auto;
+        }
+
+        .card-fill {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .monitoring-box {
+            background: #fdfdfd;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .bill-table th {
+            background: #f8f9fa;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        .bill-table td {
+            vertical-align: middle;
+        }
+
+        .bill-input {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 2px 5px;
+            width: 80px;
+            text-align: right;
+            font-size: 0.8rem;
+        }
+
+        .doc-thumbnail {
+            width: 40px;
+            height: 40px;
+            background: #eee;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body tabindex="0" data-bs-spy="scroll" data-bs-target="#wizardNav" data-bs-offset="150">
+
+    <!-- GLOBAL NAVBAR -->
+    <nav class="navbar-custom shadow-sm" id="mainNavbar" style="display: none;">
+        <div class="nav-brand">
+            <i class="fas fa-shield-alt text-primary fa-lg"></i>
+            <span>CCMS TPA Portal</span>
+            <span class="role-pill bg-light text-dark border" id="navRoleBadge">Role</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-end lh-1">
+                <div class="fw-bold small" id="navUser">User</div>
+                <div class="text-muted small" style="font-size: 0.7rem;">Internal TPA</div>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="logout()"><i
+                    class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </nav>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 1: LOGIN SCREEN -->
+    <!-- ================================================================================= -->
+    <div id="view-login" class="view-section active login-wrapper">
+        <div class="login-card">
+            <div class="text-center mb-4">
+                <i class="fas fa-shield-alt text-primary" style="font-size: 3rem;"></i>
+                <h3 class="fw-bold mt-2" style="color: #1e3c72;">CCMS TPA</h3>
+                <p class="text-muted">Unified Claims Platform</p>
+            </div>
+            <form onsubmit="event.preventDefault(); handleLogin();">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-control" value="admin" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" value="123456">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 2: MAIN DASHBOARD -->
+    <!-- ================================================================================= -->
+    <div id="view-dashboard-landing" class="view-section dashboard-layout container-fluid px-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+            <h4 class="fw-bold text-dark mb-0">Claims Overview</h4>
+
+            <!-- Dashboard Toggle -->
+            <ul class="nav nav-pills dash-tabs" id="dashTab" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="tab-cashless" data-bs-toggle="pill"
+                        data-bs-target="#content-cashless" type="button">
+                        <i class="fas fa-hospital me-2"></i> Online (GL)
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="tab-reimb" data-bs-toggle="pill" data-bs-target="#content-reimb"
+                        type="button">
+                        <i class="fas fa-file-invoice-dollar me-2"></i> Reimbursement
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="tab-members" data-bs-toggle="pill" data-bs-target="#content-members"
+                        type="button">
+                        <i class="fas fa-users me-2"></i> Members
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content">
+
+            <!-- TAB 1: CASHLESS (GL) CONTENT -->
+            <div class="tab-pane fade show active" id="content-cashless">
+                <div class="row g-4 mb-4">
+                    <!-- Stats Cards -->
+                    <div class="col-md-3">
+                        <div class="dash-stat-card p-3 d-flex align-items-center">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3"><i
+                                    class="fas fa-folder-open"></i></div>
+                            <div>
+                                <div class="h4 fw-bold mb-0">24</div>
+                                <div class="text-muted small">Active Cases</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dash-stat-card p-3 d-flex align-items-center">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3"><i
+                                    class="fas fa-clock"></i></div>
+                            <div>
+                                <div class="h4 fw-bold mb-0">8</div>
+                                <div class="text-muted small">Pending Approval</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dash-stat-card p-3 d-flex align-items-center">
+                            <div class="stat-icon bg-success bg-opacity-10 text-success me-3"><i
+                                    class="fas fa-check-circle"></i></div>
+                            <div>
+                                <div class="h4 fw-bold mb-0">15</div>
+                                <div class="text-muted small">GL Issued Today</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dash-stat-card p-3 d-flex align-items-center">
+                            <div class="stat-icon bg-danger bg-opacity-10 text-danger me-3"><i
+                                    class="fas fa-times-circle"></i></div>
+                            <div>
+                                <div class="h4 fw-bold mb-0">2</div>
+                                <div class="text-muted small">Declined / KIV</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div
+                                class="card-header bg-white border-bottom fw-bold py-3 d-flex justify-content-between align-items-center">
+                                <div><i class="fas fa-list me-2"></i> Online Work Queue</div>
+                                <select class="form-select form-select-sm" style="width: auto;" id="cashlessFilter"
+                                    onchange="filterCashlessTable()">
+                                    <option value="ALL">All Statuses</option>
+
+                                    <option value="Pending MO">Pending MO</option>
+                                    <option value="Withdrawn">Withdrawn</option>
+                                    <option value="Sent MQ">Sent MQ</option>
+                                    <option value="Decline">Decline</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                    <option value="Decline/Approved">Decline/Approved</option>
+                                </select>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="ps-4">Patient Name</th>
+                                            <th>Ref ID</th>
+                                            <th>Hospital</th>
+                                            <th>Time</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cashlessTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm bg-primary text-white mb-4">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-3" id="actionCardTitle">Actions</h5>
+                                <button class="btn btn-light text-primary fw-bold w-100 py-2 shadow-sm"
+                                    id="btnNewAdmission" onclick="openRegistration()">
+                                    <i class="fas fa-plus-circle me-2"></i> Register New Admission
+                                </button>
+                                <button class="btn btn-outline-light w-100 py-2 mt-2" id="btnProcessQueue"
+                                    onclick="openGLConsole()" style="display:none;">
+                                    <i class="fas fa-play me-2"></i> Process Queue
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white fw-bold">Notifications</div>
+                            <div class="list-group list-group-flush small">
+                                <div class="list-group-item px-3 py-2 border-0"><i
+                                        class="fas fa-bell text-warning me-2"></i> GL #9921 Pending > 2 hrs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: REIMBURSEMENT CONTENT -->
+            <div class="tab-pane fade" id="content-reimb">
+                <!-- Status Sections -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="dash-stat-card p-3 border-start border-4 border-info">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold text-info">NEW CLAIMS</span>
+                                <span class="h5 fw-bold mb-0">42</span>
+                            </div>
+                            <small class="text-muted">Awaiting Data Entry</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dash-stat-card p-3 border-start border-4 border-warning">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold text-warning">PENDING APPROVAL</span>
+                                <span class="h5 fw-bold mb-0">12</span>
+                            </div>
+                            <small class="text-muted">Medical Review In Progress</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dash-stat-card p-3 border-start border-4 border-success">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold text-success">APPROVED</span>
+                                <span class="h5 fw-bold mb-0">128</span>
+                            </div>
+                            <small class="text-muted">Payment Scheduled</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm">
+                            <div
+                                class="card-header bg-white border-bottom fw-bold py-3 d-flex justify-content-between align-items-center">
+                                <div><i class="fas fa-file-invoice me-2"></i> Reimbursement Queue</div>
+                                <select class="form-select form-select-sm" style="width: auto;" id="reimbFilter"
+                                    onchange="filterReimbTable()">
+                                    <option value="ALL">All Statuses</option>
+                                    <option value="CLOSED REMINDER">Closed Reminder</option>
+                                    <option value="FIRST REMINDER">First Reminder</option>
+                                    <option value="SECOND REMINDER">Second Reminder</option>
+                                    <option value="CLOSED">Closed</option>
+                                    <option value="INCOMPLETE CLOSED">Incomplete Closed</option>
+                                    <option value="PENDING REGISTRATION">Pending Registration</option>
+                                    <option value="REGISTERED">Registered</option>
+                                </select>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="ps-4">Claimant</th>
+                                            <th>Policy No</th>
+                                            <th>Date of Visit</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reimbTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm bg-success text-white mb-4">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-3">Reimbursement Actions</h5>
+                                <!-- NEW BUTTON FOR REIMBURSEMENT REGISTRATION -->
+                                <button class="btn btn-light text-success fw-bold w-100 py-2 shadow-sm" id="btnNewClaim"
+                                    onclick="openReimbRegistration()">
+                                    <i class="fas fa-plus-circle me-2"></i> Register New Claim
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: MEMBERS & FAMILY CONTENT -->
+            <div class="tab-pane fade" id="content-members">
+                <!-- 1. SEARCH SECTION -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <label class="form-label fw-bold mb-2">Search Member or Dependent</label>
+                        <div class="input-group">
+                            <select class="form-select" style="max-width: 200px; background-color: #f8f9fa;">
+                                <option>NRIC / Passport</option>
+                                <option>Policy No</option>
+                                <option>Name</option>
+                            </select>
+                            <input type="text" class="form-control" value="C660906015967">
+                            <button class="btn btn-primary px-5 fw-bold"><i class="fas fa-search me-2"></i>
+                                Search</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. MEMBER HEADER -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex gap-3">
+                                <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                                    style="width: 50px; height: 50px; font-size: 1.2rem;">AR</div>
+                                <div>
+                                    <h4 class="fw-bold text-dark mb-0">ISMAIL BIN MUSIRIM & Family</h4>
+                                    <div class="text-muted small">Client ID: 00189904 | Department: UiTM</div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="d-flex gap-2 mb-2 justify-content-end">
+                                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-envelope me-1"></i>
+                                        Verify Mailing Address</button>
+                                    <span class="badge bg-success d-flex align-items-center px-3">Policy Active</span>
+                                </div>
+                                <div class="small text-muted">Renewal: 01 Jan 2026</div>
+                            </div>
+                        </div>
+
+                        <!-- Sub Tabs -->
+                        <ul class="nav nav-tabs border-bottom-0">
+                            <li class="nav-item"><a class="nav-link active fw-bold border-bottom-0" href="#">Policies
+                                    (2)</a></li>
+                            <li class="nav-item"><a class="nav-link text-muted border-0" href="#">Overview & Limits</a>
+                            </li>
+                            <li class="nav-item"><a class="nav-link text-muted border-0" href="#">Claims History</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 3. POLICIES TABLE -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0"><i class="fas fa-file-contract me-2"></i> Active Policies</h6>
+                            <span class="badge bg-primary">0 Active</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-nowrap small">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Policy No</th>
+                                    <th>Type</th>
+                                    <th>Plan Code</th>
+                                    <th>Employer</th>
+                                    <th>Effective Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="ps-4 fw-bold">GC000001-07117</td>
+                                    <td>EMPLOYEE AND FAMILY ONLY</td>
+                                    <td>CUEPACSCARE (GAKUM)-0431</td>
+                                    <td>CUEPACSCARE (GAKUM)-0431</td>
+                                    <td>15 Jun 2019</td>
+                                    <td><span class="badge bg-info text-dark">INFORCE</span></td>
+                                    <td><button class="btn btn-sm btn-outline-primary">View Dependents</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 fw-bold">011850053449-00</td>
+                                    <td>EMPLOYEE AND FAMILY ONLY</td>
+                                    <td>CUEPACSCARE (MONTHLY)-0531</td>
+                                    <td>CUEPACSCARE (MONTHLY)-0531</td>
+                                    <td>15 Feb 2008</td>
+                                    <td><span class="badge bg-info text-dark">TRANSFERRED</span></td>
+                                    <td><button class="btn btn-sm btn-outline-primary">View Dependents</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. FAMILY MEMBERS GRID -->
+                <div class="card border-0 shadow-sm bg-primary text-white mb-3">
+                    <div
+                        class="card-header bg-primary border-0 py-2 d-flex justify-content-between align-items-center text-white">
+                        <h6 class="mb-0 small fw-bold"><i class="fas fa-users me-2"></i> Family Members (10)</h6>
+                        <button class="btn btn-sm btn-light text-primary fw-bold" style="font-size: 0.7rem;"><i
+                                class="fas fa-eye-slash me-1"></i> Hide</button>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <!-- Principal Card -->
+                    <div class="col-md-6">
+                        <div class="card border-primary h-100" style="border-width: 2px;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div class="d-flex gap-3">
+                                        <div class="text-primary"><i class="fas fa-user-circle fa-2x"></i></div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">ISMAIL BIN MUSIRIM</h6>
+                                            <div class="text-muted small">C660906015967</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-primary align-self-start">PRINCIPAL</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success btn-sm w-50 fw-bold"><i
+                                            class="fas fa-file-medical me-1"></i> Online Claim</button>
+                                    <button class="btn btn-outline-primary btn-sm w-50"><i
+                                            class="fas fa-file-invoice-dollar me-1"></i> Reimbursement</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Spouse Card -->
+                    <div class="col-md-6">
+                        <div class="card border-info h-100" style="border-width: 2px;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div class="d-flex gap-3">
+                                        <div class="text-info"><i class="fas fa-user-circle fa-2x"></i></div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">PUZIAH NGABIAH</h6>
+                                            <div class="text-muted small">710626016116</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-info text-dark align-self-start">SPOUSE</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success btn-sm w-50 fw-bold"><i
+                                            class="fas fa-file-medical me-1"></i> Online Claim</button>
+                                    <button class="btn btn-outline-primary btn-sm w-50"><i
+                                            class="fas fa-file-invoice-dollar me-1"></i> Reimbursement</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Child 1 -->
+                    <div class="col-md-6">
+                        <div class="card border-warning h-100" style="border-width: 2px;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div class="d-flex gap-3">
+                                        <div class="text-warning"><i class="fas fa-child fa-2x"></i></div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-truncate" style="max-width: 250px;">MUHAMMAD
+                                                FAUZAN NAZEEF BIN ISMAIL</h6>
+                                            <div class="text-muted small">040712100859</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-warning text-dark align-self-start">CHILDREN</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success btn-sm w-50 fw-bold"><i
+                                            class="fas fa-file-medical me-1"></i> Online Claim</button>
+                                    <button class="btn btn-outline-primary btn-sm w-50"><i
+                                            class="fas fa-file-invoice-dollar me-1"></i> Reimbursement</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Child 2 -->
+                    <div class="col-md-6">
+                        <div class="card border-warning h-100" style="border-width: 2px;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div class="d-flex gap-3">
+                                        <div class="text-warning"><i class="fas fa-child fa-2x"></i></div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-truncate" style="max-width: 250px;">MUHAMMAD
+                                                NIZAR FAREETH BIN ISMAIL</h6>
+                                            <div class="text-muted small">080707435005</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-warning text-dark align-self-start">CHILDREN</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success btn-sm w-50 fw-bold"><i
+                                            class="fas fa-file-medical me-1"></i> Online Claim</button>
+                                    <button class="btn btn-outline-primary btn-sm w-50"><i
+                                            class="fas fa-file-invoice-dollar me-1"></i> Reimbursement</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 3: ADMISSION REGISTRATION WIZARD (HOSPITAL VIEW) -->
+    <!-- ================================================================================= -->
+    <div id="view-registration" class="view-section reg-container">
+        <!-- Wizard Header -->
+        <div class="wizard-header">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center px-4 mb-2">
+                    <h6 class="mb-0 fw-bold text-primary">New Admission Registration</h6>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="goBackToDashboard()">Close</button>
+                </div>
+                <nav id="wizardNav" class="wizard-steps nav nav-pills">
+                    <a class="nav-link active" href="#sec-step1"><i class="fas fa-user"></i> 1. Details</a>
+                    <a class="nav-link" href="#sec-step2"><i class="fas fa-notes-medical"></i> 2. Medical</a>
+                    <a class="nav-link" href="#sec-step3"><i class="fas fa-history"></i> 3. History</a>
+                    <a class="nav-link" href="#sec-step4"><i class="fas fa-clipboard-check"></i> 4. Cost</a>
+                </nav>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <!-- STEP 1 -->
+            <div id="sec-step1" class="reg-card">
+                <div class="reg-card-header">Step 1: Admission Details</div>
+                <div class="reg-card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5"><label class="form-label">Patient Name</label><input type="text"
+                                class="form-control bg-light" value="ISMAIL BIN MUSIRIM" readonly></div>
+                        <div class="col-md-4"><label class="form-label">Patient IC</label><input type="text"
+                                class="form-control bg-light" value="C660906015967" readonly></div>
+                        <div class="col-md-3">
+                            <label class="form-label d-block">Sex</label>
+                            <div class="form-check form-check-inline"><input type="radio" name="sex" checked> Male</div>
+                            <div class="form-check form-check-inline"><input type="radio" name="sex"> Female</div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6"><label class="form-label">Hospital</label><input type="text"
+                                class="form-control" value="BUKIT TINGGI MEDICAL CENTRE"></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Services Required</label>
+                            <select class="form-select">
+                                <option>Admission</option>
+                                <option>Accident Emergency</option>
+                                <option>Day Care</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4"><label class="form-label">Admission Date</label><input
+                                type="datetime-local" class="form-control" value="2025-12-27T14:26"></div>
+                        <div class="col-md-2"><label class="form-label d-block">Student?</label><input type="checkbox">
+                            Yes</div>
+                        <div class="col-md-4">
+                            <label class="form-label d-block">Race</label>
+                            <div class="form-check form-check-inline"><input type="radio" name="race" checked> Malay
+                            </div>
+                            <div class="form-check form-check-inline"><input type="radio" name="race"> Chinese</div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Age Group</label>
+                            <select class="form-select">
+                                <option>51 - 60</option>
+                            </select>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="cause-toggle-group">
+                        <label class="fw-bold text-uppercase small text-muted me-2">Cause:</label>
+                        <div class="form-check form-check-inline"><input class="form-check-input" type="radio"
+                                name="admCause" id="causeIllness" value="illness" checked
+                                onchange="toggleCause()"><label class="form-check-label fw-bold">Illness</label></div>
+                        <div class="form-check form-check-inline"><input class="form-check-input" type="radio"
+                                name="admCause" id="causeAccident" value="accident" onchange="toggleCause()"><label
+                                class="form-check-label fw-bold">Accident</label></div>
+                    </div>
+                    <div id="sectionIllness">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8"><label class="form-label">Symptoms</label><textarea
+                                    class="form-control" rows="2"></textarea></div>
+                            <div class="col-md-4"><label class="form-label">Duration</label><input type="text"
+                                    class="form-control"></div>
+                        </div>
+                        <div class="bg-light p-3 rounded border">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="chkAdvice"
+                                    onchange="toggleConsultation()">
+                                <label class="form-check-label fw-bold">Sought advice for same illness?</label>
+                            </div>
+                            <div id="consultationDetails" style="display: none;" class="mt-2 border-top pt-2">
+                                <div class="row g-3">
+                                    <div class="col-md-4"><label class="form-label">Date</label><input type="date"
+                                            class="form-control"></div>
+                                    <div class="col-md-4"><label class="form-label">Doctor</label><input type="text"
+                                            class="form-control"></div>
+                                    <div class="col-md-4"><label class="form-label">Clinic</label><input type="text"
+                                            class="form-control"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sectionAccident" style="display:none;"
+                        class="bg-warning bg-opacity-10 p-3 rounded border border-warning">
+                        <div class="row g-3">
+                            <div class="col-md-4"><label class="form-label">Accident Time</label><input
+                                    type="datetime-local" class="form-control"></div>
+                            <div class="col-md-8"><label class="form-label">Cause</label><textarea class="form-control"
+                                    rows="1"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2-4 omitted for brevity, structure is same as previous -->
+            <!-- Using placeholders to keep file size manageable while ensuring function -->
+            <div id="sec-step2" class="reg-card">
+                <div class="reg-card-header">Step 2: Medical Report</div>
+                <div class="reg-card-body">
+                    <div class="mb-3"><label class="form-label">Diagnosis</label><input type="text"
+                            class="form-control fw-bold" value="Acute Gastroenteritis"></div>
+                </div>
+            </div>
+            <div id="sec-step3" class="reg-card">
+                <div class="reg-card-header">Step 3: Illness History</div>
+                <div class="reg-card-body">
+                    <p>History Checklist...</p>
+                </div>
+            </div>
+            <div id="sec-step4" class="reg-card">
+                <div class="reg-card-header">Step 4: Validation & Cost</div>
+                <div class="reg-card-body">
+                    <div class="row g-3 bg-light p-3 rounded">
+                        <div class="col-md-6"><label class="form-label">Est. Cost</label><input type="text"
+                                class="form-control text-end" value="3,500.00"></div>
+                        <div class="col-md-6"><label class="form-label">Est. Stay</label><input type="text"
+                                class="form-control" value="3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="sticky-footer">
+            <button class="btn btn-outline-danger" onclick="goBackToDashboard()">Cancel</button>
+            <button class="btn btn-success fw-bold px-5" onclick="submitAdmission()">Submit to Medical Queue</button>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 4: REIMBURSEMENT REGISTRATION (NEW SCREEN) -->
+    <!-- ================================================================================= -->
+    <div id="view-reimb-registration" class="view-section reg-container">
+
+        <div class="wizard-header">
+            <div class="container-fluid d-flex justify-content-between align-items-center px-4">
+                <ul class="nav nav-tabs border-bottom-0">
+                    <li class="nav-item">
+                        <a class="nav-link active fw-bold text-dark bg-light" href="#"
+                            style="border: 1px solid #ddd; border-bottom: none;">Claim Registration</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="goBackToDashboard()">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid pt-2">
+            <div class="row g-3">
+                <!-- LEFT COLUMN -->
+                <div class="col-lg-7">
+                    <div class="card border shadow-sm mb-3">
+                        <div class="card-body p-4">
+                            <!-- Patient Info -->
+                            <div class="row mb-1">
+                                <div class="col-sm-3 text-muted small fw-bold">Patient IC</div>
+                                <div class="col-sm-9 text-primary fw-bold">: C700810015261</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3 text-muted small fw-bold">Patient Name</div>
+                                <div class="col-sm-9 text-primary fw-bold">: A AZIS BIN BAJURI</div>
+                            </div>
+
+                            <!-- Mode & Date -->
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-auto small text-muted fw-bold me-2">Mode <span class="mx-2">:
+                                        REIM</span></div>
+                                <div class="col-auto d-flex align-items-center">
+                                    <span class="small text-muted fw-bold me-2">Doc Received Date</span>
+                                    <div class="input-group input-group-sm">
+                                        <input type="datetime-local" class="form-control" value="2026-01-04T18:59">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Disability Date & Checks -->
+                            <div class="row g-2 mb-3 align-items-center">
+                                <div class="col-auto d-flex align-items-center">
+                                    <span class="small text-muted fw-bold me-2">Disability Date</span>
+                                    <input type="datetime-local" class="form-control form-control-sm"
+                                        value="2026-01-04T18:59">
+                                </div>
+                                <div class="col-auto ms-3 small">
+                                    <span class="fw-bold me-2">Is it Elective Case?</span>
+                                    <span class="mx-1">:</span>
+                                    <input type="checkbox" checked> Yes
+                                </div>
+                                <div class="col-auto ms-3 small">
+                                    <span class="fw-bold me-2">Verify Mailing Address :</span>
+                                    <input type="checkbox">
+                                </div>
+                            </div>
+
+                            <!-- Pending Documents -->
+                            <h6 class="fw-bold fst-italic text-dark mb-2" style="font-family: serif;">Pending Documents
+                            </h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Duly Completed and Signed Claim Form</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox" checked>
+                                        <label class="form-check-label">Original Medical Report With Diagnosis</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Discharge Note</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Original Bill/Invoice</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Original Official Receipt</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Pensioner Card</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Discharge Summary With Diagnosis, Admission
+                                            Date, Discharge Date</label>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2 small">
+                                        <input class="form-check-input me-2" type="checkbox">
+                                        <label class="me-2">Others</label>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Student ID (for child aged 18-23 years)</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Medical Questionnaire (Attached)</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Copy of Bank Book (First Page) or Bank
+                                            Statement</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">Duly Completed and Stamped E-Payment
+                                            Form</label>
+                                    </div>
+                                    <div class="form-check small mb-1">
+                                        <input class="form-check-input" type="checkbox">
+                                        <label class="form-check-label">A Copy of Policyholder IC</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Type -->
+                            <div class="mb-3 d-flex align-items-center">
+                                <span class="small fw-bold me-3">Payment Type :</span>
+                                <div class="form-check form-check-inline small">
+                                    <input class="form-check-input" type="radio" name="payType">
+                                    <label class="form-check-label">Cheque</label>
+                                </div>
+                                <div class="form-check form-check-inline small">
+                                    <input class="form-check-input" type="radio" name="payType" checked>
+                                    <label class="form-check-label">E-Payment</label>
+                                </div>
+                            </div>
+
+                            <!-- Bank Details -->
+                            <h6 class="fw-bold fst-italic text-dark mb-2" style="font-family: serif;">Bank Details</h6>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Bank Name :</label>
+                                <div class="col-sm-9">
+                                    <select class="form-select form-select-sm">
+                                        <option></option>
+                                        <option>MAYBANK</option>
+                                        <option>CIMB</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">A/c No :</label>
+                                <div class="col-sm-9"><input type="text" class="form-control form-control-sm"></div>
+                            </div>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Payee IC :</label>
+                                <div class="col-sm-9"><input type="text" class="form-control form-control-sm"></div>
+                            </div>
+                            <div class="row mb-2 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Payee Name :</label>
+                                <div class="col-sm-9"><input type="text" class="form-control form-control-sm"></div>
+                            </div>
+                            <div class="row mb-3 align-items-center">
+                                <label class="col-sm-3 col-form-label small fw-bold">Confirmation :</label>
+                                <div class="col-sm-9">
+                                    <div class="form-check form-check-inline small">
+                                        <input class="form-check-input" type="radio" name="bankVer">
+                                        <label class="form-check-label">Bank A/c Number Verified</label>
+                                    </div>
+                                    <div class="form-check form-check-inline small">
+                                        <input class="form-check-input" type="radio" name="bankVer">
+                                        <label class="form-check-label">Bank A/c Number Not Verified</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Remarks -->
+                            <div class="row align-items-start">
+                                <label class="col-sm-3 col-form-label small fw-bold">Remarks :</label>
+                                <div class="col-sm-9">
+                                    <textarea class="form-control form-control-sm bg-light" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="col-lg-5">
+                    <!-- Claim Listing -->
+                    <div class="mb-2">
+                        <small class="fw-bold text-dark">Claim Listing</small>
+                        <div class="border" style="height: 250px; background-color: #999; overflow-y: auto;">
+                            <!-- The screenshot shows this exact header style -->
+                            <table class="table table-bordered table-sm small mb-0 bg-white">
+                                <thead>
+                                    <tr>
+                                        <th>ADMISSION TYPE</th>
+                                        <th>VISIT DATE</th>
+                                        <th>HOSPITAL NAME</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="height: 20px;">
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Claim Form -->
+                    <div class="card border rounded-0 mb-3">
+                        <div class="card-header bg-white small fw-bold py-1">Claim Form</div>
+                        <div class="card-body p-2">
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-sm-4 text-end small fw-bold">Admission Type :</div>
+                                <div class="col-sm-8"><select class="form-select form-select-sm">
+                                        <option>IP</option>
+                                    </select></div>
+                            </div>
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-sm-4 text-end small fw-bold">Visit Date :</div>
+                                <div class="col-sm-8"><input type="datetime-local" class="form-control form-control-sm"
+                                        value="2026-01-04T18:59"></div>
+                            </div>
+                            <div class="row g-2 mb-2 align-items-center">
+                                <div class="col-sm-4 text-end small fw-bold">Hospital :</div>
+                                <div class="col-sm-8">
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control">
+                                        <button class="btn btn-outline-secondary">...</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <button class="btn btn-sm btn-light border px-4">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itemised Items (New Section) -->
+                    <div class="card border rounded-0 shadow-sm">
+                        <div
+                            class="card-header bg-white small fw-bold py-1 d-flex justify-content-between align-items-center">
+                            <span>Itemised Billing</span>
+                            <button class="btn btn-xs btn-primary py-0" style="font-size: 0.7rem;">+ Add Line</button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm small mb-0 table-striped">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="text-end">Amount</th>
+                                            <th class="text-center">Act</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemizedTableBody">
+                                        <tr>
+                                            <td>Room & Board</td>
+                                            <td class="text-end">180.00</td>
+                                            <td class="text-center text-danger"><i class="fas fa-trash"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Medical Supplies</td>
+                                            <td class="text-end">45.50</td>
+                                            <td class="text-center text-danger"><i class="fas fa-trash"></i></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-bold">
+                                            <td class="text-end">TOTAL</td>
+                                            <td class="text-end">225.50</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="sticky-footer">
+            <button class="btn btn-outline-danger" onclick="goBackToDashboard()">Cancel</button>
+            <button class="btn btn-success fw-bold px-5" onclick="submitReimbursement()">Submit Claim</button>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 5: GL DECISION CONSOLE -->
+    <!-- ================================================================================= -->
+    <div id="view-gl-console" class="view-section console-layout" style="background-color: #f4f6f9;">
+        <!-- ROW 1: TITLE & STATUS (Matches Screenshot) -->
+        <div class="bg-white px-3 py-2 border-bottom d-flex justify-content-between align-items-center mb-0">
+            <div class="d-flex align-items-center text-primary fw-bold" style="font-size: 0.9rem;">
+                <button class="btn btn-sm btn-link text-decoration-none me-2 p-0" onclick="goBackToDashboard()"><i
+                        class="fas fa-arrow-left"></i></button>
+                <i class="fas fa-globe me-2"></i> FAST-TRACK GL DECISION CONSOLE
+            </div>
+            <span class="badge bg-warning text-dark rounded-pill"
+                style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px;">STATUS: NEW REQUEST</span>
+        </div>
+
+        <!-- ROW 2: PATIENT BANNER (Matches Screenshot) -->
+        <div class="bg-white px-4 py-3 border-bottom shadow-sm mb-3">
+            <div class="row align-items-center">
+                <!-- COL 1: PATIENT -->
+                <div class="col-md-3 border-end">
+                    <small class="text-uppercase text-muted fw-bold"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">PATIENT</small>
+                    <h5 class="mb-0 fw-bold text-dark mt-1">ISMAIL BIN MUSIRIM</h5>
+                    <div class="text-muted small mt-1" style="font-size: 0.75rem;">IC: 880101-14-5566 | Age: 59</div>
+                </div>
+
+                <!-- COL 2: ACTIVE POLICY (New Section) -->
+                <div class="col-md-3 border-end ps-4">
+                    <small class="text-uppercase text-muted fw-bold"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">ACTIVE POLICY</small>
+                    <h6 class="mb-0 fw-bold text-success mt-1" style="font-size: 0.9rem;">CUEPACSCARE (GAKUM)</h6>
+                    <div class="text-muted small mt-1" style="font-size: 0.75rem;">Effective: 15/06/2019</div>
+                </div>
+
+                <!-- COL 3: LIMITS -->
+                <div class="col-md-6 ps-4">
+                    <div class="row">
+                        <div class="col-md-6 border-end pe-4">
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">ANNUAL
+                                    BAL</small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-success" style="font-size: 0.85rem;">RM 45k</span>
+                                <span class="fw-bold text-success" style="font-size: 0.8rem;">75%</span>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: #f0f0f0;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 ps-4">
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">ADM
+                                    LIMIT</small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-warning" style="font-size: 0.85rem;">RM 5k</span>
+                                <span class="fw-bold text-warning" style="font-size: 0.8rem;">Low</span>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: #f0f0f0;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 20%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN 3-COLUMN CONTENT -->
+        <div class="row g-3" style="flex: 1; min-height: 0;">
+
+            <!-- LEFT COLUMN: HISTORY & VALIDATION -->
+            <div class="col-lg-3 d-flex flex-column gap-3">
+
+                <!-- Auto-Validation -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                        <i class="fas fa-robot text-primary"></i>
+                        <span class="fw-bold text-primary small">Auto-Validation</span>
+                    </div>
+                    <div class="card-body small">
+                        <div class="d-flex justify-content-between mb-1"><span>Policy</span><span
+                                class="text-success fw-bold">Active</span></div>
+                        <div class="d-flex justify-content-between mb-2"><span>Readmission</span><span
+                                class="text-danger fw-bold">Alert!</span></div>
+                        <div class="alert alert-warning border-0 p-2 mb-0"
+                            style="background-color: #fff3cd; color: #856404; font-size: 0.75rem;">
+                            Patient admitted 45 days ago.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Declared Exclusions (Red Header) -->
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-danger text-white fw-bold small py-2">
+                        <i class="fas fa-ban me-2"></i> Declared Exclusions
+                    </div>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item text-danger border-0 py-2"><i class="fas fa-times me-2"></i>Right
+                            Knee Surgery</li>
+                    </ul>
+                </div>
+
+                <!-- PEC (Red Header) -->
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-danger text-white fw-bold small py-2">
+                        <i class="fas fa-exclamation-circle me-2"></i> Pre-existing (PEC)
+                    </div>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item text-danger border-0 py-2"><i
+                                class="fas fa-exclamation-circle me-2"></i>Hypertension (2019)</li>
+                    </ul>
+                </div>
+
+                <!-- History -->
+                <div class="card border-0 shadow-sm flex-fill d-flex flex-column">
+                    <div class="card-header bg-white pt-3 pb-2 border-bottom-0">
+                        <span class="fw-bold small text-muted">History</span>
+                    </div>
+                    <div class="px-2 pb-2">
+                        <div class="row g-1 mb-2">
+                            <div class="col-6"><select class="form-select form-select-sm small-text">
+                                    <option>All Claimants</option>
+                                </select></div>
+                            <div class="col-6"><select class="form-select form-select-sm small-text">
+                                    <option>All Time</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="table-responsive flex-fill">
+                        <table class="table table-hover mb-0 small" style="font-size: 0.75rem;">
+                            <thead class="bg-light sticky-top">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Dx</th>
+                                    <th class="text-end">Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="background-color: #fff3cd;">
+                                    <td>12/11/25</td>
+                                    <td>Acute Gastritis</td>
+                                    <td class="text-end">3.2k</td>
+                                </tr>
+                                <tr>
+                                    <td>05/06/24</td>
+                                    <td>Hypertension</td>
+                                    <td class="text-end">150</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MIDDLE COLUMN: ASSESSMENT -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                        <i class="fas fa-file-medical text-primary"></i>
+                        <span class="fw-bold text-primary small">Current Assessment</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Diagnosis -->
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Diagnosis</label>
+                            <input type="text" class="form-control fw-bold" value="Acute Gastroenteritis">
+                        </div>
+
+                        <!-- Stay & MQ -->
+                        <div class="row align-items-end mb-3">
+                            <div class="col-8">
+                                <label class="form-label small text-muted">Stay</label>
+                                <input type="number" class="form-control" value="3">
+                            </div>
+                            <div class="col-4 text-end pb-2">
+                                <div class="form-check d-inline-block">
+                                    <input class="form-check-input" type="checkbox" id="mqCheck">
+                                    <label class="form-check-label fw-bold text-danger small" for="mqCheck">MQ
+                                        Required?</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Checkboxes Grid (Restored) -->
+                        <div class="row g-2 mb-3 px-1">
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk1"><label class="form-check-label text-muted" for="chk1">Related
+                                        PEC?</label></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk2"><label class="form-check-label text-muted"
+                                        for="chk2">Congenital?</label></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk3"><label class="form-check-label text-muted"
+                                        for="chk3">Cosmetic?</label></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check small"><input class="form-check-input" type="checkbox"
+                                        id="chk4"><label class="form-check-label text-muted" for="chk4">Invest.
+                                        Only?</label></div>
+                            </div>
+                        </div>
+
+                        <!-- Investigation -->
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Investigation</label>
+                            <input type="text" class="form-control form-control-sm text-muted" placeholder="e.g. MRI">
+                        </div>
+
+                        <!-- Cost -->
+                        <div class="bg-light p-2 rounded mb-3 border">
+                            <small class="fw-bold text-dark d-block mb-1">Cost</small>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted">Hospital Est:</span>
+                                <span class="fw-bold">3,500.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between small text-primary">
+                                <span>Approved GL:</span>
+                                <span class="fw-bold">3,000.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Remarks -->
+                        <div class="mb-0">
+                            <label class="form-label small text-muted">Remarks</label>
+                            <textarea class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: DECISION -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between">
+                        <i class="fas fa-gavel text-primary"></i>
+                        <span class="fw-bold text-primary small">Decision</span>
+                    </div>
+                    <div class="card-body d-flex flex-column gap-3">
+
+                        <!-- Monitoring Section -->
+                        <div class="border rounded p-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-warning fw-bold small">+8 Hours Monitoring</span>
+                                <input class="form-check-input" type="checkbox">
+                            </div>
+                            <input type="text" class="form-control form-control-sm" placeholder="Monitoring Remarks...">
+                        </div>
+
+                        <!-- LOS Log Section -->
+                        <div class="border rounded p-2 flex-grow-1 d-flex flex-column">
+                            <span class="text-info fw-bold small mb-2 border-bottom pb-1">LOS Log</span>
+                            <div class="flex-grow-1 overflow-auto mb-2" style="max-height: 150px;">
+                                <div class="d-flex justify-content-between small fw-bold text-primary mb-1">
+                                    <span>10:00 AM</span><span>SYS</span>
+                                </div>
+                                <div class="small text-muted border-bottom pb-1 mb-1">Initial: 3 Days</div>
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="logInput" placeholder="Add note...">
+                                <button class="btn btn-outline-primary" onclick="addLog()">Add</button>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-auto">
+                            <button class="btn btn-success w-100 fw-bold py-2 mb-2 shadow-sm"
+                                onclick="alert('GL Approved!')">APPROVE GL</button>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button class="btn btn-outline-warning w-100 fw-bold text-warning-emphasis"
+                                        style="border-width: 2px;">K.I.V</button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-danger w-100 fw-bold"
+                                        style="border-width: 2px;">DECLINE</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- VIEW 6: REIMBURSEMENT ADJUDICATION CONSOLE -->
+    <!-- ================================================================================= -->
+    <div id="view-reimb-console" class="view-section console-layout">
+        <!-- Header -->
+        <div class="dash-card mb-3" style="flex: 0 0 auto;">
+            <div class="dash-header py-2 bg-light">
+                <div class="d-flex justify-content-between w-100 align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="goBackToDashboard()"><i
+                                class="fas fa-arrow-left"></i> Back</button>
+                        <span class="text-success fw-bold">REIMBURSEMENT ADJUDICATION</span>
+                    </div>
+                    <span class="badge bg-info text-dark">CLAIM #REM-992</span>
+                </div>
+            </div>
+            <div class="dash-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-3 border-end"><small class="text-muted d-block">Claimant</small>
+                        <h6 class="mb-0 fw-bold">John Doe</h6>
+                    </div>
+                    <div class="col-md-3 text-end"><small class="text-muted d-block">Total Claimed</small>
+                        <h4 class="text-primary mb-0 fw-bold">RM 450.00</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3" style="flex: 1; min-height: 0;">
+            <div class="col-lg-3 d-flex flex-column gap-3">
+                <div class="dash-card" style="flex: 1;">
+                    <div class="dash-header"><span>Documents</span></div>
+                    <div class="dash-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="doc-thumbnail border-primary text-primary"><i class="fas fa-file-invoice"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="dash-card h-100">
+                    <div class="dash-header text-primary">Bill Adjudication</div>
+                    <div class="dash-body p-0">
+                        <table class="table table-hover bill-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="40%">Item</th>
+                                    <th width="20%" class="text-end">Claimed</th>
+                                    <th width="20%" class="text-end">Payable</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Consultation</td>
+                                    <td class="text-end">50.00</td>
+                                    <td class="text-end"><input type="text" class="bill-input" value="50.00"></td>
+                                </tr>
+                                <tr>
+                                    <td>Supplements</td>
+                                    <td class="text-end">250.00</td>
+                                    <td class="text-end"><input type="text" class="bill-input" value="0.00"
+                                            style="color:red;"></td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-light fw-bold">
+                                <tr>
+                                    <td class="text-end">TOTAL</td>
+                                    <td class="text-end">450.00</td>
+                                    <td class="text-end text-success">200.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="dash-card h-100 border-success">
+                    <div class="dash-header bg-white text-success">Approval</div>
+                    <div class="dash-body">
+                        <div class="mb-3"><label class="form-label small fw-bold">Remarks</label><textarea
+                                class="form-control" rows="4">Non-payable deducted.</textarea></div>
+                        <button class="btn btn-success w-100 fw-bold shadow-sm"
+                            onclick="alert('Claim Approved!')">APPROVE PAYMENT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loadingOverlay">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+        <h4 class="fw-light">Processing...</h4>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentUserRole = '';
+
+        function handleLogin() {
+            currentUserRole = 'staff';
+            const userText = currentUserRole === 'staff' ? 'STAFF_OPERATOR' : 'DR_KHALID';
+            const roleText = currentUserRole === 'staff' ? 'Assessor' : 'Medical Officer';
+            const roleClass = currentUserRole === 'staff' ? 'role-staff' : 'role-doctor';
+
+            document.getElementById('navUser').innerText = userText;
+            document.getElementById('navRoleBadge').innerText = roleText;
+            document.getElementById('navRoleBadge').className = 'role-pill border ' + roleClass;
+            document.getElementById('mainNavbar').style.display = 'flex';
+
+            document.getElementById('view-login').classList.remove('active');
+            document.getElementById('view-dashboard-landing').classList.add('active');
+
+            if (currentUserRole === 'staff') {
+                document.getElementById('btnNewAdmission').style.display = 'inline-block';
+                document.getElementById('btnNewClaim').style.display = 'inline-block';
+
+
+                // Initialize Cashless Table with data
+                filterCashlessTable();
+
+
+                // Initialize Reimb Table with data
+                filterReimbTable();
+
+
+            } else {
+                document.getElementById('btnNewAdmission').style.display = 'none';
+                document.getElementById('btnNewClaim').style.display = 'none';
+
+                document.getElementById('cashlessTableBody').innerHTML = `<tr><td class="ps-4 fw-bold">Ismail Bin Musirim</td><td>GL-2025-001</td><td>Pantai KL</td><td><span class="badge bg-info text-dark">Ready for Review</span></td><td><button class="btn btn-sm btn-primary" onclick="openGLConsole()">Process</button></td></tr>`;
+                document.getElementById('reimbTableBody').innerHTML = `<tr><td class="ps-4 fw-bold">John Doe</td><td>POL-998811</td><td>20 Dec</td><td>450.00</td><td><span class="badge bg-warning text-dark">Review</span></td><td><button class="btn btn-sm btn-primary" onclick="openReimbConsole()">Adjudicate</button></td></tr>`;
+            }
+        }
+
+        function logout() { location.reload(); }
+        function goBackToDashboard() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-dashboard-landing').classList.add('active');
+        }
+        function openRegistration() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-registration').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        function openReimbRegistration() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-reimb-registration').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        function openGLConsole() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-gl-console').classList.add('active');
+        }
+        function openReimbConsole() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-reimb-console').classList.add('active');
+        }
+        function toggleCause() {
+            const cause = document.querySelector('input[name="admCause"]:checked').value;
+            document.getElementById('sectionAccident').style.display = cause === 'accident' ? 'block' : 'none';
+            document.getElementById('sectionIllness').style.display = cause === 'illness' ? 'block' : 'none';
+        }
+        function toggleConsultation() {
+            const chk = document.getElementById('chkAdvice');
+            document.getElementById('consultationDetails').style.display = chk.checked ? 'block' : 'none';
+        }
+        function submitAdmission() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                openGLConsole();
+                document.getElementById('navUser').innerText = "DR_KHALID";
+                document.getElementById('navRoleBadge').innerText = "Medical Officer";
+                document.getElementById('navRoleBadge').className = 'role-pill border role-doctor';
+                window.scrollTo(0, 0);
+            }, 1500);
+        }
+        function submitReimbursement() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                openReimbConsole();
+                window.scrollTo(0, 0);
+            }, 1500);
+        }
+    </script>
+    </script>
+    <script>
+        const cashlessData = [
+            { name: "Ismail Bin Musirim", ref: "GL-2025-001", hosp: "Pantai KL", status: "Pending MO", badge: "bg-warning text-dark", btn: "View" },
+            { name: "Wong Mei Ling", ref: "GL-2025-002", hosp: "Sunway Medical", status: "Withdrawn", badge: "bg-secondary", btn: "View" },
+            { name: "Ahmad Razak", ref: "GL-2025-003", hosp: "Gleneagles", status: "Sent MQ", badge: "bg-info text-dark", btn: "Reply" },
+            { name: "S. Devi", ref: "GL-2025-004", hosp: "Columbia Asia", status: "Decline", badge: "bg-danger", btn: "View" },
+            { name: "Tan Ah Hock", ref: "GL-2025-005", hosp: "KPJ Damansara", status: "Approved", badge: "bg-success", btn: "Letter" },
+            { name: "Robert Lim", ref: "GL-2025-006", hosp: "Assunta", status: "Cancelled", badge: "bg-dark", btn: "View" },
+            { name: "Fatimah Yasin", ref: "GL-2025-007", hosp: "Prince Court", status: "Decline/Approved", badge: "bg-success", btn: "Letter" }
+        ];
+
+        function filterCashlessTable() {
+            if (currentUserRole !== 'staff') return;
+            const filter = document.getElementById('cashlessFilter').value;
+            const tbody = document.getElementById('cashlessTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = filter === 'ALL' ? cashlessData : cashlessData.filter(d => d.status === filter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">No records found</td></tr>';
+                return;
+            }
+
+            filtered.forEach(d => {
+                const row = `<tr>
+                    <td class="ps-4 fw-bold">${d.name}</td>
+                    <td>${d.ref}</td>
+                    <td>${d.hosp}</td>
+                    <td><span class="badge ${d.badge}">${d.status}</span></td>
+                    <td><button class="btn btn-sm btn-light border">${d.btn}</button></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+    </script>
+    <script>
+        const reimbData = [
+            { name: "Ali bin Abu", pol: "POL-1001", date: "01 Jan", amt: "1,200.00", status: "CLOSED REMINDER", badge: "bg-secondary" },
+            { name: "Sarah Lee", pol: "POL-1002", date: "05 Jan", amt: "350.00", status: "FIRST REMINDER", badge: "bg-warning text-dark" },
+            { name: "Muthu Kumar", pol: "POL-1003", date: "10 Jan", amt: "800.00", status: "SECOND REMINDER", badge: "bg-warning text-dark" },
+            { name: "Chong Wei", pol: "POL-1004", date: "15 Dec", amt: "150.00", status: "CLOSED", badge: "bg-dark" },
+            { name: "Nurul Huda", pol: "POL-1005", date: "20 Dec", amt: "2,400.00", status: "INCOMPLETE CLOSED", badge: "bg-secondary" },
+            { name: "John Doe", pol: "POL-1006", date: "09 Jan", amt: "450.00", status: "PENDING REGISTRATION", badge: "bg-info text-dark", action: "Entry" },
+            { name: "Jessica Tan", pol: "POL-1007", date: "08 Jan", amt: "180.00", status: "REGISTERED", badge: "bg-primary" },
+        ];
+
+        function filterReimbTable() {
+            if (currentUserRole !== 'staff') return;
+            const filter = document.getElementById('reimbFilter').value;
+            const tbody = document.getElementById('reimbTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = filter === 'ALL' ? reimbData : reimbData.filter(d => d.status === filter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No records found</td></tr>';
+                return;
+            }
+
+            filtered.forEach(d => {
+                let btn = `<button class="btn btn-sm btn-light border">View</button>`;
+                if (d.action === 'Entry') {
+                    btn = `<button class="btn btn-sm btn-outline-primary" onclick="openReimbConsole()">Entry</button>`;
+                }
+                const row = `<tr>
+                    <td class="ps-4 fw-bold">${d.name}</td>
+                    <td>${d.pol}</td>
+                    <td>${d.date}</td>
+                    <td>${d.amt}</td>
+                    <td><span class="badge ${d.badge}">${d.status}</span></td>
+                    <td>${btn}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+
+</html>

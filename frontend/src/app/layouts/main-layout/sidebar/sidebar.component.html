@@ -1,0 +1,61 @@
+<!-- Left Sidebar - Dark Theme Mockup Style -->
+<aside
+  [class.w-60]="isOpen"
+  [class.w-[70px]]="!isOpen"
+  class="fixed left-0 top-[60px] h-[calc(100vh-60px)] bg-[#1e293b] text-white transition-all duration-300 ease-in-out overflow-y-auto z-[1045] border-r border-[#334155]"
+>
+  <!-- Navigation -->
+  <nav class="py-3">
+    <div class="flex flex-col" *ngFor="let item of menuItems$ | async">
+      <!-- Menu Item without Children -->
+      <a
+        *ngIf="!item.children"
+        [routerLink]="item.route || '/dashboard'"
+        [class.bg-blue-600]="item.route && isActive(item.route)"
+        [class.text-white]="item.route && isActive(item.route)"
+        [class.text-gray-300]="!item.route || !isActive(item.route)"
+        class="flex items-center gap-3 px-5 py-3 hover:bg-[#334155] transition-all whitespace-nowrap overflow-hidden text-xs font-medium"
+      >
+        <i [class]="'fas fa-' + item.icon + ' w-5 text-center text-sm'"></i>
+        <span [class.hidden]="!isOpen" class="link-text">{{ item.label }}</span>
+      </a>
+
+      <!-- Menu Item with Children -->
+      <button
+        *ngIf="item.children"
+        type="button"
+        (click)="toggleSubmenu(item)"
+        class="flex items-center justify-between px-5 py-3 hover:bg-[#334155] transition-all text-gray-300 whitespace-nowrap overflow-hidden text-xs font-medium"
+      >
+        <div class="flex items-center gap-3">
+          <i [class]="'fas fa-' + item.icon + ' w-5 text-center text-sm'"></i>
+          <span [class.hidden]="!isOpen" class="link-text">{{ item.label }}</span>
+        </div>
+        <svg
+          *ngIf="isOpen"
+          class="h-3 w-3 transition-transform"
+          [class.rotate-180]="item.expanded"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      <!-- Submenu Items -->
+      <div *ngIf="item.children && item.expanded && isOpen" class="bg-[#0f172a]">
+        <a
+          *ngFor="let child of item.children"
+          [routerLink]="child.route || '/dashboard'"
+          [class.bg-blue-600]="child.route && isActive(child.route)"
+          [class.text-white]="child.route && isActive(child.route)"
+          [class.text-gray-400]="!child.route || !isActive(child.route)"
+          class="block px-12 py-2 hover:bg-[#334155] transition-all text-xs"
+        >
+          {{ child.label }}
+        </a>
+      </div>
+    </div>
+  </nav>
+</aside>

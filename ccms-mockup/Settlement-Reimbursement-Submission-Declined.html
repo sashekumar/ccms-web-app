@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settlement Console - Reimbursement Submission Declined | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #ef4444;
+            /* Red for Declined */
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem 0 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            gap: 2px;
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid transparent;
+            border-bottom: none;
+            padding: 0.35rem 0.6rem;
+            color: #475569;
+            font-weight: 500;
+            font-size: 0.73rem;
+            background: #f8fafc;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            border-color: #e2e8f0;
+            border-bottom: 2px solid white;
+            margin-bottom: -2px;
+            font-weight: 700;
+            z-index: 5;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-pane {
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: #9ca3af;
+            /* Matches gray background in screenshots */
+        }
+
+        .custom-grid {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: white;
+            padding: 0.35rem 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.35rem 0.5rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+        }
+
+        .row-highlight {
+            background-color: #fee2e2 !important;
+            /* Light red for highlights in a declined console */
+        }
+
+        .row-highlight-screenshot {
+            background-color: #fca5a5 !important;
+            /* Red highlight as seen in screenshot */
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            background: white !important;
+            z-index: 10;
+            border-right: 2px solid #cbd5e1 !important;
+        }
+
+        /* --- UI Elements --- */
+        .btn-link-sm {
+            font-size: 0.65rem;
+            text-decoration: underline;
+            padding: 0;
+            background: none;
+            border: none;
+            color: #0d6efd;
+        }
+
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 80px;
+        }
+
+        .record-count {
+            color: #2563eb;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+
+        .arrow-indicator {
+            width: 15px;
+            color: #64748b;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP NAV / TABS -->
+    <header class="header-bar d-flex justify-content-between align-items-end">
+        <ul class="nav nav-tabs" id="settlementTabs">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#rl-conf">Pending
+                    RL Confirmation</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#audit">Pending
+                    Audit</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#doc-upload">Pending
+                    Submission Doc Upload</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#insurer-sub">Pending
+                    Claim Submission to Insurer</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#decline-letter">Pending
+                    Decline Letter</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#posting">Pending Posting
+                    to Client</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#report">Report</button>
+            </li>
+        </ul>
+
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="tab-content">
+
+            <!-- T1: PENDING RL CONFIRMATION -->
+            <div class="tab-pane fade show active" id="rl-conf">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">22 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <i class="fas fa-file-excel text-success" style="font-size: 1.2rem;"></i>
+                            <span class="text-xs fw-bold" style="color: #2563eb;">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left" style="width: 40px;"></th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>PH IC</th>
+                                <th>PH NAME</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>INVOICE #</th>
+                                <th>DISCHARGE DATE</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>UNCOVERED AMOUNT</th>
+                                <th>DATE ADMISSION</th>
+                                <th>CREATED BY</th>
+                                <th>CREATED ON</th>
+                                <th>MODIFIED BY</th>
+                                <th>MODIFIED ON</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td style="background-color: #0d6efd; color: white; font-weight: bold;"></td>
+                                <td>RE/145111</td>
+                                <td>RM31524</td>
+                                <td>REIM</td>
+                                <td>PRE</td>
+                                <td>C870522045134</td>
+                                <td>NOR ZALIKHA BINTI ZAHARI</td>
+                                <td>C870522045134</td>
+                                <td>NOR ZALIKHA BINTI ZAHARI</td>
+                                <td>KLINIK UNION MEDIC (ALOR GAJAH)</td>
+                                <td>INV/2022/991</td>
+                                <td>7/20/2022</td>
+                                <td>450.00</td>
+                                <td>430.00</td>
+                                <td>20.00</td>
+                                <td>7/19/2022 7:10 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:01 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:01 PM</td>
+                                <td><button class="btn-link-sm">Edit</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td></td>
+                                <td>RE/146908</td>
+                                <td>RM31532</td>
+                                <td>REIM</td>
+                                <td>IP</td>
+                                <td>820313125028</td>
+                                <td>SITI MUHAINI BINTT ABDUL HALIM</td>
+                                <td>820313125028</td>
+                                <td>SITI MUHAINI BINTT ABDUL HALIM</td>
+                                <td>PANTAI HOSPITAL AYER KEROH</td>
+                                <td>INV/2022/1054</td>
+                                <td>12/01/2022</td>
+                                <td>1,200.00</td>
+                                <td>1,200.00</td>
+                                <td>0.00</td>
+                                <td>11/29/2022 4:57 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:56 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:56 PM</td>
+                                <td><button class="btn-link-sm">Edit</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td></td>
+                                <td>RE/147797</td>
+                                <td>RM31653</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td>C790330025518</td>
+                                <td>NOOR HASIMAH BINTI ISMAIL</td>
+                                <td>C790330025518</td>
+                                <td>NOOR HASIMAH BINTI ISMAIL</td>
+                                <td>INSTITUT JANTUNG NEGARA</td>
+                                <td>INV/2022/2215</td>
+                                <td>10/18/2022</td>
+                                <td>890.50</td>
+                                <td>850.00</td>
+                                <td>40.50</td>
+                                <td>10/16/2022 4:20 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/12/2023 4:54 PM</td>
+                                <td>dr dinesh</td>
+                                <td>1/20/2023 11:55 AM</td>
+                                <td><button class="btn-link-sm">Edit</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td></td>
+                                <td>RE/148008</td>
+                                <td>RM31837</td>
+                                <td>REIM</td>
+                                <td>POST</td>
+                                <td>C780106075749</td>
+                                <td>MOHD MUBARAK BIN MOHD DALI</td>
+                                <td>C780106075749</td>
+                                <td>MOHD MUBARAK BIN MOHD DALI</td>
+                                <td>HOSPITAL LAM WAH EE</td>
+                                <td>INV/2022/4412</td>
+                                <td>11/15/2022</td>
+                                <td>320.00</td>
+                                <td>300.00</td>
+                                <td>20.00</td>
+                                <td>11/12/2022 2:31 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/26/2023 1:48 PM</td>
+                                <td>DR DINESH</td>
+                                <td>2/7/2023 1:18 PM</td>
+                                <td><button class="btn-link-sm">Edit</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td style="color: #0d6efd; font-weight: bold;">R/2025/12/6154</td>
+                                <td>RE/213225</td>
+                                <td>RM47087</td>
+                                <td>REIM</td>
+                                <td>IP</td>
+                                <td>C890716055363</td>
+                                <td>MOHD ZAMRI BIN MOHD ZAID</td>
+                                <td>C890716055363</td>
+                                <td>MOHD ZAMRI BIN MOHD ZAID</td>
+                                <td>ASIA EYE SPECIALIST CENTRE KUCHING SDN BHD</td>
+                                <td>INV/2025/6788</td>
+                                <td>11/12/2025</td>
+                                <td>2,450.00</td>
+                                <td>2,400.00</td>
+                                <td>50.00</td>
+                                <td>11/10/2025 2:42 PM</td>
+                                <td>nur azee</td>
+                                <td>12/12/2025 3:44 AM</td>
+                                <td>nur azee</td>
+                                <td>12/12/2025 3:44 AM</td>
+                                <td><button class="btn-link-sm">Edit</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td style="color: #0d6efd; font-weight: bold;">R/2026/01/6263</td>
+                                <td>RE/213349</td>
+                                <td>RM47091</td>
+                                <td>REIM</td>
+                                <td>IP</td>
+                                <td>C850227026266</td>
+                                <td>NAJWA FARHANA BINTI KHOZALI</td>
+                                <td>C850227026266</td>
+                                <td>NAJWA FARHANA BINTI KHOZALI</td>
+                                <td>AL MUSOFFA HAEMODIALYSIS CENTRE SDN BHD</td>
+                                <td>INV/2026/0122</td>
+                                <td>8/15/2025</td>
+                                <td>150.00</td>
+                                <td>150.00</td>
+                                <td>0.00</td>
+                                <td>8/14/2025 3:20 AM</td>
+                                <td>nur azee</td>
+                                <td>1/6/2026 3:24 AM</td>
+                                <td>nur azee</td>
+                                <td>1/6/2026 3:24 AM</td>
+                                <td><button class="btn-link-sm">Edit</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T2: PENDING AUDIT -->
+            <div class="tab-pane fade" id="audit">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">12 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <i class="fas fa-file-excel text-success" style="font-size: 1.2rem;"></i>
+                            <span class="text-xs fw-bold" style="color: #2563eb;">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left" style="width: 40px;"></th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>PH IC</th>
+                                <th>PH NAME</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>INVOICE #</th>
+                                <th>DISCHARGE DATE</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>UNCOVERED AMOUNT</th>
+                                <th>DATE ADMISSION</th>
+                                <th>CREATED BY</th>
+                                <th>CREATED ON</th>
+                                <th>MODIFIED BY</th>
+                                <th>MODIFIED ON</th>
+                                <th>VIEW</th>
+                                <th>ACTION</th>
+                                <th>SUBMIT</th>
+                                <th>ESCALATION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td style="color: #0d6efd; font-weight: bold;">R/2025/11/5920</td>
+                                <td>RE/212431</td>
+                                <td>RM46332</td>
+                                <td>REIM</td>
+                                <td>POST</td>
+                                <td>0906212130297</td>
+                                <td>NUFAIL IZZ BIN ...</td>
+                                <td>0906212130297</td>
+                                <td>NUFAIL IZZ BIN ...</td>
+                                <td>KPJ PERDANA ...</td>
+                                <td>INV/2025/123</td>
+                                <td>10/15/2025</td>
+                                <td>750.00</td>
+                                <td>700.00</td>
+                                <td>50.00</td>
+                                <td>10/13/2025 1:55...</td>
+                                <td>Dr farid</td>
+                                <td>11/12/2025 5:40...</td>
+                                <td>Dr farid</td>
+                                <td>11/12/2025 5:40...</td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><select class="search-select">
+                                        <option></option>
+                                    </select></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm">Initiate</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td style="color: #0d6efd; font-weight: bold;">R/2025/06/3428</td>
+                                <td>RE/203534</td>
+                                <td>RM46959</td>
+                                <td>REIM</td>
+                                <td>IP</td>
+                                <td>220627040167</td>
+                                <td>MUHAMMAD AL...</td>
+                                <td>220627040167</td>
+                                <td>MUHAMMAD AL...</td>
+                                <td>PUTRA SPECIA...</td>
+                                <td>INV/2025/456</td>
+                                <td>4/30/2025</td>
+                                <td>3,200.00</td>
+                                <td>3,200.00</td>
+                                <td>0.00</td>
+                                <td>4/27/2025 4:33 ...</td>
+                                <td>Dr farid</td>
+                                <td>11/19/2025 3:41...</td>
+                                <td>DR FARID</td>
+                                <td>11/19/2025 6:11...</td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><select class="search-select">
+                                        <option></option>
+                                    </select></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm">Initiate</button></td>
+                            </tr>
+                            <tr class="row-highlight-screenshot">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td style="color: black; font-weight: bold;">R/2025/11/6098</td>
+                                <td>RE/213001</td>
+                                <td>RM46985</td>
+                                <td>REIM</td>
+                                <td>OP</td>
+                                <td>141227020508</td>
+                                <td>JAZMEEN MARI...</td>
+                                <td>141227020508</td>
+                                <td>JAZMEEN MARI...</td>
+                                <td>PANTAI HOSPIT...</td>
+                                <td>INV/2025/789</td>
+                                <td>6/16/2025</td>
+                                <td>120.00</td>
+                                <td>100.00</td>
+                                <td>20.00</td>
+                                <td>6/14/2025 12:21...</td>
+                                <td>Dr farid</td>
+                                <td>11/20/2025 3:27...</td>
+                                <td>DR FARID</td>
+                                <td>11/20/2025 3:32...</td>
+                                <td><button class="btn-link-sm" style="color: white;">View</button></td>
+                                <td><select class="search-select">
+                                        <option></option>
+                                    </select></td>
+                                <td><button class="btn-link-sm" style="color: white;">Submit</button></td>
+                                <td><button class="btn-link-sm" style="color: white;">Initiate</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T3: PENDING SUBMISSION DOC UPLOAD -->
+            <div class="tab-pane fade" id="doc-upload">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">1 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <i class="fas fa-file-excel text-success" style="font-size: 1.2rem;"></i>
+                            <span class="text-xs fw-bold" style="color: #2563eb;">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left" style="width: 40px;"></th>
+                                <th></th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>DATE ADMISSION</th>
+                                <th>CREATED BY</th>
+                                <th>CREATED ON</th>
+                                <th>MODIFIED BY</th>
+                                <th>UPLOAD DOCUMENT</th>
+                                <th>VIEW DOCUMENT</th>
+                                <th>ACTION</th>
+                                <th>ESCALATION</th>
+                                <th>MODIFIED ON</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td></td>
+                                <td>REIM</td>
+                                <td>OP KIDNEY</td>
+                                <td>681025015919</td>
+                                <td>TUBA NIHRIIR BIN HASSAN</td>
+                                <td>HAEMODIALYSIS YAKIN JAYA</td>
+                                <td>6/3/2019 10:10 AM</td>
+                                <td>Arsyad</td>
+                                <td>9/13/2023 8:32 PM</td>
+                                <td>dr dinesh</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm">Initiate</button></td>
+                                <td>9/18/2023 12:16 PM</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- OTHER TABS -->
+            <!-- T4: PENDING CLAIM SUBMISSION TO INSURER -->
+            <div class="tab-pane fade" id="insurer-sub">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <span class="blue-go">GO..</span>
+                        <span class="ms-4 fw-bold text-danger animate-pulse" style="font-size: 0.75rem;">AUTO
+                            SUBMISSION!!!</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">25 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <i class="fas fa-file-excel text-success" style="font-size: 1.2rem;"></i>
+                            <span class="text-xs fw-bold" style="color: #2563eb;">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left" style="width: 40px;"></th>
+                                <th>INSURER</th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>INSURER CLAIM NO</th>
+                                <th>POLICY NO</th>
+                                <th>CLIENT NO</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>PH NAME</th>
+                                <th>PH IC</th>
+                                <th>PLAN CODE</th>
+                                <th>DATE ADMISSION</th>
+                                <th>HOSPITAL</th>
+                                <th>DIAGNOSIS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/150158</td>
+                                <td>RM33361</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td></td>
+                                <td>GC000001-30280</td>
+                                <td>50119927</td>
+                                <td>C791001035082</td>
+                                <td>YUSSREMYZALITA BINTI MOHD YUSOFF</td>
+                                <td>YUSSREMYZALITA BINTI MOHD YUSOFF</td>
+                                <td>C791001035082</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>12/12/2022 9:51 AM</td>
+                                <td>HOSPITAL UNIVERSITI SAINS MALAYSIA</td>
+                                <td>CHOLELITHIASIS</td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/161683</td>
+                                <td>RM34958</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td></td>
+                                <td>GC000001-82932</td>
+                                <td>50373417</td>
+                                <td>211130050189</td>
+                                <td>MUHAMMAD ALZAM UBAIDAH BIN MOHD ZAMRI</td>
+                                <td>NOR SHLEAH BINTI SALIM</td>
+                                <td>C870924055298</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>2/10/2023 9:57 PM</td>
+                                <td>Hospital Seri Manjung</td>
+                                <td>PNEUMONIA</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/161687</td>
+                                <td>RM34959</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td></td>
+                                <td>0</td>
+                                <td>50368882</td>
+                                <td>C780413145444</td>
+                                <td>NIK MAZURA FAISA BINTI MADZLAN</td>
+                                <td>NIK MAZURA FAISA BINTI MADZLAN</td>
+                                <td>C780413145444</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>1/27/2023 5:39 PM</td>
+                                <td>HOSPITAL RAJA PERREMPUAN ZAINAB II</td>
+                                <td>CRYPTOGENIC PNEUMONIA...</td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>FWD</td>
+                                <td>R/2025/11/5943</td>
+                                <td>RE/212515</td>
+                                <td>RM46992</td>
+                                <td>REIM</td>
+                                <td>PRE</td>
+                                <td></td>
+                                <td>GC000001-76923</td>
+                                <td>50292544</td>
+                                <td>600205055059</td>
+                                <td>TAN KOK KWEE</td>
+                                <td>KOK KIM KEE</td>
+                                <td>C581110085796</td>
+                                <td>CUEPACSCARE (YEARLY)</td>
+                                <td>10/13/2025 5:01 PM</td>
+                                <td>CMH SPECIALIST HOSPITAL</td>
+                                <td>GASTROESOPHAGEAL REFLUX...</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>FWD</td>
+                                <td>R/2025/11/6131</td>
+                                <td>RE/213094</td>
+                                <td>RM47014</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td></td>
+                                <td>GC000001-98696</td>
+                                <td>50370212</td>
+                                <td>C850407295112</td>
+                                <td>NOOR AFZAN BINTI MOHD RAWI</td>
+                                <td>NOOR AFZAN BINTI MOHD RAWI</td>
+                                <td>C850407295112</td>
+                                <td>CUEPACSCARE (FAMA NEW)-1511</td>
+                                <td>11/12/2025 2:08 PM</td>
+                                <td>Hospital Selayang</td>
+                                <td>VOMITING IN PREGNANCY</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- T5: PENDING DECLINE LETTER -->
+            <div class="tab-pane fade" id="decline-letter">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">393 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <i class="fas fa-file-excel text-success" style="font-size: 1.2rem;"></i>
+                            <span class="text-xs fw-bold" style="color: #2563eb;">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left" style="width: 40px;"></th>
+                                <th>INSURER</th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>INSURER CLAIM NO</th>
+                                <th>POLICY NO</th>
+                                <th>CLIENT NO</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>PH NAME</th>
+                                <th>PH IC</th>
+                                <th>PLAN CODE</th>
+                                <th>DATE ADMISSION</th>
+                                <th>HOSPITAL</th>
+                                <th>DIAGNOSIS</th>
+                                <th>UPLOAD DOCUMENT</th>
+                                <th>VIEW DOCUMENT</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/147681</td>
+                                <td>RM31720</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td>CC026079-00</td>
+                                <td>GC000001-79534</td>
+                                <td>50323634</td>
+                                <td>210417020222</td>
+                                <td>NUR AFIFAH ALYA BINTI ZULKEFLI</td>
+                                <td>NUR RUBUBIYAH BINTI MD AKHIR</td>
+                                <td>C840417025644</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>12/31/2022 3:17 PM</td>
+                                <td>Hospital Sultanah Bahiyah</td>
+                                <td>GLOBAL DEVELOPMENTAL DELAY</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/149523</td>
+                                <td>RM32076</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td>CC026758-00</td>
+                                <td>GC000001-69018</td>
+                                <td>50267315</td>
+                                <td>C860423025147</td>
+                                <td>ZAINOL BIN ZAKARIYA</td>
+                                <td>ZAINOL BIN ZAKARIYA</td>
+                                <td>C860423025147</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>12/6/2022 5:02 PM</td>
+                                <td>Hospital Sultanah Bahiyah</td>
+                                <td>ENTEROVIRUS, RHINOVIRUS PNEUMONIA...</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/149573</td>
+                                <td>RM32195</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td>CC027383-00</td>
+                                <td>GC000001-59291</td>
+                                <td>50304327</td>
+                                <td>931119045042</td>
+                                <td>NOR SYUHADAH BINTI RAHIM</td>
+                                <td>NORAZHAM BIN AZHAR</td>
+                                <td>C920416085215</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>1/19/2023 2:32 PM</td>
+                                <td>Hospital Sultanah Aminah</td>
+                                <td>EARLY INTRAUTERINE PREGNANCY...</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/147065</td>
+                                <td>RM32436</td>
+                                <td>REIM</td>
+                                <td>IP</td>
+                                <td>CC012167-01</td>
+                                <td>GC000001-43500</td>
+                                <td>50172565</td>
+                                <td>050930010390</td>
+                                <td>ANIA DHIYA BINTI MOHD NAJIB</td>
+                                <td>NOR AZIAN BINTI YAHYA</td>
+                                <td>C780426035076</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>11/29/2021 1:49 PM</td>
+                                <td>KPJ JOHOR SPECIALIST HOSPITAL</td>
+                                <td>RIGHT ANKLE TENDON ACHILLES...</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td>ZURICH</td>
+                                <td></td>
+                                <td>RE/164642</td>
+                                <td>RM35878</td>
+                                <td>REIM</td>
+                                <td>OP CANCER</td>
+                                <td>111953238-004</td>
+                                <td>011850134404-01</td>
+                                <td>50280097</td>
+                                <td>C671117015095</td>
+                                <td>SUBRAMANIAN A/L SINNAPAYAN</td>
+                                <td>SUBRAMANIAN A/L SINNAPAYAN</td>
+                                <td>C671117015095</td>
+                                <td>CUEPACSCARE (GAKUM)-0431</td>
+                                <td>9/5/2022 3:44 PM</td>
+                                <td>KPJ BATU PAHAT SPECIALIST HOSPITAL</td>
+                                <td>LEFT DEVIATED NASAL SEPTUM...</td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- T6: PENDING POSTING TO CLIENT -->
+            <div class="tab-pane fade" id="posting">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="flex-grow-1 text-center">
+                        <span class="clickable fw-bold text-xs" style="color: #1e293b;">Submit for Posting</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">50 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <i class="fas fa-file-excel text-success" style="font-size: 1.2rem;"></i>
+                            <span class="text-xs fw-bold" style="color: #2563eb;">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left" style="width: 40px;"></th>
+                                <th>Tick</th>
+                                <th>INSURER</th>
+                                <th>CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>RL REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>PH NAME</th>
+                                <th>PH IC</th>
+                                <th>PLAN CODE</th>
+                                <th>DATE ADMISSION</th>
+                                <th>HOSPITAL</th>
+                                <th>DIAGNOSIS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/151868</td>
+                                <td>RM33013</td>
+                                <td>REIM</td>
+                                <td>POST</td>
+                                <td>071021010485</td>
+                                <td>JAUHAR ANIQ BIN JAMALUDDIN</td>
+                                <td>JAMALUDDIN BIN JUMA'AT</td>
+                                <td>C710624015881</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>5/29/2022 6:15 PM</td>
+                                <td>KPJ JOHOR SPECIALIST HOSPITAL</td>
+                                <td>FRACTURE RIGHT CLAVICLE</td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/173101</td>
+                                <td>RM38984</td>
+                                <td>REIM</td>
+                                <td>IP</td>
+                                <td>120514100786</td>
+                                <td>SHARIFAH NUR SYURA BINTI SYED SAIFUL NIZAM</td>
+                                <td>SYED SAIFUL NIZAM BIN SYED MUBARAT</td>
+                                <td>C81100305425</td>
+                                <td>CUEPACSCARE PLUS (MONTHLY)-0517</td>
+                                <td>1/31/2024 8:16 PM</td>
+                                <td>THOMSON HOSPITAL KOTA DAMANSARA</td>
+                                <td>INFLUENZA B INFECTION</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td class="text-center"><input type="checkbox" checked></td>
+                                <td>FWD</td>
+                                <td></td>
+                                <td>RE/187721</td>
+                                <td>RM41213</td>
+                                <td>REIM</td>
+                                <td>OP</td>
+                                <td>930821135756</td>
+                                <td>FLORINA BELAYAU ANAK MAWAN</td>
+                                <td>JINNY ANAK LENGGIE</td>
+                                <td>C931215135227</td>
+                                <td>CUEPACSCARE PLUS (MONTHLY)-0515</td>
+                                <td>10/2/2024 5:08 PM</td>
+                                <td>U.N.I KLINIK</td>
+                                <td>FOOD POISONING</td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                                <td>FWD</td>
+                                <td>R/2025/07/3882</td>
+                                <td>RE/205154</td>
+                                <td>RM45406</td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td>C910414115506</td>
+                                <td>TUAN BASYIRAHAYU BINTI T JUSOH</td>
+                                <td>TUAN BASYIRAHAYU BINTI T JUSOH</td>
+                                <td>C910414115506</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>7/10/2025 2:52 PM</td>
+                                <td>Hospital Putrajaya</td>
+                                <td>VIRAL INDUCED WHEEZE</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                                <td>FWD</td>
+                                <td>R/2025/08/4416</td>
+                                <td>RE/207013</td>
+                                <td>RM45846</td>
+                                <td>REIM</td>
+                                <td>PRE</td>
+                                <td>C610728085966</td>
+                                <td>HONG CHING PING</td>
+                                <td>HONG CHING PING</td>
+                                <td>C610728085966</td>
+                                <td>CUEPACSCARE (YEARLY) - Y0531</td>
+                                <td>6/11/2025 6:05 PM</td>
+                                <td>SRI MANJUNG SPECIALIST HOSPITAL</td>
+                                <td>INFECTED SEBACEOUS CYST, CHEST WALL</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- T7: REPORT -->
+            <div class="tab-pane fade" id="report">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">509 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <i class="fas fa-file-excel text-success" style="font-size: 1.2rem;"></i>
+                            <span class="text-xs fw-bold" style="color: #2563eb;">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left" style="width: 40px;"></th>
+                                <th>CLAIM FILENO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>PH NAME</th>
+                                <th>PH IC</th>
+                                <th>PLAN CODE</th>
+                                <th>DATE ADMISSION</th>
+                                <th>HOSPITAL</th>
+                                <th>DIAGNOSIS</th>
+                                <th>CREATED BY</th>
+                                <th>CREATED ON</th>
+                                <th>MODIFIED BY</th>
+                                <th>MODIFIED ON</th>
+                                <th>SUBMISSION DOC UPLOADED BY</th>
+                                <th>SUBMISSION DOC UPLOADED ON</th>
+                                <th>DATE SUBMISSION</th>
+                                <th>DATE REPUDIATED</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td></td>
+                                <td>REIM</td>
+                                <td>PRE</td>
+                                <td>C870522045134</td>
+                                <td>NOR ZALIKHA BINTI ZAHARI</td>
+                                <td>NOR ZALIKHA BINTI ZAHARI</td>
+                                <td>C870522045134</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>7/19/2022 7:10 PM</td>
+                                <td>KLINIK UNION MEDIC (ALOR GAJAH)</td>
+                                <td>SKIN ABSCESS AT LEFT WRIST</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:01 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:01 PM</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>PENDING RL CONFIRMATION</td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td></td>
+                                <td>REIM</td>
+                                <td>IP</td>
+                                <td>820313125028</td>
+                                <td>SITI MUHAINI BINTI ABDUL HALIM</td>
+                                <td>MOHD RIDZUAN BIN MD ARIS</td>
+                                <td>C831002055505</td>
+                                <td>CUEPACSCARE (GAKUM)-0411</td>
+                                <td>11/29/2022 4:57 PM</td>
+                                <td>PANTAI HOSPITAL AYER KEROH</td>
+                                <td>PNEUMONIA WITH BRONCHOSPASM</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:56 PM</td>
+                                <td>Arsyad</td>
+                                <td>1/4/2023 2:56 PM</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>PENDING RL CONFIRMATION</td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td></td>
+                                <td>REIM</td>
+                                <td>DCA</td>
+                                <td>210417020222</td>
+                                <td>NUR AFIFAH ALYA BINTI ZULKEFLI</td>
+                                <td>NUR RUBUBIYAH BINTI MD AKHIR</td>
+                                <td>C840417025644</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>12/31/2022 3:17 PM</td>
+                                <td>Hospital Sultanah Bahiyah</td>
+                                <td>GLOBAL DEVELOPMENTAL DELAY</td>
+                                <td>Arsyad</td>
+                                <td>1/17/2023 12:44 PM</td>
+                                <td>DR DINESH</td>
+                                <td>1/20/2023 2:41 PM</td>
+                                <td>MANUAL</td>
+                                <td>2/3/2025</td>
+                                <td>9/25/2023 11:03 PM</td>
+                                <td></td>
+                                <td>PENDING DECLINE LETTER</td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left arrow-indicator"></td>
+                                <td></td>
+                                <td>REIM</td>
+                                <td>PRE</td>
+                                <td>C850225025737</td>
+                                <td>MUHAMAD SYAKIR BIN MUKHTAR</td>
+                                <td>MUHAMAD SYAKIR BIN MUKHTAR</td>
+                                <td>C850225025737</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>1/13/2023 4:11 PM</td>
+                                <td>KLINIK DR OTHMAN</td>
+                                <td>GANGRENE OF RIGHT THUMB...</td>
+                                <td>Arsyad</td>
+                                <td>3/1/2023 2:13 PM</td>
+                                <td>dr dinesh</td>
+                                <td>3/4/2023 10:55 AM</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>5/9/2025 1:40 PM</td>
+                                <td>PENDING RL CONFIRMATION</td>
+                            </tr>
+                            <tr class="selected">
+                                <td class="col-sticky-left arrow-indicator"><i class="fas fa-caret-right"></i></td>
+                                <td></td>
+                                <td>REIM</td>
+                                <td>POST</td>
+                                <td>071021010485</td>
+                                <td>JAUHAR ANIQ BIN JAMALUDDIN</td>
+                                <td>JAMALUDDIN BIN JUMA'AT</td>
+                                <td>C710624015881</td>
+                                <td>CUEPACSCARE (NEW MONTHLY)-0511</td>
+                                <td>5/29/2022 6:15 PM</td>
+                                <td>KPJ JOHOR SPECIALIST HOSPITAL</td>
+                                <td>FRACTURE RIGHT CLAVICLE</td>
+                                <td>Arsyad</td>
+                                <td>4/10/2023 12:58 PM</td>
+                                <td>dr dinesh</td>
+                                <td>4/13/2023 2:24 PM</td>
+                                <td>MANUAL</td>
+                                <td>2/3/2025</td>
+                                <td>9/25/2023 11:03 PM</td>
+                                <td>5/9/2025 9:59 AM</td>
+                                <td>PENDING POSTING CLIENT</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

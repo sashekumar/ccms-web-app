@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settlement Console - Comprehensive View | CCMS</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --accent-blue: #0d6efd;
+            --bg-gray: #f0f2f5;
+            --border-color: #d1d5db;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0.72rem;
+        }
+
+        /* --- Header / Tabs --- */
+        .header-bar {
+            background: white;
+            padding: 0.3rem 1.2rem 0 1.2rem;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            gap: 2px;
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid transparent;
+            border-bottom: none;
+            padding: 0.35rem 0.6rem;
+            color: #475569;
+            font-weight: 500;
+            font-size: 0.73rem;
+            background: #f8fafc;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            border-color: #e2e8f0;
+            border-bottom: 2px solid white;
+            margin-bottom: -2px;
+            font-weight: 700;
+            z-index: 5;
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-pane {
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        /* --- Grid Controls --- */
+        .grid-controls {
+            padding: 0.4rem 1rem;
+            background: #fdfdfd;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-by-text {
+            font-size: 0.7rem;
+            color: #444;
+            margin-right: 5px;
+        }
+
+        .blue-go {
+            color: #2563eb;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 0.7rem;
+        }
+
+        /* --- Table Styling --- */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+            background: #9ca3af;
+            /* Matches gray background in screenshots */
+        }
+
+        .custom-grid {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .custom-grid thead th {
+            background: white;
+            padding: 0.35rem 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.62rem;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .custom-grid tbody td {
+            padding: 0.35rem 0.5rem;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            vertical-align: middle;
+            background: white;
+        }
+
+        .row-highlight {
+            background-color: #fca5a5 !important;
+        }
+
+        .row-alt {
+            background-color: #f8fafc;
+        }
+
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            background: white !important;
+            z-index: 10;
+            border-right: 2px solid #cbd5e1 !important;
+        }
+
+        /* --- UI Elements --- */
+        .btn-link-sm {
+            font-size: 0.65rem;
+            text-decoration: underline;
+            padding: 0;
+            background: none;
+            border: none;
+            color: #0d6efd;
+        }
+
+        .search-select {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            min-width: 80px;
+        }
+
+        .search-box {
+            width: 120px;
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            margin-left: 2px;
+        }
+
+        .record-count {
+            color: #2563eb;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border: 2px solid #f1f5f9;
+            border-radius: 5px;
+        }
+
+        .badge-manual {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+            font-size: 0.6rem;
+        }
+
+        .badge-enabled {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+            font-size: 0.6rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP NAV / TABS -->
+    <header class="header-bar d-flex justify-content-between align-items-end">
+        <ul class="nav nav-tabs" id="settlementTabs">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#audit">Pending
+                    Audit</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#doc-verify">Pending Doc
+                    Verification & Upload</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stamping">Pending
+                    Adjustment - Stamping</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#adj-conf">Pending
+                    Adjustment - Confirmation</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#offer-conf">Pending
+                    Offer - Confirmation</button></li>
+        </ul>
+
+    </header>
+
+    <!-- CONTENT -->
+    <div class="workspace">
+        <div class="tab-content">
+
+            <!-- T1: PENDING AUDIT -->
+            <div class="tab-pane fade show active" id="audit">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <input type="text" class="search-box">
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">18 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                            <span class="text-xs">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">CLAIM FILENO</th>
+                                <th>REG REFNO</th>
+                                <th>PA REFNO</th>
+                                <th>MODE</th>
+                                <th>ADMISSION TYPE</th>
+                                <th>PH IC</th>
+                                <th>PH NAME</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>INVOICE #</th>
+                                <th>DISCHARGE DATE</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>UNCOVERED AMOUNT</th>
+                                <th>CREATED BY</th>
+                                <th>CREATED ON</th>
+                                <th>MODIFIED BY</th>
+                                <th>MODIFIED ON</th>
+                                <th>VIEW PA</th>
+                                <th>ACTION</th>
+                                <th>SUBMIT</th>
+                                <th>ESCALATION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/11/9693</td>
+                                <td>OL/213115</td>
+                                <td>PA165048</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td>C850716075616</td>
+                                <td>UMMU SALMAH...</td>
+                                <td>171001020756</td>
+                                <td>HANIS UMAIRA...</td>
+                                <td>PANTAI HOSPIT...</td>
+                                <td>PHLM25A0055896</td>
+                                <td>11/24/2025 4:04 AM</td>
+                                <td>5,863.20</td>
+                                <td>5,820.40</td>
+                                <td>42.80</td>
+                                <td>Arsyad</td>
+                                <td>11/24/2025 5:04 PM</td>
+                                <td></td>
+                                <td></td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                                <td><select class="search-select">
+                                        <option></option>
+                                    </select></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm text-primary">Initiate</button></td>
+                            </tr>
+                            <tr class="row-highlight">
+                                <td class="col-sticky-left">O/2025/11/9591</td>
+                                <td>OL/212903</td>
+                                <td>PA164958</td>
+                                <td>OL</td>
+                                <td>IP</td>
+                                <td>C840824025180</td>
+                                <td>NURINAHAF IZA...</td>
+                                <td>750728025167</td>
+                                <td>MOHAMAD NAZ...</td>
+                                <td>KEDAH MEDICA...</td>
+                                <td>3254640</td>
+                                <td>11/21/2025 2:41 PM</td>
+                                <td>7,267.92</td>
+                                <td>6,257.00</td>
+                                <td>1,010.92</td>
+                                <td>Krishna</td>
+                                <td>11/22/2025 10:00 AM</td>
+                                <td>Nur Azee</td>
+                                <td>11/24/2025 5:48 PM</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                                <td><select class="search-select">
+                                        <option></option>
+                                    </select></td>
+                                <td><button class="btn-link-sm">Submit</button></td>
+                                <td><button class="btn-link-sm text-primary">Initiate</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T2: PENDING DOC VERIFICATION -->
+            <div class="tab-pane fade" id="doc-verify">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option></option>
+                        </select>
+                        <input type="text" class="search-box">
+                        <span class="blue-go">GO..</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">433 records</span>
+                        <div class="d-flex align-items-center gap-1 clickable">
+                            <img src="https://img.icons8.com/color/20/microsoft-excel-2019.png" alt="Excel">
+                            <span class="text-xs">Export</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">PHID</th>
+                                <th>CLAIM FILENO</th>
+                                <th>PA REFNO</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>BANK NAME</th>
+                                <th>BANK ACC NO</th>
+                                <th>PAYEE IC</th>
+                                <th>PAYEE NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>INVOICE #</th>
+                                <th>DISCHARGE DATE</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>DOCUMENT NAME</th>
+                                <th>UPLOAD CLAIM FORM</th>
+                                <th>VIEW CLAIM FORM</th>
+                                <th>DOWNLOAD CHECK LIST</th>
+                                <th>FAX LAST DOCS RECEIVE DATE (DD/MM/YYYY)</th>
+                                <th>REMARKS</th>
+                                <th>ACTION</th>
+                                <th>ESCALATION</th>
+                                <th>UNCOVERED AMOUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left" style="background: #e0f2fe !important;">dcb59731-9705-4...
+                                </td>
+                                <td>O/2025/11/9677</td>
+                                <td>PA165049</td>
+                                <td>C601011016096</td>
+                                <td>RASHIDAH BIN...</td>
+                                <td>Malayan Bank B...</td>
+                                <td>101049149669</td>
+                                <td></td>
+                                <td></td>
+                                <td>KPJ BANDAR M...</td>
+                                <td>477193</td>
+                                <td>11/24/2025 5:05 PM</td>
+                                <td>4,444.60</td>
+                                <td>4,383.30</td>
+                                <td><select class="search-select">
+                                        <option></option>
+                                    </select></td>
+                                <td><button class="btn-link-sm">Upload</button></td>
+                                <td><button class="btn-link-sm">View</button></td>
+                                <td><button class="btn-link-sm">Download</button></td>
+                                <td></td>
+                                <td></td>
+                                <td><button class="btn-link-sm text-primary fw-bold">Update</button></td>
+                                <td><button class="btn-link-sm text-primary">Initiate</button></td>
+                                <td>61.30</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T3: STAMPING -->
+            <div class="tab-pane fade" id="stamping">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center">
+                        <span class="search-by-text">Search By :</span>
+                        <select class="search-select">
+                            <option>Claim Fileno</option>
+                        </select>
+                        <input type="text" class="search-box">
+                        <span class="blue-go">GO..</span>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">CLAIM FILENO</th>
+                                <th>PA REFNO</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>DISCHARGE DATE</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>STAMPING STATUS</th>
+                                <th>ASSIGNED TO</th>
+                                <th>STAMPED ON</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/11/8840</td>
+                                <td>PA165002</td>
+                                <td>AHMAD FAUZI</td>
+                                <td>PANTAI HOSPIT...</td>
+                                <td>11/20/2025</td>
+                                <td>3,500.00</td>
+                                <td>3,450.00</td>
+                                <td><span class="badge text-dark bg-warning">PENDING</span></td>
+                                <td>Suraya</td>
+                                <td></td>
+                                <td><button class="btn-link-sm">Perform Stamp</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T4: PENDING ADJUSTMENT - CONFIRMATION -->
+            <div class="tab-pane fade" id="adj-conf">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-xs blue-go fw-bold clickable">Export to Excel</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">#39 record</span>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">CLAIM FILENO</th>
+                                <th>REF NO</th>
+                                <th>PLAN CODE</th>
+                                <th>PH IC</th>
+                                <th>PH NAME</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>INVOICE NO</th>
+                                <th>DISCHARGE DATE</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>NOT COVERED AMOUNT</th>
+                                <th>View PA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/11/9070</td>
+                                <td>PA164205</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C781119015440</td>
+                                <td>NATASYA BINTI...</td>
+                                <td>720203035285</td>
+                                <td>MOHD ZAILANI ...</td>
+                                <td>KPJ KAJANG SP...</td>
+                                <td>1117620</td>
+                                <td>07/11/2025</td>
+                                <td>5,184.00</td>
+                                <td>5,169.00</td>
+                                <td>15.00</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left">O/2025/11/9381</td>
+                                <td>PA164643</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C861218355432</td>
+                                <td>SYAHIRAH BINT...</td>
+                                <td>150116070652</td>
+                                <td>WAN MARYAM ...</td>
+                                <td>KPJ PENANG S...</td>
+                                <td>2115951</td>
+                                <td>16/11/2025</td>
+                                <td>7,504.65</td>
+                                <td>7,465.65</td>
+                                <td>39.00</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/11/8040</td>
+                                <td>PA162795</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C750223035565</td>
+                                <td>TUAN MOHD K...</td>
+                                <td>111113031103</td>
+                                <td>TUAN DANIAL I...</td>
+                                <td>KPJ JOHOR SPE...</td>
+                                <td>5160625</td>
+                                <td>13/10/2025</td>
+                                <td>5,312.55</td>
+                                <td>5,179.30</td>
+                                <td>133.25</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left">O/2025/11/8413</td>
+                                <td>PA163184</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C840706015354</td>
+                                <td>MAISARAH BIN...</td>
+                                <td>C840706015354</td>
+                                <td>MAISARAH BIN...</td>
+                                <td>KPJ PERLIS SP...</td>
+                                <td>242495</td>
+                                <td>18/10/2025</td>
+                                <td>2,982.15</td>
+                                <td>2,943.65</td>
+                                <td>38.50</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/11/9239</td>
+                                <td>PA164336</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C821016016129</td>
+                                <td>SAHRIL BIN SA...</td>
+                                <td>C821016016129</td>
+                                <td>SAHRIL BIN SA...</td>
+                                <td>KPJ PASIR GUD...</td>
+                                <td>786113</td>
+                                <td>10/11/2025</td>
+                                <td>22,932.45</td>
+                                <td>20,000.00</td>
+                                <td>2,932.45</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- T5: PENDING OFFER - CONFIRMATION -->
+            <div class="tab-pane fade" id="offer-conf">
+                <div class="grid-controls">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-xs blue-go fw-bold clickable">Export to Excel</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="record-count">#93 record</span>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="custom-grid">
+                        <thead>
+                            <tr>
+                                <th class="col-sticky-left">CLAIM FILENO</th>
+                                <th>REF NO</th>
+                                <th>PLAN CODE</th>
+                                <th>PH IC</th>
+                                <th>PH NAME</th>
+                                <th>PATIENT IC</th>
+                                <th>PATIENT NAME</th>
+                                <th>HOSPITAL</th>
+                                <th>INVOICE NO</th>
+                                <th>DISCHARGE DATE</th>
+                                <th>INCURRED AMOUNT</th>
+                                <th>COVERED AMOUNT</th>
+                                <th>NOT COVERED AMOUNT</th>
+                                <th>View PA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/11/9007</td>
+                                <td>PA164219</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C880705355521</td>
+                                <td>MOHAMAD HAN...</td>
+                                <td>200129101563</td>
+                                <td>MUHAMMAD H...</td>
+                                <td>HOSPITAL PUS...</td>
+                                <td>A003310342</td>
+                                <td>06/11/2025</td>
+                                <td>9,937.40</td>
+                                <td>9,787.40</td>
+                                <td>150.00</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left">O/2025/11/9021</td>
+                                <td>PA163988</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C830201145031</td>
+                                <td>MOHD EZHAR B...</td>
+                                <td>C830201145031</td>
+                                <td>MOHD EZHAR B...</td>
+                                <td>KPJ RAWANG S...</td>
+                                <td>950212</td>
+                                <td>05/11/2025</td>
+                                <td>5,365.10</td>
+                                <td>5,351.70</td>
+                                <td>13.40</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/11/8040</td>
+                                <td>PA163617</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C791006085943</td>
+                                <td>AHMAD AZMIL ...</td>
+                                <td>141231080829</td>
+                                <td>TARIQ DARWIS...</td>
+                                <td>PERAK COMMU...</td>
+                                <td>S-250140995</td>
+                                <td>29/10/2025</td>
+                                <td>7,658.95</td>
+                                <td>7,657.95</td>
+                                <td>01.00</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr class="row-alt">
+                                <td class="col-sticky-left">O/2025/11/9281</td>
+                                <td>PA164524</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C890118025025</td>
+                                <td>AZRUL BIN SHA...</td>
+                                <td>160602021136</td>
+                                <td>NUR AISYAH Z...</td>
+                                <td>KPJ PENANG S...</td>
+                                <td>2114769</td>
+                                <td>13/11/2025</td>
+                                <td>4,099.50</td>
+                                <td>4,008.60</td>
+                                <td>90.90</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                            <tr>
+                                <td class="col-sticky-left">O/2025/10/9295</td>
+                                <td>PA164483</td>
+                                <td>CUEPACSCARE ...</td>
+                                <td>C670425045183</td>
+                                <td>MUHAMAD ABR...</td>
+                                <td>C670425045183</td>
+                                <td>MUHAMAD ABR...</td>
+                                <td>KPJ PERLIS SP...</td>
+                                <td>245595</td>
+                                <td>13/11/2025</td>
+                                <td>6,398.40</td>
+                                <td>6,087.90</td>
+                                <td>310.50</td>
+                                <td><button class="btn-link-sm">View PA</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
