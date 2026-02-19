@@ -1,0 +1,70 @@
+/**
+ * Database Object Name Constants
+ * 
+ * Centralized naming for all database objects (tables, views, stored procedures).
+ * Use these constants instead of hardcoded strings to:
+ * - Enable type-safe refactoring
+ * - Prevent typos
+ * - Document database structure
+ * - Make schema changes easier
+ * 
+ * @example
+ * ```typescript
+ * const query = `SELECT * FROM ${DB_TABLES.USERS} WHERE ${DB_TABLES.USERS} = 1`;
+ * await pool.execute(DB_PROCEDURES.CHECK_USER_PERMISSION, params);
+ * ```
+ */
+
+// ============================================================================
+// TABLES
+// ============================================================================
+
+export const DB_TABLES = {
+  // User Management
+  USERS: 'ccms_users',
+  
+  // Permission Control System
+  ROLES: 'ccms_roles',
+  CATEGORIES: 'ccms_categories',
+  MODULES: 'ccms_modules',
+  ACTIONS: 'ccms_actions',
+  MODULE_ACTIONS: 'ccms_module_actions',
+  ROLE_PERMISSIONS: 'ccms_role_permissions',
+  USER_ROLES: 'ccms_user_roles'
+} as const;
+
+// ============================================================================
+// VIEWS
+// ============================================================================
+
+export const DB_VIEWS = {
+  USER_PERMISSIONS: 'vw_user_permissions',
+  ROLE_PERMISSIONS: 'vw_role_permissions'
+} as const;
+
+// ============================================================================
+// STORED PROCEDURES
+// ============================================================================
+
+export const DB_PROCEDURES = {
+  CHECK_USER_PERMISSION: 'sp_check_user_permission',
+  GET_USER_PERMISSIONS_JSON: 'sp_get_user_permissions_json',
+  ASSIGN_ROLE_TO_USER: 'sp_assign_role_to_user'
+} as const;
+
+// ============================================================================
+// FUNCTIONS
+// ============================================================================
+
+export const DB_FUNCTIONS = {
+  // Add custom functions here when needed
+} as const;
+
+// ============================================================================
+// TYPE EXPORTS (for type safety)
+// ============================================================================
+
+export type TableName = typeof DB_TABLES[keyof typeof DB_TABLES];
+export type ViewName = typeof DB_VIEWS[keyof typeof DB_VIEWS];
+export type ProcedureName = typeof DB_PROCEDURES[keyof typeof DB_PROCEDURES];
+export type FunctionName = typeof DB_FUNCTIONS[keyof typeof DB_FUNCTIONS];

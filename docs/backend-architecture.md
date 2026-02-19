@@ -14,7 +14,7 @@ A scalable, maintainable, and secure backend API using MVC architecture with str
 - **Validation**: Joi
 - **Testing**: Jest
 - **API Documentation**: Swagger/OpenAPI
-- **Caching/Sessions**: In-memory (token blacklist planned as future enhancement)
+- **Caching/Sessions**: In-memory where appropriate
 
 ## Key Features
 - ✅ **MVC Architecture**: Clear separation of concerns
@@ -57,6 +57,48 @@ A scalable, maintainable, and secure backend API using MVC architecture with str
 - **QueryBuilder**: Safe query construction
 - **Parameter binding**: Automatic SQL injection prevention
 - **Dynamic filters**: Build complex WHERE clauses safely
+
+#### ✅ Constants Management
+- **Database Constants**: Centralized table, view, procedure names
+- **Route Constants**: API endpoint paths
+- **Single source of truth**: Change once, update everywhere
+- **Typo prevention**: TypeScript catches errors at compile time
+
+**Structure**:
+```
+core/
+  ├── constants/
+      ├── database.constants.ts      # DB tables, views, procedures
+      ├── routes.constants.ts        # API routes
+      └── index.ts                   # Barrel export
+```
+
+**Example**:
+```typescript
+// database.constants.ts
+export const DB_TABLES = {
+  USERS: 'ccms_users',
+  ROLES: 'ccms_roles',
+  PERMISSIONS: 'ccms_role_permissions'
+} as const;
+
+// Usage in repository
+import { DB_TABLES } from '../../core/constants';
+
+class UserRepository {
+  async findAll() {
+    return this.execute(`SELECT * FROM ${DB_TABLES.USERS}`);
+  }
+}
+```
+
+**Benefits**:
+- ✅ No typos in SQL queries
+- ✅ Easy database object refactoring
+- ✅ Self-documenting code
+- ✅ TypeScript autocomplete support
+
+**For detailed documentation**, see [coding-standards.md - Constants Management Pattern](./coding-standards.md).
 
 ---
 
@@ -2600,27 +2642,12 @@ export class CsrfService {
 }
 ```
 
-### Token Blacklist Service (Future Enhancement)
-
-**Status**: Planned for Phase 2
-
-**Purpose**: Database-based token revocation for immediate logout and password change scenarios.
-
-**Planned Features**:
-- Blacklist individual tokens on logout
-- Invalidate all user tokens on password change
-- Automatic cleanup of expired tokens
-- Redis or database storage for performance
-
-**Current Implementation**: Token expiry relies on short-lived access tokens (15 minutes). Logout only clears cookies on client side.
-
-### Authentication Middleware (httpOnly Cookies + Blacklist)
+### Authentication Middleware (httpOnly Cookies)
 
 ```typescript
 // core/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { JwtService, TokenPayload } from '@/core/auth/jwt.service';
-import { TokenBlacklistService } from '@/core/auth/token-blacklist.service';
 import { ResponseUtil } from '@/core/utils/response.util';
 import { Logger } from '@/core/utils/logger.util';
 
@@ -2650,22 +2677,8 @@ export const authMiddleware = async (
       return;
     }
 
-    // Check if token is blacklisted (logout)
-    const isBlacklisted = await TokenBlacklistService.isBlacklisted(token);
-    if (isBlacklisted) {
-      ResponseUtil.error(res, 'Token has been revoked', 401);
-      return;
-    }
-
     // Verify token
     const payload = JwtService.verifyToken(token);
-
-    // Check if user's all tokens are invalidated (password change)
-    const areTokensInvalidated = await TokenBlacklistService.areUserTokensInvalidated(payload.userId);
-    if (areTokensInvalidated) {
-      ResponseUtil.error(res, 'Token has been invalidated. Please login again.', 401);
-      return;
-    }
 
     // Attach user to request
     req.user = payload;
@@ -2688,11 +2701,8 @@ export const optionalAuthMiddleware = async (
     const token = req.cookies.accessToken;
 
     if (token) {
-      const isBlacklisted = await TokenBlacklistService.isBlacklisted(token);
-      if (!isBlacklisted) {
-        const payload = JwtService.verifyToken(token);
-        req.user = payload;
-      }
+      const payload = JwtService.verifyToken(token);
+      req.user = payload;
     }
     next();
   } catch (error) {
@@ -3161,8 +3171,19 @@ export default router;
 - **Algorithm**: HS256 (Symmetric key signing)
 - **Token Storage**: httpOnly Cookies (XSS protection)
 - **Token Expiration**: 15 min access / 7 day refresh
-- **Revocation**: Redis Blacklist (immediate logout)
-- **Payload**: userId, role, email only (no permissions)
+- **Token Refresh**: ✅ **IMPLEMENTED** - Automatic refresh on access token expiry
+- **Frontend Auto-Refresh**: ✅ **IMPLEMENTED** - Error interceptor handles 401 and refreshes automatically
+- **Revocation**: Logout clears httpOnly cookies (client-side only)
+- **Payload**: userId, username only (minimal payload for security)
+
+**Current Implementation Status:**
+- ✅ JWT token generation (access + refresh)
+- ✅ httpOnly cookie storage
+- ✅ Token refresh endpoint (`/auth/refresh`)
+- ✅ Frontend automatic token refresh on expiry
+- ✅ User stays logged in for 7 days without interruption
+- ❌ Token blacklisting (logout clears cookies only)
+- ❌ Token invalidation on password change
 
 ### JWT Service (Token Generation & Verification)
 
@@ -3259,101 +3280,12 @@ export class JwtService {
 }
 ```
 
-### Token Blacklist Service (Redis)
-
-```typescript
-// core/auth/token-blacklist.service.ts
-import { redisManager } from '@/config/redis.config';
-import { JwtService } from './jwt.service';
-import { Logger } from '@/core/utils/logger.util';
-
-export class TokenBlacklistService {
-  private static BLACKLIST_PREFIX = 'blacklist:';
-
-  /**
-   * Add token to blacklist (for logout)
-   */
-  public static async blacklistToken(token: string): Promise<void> {
-    try {
-      const redis = redisManager.getClient();
-      const decoded = JwtService.decodeToken(token);
-      
-      if (!decoded || !decoded.exp) {
-        throw new Error('Invalid token');
-      }
-
-      // Calculate TTL (seconds until token expires)
-      const now = Math.floor(Date.now() / 1000);
-      const ttl = decoded.exp - now;
-
-      if (ttl > 0) {
-        // Store in Redis with TTL
-        const key = `${this.BLACKLIST_PREFIX}${token}`;
-        await redis.setEx(key, ttl, 'revoked');
-        Logger.debug(`Token blacklisted with TTL: ${ttl}s`);
-      }
-    } catch (error) {
-      Logger.error('Failed to blacklist token:', error);
-      throw new Error('Token blacklist failed');
-    }
-  }
-
-  /**
-   * Check if token is blacklisted
-   */
-  public static async isBlacklisted(token: string): Promise<boolean> {
-    try {
-      const redis = redisManager.getClient();
-      const key = `${this.BLACKLIST_PREFIX}${token}`;
-      const result = await redis.exists(key);
-      return result === 1;
-    } catch (error) {
-      Logger.error('Failed to check blacklist:', error);
-      // Fail-safe: Allow request if Redis is down (or reject based on your security policy)
-      return false;
-    }
-  }
-
-  /**
-   * Blacklist all tokens for a user (on password change)
-   */
-  public static async blacklistUserTokens(userId: number): Promise<void> {
-    try {
-      const redis = redisManager.getClient();
-      // Store user blacklist flag
-      const key = `user:${userId}:tokens_invalidated`;
-      await redis.setEx(key, 60 * 60 * 24 * 7, 'true'); // 7 days
-      Logger.info(`All tokens invalidated for user: ${userId}`);
-    } catch (error) {
-      Logger.error('Failed to blacklist user tokens:', error);
-      throw new Error('User token invalidation failed');
-    }
-  }
-
-  /**
-   * Check if user's all tokens are invalidated
-   */
-  public static async areUserTokensInvalidated(userId: number): Promise<boolean> {
-    try {
-      const redis = redisManager.getClient();
-      const key = `user:${userId}:tokens_invalidated`;
-      const result = await redis.exists(key);
-      return result === 1;
-    } catch (error) {
-      Logger.error('Failed to check user token invalidation:', error);
-      return false;
-    }
-  }
-}
-```
-
-### Authentication Middleware (httpOnly Cookies + Blacklist)
+### Authentication Middleware (httpOnly Cookies)
 
 ```typescript
 // core/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { JwtService, TokenPayload } from '@/core/auth/jwt.service';
-import { TokenBlacklistService } from '@/core/auth/token-blacklist.service';
 import { ResponseUtil } from '@/core/utils/response.util';
 import { Logger } from '@/core/utils/logger.util';
 
@@ -3383,22 +3315,8 @@ export const authMiddleware = async (
       return;
     }
 
-    // Check if token is blacklisted (logout)
-    const isBlacklisted = await TokenBlacklistService.isBlacklisted(token);
-    if (isBlacklisted) {
-      ResponseUtil.error(res, 'Token has been revoked', 401);
-      return;
-    }
-
     // Verify token
     const payload = JwtService.verifyToken(token);
-
-    // Check if user's all tokens are invalidated (password change)
-    const areTokensInvalidated = await TokenBlacklistService.areUserTokensInvalidated(payload.userId);
-    if (areTokensInvalidated) {
-      ResponseUtil.error(res, 'Token has been invalidated. Please login again.', 401);
-      return;
-    }
 
     // Attach user to request
     req.user = payload;
@@ -3421,11 +3339,8 @@ export const optionalAuthMiddleware = async (
     const token = req.cookies.accessToken;
 
     if (token) {
-      const isBlacklisted = await TokenBlacklistService.isBlacklisted(token);
-      if (!isBlacklisted) {
-        const payload = JwtService.verifyToken(token);
-        req.user = payload;
-      }
+      const payload = JwtService.verifyToken(token);
+      req.user = payload;
     }
     next();
   } catch (error) {
@@ -3885,9 +3800,8 @@ export class AuthInterceptor implements HttpInterceptor {
 
 2. Authenticated Request (GET /api/v1/claims)
    ├─ Read accessToken from httpOnly cookie
-   ├─ Check Redis blacklist
    ├─ Verify JWT signature (HS256)
-   ├─ Check user token invalidation flag
+   ├─ Check token expiry
    └─ Attach user to request
 
 3. Token Refresh (POST /api/v1/auth/refresh)
@@ -3897,42 +3811,40 @@ export class AuthInterceptor implements HttpInterceptor {
    └─ Set new accessToken cookie
 
 4. Logout (POST /api/v1/auth/logout)
-   ├─ Add access token to Redis blacklist (TTL = remaining expiry)
-   ├─ Clear cookies
-   └─ Token rejected on next request
+   ├─ Clear httpOnly cookies
+   └─ Token remains valid until expiry (15 min max)
 
 5. Password Change (POST /api/v1/auth/change-password)
    ├─ Update password in database
-   ├─ Set user token invalidation flag in Redis (7 days)
    ├─ Clear current cookies
-   └─ All user tokens rejected (must re-login)
+   └─ User must re-login (tokens remain valid until expiry)
 ```
 
 **Security Features:**
 
-| Feature | Implementation | Protection |
-|---------|---------------|-----------|
-| **XSS Protection** | httpOnly cookies | JavaScript cannot access tokens |
-| **CSRF Protection** | SameSite=strict | Cookies only sent from same origin |
-| **SQL Injection** | Parameterized queries | QueryBuilder prevents injection |
-| **Token Theft** | Short expiry (15 min) | Limited damage window |
-| **Immediate Logout** | Redis blacklist | Token invalidated instantly |
-| **Password Change** | Invalidate all sessions | All devices must re-login |
-| **Algorithm Attack** | Force HS256 | Prevent algorithm confusion |
-| **HTTPS Only** | Secure cookies in prod | Cookies only over HTTPS |
+| Feature | Implementation | Protection | Status |
+|---------|---------------|-----------|--------|
+| **XSS Protection** | httpOnly cookies | JavaScript cannot access tokens | ✅ Active |
+| **CSRF Protection** | SameSite=strict | Cookies only sent from same origin | ✅ Active |
+| **SQL Injection** | Parameterized queries | QueryBuilder prevents injection | ✅ Active |
+| **Token Theft** | Short expiry (15 min) | Limited damage window | ✅ Active |
+| **Auto Token Refresh** | 7-day refresh token | Seamless user experience | ✅ Active |
+| **Client-Side Logout** | Clear cookies | Tokens remain valid until expiry | ✅ Active |
+| **Password Change** | Invalidate all sessions | All devices must re-login | ⚠️ Planned |
+| **Algorithm Attack** | Force HS256 | Prevent algorithm confusion | ✅ Active |
+| **HTTPS Only** | Secure cookies in prod | Cookies only over HTTPS | ✅ Active |
 
 **Key Configuration:**
 - **Algorithm**: HS256 (Symmetric)
 - **Access Token**: 15 minutes
 - **Refresh Token**: 7 days
 - **Storage**: httpOnly cookies
-- **Revocation**: Redis blacklist
-- **Payload**: userId, role, email (no permissions)
+- **Revocation**: Client-side cookie clearing (tokens valid until expiry)
+- **Payload**: userId, username only (minimal for security)
 
 **Performance:**
-- Redis blacklist check: ~1ms per request
 - JWT verify: ~0.5ms per request
-- Total overhead: ~1.5ms per authenticated request
+- Total overhead: ~0.5ms per authenticated request
 
 ---
 
@@ -4047,7 +3959,6 @@ import cookieParser from 'cookie-parser';
 import routes from './routes';
 import { errorHandler } from './core/middleware/error.middleware';
 import { connectionManager } from './core/database/connection-manager';
-import { redisManager } from './config/redis.config';
 import { Logger } from './core/utils/logger.util';
 
 export class App {
@@ -4092,22 +4003,8 @@ export class App {
     }
   }
 
-  public async connectRedis(): Promise<void> {
-    try {
-      await redisManager.connect();
-      Logger.info('Redis connected successfully');
-    } catch (error) {
-      Logger.error('Redis connection failed:', error);
-      throw error;
-    }
-  }
-
   public async disconnectDatabase(): Promise<void> {
     await connectionManager.disconnect();
-  }
-
-  public async disconnectRedis(): Promise<void> {
-    await redisManager.disconnect();
   }
 }
 ```
@@ -4126,9 +4023,6 @@ async function startServer(): Promise<void> {
   try {
     // Connect to database
     await app.connectDatabase();
-    
-    // Connect to Redis
-    await app.connectRedis();
 
     // Start server
     const PORT = config.port || 3000;
@@ -4141,7 +4035,6 @@ async function startServer(): Promise<void> {
     process.on('SIGTERM', async () => {
       Logger.info('SIGTERM received, closing server...');
       await app.disconnectDatabase();
-      await app.disconnectRedis();
       process.exit(0);
     });
 
@@ -4169,7 +4062,7 @@ export const databaseConfig = {
   user: process.env.DB_USER || 'sa',
   password: process.env.DB_PASSWORD || '',
   server: process.env.DB_SERVER || 'localhost',
-  database: process.env.DB_DATABASE || 'ccms_db',
+  database: process.env.DB_DATABASE || 'db_ccms',
   port: parseInt(process.env.DB_PORT || '1433'),
   encrypt: process.env.DB_ENCRYPT === 'true',
   trustServerCertificate: process.env.DB_TRUST_CERTIFICATE === 'true',
@@ -4212,110 +4105,6 @@ export const jwtConfig = {
     path: '/'
   }
 };
-```
-
-### Redis Configuration (Token Blacklist)
-
-```typescript
-// config/redis.config.ts
-import { config as dotenvConfig } from 'dotenv';
-import { createClient, RedisClientType } from 'redis';
-import { Logger } from '@/core/utils/logger.util';
-
-dotenvConfig();
-
-export const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
-  db: parseInt(process.env.REDIS_DB || '0'),
-  
-  // Connection settings
-  socket: {
-    reconnectStrategy: (retries: number) => {
-      if (retries > 10) {
-        Logger.error('Redis max reconnection attempts reached');
-        return new Error('Max reconnection attempts reached');
-      }
-      return retries * 500; // Exponential backoff
-    }
-  }
-};
-
-// Redis Client Manager (Singleton)
-export class RedisManager {
-  private static instance: RedisManager;
-  private client: RedisClientType | null = null;
-  private isConnected: boolean = false;
-
-  private constructor() {}
-
-  public static getInstance(): RedisManager {
-    if (!RedisManager.instance) {
-      RedisManager.instance = new RedisManager();
-    }
-    return RedisManager.instance;
-  }
-
-  public async connect(): Promise<void> {
-    if (this.isConnected && this.client) {
-      Logger.info('Redis already connected');
-      return;
-    }
-
-    try {
-      this.client = createClient({
-        url: `redis://${redisConfig.host}:${redisConfig.port}`,
-        password: redisConfig.password,
-        database: redisConfig.db,
-        socket: redisConfig.socket
-      });
-
-      this.client.on('error', (err) => {
-        Logger.error('Redis Client Error:', err);
-        this.isConnected = false;
-      });
-
-      this.client.on('connect', () => {
-        Logger.info('Redis connecting...');
-      });
-
-      this.client.on('ready', () => {
-        Logger.info('Redis ready');
-        this.isConnected = true;
-      });
-
-      await this.client.connect();
-      Logger.info('Redis connection established');
-    } catch (error) {
-      Logger.error('Failed to connect to Redis:', error);
-      throw new Error('Redis connection failed');
-    }
-  }
-
-  public getClient(): RedisClientType {
-    if (!this.client || !this.isConnected) {
-      throw new Error('Redis not connected. Call connect() first.');
-    }
-    return this.client;
-  }
-
-  public async disconnect(): Promise<void> {
-    if (this.client) {
-      await this.client.quit();
-      this.client = null;
-      this.isConnected = false;
-      Logger.info('Redis connection closed');
-    }
-  }
-
-  public isConnectionActive(): boolean {
-    return this.isConnected;
-  }
-}
-
-// Export singleton instance
-export const redisManager = RedisManager.getInstance();
 ```
 
 ### TypeScript Configuration
@@ -4416,7 +4205,6 @@ export const redisManager = RedisManager.getInstance();
   "dependencies": {
     "express": "^4.18.2",
     "mssql": "^10.0.2",
-    "redis": "^4.6.12",
     "dotenv": "^16.4.1",
     "jsonwebtoken": "^9.0.2",
     "bcrypt": "^5.1.1",
@@ -4657,19 +4445,13 @@ API_VERSION=v1
 DB_USER=sa
 DB_PASSWORD=your-password-here
 DB_SERVER=localhost
-DB_DATABASE=ccms_db
+DB_DATABASE=db_ccms
 DB_PORT=1433
 DB_ENCRYPT=false
 DB_TRUST_CERTIFICATE=true
 DB_POOL_MAX=10
 DB_POOL_MIN=2
 DB_POOL_IDLE_TIMEOUT=30000
-
-# Redis (Token Blacklist)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
 
 # JWT Authentication (HS256)
 JWT_SECRET=your-jwt-secret-key-min-32-chars-change-in-production
@@ -4725,11 +4507,6 @@ DB_TRUST_CERTIFICATE=true
 DB_POOL_MAX=5
 DB_POOL_MIN=1
 DB_POOL_IDLE_TIMEOUT=30000
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
 
 JWT_SECRET=dev-secret-key-not-for-production-use-only
 JWT_ACCESS_EXPIRY=15m
@@ -4789,11 +4566,6 @@ DB_POOL_MAX = 10
 DB_POOL_MIN = 2
 DB_POOL_IDLE_TIMEOUT = 30000
 
-REDIS_HOST = uat-redis.redis.cache.windows.net
-REDIS_PORT = 6380
-REDIS_PASSWORD = [Secure Value - Hidden]
-REDIS_DB = 0
-
 JWT_SECRET = [Secure Value - Hidden - Min 64 chars]
 JWT_ACCESS_EXPIRY = 15m
 JWT_REFRESH_EXPIRY = 7d
@@ -4820,8 +4592,7 @@ az webapp config appsettings set --resource-group myResourceGroup --name ccms-ap
   NODE_ENV=uat \
   DB_SERVER=uat-sqlserver.database.windows.net \
   DB_DATABASE=ccms_uat \
-  JWT_SECRET=your-secure-secret \
-  REDIS_HOST=uat-redis.redis.cache.windows.net
+  JWT_SECRET=your-secure-secret
 ```
 
 #### Option 2: Docker/Docker Compose
@@ -4843,8 +4614,6 @@ services:
       DB_SERVER: prod-sqlserver.company.com
       DB_DATABASE: ccms_production
       DB_ENCRYPT: true
-      REDIS_HOST: prod-redis.company.com
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: https://ccms.company.com
       CORS_ORIGIN: https://ccms.company.com
@@ -4863,7 +4632,6 @@ docker-compose up -d
 # Or use .env file for Docker (NOT committed to Git)
 # Docker Compose automatically reads .env in the same directory
 echo "DB_PASSWORD=prod_password" >> .env
-echo "REDIS_PASSWORD=redis_password" >> .env
 echo "JWT_SECRET=jwt_secret_here" >> .env
 ```
 
@@ -4881,7 +4649,6 @@ option_settings:
     DB_SERVER: prod-db.xxxxx.us-east-1.rds.amazonaws.com
     DB_DATABASE: ccms_production
     DB_ENCRYPT: true
-    REDIS_HOST: prod-redis.xxxxx.cache.amazonaws.com
     FRONTEND_URL: https://ccms.company.com
     LOG_LEVEL: warn
 ```
@@ -4936,7 +4703,7 @@ jobs:
 
 **Environment Variables from GitHub Secrets:**
 - Repository → Settings → Secrets and variables → Actions
-- Create secrets: `DB_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET`
+- Create secrets: `DB_PASSWORD`, `JWT_SECRET`
 - Reference in workflow: `${{ secrets.DB_PASSWORD }}`
 
 ---
@@ -4972,13 +4739,6 @@ export const env = {
     }
   },
   
-  redis: {
-    host: process.env.REDIS_HOST!,
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD || undefined,
-    db: parseInt(process.env.REDIS_DB || '0', 10)
-  },
-  
   jwt: {
     secret: process.env.JWT_SECRET!,
     accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
@@ -5009,7 +4769,7 @@ export const env = {
 // Validate required environment variables
 const requiredEnvVars = [
   'DB_USER', 'DB_PASSWORD', 'DB_SERVER', 'DB_DATABASE',
-  'REDIS_HOST', 'JWT_SECRET'
+  'JWT_SECRET'
 ];
 
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
@@ -5053,7 +4813,7 @@ export const jwtConfig = {
 
 #### Local Development
 - [ ] Copy `.env.example` to `.env`
-- [ ] Configure local database and Redis
+- [ ] Configure local database
 - [ ] Use development JWT secret (can be simple)
 - [ ] Run `npm run dev`
 
@@ -5555,7 +5315,6 @@ docker build --build-arg ENVIRONMENT=production -t ccms-frontend:prod .
 3. **Rotate secrets regularly**
    - JWT secrets: Every 6 months
    - Database passwords: Every 3 months
-   - Redis passwords: Every 6 months
 
 4. **Use environment variable management**
    - AWS Secrets Manager
@@ -5738,8 +5497,8 @@ cd ccms-backend-api
 # Initialize Node.js project
 npm init -y
 
-# Install dependencies (including Redis and cookie-parser for JWT)
-npm install express mssql redis dotenv jsonwebtoken bcrypt joi winston cors helmet morgan cookie-parser compression express-rate-limit
+# Install dependencies
+npm install express mssql dotenv jsonwebtoken bcrypt joi winston cors helmet morgan cookie-parser compression express-rate-limit
 
 # Install TypeScript and dev dependencies
 npm install -D typescript @types/node @types/express @types/mssql @types/jsonwebtoken @types/bcrypt @types/cors @types/morgan @types/cookie-parser @types/compression ts-node-dev nodemon rimraf @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint prettier jest @types/jest ts-jest
@@ -5776,19 +5535,13 @@ PORT=3000
 DB_USER=sa
 DB_PASSWORD=YourPassword123
 DB_SERVER=localhost
-DB_DATABASE=ccms_db
+DB_DATABASE=db_ccms
 DB_PORT=1433
 DB_ENCRYPT=false
 DB_TRUST_CERTIFICATE=true
 DB_POOL_MAX=10
 DB_POOL_MIN=2
 DB_POOL_IDLE_TIMEOUT=30000
-
-# Redis (Token Blacklist)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
 
 # JWT Authentication (HS256)
 JWT_SECRET=your-jwt-secret-key-change-in-production-min-32-chars
@@ -5803,30 +5556,15 @@ FRONTEND_URL=http://localhost:4200
 LOG_LEVEL=debug
 ```
 
-**Note**: Make sure Redis is installed and running:
-```bash
-# Install Redis (Windows - using Chocolatey)
-choco install redis-64
-
-# Or use Docker
-docker run -d -p 6379:6379 redis:latest
-
-# Verify Redis is running
-redis-cli ping
-# Should return: PONG
-```
-LOG_LEVEL=debug
-```
-
 ### Step 5: Create Database Connection
 
-Follow the **ConnectionManager** and **RedisManager** implementations from the Configuration section.
+Follow the **ConnectionManager** implementation from the Configuration section.
 
 ### Step 6: Implement JWT Authentication
 
 ```bash
 # Create auth core services
-touch src/core/auth/{jwt.service.ts,token-blacklist.service.ts}
+touch src/core/auth/jwt.service.ts
 touch src/core/middleware/auth.middleware.ts
 touch src/core/utils/crypto.util.ts
 
@@ -5838,13 +5576,11 @@ touch src/features/auth/{auth.controller.ts,auth.service.ts,auth.routes.ts,auth.
 **Implementation order:**
 1. `core/utils/crypto.util.ts` - Password hashing utilities
 2. `config/jwt.config.ts` - JWT configuration
-3. `config/redis.config.ts` - Redis manager
-4. `core/auth/jwt.service.ts` - Token generation/verification
-5. `core/auth/token-blacklist.service.ts` - Redis blacklist
-6. `core/middleware/auth.middleware.ts` - Auth middleware
-7. `features/auth/auth.service.ts` - Auth business logic
-8. `features/auth/auth.controller.ts` - Login/logout/refresh endpoints
-9. `features/auth/auth.routes.ts` - Auth routes
+3. `core/auth/jwt.service.ts` - Token generation/verification
+4. `core/middleware/auth.middleware.ts` - Auth middleware
+5. `features/auth/auth.service.ts` - Auth business logic
+6. `features/auth/auth.controller.ts` - Login/logout/refresh endpoints
+7. `features/auth/auth.routes.ts` - Auth routes
 
 **Reference**: See complete code in the **JWT Authentication & Security** section above.
 
@@ -5873,7 +5609,6 @@ touch src/features/users/{users.types.ts,users.repository.ts,users.service.ts,us
 npm run dev
 
 # Server should start at http://localhost:3000
-# Make sure Redis is also running!
 ```
 
 ### Step 9: Test API

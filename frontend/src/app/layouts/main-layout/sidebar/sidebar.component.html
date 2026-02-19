@@ -6,33 +6,42 @@
 >
   <!-- Navigation -->
   <nav class="py-3">
-    <div class="flex flex-col" *ngFor="let item of menuItems$ | async">
+    <div class="flex flex-col" *ngFor="let item of menuItems">
       <!-- Menu Item without Children -->
       <a
-        *ngIf="!item.children"
+        *ngIf="!item.children && item.id !== 'logout'"
         [routerLink]="item.route || '/dashboard'"
-        [class.bg-blue-600]="item.route && isActive(item.route)"
-        [class.text-white]="item.route && isActive(item.route)"
-        [class.text-gray-300]="!item.route || !isActive(item.route)"
-        class="flex items-center gap-3 px-5 py-3 hover:bg-[#334155] transition-all whitespace-nowrap overflow-hidden text-xs font-medium"
+        routerLinkActive="!bg-blue-600 !text-white !border-l-4 !border-blue-400"
+        [routerLinkActiveOptions]="{exact: false}"
+        class="flex items-center gap-3 px-5 py-3 hover:bg-[#334155] transition-all whitespace-nowrap overflow-hidden text-xs font-medium text-gray-300"
       >
         <i [class]="'fas fa-' + item.icon + ' w-5 text-center text-sm'"></i>
         <span [class.hidden]="!isOpen" class="link-text">{{ item.label }}</span>
       </a>
 
-      <!-- Menu Item with Children -->
+      <!-- Logout Menu Item (with confirmation) -->
       <button
-        *ngIf="item.children"
+        *ngIf="!item.children && item.id === 'logout'"
+        type="button"
+        (click)="onMenuItemClick(item, $event)"
+        class="flex items-center gap-3 px-5 py-3 hover:bg-red-600 transition-all whitespace-nowrap overflow-hidden text-xs font-medium text-gray-300 hover:text-white w-full text-left"
+      >
+        <i [class]="'fas fa-' + item.icon + ' w-5 text-center text-sm'"></i>
+        <span [class.hidden]="!isOpen" class="link-text">{{ item.label }}</span>
+      </button>
+
+      <!-- Menu Item with Children (Categories) - Expanded Sidebar -->
+      <button
+        *ngIf="item.children && isOpen"
         type="button"
         (click)="toggleSubmenu(item)"
         class="flex items-center justify-between px-5 py-3 hover:bg-[#334155] transition-all text-gray-300 whitespace-nowrap overflow-hidden text-xs font-medium"
       >
         <div class="flex items-center gap-3">
           <i [class]="'fas fa-' + item.icon + ' w-5 text-center text-sm'"></i>
-          <span [class.hidden]="!isOpen" class="link-text">{{ item.label }}</span>
+          <span class="link-text">{{ item.label }}</span>
         </div>
         <svg
-          *ngIf="isOpen"
           class="h-3 w-3 transition-transform"
           [class.rotate-180]="item.expanded"
           fill="none"
@@ -43,17 +52,51 @@
         </svg>
       </button>
 
-      <!-- Submenu Items -->
+      <!-- Menu Item with Children (Categories) - Collapsed Sidebar -->
+      <button
+        *ngIf="item.children && !isOpen"
+        type="button"
+        (click)="toggleSubmenu(item)"
+        [title]="item.label + ' (' + item.children.length + ' items)'"
+        class="relative flex items-center justify-center py-3 hover:bg-[#334155] transition-all text-gray-300 w-full"
+      >
+        <i [class]="'fas fa-' + item.icon + ' w-5 text-center text-sm'"></i>
+        <!-- Expand/Collapse indicator badge -->
+        <svg
+          class="absolute top-1 right-2 h-2.5 w-2.5 transition-transform"
+          [class.rotate-180]="item.expanded"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M7 10l5 5 5-5z"/>
+        </svg>
+      </button>
+
+      <!-- Submenu Items - Expanded sidebar -->
       <div *ngIf="item.children && item.expanded && isOpen" class="bg-[#0f172a]">
         <a
           *ngFor="let child of item.children"
           [routerLink]="child.route || '/dashboard'"
-          [class.bg-blue-600]="child.route && isActive(child.route)"
-          [class.text-white]="child.route && isActive(child.route)"
-          [class.text-gray-400]="!child.route || !isActive(child.route)"
-          class="block px-12 py-2 hover:bg-[#334155] transition-all text-xs"
+          routerLinkActive="!bg-blue-600 !text-white !border-l-4 !border-blue-400"
+          [routerLinkActiveOptions]="{exact: false}"
+          class="flex items-center gap-3 px-12 py-2 hover:bg-[#334155] transition-all text-xs text-gray-400"
         >
-          {{ child.label }}
+          <i [class]="'fas fa-' + child.icon + ' w-4 text-center text-xs'"></i>
+          <span>{{ child.label }}</span>
+        </a>
+      </div>
+
+      <!-- Submenu Items - Collapsed sidebar (show icons only when expanded) -->
+      <div *ngIf="item.children && !isOpen && item.expanded" class="flex flex-col bg-[#0f172a]">
+        <a
+          *ngFor="let child of item.children"
+          [routerLink]="child.route || '/dashboard'"
+          routerLinkActive="!bg-blue-600 !text-white"
+          [routerLinkActiveOptions]="{exact: false}"
+          [title]="child.label"
+          class="flex items-center justify-center py-3 hover:bg-[#334155] transition-all text-gray-400"
+        >
+          <i [class]="'fas fa-' + child.icon + ' w-5 text-center text-xs'"></i>
         </a>
       </div>
     </div>

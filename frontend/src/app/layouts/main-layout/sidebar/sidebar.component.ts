@@ -1,12 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { Subject, takeUntil, filter, Observable } from 'rxjs';
+import { Subject, takeUntil, filter } from 'rxjs';
 import { SidebarService } from '../../../core/services/sidebar.service';
-import { RoleService, MenuItem } from '../../../core/services/role.service';
+import { MenuService, MenuItem } from '../../../core/services/menu.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 /**
- * Sidebar navigation component with role-based menu items
+ * Sidebar navigation component with permission-based menu items
  */
 @Component({
   selector: 'app-sidebar',
@@ -18,22 +19,33 @@ import { RoleService, MenuItem } from '../../../core/services/role.service';
 export class SidebarComponent implements OnInit, OnDestroy {
   isOpen = true;
   currentRoute = '';
-  menuItems$!: Observable<MenuItem[]>;
+  menuItems: MenuItem[] = [];
   private destroy$ = new Subject<void>();
 
   constructor(
     private sidebarService: SidebarService,
-    private roleService: RoleService,
-    private router: Router
+    private menuService: MenuService,
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    console.log('📱 Sidebar component initialized');
     this.sidebarService.isSidebarOpen$
       .pipe(takeUntil(this.destroy$))
       .subscribe(isOpen => this.isOpen = isOpen);
 
-    // Get menu items for selected role
-    this.menuItems$ = this.roleService.getCurrentMenuItems();
+    // Subscribe to menu items and store them directly
+    this.menuService.getCurrentMenuItems()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(items => {
+        console.log('🎨 Sidebar received menu items update:', items);
+        console.log('🎨 Menu count:', items.length);
+        if (items.length > 0) {
+          console.log('🎨 First item:', items[0]);
+        }
+        this.menuItems = items;
+      });
 
     this.router.events
       .pipe(
@@ -68,6 +80,29 @@ export class SidebarComponent implements OnInit, OnDestroy {
   closeSidebar(): void {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       this.sidebarService.close();
+    }
+  }
+
+  onMenuItemClick(item: MenuItem, event: Event): void {
+    // Handle logout with confirmation
+    if (item.id === 'logout') {
+      event.preventDefault();
+      this.confirmLogout();
+    }
+  }
+
+  private confirmLogout(): void {
+    if (confirm('Are you sure you want to logout?')) {
+      this.authService.logout().subscribe({
+        next: () => {
+          console.log('✅ Logout successful');
+        },
+        error: (error) => {
+          console.error('❌ Logout failed:', error);
+          // Still navigate to login on error
+          this.router.navigate(['/auth/login']);
+        }
+      });
     }
   }
 }

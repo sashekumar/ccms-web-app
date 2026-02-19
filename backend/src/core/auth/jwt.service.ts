@@ -10,7 +10,6 @@ export class JwtService {
     const payload: TokenPayload = {
       userId: user.user_id,
       username: user.username,
-      roleId: user.role_id,
       tokenType: 'access'
     };
 
@@ -31,7 +30,6 @@ export class JwtService {
     const payload: TokenPayload = {
       userId: user.user_id,
       username: user.username,
-      roleId: user.role_id,
       tokenType: 'refresh'
     };
 

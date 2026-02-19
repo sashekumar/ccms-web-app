@@ -10,6 +10,7 @@ const authController = new AuthController();
 // Public routes
 router.get('/csrf-token', authController.getCsrfToken);
 router.post('/login', validateRequest(loginSchema), authController.login);
+router.post('/refresh', authController.refresh);
 
 // Protected routes
 router.post('/logout', authMiddleware, authController.logout);

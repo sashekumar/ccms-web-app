@@ -998,6 +998,315 @@ ck_claims_amount (check constraint)
 
 ---
 
+## 🔐 CONSTANTS MANAGEMENT PATTERN
+
+### Why Constants Matter
+
+Centralizing constants eliminates:
+- ❌ Magic strings/numbers scattered across code
+- ❌ Typos in route paths, API endpoints, or database names
+- ❌ Inconsistent naming across features
+- ❌ Difficult refactoring when values change
+
+Enables:
+- ✅ Single source of truth
+- ✅ TypeScript autocomplete and type safety
+- ✅ Easy refactoring (change once, update everywhere)
+- ✅ Reduced runtime errors from typos
+
+### Backend Constants Structure
+
+**File**: `backend/src/core/constants/database.constants.ts`
+
+```typescript
+// ✅ GOOD: Centralized database object names
+export const DB_TABLES = {
+  USERS: 'ccms_users',
+  ROLES: 'ccms_roles',
+  MODULES: 'ccms_modules',
+  PERMISSIONS: 'ccms_role_permissions'
+} as const;
+
+export const DB_VIEWS = {
+  USER_PERMISSIONS: 'vw_user_permissions',
+  ROLE_DETAILS: 'vw_role_details'
+} as const;
+
+export const DB_PROCEDURES = {
+  GET_USER_PERMISSIONS: 'sp_GetUserPermissions',
+  ASSIGN_ROLE: 'sp_AssignUserRole'
+} as const;
+
+export const DB_FUNCTIONS = {
+  CHECK_PERMISSION: 'fn_CheckUserPermission'
+} as const;
+```
+
+**Usage in Repository**:
+```typescript
+import { DB_TABLES, DB_PROCEDURES } from '../../core/constants';
+
+class PermissionsRepository {
+  async getUserPermissions(userId: number) {
+    // ✅ GOOD: Using constants
+    const query = `
+      SELECT p.* 
+      FROM ${DB_TABLES.PERMISSIONS} p
+      WHERE p.user_id = @userId
+    `;
+    return this.execute(query, { userId });
+  }
+  
+  // ❌ BAD: Magic strings
+  async getBadExample(userId: number) {
+    const query = 'SELECT * FROM ccms_role_permisions WHERE user_id = @userId';  // Typo!
+    return this.execute(query, { userId });
+  }
+}
+```
+
+**File**: `backend/src/core/constants/routes.constants.ts`
+
+```typescript
+// ✅ GOOD: API route constants
+export const API_ROUTES = {
+  AUTH: {
+    BASE: '/auth',
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
+    REFRESH: '/auth/refresh'
+  },
+  USERS: {
+    BASE: '/users',
+    BY_ID: '/users/:id',
+    PROFILE: '/users/profile'
+  },
+  PERMISSIONS: {
+    BASE: '/permissions',
+    USER_PERMISSIONS: '/permissions/user',
+    ASSIGN_ROLE: '/permissions/assign-role'
+  }
+} as const;
+```
+
+**Usage in Controller**:
+```typescript
+import { API_ROUTES } from '../../core/constants';
+import { Router } from 'express';
+
+const router = Router();
+
+// ✅ GOOD: Using route constants
+router.post(API_ROUTES.PERMISSIONS.ASSIGN_ROLE, assignRoleController);
+
+// ❌ BAD: Magic string
+router.post('/permisions/assign-role', assignRoleController);  // Typo!
+```
+
+### Frontend Constants Structure
+
+**File**: `frontend/src/app/core/constants/api-endpoints.constants.ts`
+
+```typescript
+// ⚠️ CRITICAL: API_BASE configuration
+// If environment.apiUrl already includes '/api', then API_BASE should be EMPTY
+// Example: environment.apiUrl = 'http://localhost:3000/api'
+const API_BASE = '';  // ✅ CORRECT - prevents /api/api/ duplication
+
+// ❌ WRONG: Would create http://localhost:3000/api/api/users
+// const API_BASE = '/api';
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: `${API_BASE}/auth/login`,
+    LOGOUT: `${API_BASE}/auth/logout`,
+    REFRESH: `${API_BASE}/auth/refresh`
+  },
+  USERS: {
+    LIST: `${API_BASE}/users`,
+    BY_ID: (id: number) => `${API_BASE}/users/${id}`,
+    PROFILE: `${API_BASE}/users/profile`
+  },
+  PERMISSIONS: {
+    USER: {
+      GET_CURRENT: `${API_BASE}/permissions/user`,
+      ASSIGN_ROLE: `${API_BASE}/permissions/assign-role`
+    }
+  }
+} as const;
+```
+
+**File**: `frontend/src/app/core/constants/routes.constants.ts`
+
+```typescript
+// ✅ GOOD: Application routes
+export const APP_ROUTES = {
+  PUBLIC: {
+    LOGIN: '/login',
+    UNAUTHORIZED: '/unauthorized'
+  },
+  PROTECTED: {
+    DASHBOARD: '/dashboard',
+    USERS: {
+      BASE: '/users',
+      LIST: '/users',
+      CREATE: '/users/create',
+      EDIT: (id: number) => `/users/edit/${id}`
+    },
+    ROLES: {
+      BASE: '/roles',
+      LIST: '/roles',
+      MANAGE: '/roles/manage'
+    }
+  }
+} as const;
+```
+
+**Usage in Guard**:
+```typescript
+import { APP_ROUTES } from '../constants';
+import { Router } from '@angular/router';
+
+export const permissionGuard: CanActivateFn = (route, state) => {
+  const hasPermission = checkPermission();
+  
+  if (!hasPermission) {
+    // ✅ GOOD: Using route constants
+    router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
+    return false;
+  }
+  
+  return true;
+};
+```
+
+**File**: `frontend/src/app/core/constants/permissions.constants.ts`
+
+```typescript
+// ✅ GOOD: Permission keys (matches database module_code values)
+export const USER_MANAGEMENT_PERMISSIONS = {
+  MODULE: 'USER_MANAGEMENT',  // Must match ccms_modules.module_code
+  ACTIONS: {
+    VIEW: 'USER_MANAGEMENT.VIEW',
+    CREATE: 'USER_MANAGEMENT.CREATE',
+    EDIT: 'USER_MANAGEMENT.EDIT',
+    DELETE: 'USER_MANAGEMENT.DELETE'
+  }
+} as const;
+
+export const ROLE_MANAGEMENT_PERMISSIONS = {
+  MODULE: 'ROLE_MANAGEMENT',
+  ACTIONS: {
+    VIEW: 'ROLE_MANAGEMENT.VIEW',
+    MANAGE: 'ROLE_MANAGEMENT.MANAGE'
+  }
+} as const;
+
+export const PERMISSIONS = {
+  USER_MANAGEMENT: USER_MANAGEMENT_PERMISSIONS,
+  ROLE_MANAGEMENT: ROLE_MANAGEMENT_PERMISSIONS
+  // Add other modules only when they exist in database
+} as const;
+```
+
+### Constants Best Practices
+
+#### ✅ DO:
+1. **Query database before adding module constants**
+   ```sql
+   -- Always verify modules exist first
+   SELECT module_code FROM ccms_modules;
+   ```
+
+2. **Use `as const` for type safety**
+   ```typescript
+   export const DB_TABLES = { USERS: 'ccms_users' } as const;
+   // TypeScript knows it's 'ccms_users', not just string
+   ```
+
+3. **Group related constants**
+   ```typescript
+   export const API_ENDPOINTS = {
+     AUTH: { /* auth endpoints */ },
+     USERS: { /* user endpoints */ }
+   };
+   ```
+
+4. **Use functions for dynamic values**
+   ```typescript
+   export const API_ENDPOINTS = {
+     USERS: {
+       BY_ID: (id: number) => `/users/${id}`  // ✅ Type-safe
+     }
+   };
+   ```
+
+5. **Check environment configuration**
+   ```typescript
+   // If environment.apiUrl = 'http://localhost:3000/api'
+   const API_BASE = '';  // ✅ Don't duplicate /api
+   ```
+
+#### ❌ DON'T:
+1. **Don't add speculative/future constants**
+   ```typescript
+   // ❌ WRONG: CLAIMS module doesn't exist yet
+   export const PERMISSIONS = {
+     USER_MANAGEMENT: USER_MANAGEMENT_PERMISSIONS,
+     CLAIMS_MANAGEMENT: CLAIMS_MANAGEMENT_PERMISSIONS  // Not in DB!
+   };
+   ```
+
+2. **Don't use commented examples**
+   ```typescript
+   // ❌ WRONG: No commented placeholder examples
+   export const DB_TABLES = {
+     USERS: 'ccms_users',
+     // CLAIMS: 'ccms_claims',  // Add when implemented
+   };
+   ```
+
+3. **Don't hardcode magic strings in code**
+   ```typescript
+   // ❌ WRONG: Magic string
+   router.post('/users/assign-role', controller);
+   
+   // ✅ GOOD: Use constant
+   router.post(API_ROUTES.USERS.ASSIGN_ROLE, controller);
+   ```
+
+4. **Don't duplicate path segments**
+   ```typescript
+   // ❌ WRONG: Creates /api/api/users
+   // environment.apiUrl = 'http://localhost:3000/api'
+   const API_BASE = '/api';
+   
+   // ✅ GOOD: Creates /api/users
+   const API_BASE = '';
+   ```
+
+### Migration Checklist for Constants
+
+**Backend Migration:**
+- [ ] Create `database.constants.ts` with actual DB objects only
+- [ ] Create `routes.constants.ts` with API routes
+- [ ] Update repositories to use `DB_TABLES`, `DB_PROCEDURES`, etc.
+- [ ] Update controllers to use `API_ROUTES`
+- [ ] Remove all magic strings from SQL queries
+- [ ] Test all database queries still work
+
+**Frontend Migration:**
+- [ ] Create `api-endpoints.constants.ts` (verify `API_BASE` value!)
+- [ ] Create `routes.constants.ts` with app routes
+- [ ] Create `permissions.constants.ts` (query DB first!)
+- [ ] Update services to use `API_ENDPOINTS`
+- [ ] Update guards to use `APP_ROUTES` and `PERMISSIONS`
+- [ ] Update navigation to use `APP_ROUTES`
+- [ ] Test all API calls return 200, not 404
+- [ ] Test all routes navigate correctly
+
+---
+
 # PART II: FRONTEND STANDARDS (Angular)
 *Angular-specific coding standards, patterns, and best practices*
 
@@ -2915,7 +3224,7 @@ export type UserId = string;
 **Route Naming:**
 ```typescript
 // ✅ GOOD: RESTful route naming
-router.get('/users', userController.getUsers);           // GET /api/users
+router.post('/users/list', userController.getUsers);     // POST /api/users/list (filters in body)
 router.get('/users/:id', userController.getUserById);    // GET /api/users/123
 router.post('/users', userController.createUser);        // POST /api/users
 router.put('/users/:id', userController.updateUser);     // PUT /api/users/123
@@ -2983,17 +3292,12 @@ DB_HOST=localhost
 DB_PORT=1433
 DB_USER=admin
 DB_PASSWORD=secret
-DB_NAME=ccms_db
+DB_NAME=db_ccms
 
 # JWT
 JWT_SECRET=your-secret-key
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=7d
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
 ```
 
 **API Response Naming:**
@@ -3751,6 +4055,389 @@ Following these coding standards ensures:
 - **Security** in application
 - **Performance** optimization
 - **Collaboration** efficiency
+
+---
+
+## ⚠️ COMMON PITFALLS FROM REAL IMPLEMENTATION
+
+### 1. Double Path Segments in API URLs
+
+**Symptom**: API calls return 404, browser shows `http://localhost:3000/api/api/permissions/user`
+
+**Root Cause**:
+```typescript
+// environment.ts
+export const environment = {
+  apiUrl: 'http://localhost:3000/api'  // Already includes /api
+};
+
+// api-endpoints.constants.ts
+const API_BASE = '/api';  // ❌ WRONG - duplicates /api
+
+export const API_ENDPOINTS = {
+  PERMISSIONS: {
+    USER: `${API_BASE}/permissions/user`  // Results in /api/permissions/user
+  }
+};
+
+// service.ts
+getUserPermissions() {
+  // Constructs: environment.apiUrl + API_ENDPOINTS.PERMISSIONS.USER
+  // = 'http://localhost:3000/api' + '/api/permissions/user'
+  // = 'http://localhost:3000/api/api/permissions/user'  ❌ 404 Error!
+  return this.http.get(`${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER}`);
+}
+```
+
+**Solution**:
+```typescript
+// api-endpoints.constants.ts
+const API_BASE = '';  // ✅ CORRECT - environment.apiUrl already has /api
+
+export const API_ENDPOINTS = {
+  PERMISSIONS: {
+    USER: `${API_BASE}/permissions/user`  // Just /permissions/user
+  }
+};
+
+// service.ts  
+getUserPermissions() {
+  // Constructs: 'http://localhost:3000/api' + '/permissions/user'
+  // = 'http://localhost:3000/api/permissions/user'  ✅ Works!
+  return this.http.get(`${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER}`);
+}
+```
+
+**Prevention Rule**: If `environment.apiUrl` includes the base path (`/api`), then `API_BASE` must be empty string.
+
+**Debug Steps**:
+1. Open browser DevTools → Network tab
+2. Make API call and check the request URL
+3. If you see `/api/api/`, check your `API_BASE` constant
+4. Verify `environment.apiUrl` value
+5. Ensure no double path segments in URL construction
+
+---
+
+### 2. Speculative/Future Features in Constants
+
+**Symptom**: Constants file has modules that don't exist in database, causing confusion
+
+**Problem**:
+```typescript
+// ❌ WRONG: Adding features that aren't implemented
+export const PERMISSIONS = {
+  USER_MANAGEMENT: USER_MANAGEMENT_PERMISSIONS,      // ✅ Exists in DB
+  ROLE_MANAGEMENT: ROLE_MANAGEMENT_PERMISSIONS,      // ✅ Exists in DB
+  CLAIMS_MANAGEMENT: CLAIMS_MANAGEMENT_PERMISSIONS,  // ❌ Not in database!
+  MEMBER_MANAGEMENT: MEMBER_MANAGEMENT_PERMISSIONS,  // ❌ Placeholder only!
+  REPORTS: REPORTS_PERMISSIONS                        // ❌ Future feature!
+};
+```
+
+**Database Reality**:
+```sql
+SELECT module_code FROM ccms_modules;
+-- Results:
+-- USER_MANAGEMENT
+-- ROLE_MANAGEMENT
+-- DASHBOARD
+-- ... (9 modules total, all system admin)
+-- No CLAIMS_MANAGEMENT, MEMBER_MANAGEMENT, or REPORTS
+```
+
+**Solution**:
+```typescript
+// ✅ CORRECT: Only actual implemented modules
+export const PERMISSIONS = {
+  USER_MANAGEMENT: USER_MANAGEMENT_PERMISSIONS,
+  ROLE_MANAGEMENT: ROLE_MANAGEMENT_PERMISSIONS,
+  DASHBOARD: DASHBOARD_PERMISSIONS
+  // Add CLAIMS_MANAGEMENT when:
+  // 1. It's added to ccms_modules table
+  // 2. Backend endpoints are implemented
+  // 3. Frontend feature folder is created
+};
+```
+
+**Prevention Rule**: Always query your database before adding module constants.
+
+```sql
+-- Run this query first
+SELECT 
+  module_id,
+  module_code,
+  module_name,
+  is_active
+FROM ccms_modules
+ORDER BY module_code;
+```
+
+**Why This Matters**:
+- Guard checks fail if module doesn't exist in DB
+- Permission checks return false negatives
+- Developers waste time implementing against non-existent modules
+- Creates false expectations about available features
+
+---
+
+### 3. Placeholder Folders Without Implementation
+
+**Symptom**: Feature folders exist but have no real components, just TODO comments
+
+**Problem Structure**:
+```
+features/
+  ├── users/                ✅ Fully implemented (components, services, routes)
+  ├── roles/                ✅ Fully implemented
+  ├── claims/               ❌ Only has routes.ts with TODO
+  ├── reports/              ❌ Empty folder with just .gitkeep
+  ├── settings/             ❌ Single component with "Coming Soon" message
+  └── collections/          ❌ Just folder structure, no code
+```
+
+**Problems This Causes**:
+- Routes defined but lead to empty/broken pages
+- Menu items navigate to non-functional features
+- Confusion about what's implemented vs planned
+- Import errors when other code references these folders
+- Bundle includes unnecessary placeholder code
+
+**Solution**: Remove placeholder folders entirely
+
+```bash
+# Remove placeholder folders
+Remove-Item -Path "frontend/src/app/features/claims" -Recurse -Force
+Remove-Item -Path "frontend/src/app/features/reports" -Recurse -Force
+Remove-Item -Path "frontend/src/app/features/settings" -Recurse -Force
+```
+
+```typescript
+// app.routes.ts - Remove placeholder routes
+export const routes: Routes = [
+  { path: 'users', loadChildren: () => import('./features/users/routes') },
+  { path: 'roles', loadChildren: () => import('./features/roles/routes') },
+  // ❌ REMOVE: Placeholder routes
+  // { path: 'claims', loadChildren: () => import('./features/claims/routes') },
+  // { path: 'reports', loadChildren: () => import('./features/reports/routes') },
+];
+```
+
+**Prevention Rule**: If a feature folder exists, it must be fully functional. No placeholders.
+
+**When to Create Feature Folders**:
+- ✅ When you start actual implementation
+- ✅ When you have database schema ready
+- ✅ When backend endpoints are available
+- ❌ "For future use"
+- ❌ "To plan the structure"
+- ❌ "So we don't forget"
+
+---
+
+### 4. Commented Examples in Constants Files
+
+**Problem**:
+```typescript
+// ❌ WRONG: Commented examples pollute the file
+export const DB_TABLES = {
+  USERS: 'ccms_users',
+  ROLES: 'ccms_roles',
+  // Add other tables as needed:          // Bad practice!
+  // CLAIMS: 'ccms_claims',               // Speculative!
+  // MEMBERS: 'ccms_members',             // Not implemented!
+  // HOSPITALS: 'ccms_hospitals',         // Future feature!
+} as const;
+
+export const DB_PROCEDURES = {
+  GET_USER_PERMISSIONS: 'sp_GetUserPermissions',
+  // Examples:                            // Unnecessary!
+  // GET_CLAIMS: 'sp_GetClaims',
+  // PROCESS_PAYMENT: 'sp_ProcessPayment',
+} as const;
+```
+
+**Why This Is Bad**:
+- Developers might uncomment without verifying DB objects exist
+- Creates maintenance burden (keeping comments up to date)
+- Gives false impression these are available
+- Clutters the file with "documentation" that belongs elsewhere
+
+**Solution**:
+```typescript
+// ✅ GOOD: Only actual database objects
+export const DB_TABLES = {
+  USERS: 'ccms_users',
+  ROLES: 'ccms_roles'
+} as const;
+// Note: Add new tables here when they're created in database
+// Always verify with: SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME LIKE 'ccms_%'
+
+export const DB_PROCEDURES = {
+  GET_USER_PERMISSIONS: 'sp_GetUserPermissions'
+} as const;
+// Note: When adding new stored procedures:
+// 1. Ensure they exist in database first
+// 2. Add them here with exact name (case-sensitive)
+// 3. Update type definitions if needed
+```
+
+**Prevention Rule**: No commented code examples in production constants files. Use external documentation instead.
+
+---
+
+### 5. Magic Strings in SQL Queries
+
+**Problem**:
+```typescript
+// ❌ WRONG: Magic strings with typos
+class PermissionsRepository {
+  async getUserPermissions(userId: number) {
+    const query = `
+      SELECT p.*
+      FROM ccms_role_permisions p    -- Typo! Should be 'permissions'
+      INNER JOIN ccms_user_roles ur ON p.role_id = ur.role_id
+      WHERE ur.user_id = @userId
+    `;
+    return this.execute(query, { userId });
+  }
+  
+  async getRoles() {
+    // Another typo in different file
+    const query = 'SELECT * FROM ccms_role'  // Missing 's'
+    return this.execute(query);
+  }
+}
+```
+
+**Runtime Error**:
+```
+RequestError: Invalid object name 'ccms_role_permisions'.
+```
+
+**Solution**:
+```typescript
+import { DB_TABLES, DB_VIEWS } from '../../core/constants';
+
+class PermissionsRepository {
+  async getUserPermissions(userId: number) {
+    // ✅ GOOD: Using constants (TypeScript catches typos at compile time)
+    const query = `
+      SELECT p.*
+      FROM ${DB_TABLES.PERMISSIONS} p
+      INNER JOIN ${DB_TABLES.USER_ROLES} ur ON p.role_id = ur.role_id
+      WHERE ur.user_id = @userId
+    `;
+    return this.execute(query, { userId });
+  }
+  
+  async getRoles() {
+    // ✅ GOOD: Constant ensures correct table name
+    const query = `SELECT * FROM ${DB_TABLES.ROLES}`;
+    return this.execute(query);
+  }
+  
+  async getUserPermissionsOptimized(userId: number) {
+    // ✅ BEST: Use database views for complex queries
+    const query = `
+      SELECT * 
+      FROM ${DB_VIEWS.USER_PERMISSIONS}
+      WHERE user_id = @userId
+    `;
+    return this.execute(query, { userId });
+  }
+}
+```
+
+**Benefits**:
+- TypeScript autocomplete prevents typos
+- Refactor table names in one place
+- Compile-time error if constant doesn't exist
+- Self-documenting code (clear what tables are used)
+
+---
+
+### 6. Not Testing After Constants Migration
+
+**Problem**: Assuming constants migration worked without verification
+
+**Hidden Issues**:
+```typescript
+// Looks correct, but has subtle bug
+export const API_ENDPOINTS = {
+  USERS: {
+    LIST: '/users',
+    BY_ID: (id: number) => `/users/${id}`,
+    UPDATE: '/users/:id'  // ❌ Wrong! Should be function or full path
+  }
+};
+
+// Service usage
+updateUser(id: number, data: UserDto) {
+  // Bug: Creates URL /users/:id instead of /users/123
+  return this.http.put(`${this.apiUrl}${API_ENDPOINTS.USERS.UPDATE}`, data);
+}
+```
+
+**Testing Checklist After Migration**:
+
+```typescript
+// ✅ Test Suite for Constants
+describe('API Endpoints', () => {
+  it('should generate correct user URL with ID', () => {
+    const userId = 123;
+    const url = API_ENDPOINTS.USERS.BY_ID(userId);
+    expect(url).toBe('/users/123');
+  });
+  
+  it('should not have duplicate path segments', () => {
+    Object.values(API_ENDPOINTS).forEach(endpoints => {
+      Object.values(endpoints).forEach(endpoint => {
+        const url = typeof endpoint === 'function' ? endpoint(1) : endpoint;
+        expect(url).not.toMatch(/\/api\/api\//);  // No double /api/
+      });
+    });
+  });
+});
+```
+
+**Manual Testing Steps**:
+1. **Test all API calls in browser**:
+   - Open DevTools → Network tab
+   - Perform each feature action (create, read, update, delete)
+   - Verify HTTP status is 200, not 404
+   - Check request URL format
+
+2. **Test all navigation**:
+   - Click every menu item
+   - Test browser back/forward
+   - Test direct URL entry
+   - Verify no "Page Not Found" errors
+
+3. **Test permissions**:
+   - Log in with different roles
+   - Verify guards work correctly
+   - Check unauthorized redirects
+
+4. **Check browser console**:
+   - No TypeScript errors
+   - No import errors
+   - No runtime errors
+
+---
+
+### Summary of Common Pitfalls
+
+| Pitfall | Symptom | Root Cause | Solution |
+|---------|---------|------------|----------|
+| **Double /api/** | 404 errors | `API_BASE` duplicates `environment.apiUrl` path | Set `API_BASE = ''` |
+| **Speculative modules** | Guard failures | Constants include non-existent DB modules | Query DB first, add only real modules |
+| **Placeholder folders** | Broken navigation | Feature folders exist but not implemented | Remove placeholder folders entirely |
+| **Commented examples** | Confusion | Constants files have commented future code | Remove all comments, keep only real values |
+| **Magic strings** | Typo errors | Hardcoded table/route names in queries | Use constants everywhere |
+| **No testing** | Hidden bugs | Assumptions without verification | Test thoroughly after migration |
+
+**Golden Rule**: Constants should reflect **reality**, never **speculation**.
 
 ---
 

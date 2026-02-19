@@ -138,4 +138,52 @@ export class AuthController {
       next(error);
     }
   };
+
+  /**
+   * POST /api/auth/refresh
+   * Refresh access token using refresh token
+   */
+  public refresh = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const refreshToken = req.cookies.refreshToken;
+
+      if (!refreshToken) {
+        res.status(401).json({
+          success: false,
+          message: 'Refresh token required',
+          data: null
+        });
+        return;
+      }
+
+      const result = await this.authService.refreshToken(refreshToken);
+
+      // Set new httpOnly cookies
+      res.cookie('accessToken', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000 // 15 minutes
+      });
+
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Token refreshed successfully',
+        data: null
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

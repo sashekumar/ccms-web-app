@@ -1,16 +1,15 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap, switchMap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
+import { tap, switchMap, catchError, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { PermissionService } from './permission.service';
 
 export interface User {
   userId: number;
   username: string;
   fullName: string;
-  roleId: number;
-  permissions: any;
 }
 
 export interface ApiResponse<T> {
@@ -31,10 +30,15 @@ export class AuthService {
   public currentUser$ = this.currentUserSubject.asObservable();
   
   public redirectUrl: string = '/dashboard';
+  
+  // Token refresh management
+  private isRefreshing = false;
+  private refreshTokenSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private permissionService: PermissionService
   ) {
     this.loadCurrentUser();
   }
@@ -66,11 +70,30 @@ export class AuthService {
           }
         );
       }),
-      tap((response) => {
+      switchMap((response) => {
         if (response.success && response.data) {
           this.currentUserSubject.next(response.data);
           sessionStorage.setItem('currentUser', JSON.stringify(response.data));
+          
+          // Wait for user permissions to load before completing login
+          console.log('🔐 Login successful, now loading permissions...');
+          return this.permissionService.loadUserPermissions().pipe(
+            tap((permissions) => {
+              console.log('✅ LOGIN COMPLETE: Permissions loaded successfully');
+              const totalModules = (permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0) +
+                                  (permissions.uncategorized_modules?.length || 0) +
+                                  (permissions.modules?.length || 0);
+              console.log(`📊 User has ${totalModules} permission modules`);
+            }),
+            switchMap(() => of(response)),
+            catchError(error => {
+              console.error('⚠️ Failed to load permissions during login:', error);
+              // Still allow login to proceed, permissions can be retried
+              return of(response);
+            })
+          );
         }
+        return of(response);
       })
     );
   }
@@ -85,9 +108,64 @@ export class AuthService {
       tap(() => {
         this.currentUserSubject.next(null);
         sessionStorage.removeItem('currentUser');
+        this.permissionService.clearAllData();
         this.router.navigate(['/auth/login']);
       })
     );
+  }
+
+  /**
+   * Refresh access token using refresh token
+   * Returns observable that completes when refresh is done
+   */
+  refreshAccessToken(): Observable<boolean> {
+    // Prevent multiple concurrent refresh requests
+    if (this.isRefreshing) {
+      return this.refreshTokenSubject.asObservable();
+    }
+
+    this.isRefreshing = true;
+    this.refreshTokenSubject.next(false);
+
+    return this.http.post<ApiResponse<null>>(`${this.apiUrl}/auth/refresh`, {}, {
+      withCredentials: true
+    }).pipe(
+      tap((response) => {
+        if (response.success) {
+          console.log('✅ Token refreshed successfully');
+          this.isRefreshing = false;
+          this.refreshTokenSubject.next(true);
+        }
+      }),
+      switchMap((response) => of(response.success)),
+      catchError((error) => {
+        console.error('❌ Token refresh failed:', error);
+        this.isRefreshing = false;
+        this.refreshTokenSubject.next(false);
+        
+        // Clear session and redirect to login
+        this.currentUserSubject.next(null);
+        sessionStorage.removeItem('currentUser');
+        this.permissionService.clearAllData();
+        this.router.navigate(['/auth/login']);
+        
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get refresh state observable for queuing requests during token refresh
+   */
+  getRefreshState(): Observable<boolean> {
+    return this.refreshTokenSubject.asObservable();
+  }
+
+  /**
+   * Check if token refresh is in progress
+   */
+  isRefreshingToken(): boolean {
+    return this.isRefreshing;
   }
 
   /**
@@ -102,25 +180,6 @@ export class AuthService {
    */
   isAuthenticated(): boolean {
     return this.currentUserSubject.value !== null;
-  }
-
-  /**
-   * Check if user has specific role ID
-   */
-  hasRole(roleId: number): boolean {
-    const user = this.getCurrentUser();
-    return user ? user.roleId === roleId : false;
-  }
-
-  /**
-   * Check if user has specific permission
-   */
-  hasPermission(permission: string): boolean {
-    const user = this.getCurrentUser();
-    if (!user || !user.permissions) return false;
-    
-    // Check if permission exists in the permissions object
-    return user.permissions[permission] === true;
   }
 
   /**
@@ -140,12 +199,30 @@ export class AuthService {
           if (response.success && response.data) {
             this.currentUserSubject.next(response.data);
             sessionStorage.setItem('currentUser', JSON.stringify(response.data));
+            
+            // Load user permissions with error handling
+            this.permissionService.loadUserPermissions().subscribe({
+              next: (permissions) => {
+                const totalModules = (permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0) +
+                                    (permissions.uncategorized_modules?.length || 0) +
+                                    (permissions.modules?.length || 0);
+                console.log('✅ Permissions loaded on app init:', totalModules, 'modules');
+              },
+              error: (error) => {
+                console.error('❌ Failed to load permissions on app init:', error);
+                // Clear user session if permissions can't load
+                this.currentUserSubject.next(null);
+                sessionStorage.removeItem('currentUser');
+                this.permissionService.clearAllData();
+              }
+            });
           }
         },
         error: (err) => {
           // Session expired, clear local data (silently)
           this.currentUserSubject.next(null);
           sessionStorage.removeItem('currentUser');
+          this.permissionService.clearAllData();
           // Don't log error - this is expected behavior when session expires
         }
       });

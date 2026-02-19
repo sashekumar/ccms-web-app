@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
-import rolesConfig from '../../../assets/config/roles-menu.json';
 
 export interface MenuItem {
   id: string;
@@ -75,33 +74,13 @@ export class RoleService {
   }
 
   private loadRolesConfig(): void {
-    try {
-      const config = rolesConfig as RoleBasedMenuConfig;
-      console.log('Roles config loaded:', config);
-      
-      this.rolesConfigSubject.next(config.roles);
-      
-      // Load selected role from storage
-      const storedRoleId = sessionStorage.getItem('selectedRole');
-      if (storedRoleId) {
-        const roleId = parseInt(storedRoleId, 10);
-        const role = config.roles.find(r => r.roleId === roleId);
-        if (role) {
-          this.selectedRoleSubject.next(role);
-        } else {
-          // Default to first role if stored role not found
-          this.selectedRoleSubject.next(config.roles[0]);
-        }
-      } else {
-        // Default to first role
-        this.selectedRoleSubject.next(config.roles[0]);
-      }
-    } catch (error) {
-      console.error('Error loading roles config:', error);
-      // Set empty roles - app will work without role-based menus
-      this.rolesConfigSubject.next([]);
-      this.selectedRoleSubject.next(null);
-    }
+    // TODO: Migrate to database-driven permission system
+    // This service is deprecated in favor of PermissionService
+    console.warn('RoleService is deprecated. Use PermissionService for permission-based menu items.');
+    
+    // Initialize with empty state
+    this.rolesConfigSubject.next([]);
+    this.selectedRoleSubject.next(null);
   }
 
   getAllRoles(): Observable<RoleConfig[]> {

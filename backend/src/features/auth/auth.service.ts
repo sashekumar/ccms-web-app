@@ -47,21 +47,11 @@ export class AuthService {
     // Update last login
     await this.authRepository.updateLastLogin(user.user_id);
 
-    // Parse permissions
-    let permissions = null;
-    try {
-      permissions = user.permissions_json ? JSON.parse(user.permissions_json) : null;
-    } catch (error) {
-      console.warn('Failed to parse permissions JSON:', error);
-    }
-
     return {
       user: {
         userId: user.user_id,
         username: user.username,
-        fullName: user.full_name,
-        roleId: user.role_id,
-        permissions
+        fullName: user.full_name
       },
       accessToken,
       refreshToken
@@ -82,19 +72,50 @@ export class AuthService {
       throw new Error('Account is inactive');
     }
 
-    let permissions = null;
-    try {
-      permissions = user.permissions_json ? JSON.parse(user.permissions_json) : null;
-    } catch (error) {
-      console.warn('Failed to parse permissions JSON:', error);
-    }
-
     return {
       userId: user.user_id,
       username: user.username,
-      fullName: user.full_name,
-      roleId: user.role_id,
-      permissions
+      fullName: user.full_name
     };
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  public async refreshToken(refreshToken: string): Promise<{ 
+    accessToken: string; 
+    refreshToken: string 
+  }> {
+    try {
+      // Verify refresh token
+      const payload = JwtService.verifyToken(refreshToken);
+
+      // Check if it's actually a refresh token
+      if (payload.tokenType !== 'refresh') {
+        throw new Error('Invalid token type');
+      }
+
+      // Get user from database
+      const user = await this.authRepository.findById(payload.userId);
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (!user.is_active) {
+        throw new Error('Account is inactive');
+      }
+
+      // Generate new tokens
+      const newAccessToken = JwtService.generateAccessToken(user);
+      const newRefreshToken = JwtService.generateRefreshToken(user);
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken
+      };
+    } catch (error) {
+      throw new Error('Invalid or expired refresh token');
+    }
   }
 }

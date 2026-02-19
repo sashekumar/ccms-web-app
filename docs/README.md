@@ -50,13 +50,13 @@
 - Database abstraction for technology independence
 - SQL injection prevention strategies
 - Base Repository, Service, and Controller patterns
-- JWT authentication implementation (HS256, httpOnly cookies, Redis blacklist)
-- Token revocation and security
+- JWT authentication implementation (HS256, httpOnly cookies)
+- Token revocation and security (automatic refresh tokens)
 - Query optimization and performance
 - Indexing strategies and N+1 query prevention
 - Pagination patterns (cursor-based)
 - Connection pool management
-- Caching strategies with Redis
+- Caching strategies
 - Monitoring and profiling
 - Environment configuration
 
@@ -125,7 +125,7 @@
    - Use BaseRepository<T>, BaseService<T>, BaseController<T>
    - Use QueryBuilder for ALL database queries (SQL injection prevention)
    - Use ConnectionManager singleton for database connections
-   - Follow JWT authentication patterns (httpOnly cookies, Redis blacklist)
+   - Follow JWT authentication patterns (httpOnly cookies, automatic token refresh)
    - Apply cursor-based pagination for lists
    - Implement proper error handling and validation
 
@@ -188,9 +188,10 @@
 ### 3. **Security First**
 - SQL injection prevention (parameterized queries only)
 - JWT with httpOnly cookies (XSS protection)
-- Token blacklist with Redis (immediate logout)
+- **Automatic token refresh** (✅ implemented - seamless 7-day sessions)
 - Input validation at all layers
 - CSRF protection (SameSite cookies)
+- Short-lived access tokens (15 min) for security
 
 ### 4. **Layer Isolation**
 - Controllers handle HTTP only
@@ -208,7 +209,7 @@
 - Connection pooling
 - Query optimization and indexing
 - Cursor-based pagination
-- Redis caching
+- In-memory caching where appropriate
 - N+1 query prevention
 - Execution plan analysis
 

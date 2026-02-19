@@ -490,9 +490,38 @@ export const routes: Routes = [
 **Purpose**: Handle HTTP requests globally with composable functions
 
 **Available Interceptors**:
-- `authInterceptor`: Add credentials (httpOnly cookies)
-- `errorInterceptor`: Global error handling
-- `loaderInterceptor`: Show/hide loading indicator
+
+1. **`authInterceptor`**: Add credentials (httpOnly cookies)
+   - Adds `withCredentials: true` to all requests
+   - Enables httpOnly cookie transmission for JWT tokens
+
+2. **`errorInterceptor`**: Global error handling + **Automatic Token Refresh**
+   - **401 Unauthorized**: Automatically attempts token refresh
+     - Calls `/auth/refresh` endpoint with refresh token
+     - Retries original request if refresh succeeds
+     - Queues concurrent requests during refresh
+     - Redirects to login only if refresh fails
+   - **403 Forbidden**: Logs access denied, component handles UI
+   - **404 Not Found**: Logs resource not found
+   - **500 Server Error**: Logs internal server error
+   - Skips refresh for auth endpoints (login, logout, refresh, me)
+
+3. **`loaderInterceptor`**: Show/hide loading indicator
+   - Displays global loading state during API calls
+   - Automatically manages loader visibility
+
+**Token Refresh Flow**:
+```typescript
+// Automatic refresh on 401 error
+User makes API call
+  → Access token expired (15 min)
+  → 401 error caught by errorInterceptor
+  → Interceptor calls refreshAccessToken()
+  → Backend verifies refresh token (7 days)
+  → New access token generated
+  → Original request retried with new token
+  → User never sees the error
+```
 
 **Configuration**:
 ```typescript
@@ -1629,6 +1658,65 @@ export class FilterUtil {
 - Retry logic for failed requests
 - Centralized error handling in ApiService
 
+### Constants Management
+
+**Purpose**: Centralize all routes, API endpoints, and permission keys to eliminate magic strings and provide type-safe constant references.
+
+**Structure**:
+```
+core/
+  ├── constants/
+      ├── api-endpoints.constants.ts    # API endpoint URLs
+      ├── routes.constants.ts           # Application routes
+      ├── permissions.constants.ts      # Permission keys
+      └── index.ts                      # Barrel export
+```
+
+**Key Principle**: 
+⚠️ **CRITICAL**: If `environment.apiUrl` includes `/api`, then `API_BASE` must be empty string `''` to prevent double path segments like `/api/api/`.
+
+**Example**:
+```typescript
+// api-endpoints.constants.ts
+const API_BASE = '';  // ✅ environment.apiUrl = 'http://localhost:3000/api'
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: `${API_BASE}/auth/login`,
+    LOGOUT: `${API_BASE}/auth/logout`
+  },
+  USERS: {
+    LIST: `${API_BASE}/users`,
+    BY_ID: (id: number) => `${API_BASE}/users/${id}`
+  }
+} as const;
+
+// routes.constants.ts
+export const APP_ROUTES = {
+  PUBLIC: {
+    LOGIN: '/login',
+    UNAUTHORIZED: '/unauthorized'
+  },
+  PROTECTED: {
+    DASHBOARD: '/dashboard',
+    USERS: {
+      BASE: '/users',
+      LIST: '/users',
+      EDIT: (id: number) => `/users/edit/${id}`
+    }
+  }
+} as const;
+```
+
+**Benefits**:
+- ✅ TypeScript autocomplete prevents typos
+- ✅ Single source of truth for all routes/endpoints
+- ✅ Refactor URLs in one place
+- ✅ Compile-time errors if constant doesn't exist
+- ✅ No runtime 404 errors from typos
+
+**For detailed documentation**, see [coding-standards.md - Constants Management Pattern](./coding-standards.md).
+
 ## Form Management
 
 ### Reactive Forms (Preferred)
@@ -2446,11 +2534,18 @@ if (this.deviceDetector.isMobile()) {
 
 ### Authentication Flow
 1. User provides credentials
-2. Frontend sends to backend API
-3. Backend validates and returns JWT token
-4. Frontend stores token (localStorage/sessionStorage)
-5. Token included in subsequent requests via interceptor
-6. Token refresh mechanism for expired tokens
+2. Frontend sends to backend API with CSRF token
+3. Backend validates and returns JWT tokens
+4. **Tokens stored in httpOnly cookies** (not localStorage - XSS protection)
+5. Tokens automatically included in requests via `withCredentials: true`
+6. **Automatic token refresh** - When access token expires (15 min), error interceptor automatically calls refresh endpoint using refresh token (7 days)
+7. User stays logged in for full 7 days without interruption
+
+**Token Lifecycle**:
+- **Access Token**: 15 minutes (short-lived for security)
+- **Refresh Token**: 7 days (long-lived for convenience)
+- On 401 error → Auto-refresh → Retry original request
+- User only logged out if refresh token expires or is invalid
 
 ### Authorization
 - Role-based access control (RBAC)

@@ -1,0 +1,722 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { tap, catchError, map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { API_ENDPOINTS } from '../constants';
+import {
+  UserPermissionsResponse,
+  PermissionCheck,
+  Role,
+  Module,
+  Action,
+  RolePermissionSummary,
+  AssignRoleDto,
+  CreateRoleDto,
+  UpdateRoleDto,
+  GrantPermissionDto,
+  RevokePermissionDto
+} from '../../shared/models/permission.model';
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
+/**
+ * Permission Service - Handles permission checks and management
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class PermissionService {
+  private apiUrl = environment.apiUrl; // Base API URL
+  
+  // Cache for user permissions
+  private userPermissionsSubject = new BehaviorSubject<UserPermissionsResponse | null>(null);
+  public userPermissions$ = this.userPermissionsSubject.asObservable();
+  
+  // Cache for permission checks (format: "MODULE_CODE.ACTION_CODE" => boolean)
+  private permissionCache = new Map<string, boolean>();
+  
+  // Cache timestamp for invalidation
+  private cacheTimestamp: number = 0;
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  constructor(private http: HttpClient) {}
+
+  /**
+   * Load current user's permissions
+   */
+  loadUserPermissions(): Observable<UserPermissionsResponse> {
+    console.log('🔄 Loading user permissions from API...');
+    return this.http.get<ApiResponse<UserPermissionsResponse>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT}`,
+      { withCredentials: true }
+    ).pipe(
+      map(response => {
+        console.log('📦 Raw API response:', response);
+        return response.data;
+      }),
+      tap(permissions => {
+        // Calculate total modules from both categories and uncategorized
+        const categoryModuleCount = permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0;
+        const uncategorizedCount = permissions.uncategorized_modules?.length || 0;
+        const oldStructureCount = permissions.modules?.length || 0;
+        const totalModules = categoryModuleCount + uncategorizedCount || oldStructureCount;
+        
+        console.log(`✅ Permissions loaded successfully: ${totalModules} modules`);
+        if (permissions.categories) {
+          console.log(`📁 Categories: ${permissions.categories.length}`);
+          permissions.categories.forEach(cat => {
+            console.log(`  └─ ${cat.category_name}: ${cat.modules.length} modules`);
+          });
+          if (uncategorizedCount > 0) {
+            console.log(`  └─ Uncategorized: ${uncategorizedCount} modules`);
+          }
+        } else if (permissions.modules) {
+          console.log('📋 Modules (flat):', permissions.modules.map(m => `${m.module_code} (${m.actions.length})`).join(', '));
+        }
+        this.userPermissionsSubject.next(permissions);
+        this.cacheTimestamp = Date.now();
+      }),
+      catchError(error => {
+        console.error('❌ Error loading user permissions:', error);
+        return of({ 
+          categories: [], 
+          uncategorized_modules: [],
+          modules: [] 
+        } as UserPermissionsResponse);
+      })
+    );
+  }
+
+  /**
+   * Get current user's permissions (from cache or server)
+   */
+  getUserPermissions(forceRefresh: boolean = false): Observable<UserPermissionsResponse> {
+    const cachedPermissions = this.userPermissionsSubject.value;
+    const isCacheValid = this.isCacheValid();
+
+    if (!forceRefresh && cachedPermissions && isCacheValid) {
+      return of(cachedPermissions);
+    }
+
+    return this.loadUserPermissions();
+  }
+
+  /**
+   * Check if user has specific permission
+   */
+  hasPermission(moduleCode: string, actionCode: string): Observable<boolean> {
+    const cacheKey = `${moduleCode}.${actionCode}`;
+    console.log(`🔍 Checking permission: ${cacheKey}`);
+    
+    // Check cache first
+    if (this.isCacheValid() && this.permissionCache.has(cacheKey)) {
+      const cached = this.permissionCache.get(cacheKey)!;
+      console.log(`💾 Using cached result for ${cacheKey}: ${cached}`);
+      return of(cached);
+    }
+
+    // Check from user permissions in memory
+    const userPermissions = this.userPermissionsSubject.value;
+    const categoryModuleCount = userPermissions?.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0;
+    const uncategorizedCount = userPermissions?.uncategorized_modules?.length || 0;
+    const oldStructureCount = userPermissions?.modules?.length || 0;
+    const totalModules = categoryModuleCount + uncategorizedCount || oldStructureCount;
+    
+    console.log(`📊 Current permissions state:`, {
+      hasPermissions: !!userPermissions,
+      moduleCount: totalModules,
+      cacheValid: this.isCacheValid()
+    });
+    
+    if (userPermissions && this.isCacheValid()) {
+      const hasAccess = this.checkPermissionInMemory(userPermissions, moduleCode, actionCode);
+      console.log(`${hasAccess ? '✅' : '❌'} Permission check result for ${cacheKey}: ${hasAccess}`);
+      this.permissionCache.set(cacheKey, hasAccess);
+      return of(hasAccess);
+    }
+
+    // Fallback to API call
+    const params = new HttpParams()
+      .set('moduleCode', moduleCode)
+      .set('actionCode', actionCode);
+
+    return this.http.get<ApiResponse<PermissionCheck>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.CHECK}`,
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => response.data.has_permission),
+      tap(hasAccess => {
+        this.permissionCache.set(cacheKey, hasAccess);
+      }),
+      catchError(error => {
+        console.error('Error checking permission:', error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * Check permission synchronously from cached data
+   */
+  hasPermissionSync(moduleCode: string, actionCode: string): boolean {
+    const cacheKey = `${moduleCode}.${actionCode}`;
+    
+    if (this.isCacheValid() && this.permissionCache.has(cacheKey)) {
+      return this.permissionCache.get(cacheKey)!;
+    }
+
+    const userPermissions = this.userPermissionsSubject.value;
+    if (userPermissions && this.isCacheValid()) {
+      const hasAccess = this.checkPermissionInMemory(userPermissions, moduleCode, actionCode);
+      this.permissionCache.set(cacheKey, hasAccess);
+      return hasAccess;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if user has any of the specified permissions
+   */
+  hasAnyPermission(permissions: [string, string][]): Observable<boolean> {
+    const userPermissions = this.userPermissionsSubject.value;
+    
+    if (userPermissions && this.isCacheValid()) {
+      const hasAny = permissions.some(([moduleCode, actionCode]) => 
+        this.checkPermissionInMemory(userPermissions, moduleCode, actionCode)
+      );
+      return of(hasAny);
+    }
+
+    // Fallback to checking each permission
+    return new Observable(observer => {
+      const checks = permissions.map(([moduleCode, actionCode]) => 
+        this.hasPermission(moduleCode, actionCode)
+      );
+      
+      Promise.all(checks.map(obs => obs.toPromise())).then(results => {
+        observer.next(results.some(r => r === true));
+        observer.complete();
+      });
+    });
+  }
+
+  /**
+   * Check if user has all of the specified permissions
+   */
+  hasAllPermissions(permissions: [string, string][]): Observable<boolean> {
+    const userPermissions = this.userPermissionsSubject.value;
+    
+    if (userPermissions && this.isCacheValid()) {
+      const hasAll = permissions.every(([moduleCode, actionCode]) => 
+        this.checkPermissionInMemory(userPermissions, moduleCode, actionCode)
+      );
+      return of(hasAll);
+    }
+
+    // Fallback to checking each permission
+    return new Observable(observer => {
+      const checks = permissions.map(([moduleCode, actionCode]) => 
+        this.hasPermission(moduleCode, actionCode)
+      );
+      
+      Promise.all(checks.map(obs => obs.toPromise())).then(results => {
+        observer.next(results.every(r => r === true));
+        observer.complete();
+      });
+    });
+  }
+
+  /**
+   * Get permissions for a specific user (admin only)
+   */
+  getUserPermissionsById(userId: number): Observable<UserPermissionsResponse> {
+    return this.http.get<ApiResponse<UserPermissionsResponse>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.getById(userId)}`,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading user permissions:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Assign role to user
+   */
+  assignRole(dto: AssignRoleDto): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.ASSIGN_ROLE}`,
+      dto,
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error assigning role:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Detach role from user
+   */
+  detachRole(userId: number, roleId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.detachRole(userId, roleId)}`,
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error detaching role:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get user's assigned roles
+   */
+  getUserRoles(userId: number): Observable<number[]> {
+    return this.http.get<ApiResponse<{ roleIds: number[] }>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.getRoles(userId)}`,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data.roleIds),
+      catchError(error => {
+        console.error('Error getting user roles:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get all roles
+   */
+  getAllRoles(): Observable<Role[]> {
+    return this.http.post<ApiResponse<Role[]>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.LIST}`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading roles:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get role by ID
+   */
+  getRoleById(roleId: number): Observable<Role> {
+    return this.http.post<ApiResponse<Role>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.GET}`,
+      { roleId },
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading role:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get role permissions
+   */
+  getRolePermissions(roleId: number): Observable<RolePermissionSummary[]> {
+    return this.http.post<ApiResponse<RolePermissionSummary[]>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS}`,
+      { roleId },
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading role permissions:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get role permissions matrix (all module-action combinations with grant status)
+   */
+  getRolePermissionsMatrix(roleId: number): Observable<any[]> {
+    return this.http.post<ApiResponse<any[]>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS_MATRIX}`,
+      { roleId },
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading role permissions matrix:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Create new role
+   */
+  createRole(dto: CreateRoleDto): Observable<number> {
+    return this.http.post<ApiResponse<{ roleId: number }>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.CREATE}`,
+      dto,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data.roleId),
+      catchError(error => {
+        console.error('Error creating role:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Update role
+   */
+  updateRole(roleId: number, dto: UpdateRoleDto): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE}`,
+      { roleId, ...dto },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error updating role:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete role
+   */
+  deleteRole(roleId: number): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.DELETE}`,
+      { roleId },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error deleting role:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get all modules
+   */
+  getAllModules(): Observable<Module[]> {
+    return this.http.post<ApiResponse<Module[]>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.LIST}`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading modules:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get all actions
+   */
+  getAllActions(): Observable<Action[]> {
+    return this.http.post<ApiResponse<Action[]>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.LIST}`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading actions:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Grant permission to role
+   */
+  grantPermission(dto: GrantPermissionDto): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.GRANT}`,
+      dto,
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      tap(() => this.clearCache()),
+      catchError(error => {
+        console.error('Error granting permission:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Revoke permission from role
+   */
+  revokePermission(dto: RevokePermissionDto): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.REVOKE}`,
+      dto,
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      tap(() => this.clearCache()),
+      catchError(error => {
+        console.error('Error revoking permission:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Create module
+   */
+  createModule(data: any): Observable<number> {
+    return this.http.post<ApiResponse<{ moduleId: number }>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.CREATE}`,
+      data,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data.moduleId),
+      catchError(error => {
+        console.error('Error creating module:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Update module
+   */
+  updateModule(moduleId: number, data: any): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE}`,
+      { moduleId, ...data },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error updating module:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete module
+   */
+  deleteModule(moduleId: number): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.DELETE}`,
+      { moduleId },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error deleting module:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Create action
+   */
+  createAction(data: any): Observable<number> {
+    return this.http.post<ApiResponse<{ actionId: number }>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.CREATE}`,
+      data,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data.actionId),
+      catchError(error => {
+        console.error('Error creating action:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Update action
+   */
+  updateAction(actionId: number, data: any): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE}`,
+      { actionId, ...data },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error updating action:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete action
+   */
+  deleteAction(actionId: number): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.DELETE}`,
+      { actionId },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error deleting action:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get all module-actions
+   */
+  getAllModuleActions(): Observable<any[]> {
+    return this.http.post<ApiResponse<any[]>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.LIST}`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error loading module-actions:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Create module-action
+   */
+  createModuleAction(data: any): Observable<number> {
+    return this.http.post<ApiResponse<{ moduleActionId: number }>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.CREATE}`,
+      data,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data.moduleActionId),
+      catchError(error => {
+        console.error('Error creating module-action:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Update module-action
+   */
+  updateModuleAction(moduleActionId: number, data: any): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.UPDATE}`,
+      { moduleActionId, ...data },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error updating module-action:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete module-action
+   */
+  deleteModuleAction(moduleActionId: number): Observable<void> {
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.DELETE}`,
+      { moduleActionId },
+      { withCredentials: true }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error deleting module-action:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Clear permission cache
+   */
+  clearCache(): void {
+    this.permissionCache.clear();
+    this.cacheTimestamp = 0;
+  }
+
+  /**
+   * Clear all cached data
+   */
+  clearAllData(): void {
+    this.userPermissionsSubject.next(null);
+    this.clearCache();
+  }
+
+  /**
+   * Check if cache is still valid
+   */
+  private isCacheValid(): boolean {
+    return Date.now() - this.cacheTimestamp < this.CACHE_DURATION;
+  }
+
+  /**
+   * Check permission in memory from cached user permissions
+   * Handles both category-based and flat module structures
+   */
+  private checkPermissionInMemory(
+    permissions: UserPermissionsResponse,
+    moduleCode: string,
+    actionCode: string
+  ): boolean {
+    // Collect all modules from categories and uncategorized, or use old flat structure
+    const allModules: any[] = [];
+    
+    if (permissions.categories) {
+      // New category-based structure
+      permissions.categories.forEach(cat => {
+        allModules.push(...cat.modules);
+      });
+      if (permissions.uncategorized_modules) {
+        allModules.push(...permissions.uncategorized_modules);
+      }
+    } else if (permissions.modules) {
+      // Old flat structure
+      allModules.push(...permissions.modules);
+    }
+    
+    const module = allModules.find(m => m.module_code === moduleCode);
+    if (!module) {
+      console.log(`⚠️ Module not found: ${moduleCode}`);
+      console.log(`📋 Available modules:`, allModules.map(m => m.module_code));
+      return false;
+    }
+    
+    const hasAction = module.actions.some((a: any) => a.action_code === actionCode);
+    if (!hasAction) {
+      console.log(`⚠️ Action not found in module ${moduleCode}: ${actionCode}`);
+      console.log(`📋 Available actions:`, module.actions.map((a: any) => a.action_code));
+    }
+    
+    return hasAction;
+  }
+}

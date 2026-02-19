@@ -1,6 +1,6 @@
 <!-- Fixed Top Navbar - CCMS Mockup Style with Sidebar Toggle -->
 <nav class="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-50 h-[60px] px-6 flex items-center justify-between">
-  <!-- Left: Sidebar Toggle + Brand Logo + Role Badge -->
+  <!-- Left: Sidebar Toggle + Brand Logo -->
   <div class="flex items-center gap-3">
     <!-- Sidebar Toggle Button -->
     <button
@@ -14,14 +14,10 @@
 
     <i class="fas fa-shield-alt text-primary-800 text-xl"></i>
     <span class="text-lg font-bold text-primary-800">CCMS TPA Portal</span>
-    <span *ngIf="selectedRole$ | async as selectedRole" 
-          class="px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-wide bg-gray-100 text-gray-800 border border-gray-300 rounded-full">
-      {{ selectedRole.roleName }}
-    </span>
   </div>
 
   <!-- Center: Quick Navigation Links -->
-  <ul class="hidden lg:flex items-center gap-4 ml-8">
+  <!-- <ul class="hidden lg:flex items-center gap-4 ml-8">
     <li>
       <a href="#" class="text-gray-600 text-xs font-bold hover:text-gray-800 transition-colors">
         <i class="fas fa-clock me-1"></i> 8H Monitoring
@@ -32,22 +28,10 @@
         <i class="fas fa-procedures me-1"></i> LOS Monitoring
       </a>
     </li>
-  </ul>
+  </ul> -->
 
-  <!-- Right: Role Selector + User Info + Logout -->
+  <!-- Right: User Info + Logout -->
   <div class="flex items-center gap-3">
-    <!-- Role Selector Dropdown (Admin Only - roleId 0) -->
-    <select 
-      *ngIf="showRoleDropdown"
-      class="text-sm px-2 py-1 border border-gray-300 rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-      (change)="selectRole(+$any($event.target).value)"
-      [value]="(selectedRole$ | async)?.roleId"
-    >
-      <option *ngFor="let role of availableRoles$ | async" [value]="role.roleId">
-        {{ role.roleName }}
-      </option>
-    </select>
-
     <!-- User Display -->
     <div class="text-right leading-tight">
       <div class="font-bold text-sm">{{ currentUser?.fullName || 'User' }}</div>

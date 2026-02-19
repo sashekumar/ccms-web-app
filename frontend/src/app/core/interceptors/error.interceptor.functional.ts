@@ -1,13 +1,15 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError, switchMap, filter, take } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 /**
- * Error Interceptor (Functional) - Global HTTP error handling
+ * Error Interceptor (Functional) - Global HTTP error handling with automatic token refresh
  */
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
+  const authService = inject(AuthService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -23,20 +25,66 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         // Handle specific HTTP errors
         switch (error.status) {
           case 401:
-            // Suppress logging for /me endpoint (expected during session check)
-            if (!req.url.includes('/auth/me')) {
-              console.error('Unauthorized:', errorMessage);
+            // Skip refresh for certain endpoints
+            const skipRefreshEndpoints = ['/auth/login', '/auth/refresh', '/auth/me', '/auth/csrf-token'];
+            const shouldSkipRefresh = skipRefreshEndpoints.some(endpoint => req.url.includes(endpoint));
+
+            if (shouldSkipRefresh) {
+              // For /me endpoint, fail silently (expected during session check)
+              if (req.url.includes('/auth/me')) {
+                return throwError(() => error);
+              }
+
+              // For other auth endpoints, redirect to login
+              if (!router.url.startsWith('/auth')) {
+                sessionStorage.removeItem('currentUser');
+                router.navigate(['/auth/login']);
+              }
+              return throwError(() => error);
             }
-            
-            // Unauthorized - redirect to login (unless already on auth pages)
-            if (!router.url.startsWith('/auth')) {
-              sessionStorage.removeItem('currentUser');
-              router.navigate(['/auth/login']);
+
+            // Attempt automatic token refresh
+            console.log('🔄 Access token expired, attempting refresh...');
+
+            // If already refreshing, wait for it to complete
+            if (authService.isRefreshingToken()) {
+              return authService.getRefreshState().pipe(
+                filter(refreshed => refreshed === true),
+                take(1),
+                switchMap(() => {
+                  console.log('♻️ Retrying original request after token refresh');
+                  return next(req);
+                })
+              );
             }
-            break;
+
+            // Attempt token refresh
+            return authService.refreshAccessToken().pipe(
+              switchMap((success) => {
+                if (success) {
+                  console.log('♻️ Retrying original request after successful refresh');
+                  // Retry the original request with new token
+                  return next(req);
+                }
+                return throwError(() => error);
+              }),
+              catchError((refreshError) => {
+                // Refresh failed, redirect to login
+                console.error('❌ Token refresh failed, redirecting to login');
+                return throwError(() => error);
+              })
+            );
+
           case 403:
-            // Forbidden
-            router.navigate(['/unauthorized']);
+            // Forbidden - log but don't redirect
+            // Let the component handle this error (show message/toast)
+            console.warn('Access denied:', error.error?.message || 'You do not have permission to perform this action');
+            
+            // Only redirect if explicitly navigating to a protected route (not for button clicks/API calls)
+            // This prevents unwanted redirects when users click buttons they shouldn't have access to
+            if (req.method === 'GET' && !req.url.includes('/api/')) {
+              router.navigate(['/unauthorized']);
+            }
             break;
           case 404:
             // Not found
@@ -49,8 +97,8 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
-      // Only log non-401 errors or 401 errors not from /me endpoint
-      if (error.status !== 401 || !req.url.includes('/auth/me')) {
+      // Only log non-401 errors or 401 errors from skipped endpoints
+      if (error.status !== 401 || req.url.includes('/auth/me')) {
         console.error(errorMessage);
       }
       

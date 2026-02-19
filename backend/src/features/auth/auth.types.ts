@@ -3,8 +3,6 @@ export interface User {
   username: string;
   password_hash: string;
   full_name: string;
-  role_id: number;
-  permissions_json: string;
   is_active: boolean;
   last_login: Date | null;
 }
@@ -17,7 +15,6 @@ export interface LoginDto {
 export interface TokenPayload {
   userId: number;
   username: string;
-  roleId: number;
   tokenType: 'access' | 'refresh';
   iat?: number;
   exp?: number;
@@ -28,8 +25,6 @@ export interface LoginResponse {
     userId: number;
     username: string;
     fullName: string;
-    roleId: number;
-    permissions: any;
   };
   message: string;
 }

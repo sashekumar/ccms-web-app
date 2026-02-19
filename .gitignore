@@ -116,7 +116,7 @@ pids
 .pnp.*
 
 # Database
-*.sql
+# *.sql
 *.sqlite
 *.sqlite3
 *.db

@@ -102,8 +102,7 @@ export class UserController extends BaseController {
 - [ ] Select only needed columns (no SELECT *)
 - [ ] Use cursor-based pagination for lists
 - [ ] Prevent N+1 queries (use JOINs or batch loading)
-- [ ] Cache reference data with Redis
-- [ ] Invalidate cache on updates
+- [ ] Cache reference data in-memory where appropriate
 
 ---
 
@@ -158,7 +157,6 @@ const role = req.user.role;
 DB_HOST=localhost
 DB_NAME=ccms
 JWT_SECRET=your-secret-key
-REDIS_HOST=localhost
 ```
 
 ### Frontend (environment.ts)

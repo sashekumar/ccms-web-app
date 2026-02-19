@@ -12,8 +12,6 @@ export class AuthRepository {
         username,
         password_hash,
         full_name,
-        role_id,
-        permissions_json,
         is_active,
         last_login
       FROM ccms_users
@@ -46,8 +44,6 @@ export class AuthRepository {
         username,
         password_hash,
         full_name,
-        role_id,
-        permissions_json,
         is_active,
         last_login
       FROM ccms_users
