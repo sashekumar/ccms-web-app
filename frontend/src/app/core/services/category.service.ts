@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { ApiService } from './api.service';
 import { Category } from '../../shared/models/permission.model';
 
 export interface ApiResponse<T> {
@@ -35,18 +34,15 @@ export interface UpdateCategoryDto {
   providedIn: 'root'
 })
 export class CategoryService {
-  private apiUrl = `${environment.apiUrl}/permissions/categories`;
-
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiService) {}
 
   /**
    * Get all categories
    * GET /api/permissions/categories
    */
   getAllCategories(): Observable<Category[]> {
-    return this.http.get<ApiResponse<Category[]>>(
-      this.apiUrl,
-      { withCredentials: true }
+    return this.api.get<ApiResponse<Category[]>>(
+      'permissions/categories'
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -61,9 +57,8 @@ export class CategoryService {
    * GET /api/permissions/categories/:id
    */
   getCategoryById(categoryId: number): Observable<Category> {
-    return this.http.get<ApiResponse<Category>>(
-      `${this.apiUrl}/${categoryId}`,
-      { withCredentials: true }
+    return this.api.get<ApiResponse<Category>>(
+      `permissions/categories/${categoryId}`
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -78,10 +73,9 @@ export class CategoryService {
    * POST /api/permissions/categories
    */
   createCategory(data: CreateCategoryDto): Observable<number> {
-    return this.http.post<ApiResponse<{ category_id: number }>>(
-      this.apiUrl,
-      data,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<{ category_id: number }>>(
+      'permissions/categories',
+      data
     ).pipe(
       map(response => response.data.category_id),
       catchError(error => {
@@ -96,10 +90,9 @@ export class CategoryService {
    * PUT /api/permissions/categories/:id
    */
   updateCategory(categoryId: number, data: UpdateCategoryDto): Observable<void> {
-    return this.http.put<ApiResponse<void>>(
-      `${this.apiUrl}/${categoryId}`,
-      data,
-      { withCredentials: true }
+    return this.api.put<ApiResponse<void>>(
+      `permissions/categories/${categoryId}`,
+      data
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -114,9 +107,8 @@ export class CategoryService {
    * DELETE /api/permissions/categories/:id
    */
   deleteCategory(categoryId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/${categoryId}`,
-      { withCredentials: true }
+    return this.api.delete<ApiResponse<void>>(
+      `permissions/categories/${categoryId}`
     ).pipe(
       map(() => undefined),
       catchError(error => {

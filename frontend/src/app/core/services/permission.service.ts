@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { ApiService } from './api.service';
 import { API_ENDPOINTS } from '../constants';
 import {
   UserPermissionsResponse,
@@ -31,8 +30,6 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class PermissionService {
-  private apiUrl = environment.apiUrl; // Base API URL
-  
   // Cache for user permissions
   private userPermissionsSubject = new BehaviorSubject<UserPermissionsResponse | null>(null);
   public userPermissions$ = this.userPermissionsSubject.asObservable();
@@ -44,16 +41,15 @@ export class PermissionService {
   private cacheTimestamp: number = 0;
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiService) {}
 
   /**
    * Load current user's permissions
    */
   loadUserPermissions(): Observable<UserPermissionsResponse> {
     console.log('🔄 Loading user permissions from API...');
-    return this.http.get<ApiResponse<UserPermissionsResponse>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT}`,
-      { withCredentials: true }
+    return this.api.get<ApiResponse<UserPermissionsResponse>>(
+      `${API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT}`
     ).pipe(
       map(response => {
         console.log('📦 Raw API response:', response);
@@ -141,13 +137,8 @@ export class PermissionService {
     }
 
     // Fallback to API call
-    const params = new HttpParams()
-      .set('moduleCode', moduleCode)
-      .set('actionCode', actionCode);
-
-    return this.http.get<ApiResponse<PermissionCheck>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.CHECK}`,
-      { params, withCredentials: true }
+    return this.api.get<ApiResponse<PermissionCheck>>(
+      `${API_ENDPOINTS.PERMISSIONS.CHECK}?moduleCode=${moduleCode}&actionCode=${actionCode}`
     ).pipe(
       map(response => response.data.has_permission),
       tap(hasAccess => {
@@ -236,9 +227,8 @@ export class PermissionService {
    * Get permissions for a specific user (admin only)
    */
   getUserPermissionsById(userId: number): Observable<UserPermissionsResponse> {
-    return this.http.get<ApiResponse<UserPermissionsResponse>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.getById(userId)}`,
-      { withCredentials: true }
+    return this.api.get<ApiResponse<UserPermissionsResponse>>(
+      `${API_ENDPOINTS.PERMISSIONS.USER.getById(userId)}`
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -252,10 +242,9 @@ export class PermissionService {
    * Assign role to user
    */
   assignRole(dto: AssignRoleDto): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.ASSIGN_ROLE}`,
-      dto,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.USER.ASSIGN_ROLE}`,
+      dto
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -269,9 +258,8 @@ export class PermissionService {
    * Detach role from user
    */
   detachRole(userId: number, roleId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.detachRole(userId, roleId)}`,
-      { withCredentials: true }
+    return this.api.delete<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.USER.detachRole(userId, roleId)}`
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -285,9 +273,8 @@ export class PermissionService {
    * Get user's assigned roles
    */
   getUserRoles(userId: number): Observable<number[]> {
-    return this.http.get<ApiResponse<{ roleIds: number[] }>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.USER.getRoles(userId)}`,
-      { withCredentials: true }
+    return this.api.get<ApiResponse<{ roleIds: number[] }>>(
+      `${API_ENDPOINTS.PERMISSIONS.USER.getRoles(userId)}`
     ).pipe(
       map(response => response.data.roleIds),
       catchError(error => {
@@ -301,10 +288,9 @@ export class PermissionService {
    * Get all roles
    */
   getAllRoles(): Observable<Role[]> {
-    return this.http.post<ApiResponse<Role[]>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.LIST}`,
-      {},
-      { withCredentials: true }
+    return this.api.post<ApiResponse<Role[]>>(
+      `${API_ENDPOINTS.PERMISSIONS.ROLES.LIST}`,
+      {}
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -318,10 +304,9 @@ export class PermissionService {
    * Get role by ID
    */
   getRoleById(roleId: number): Observable<Role> {
-    return this.http.post<ApiResponse<Role>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.GET}`,
-      { roleId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<Role>>(
+      `${API_ENDPOINTS.PERMISSIONS.ROLES.GET}`,
+      { roleId }
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -335,10 +320,9 @@ export class PermissionService {
    * Get role permissions
    */
   getRolePermissions(roleId: number): Observable<RolePermissionSummary[]> {
-    return this.http.post<ApiResponse<RolePermissionSummary[]>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS}`,
-      { roleId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<RolePermissionSummary[]>>(
+      `${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS}`,
+      { roleId }
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -352,10 +336,9 @@ export class PermissionService {
    * Get role permissions matrix (all module-action combinations with grant status)
    */
   getRolePermissionsMatrix(roleId: number): Observable<any[]> {
-    return this.http.post<ApiResponse<any[]>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS_MATRIX}`,
-      { roleId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<any[]>>(
+      `${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS_MATRIX}`,
+      { roleId }
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -369,10 +352,9 @@ export class PermissionService {
    * Create new role
    */
   createRole(dto: CreateRoleDto): Observable<number> {
-    return this.http.post<ApiResponse<{ roleId: number }>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.CREATE}`,
-      dto,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<{ roleId: number }>>(
+      `${API_ENDPOINTS.PERMISSIONS.ROLES.CREATE}`,
+      dto
     ).pipe(
       map(response => response.data.roleId),
       catchError(error => {
@@ -386,10 +368,9 @@ export class PermissionService {
    * Update role
    */
   updateRole(roleId: number, dto: UpdateRoleDto): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE}`,
-      { roleId, ...dto },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE}`,
+      { roleId, ...dto }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -403,10 +384,9 @@ export class PermissionService {
    * Delete role
    */
   deleteRole(roleId: number): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ROLES.DELETE}`,
-      { roleId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.ROLES.DELETE}`,
+      { roleId }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -420,10 +400,9 @@ export class PermissionService {
    * Get all modules
    */
   getAllModules(): Observable<Module[]> {
-    return this.http.post<ApiResponse<Module[]>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.LIST}`,
-      {},
-      { withCredentials: true }
+    return this.api.post<ApiResponse<Module[]>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULES.LIST}`,
+      {}
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -437,10 +416,9 @@ export class PermissionService {
    * Get all actions
    */
   getAllActions(): Observable<Action[]> {
-    return this.http.post<ApiResponse<Action[]>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.LIST}`,
-      {},
-      { withCredentials: true }
+    return this.api.post<ApiResponse<Action[]>>(
+      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.LIST}`,
+      {}
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -454,10 +432,9 @@ export class PermissionService {
    * Grant permission to role
    */
   grantPermission(dto: GrantPermissionDto): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.GRANT}`,
-      dto,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.GRANT}`,
+      dto
     ).pipe(
       map(() => undefined),
       tap(() => this.clearCache()),
@@ -472,10 +449,9 @@ export class PermissionService {
    * Revoke permission from role
    */
   revokePermission(dto: RevokePermissionDto): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.REVOKE}`,
-      dto,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.REVOKE}`,
+      dto
     ).pipe(
       map(() => undefined),
       tap(() => this.clearCache()),
@@ -490,10 +466,9 @@ export class PermissionService {
    * Create module
    */
   createModule(data: any): Observable<number> {
-    return this.http.post<ApiResponse<{ moduleId: number }>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.CREATE}`,
-      data,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<{ moduleId: number }>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULES.CREATE}`,
+      data
     ).pipe(
       map(response => response.data.moduleId),
       catchError(error => {
@@ -507,10 +482,9 @@ export class PermissionService {
    * Update module
    */
   updateModule(moduleId: number, data: any): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE}`,
-      { moduleId, ...data },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE}`,
+      { moduleId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -524,10 +498,9 @@ export class PermissionService {
    * Delete module
    */
   deleteModule(moduleId: number): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULES.DELETE}`,
-      { moduleId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULES.DELETE}`,
+      { moduleId }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -541,10 +514,9 @@ export class PermissionService {
    * Create action
    */
   createAction(data: any): Observable<number> {
-    return this.http.post<ApiResponse<{ actionId: number }>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.CREATE}`,
-      data,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<{ actionId: number }>>(
+      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.CREATE}`,
+      data
     ).pipe(
       map(response => response.data.actionId),
       catchError(error => {
@@ -558,10 +530,9 @@ export class PermissionService {
    * Update action
    */
   updateAction(actionId: number, data: any): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE}`,
-      { actionId, ...data },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE}`,
+      { actionId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -575,10 +546,9 @@ export class PermissionService {
    * Delete action
    */
   deleteAction(actionId: number): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.ACTIONS.DELETE}`,
-      { actionId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.DELETE}`,
+      { actionId }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -592,10 +562,9 @@ export class PermissionService {
    * Get all module-actions
    */
   getAllModuleActions(): Observable<any[]> {
-    return this.http.post<ApiResponse<any[]>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.LIST}`,
-      {},
-      { withCredentials: true }
+    return this.api.post<ApiResponse<any[]>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.LIST}`,
+      {}
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -609,10 +578,9 @@ export class PermissionService {
    * Create module-action
    */
   createModuleAction(data: any): Observable<number> {
-    return this.http.post<ApiResponse<{ moduleActionId: number }>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.CREATE}`,
-      data,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<{ moduleActionId: number }>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.CREATE}`,
+      data
     ).pipe(
       map(response => response.data.moduleActionId),
       catchError(error => {
@@ -626,10 +594,9 @@ export class PermissionService {
    * Update module-action
    */
   updateModuleAction(moduleActionId: number, data: any): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.UPDATE}`,
-      { moduleActionId, ...data },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.UPDATE}`,
+      { moduleActionId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -643,10 +610,9 @@ export class PermissionService {
    * Delete module-action
    */
   deleteModuleAction(moduleActionId: number): Observable<void> {
-    return this.http.post<ApiResponse<void>>(
-      `${this.apiUrl}${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.DELETE}`,
-      { moduleActionId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<void>>(
+      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.DELETE}`,
+      { moduleActionId }
     ).pipe(
       map(() => undefined),
       catchError(error => {

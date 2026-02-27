@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { ApiService } from './api.service';
 import {
   User,
   UserDetail,
@@ -25,18 +24,15 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class UserService {
-  private apiUrl = `${environment.apiUrl}/users`;
-
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiService) {}
 
   /**
    * Get paginated list of users with filters
    */
   getUsers(filters: UserFilters = {}): Observable<PaginatedUsers> {
-    return this.http.post<ApiResponse<PaginatedUsers>>(
-      `${this.apiUrl}/list`,
-      filters,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<PaginatedUsers>>(
+      'users/list',
+      filters
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -50,9 +46,8 @@ export class UserService {
    * Get user by ID
    */
   getUserById(userId: number): Observable<UserDetail> {
-    return this.http.get<ApiResponse<UserDetail>>(
-      `${this.apiUrl}/${userId}`,
-      { withCredentials: true }
+    return this.api.get<ApiResponse<UserDetail>>(
+      `users/${userId}`
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -66,10 +61,9 @@ export class UserService {
    * Create new user
    */
   createUser(dto: CreateUserDto): Observable<number> {
-    return this.http.post<ApiResponse<{ userId: number }>>(
-      this.apiUrl,
-      dto,
-      { withCredentials: true }
+    return this.api.post<ApiResponse<{ userId: number }>>(
+      'users',
+      dto
     ).pipe(
       map(response => response.data.userId),
       catchError(error => {
@@ -83,10 +77,9 @@ export class UserService {
    * Update user
    */
   updateUser(userId: number, dto: UpdateUserDto): Observable<void> {
-    return this.http.put<ApiResponse<void>>(
-      `${this.apiUrl}/${userId}`,
-      dto,
-      { withCredentials: true }
+    return this.api.put<ApiResponse<void>>(
+      `users/${userId}`,
+      dto
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -100,9 +93,8 @@ export class UserService {
    * Delete user (soft delete)
    */
   deleteUser(userId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/${userId}`,
-      { withCredentials: true }
+    return this.api.delete<ApiResponse<void>>(
+      `users/${userId}`
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -116,10 +108,9 @@ export class UserService {
    * Check username availability
    */
   checkUsernameAvailability(username: string, excludeUserId?: number): Observable<boolean> {
-    return this.http.post<ApiResponse<{ available: boolean }>>(
-      `${this.apiUrl}/check-username`,
-      { username, excludeUserId },
-      { withCredentials: true }
+    return this.api.post<ApiResponse<{ available: boolean }>>(
+      'users/check-username',
+      { username, excludeUserId }
     ).pipe(
       map(response => response.data.available),
       catchError(error => {

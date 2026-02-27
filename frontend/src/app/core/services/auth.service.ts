@@ -1,9 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { tap, switchMap, catchError, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { environment } from '../../../environments/environment';
+import { ApiService } from './api.service';
 import { PermissionService } from './permission.service';
 import { User } from '../../shared/models/user.model';
 
@@ -20,7 +19,6 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = environment.apiUrl;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   
@@ -31,7 +29,7 @@ export class AuthService {
   private refreshTokenSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   constructor(
-    private http: HttpClient,
+    private api: ApiService,
     private router: Router,
     private permissionService: PermissionService
   ) {
@@ -44,9 +42,7 @@ export class AuthService {
    */
   initializeAuth(): Promise<void> {
     return new Promise((resolve) => {
-      this.http.get<ApiResponse<User>>(`${this.apiUrl}/auth/me`, {
-        withCredentials: true
-      }).subscribe({
+      this.api.get<ApiResponse<User>>('/auth/me').subscribe({
         next: (response) => {
           if (response.success && response.data) {
             this.currentUserSubject.next(response.data);
@@ -85,7 +81,7 @@ export class AuthService {
    * Get CSRF token for login
    */
   getCsrfToken(): Observable<ApiResponse<{ csrfToken: string }>> {
-    return this.http.get<ApiResponse<{ csrfToken: string }>>(`${this.apiUrl}/auth/csrf-token`);
+    return this.api.get<ApiResponse<{ csrfToken: string }>>('/auth/csrf-token');
   }
 
   /**
@@ -97,14 +93,11 @@ export class AuthService {
       switchMap(tokenResponse => {
         const csrfToken = tokenResponse.data.csrfToken;
         
-        return this.http.post<ApiResponse<User>>(
-          `${this.apiUrl}/auth/login`,
+        return this.api.post<ApiResponse<User>>(
+          '/auth/login',
           { username, password },
           {
-            withCredentials: true,
-            headers: {
-              'X-CSRF-Token': csrfToken
-            }
+            'X-CSRF-Token': csrfToken
           }
         );
       }),
@@ -140,9 +133,7 @@ export class AuthService {
    * Logout user
    */
   logout(): Observable<ApiResponse<null>> {
-    return this.http.post<ApiResponse<null>>(`${this.apiUrl}/auth/logout`, {}, {
-      withCredentials: true
-    }).pipe(
+    return this.api.post<ApiResponse<null>>('/auth/logout', {}).pipe(
       tap(() => {
         this.currentUserSubject.next(null);
         sessionStorage.removeItem('currentUser');
@@ -165,9 +156,7 @@ export class AuthService {
     this.isRefreshing = true;
     this.refreshTokenSubject.next(false);
 
-    return this.http.post<ApiResponse<null>>(`${this.apiUrl}/auth/refresh`, {}, {
-      withCredentials: true
-    }).pipe(
+    return this.api.post<ApiResponse<null>>('/auth/refresh', {}).pipe(
       tap((response) => {
         if (response.success) {
           console.log('✅ Token refreshed successfully');
