@@ -6,7 +6,7 @@ import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { UserDetail } from '../../../shared/models/user.model';
-import { Role } from '../../../shared/models/permission.model';
+import { Role, AssignRoleDto } from '../../../shared/models/permission.model';
 
 interface RoleAssignment {
   roleId: number;
@@ -293,10 +293,10 @@ export class UserRolesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
-    const dto: any = {
+    const dto: AssignRoleDto = {
       user_id: this.userId,
       role_id: this.selectedRoleId,
-      expires_at: this.expirationDate || undefined
+      expires_at: this.expirationDate ? new Date(this.expirationDate) : undefined
     };
     
     this.permissionService.assignRole(dto)

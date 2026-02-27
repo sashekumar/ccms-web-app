@@ -6,7 +6,7 @@
 >
   <!-- Navigation -->
   <nav class="py-3">
-    <div class="flex flex-col" *ngFor="let item of menuItems">
+    <div class="flex flex-col" *ngFor="let item of menuItems; trackBy: trackByMenuId">
       <!-- Menu Item without Children -->
       <a
         *ngIf="!item.children && item.id !== 'logout'"
@@ -75,7 +75,7 @@
       <!-- Submenu Items - Expanded sidebar -->
       <div *ngIf="item.children && item.expanded && isOpen" class="bg-[#0f172a]">
         <a
-          *ngFor="let child of item.children"
+          *ngFor="let child of item.children; trackBy: trackByMenuId"
           [routerLink]="child.route || '/dashboard'"
           routerLinkActive="!bg-blue-600 !text-white !border-l-4 !border-blue-400"
           [routerLinkActiveOptions]="{exact: false}"
@@ -89,7 +89,7 @@
       <!-- Submenu Items - Collapsed sidebar (show icons only when expanded) -->
       <div *ngIf="item.children && !isOpen && item.expanded" class="flex flex-col bg-[#0f172a]">
         <a
-          *ngFor="let child of item.children"
+          *ngFor="let child of item.children; trackBy: trackByMenuId"
           [routerLink]="child.route || '/dashboard'"
           routerLinkActive="!bg-blue-600 !text-white"
           [routerLinkActiveOptions]="{exact: false}"

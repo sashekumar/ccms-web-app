@@ -49,7 +49,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (confirm('Are you sure you want to logout?')) {
       this.authService.logout().subscribe({
         next: () => {
-          console.log('✅ Logout successful');
+          // Navigate to login handled by auth service
         },
         error: (err) => {
           console.error('❌ Logout error:', err);

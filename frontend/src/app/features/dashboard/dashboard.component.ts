@@ -88,4 +88,15 @@ export class DashboardComponent implements OnInit {
     };
     return statusMap[status] || 'bg-gray-100 text-gray-800';
   }
+
+  /**
+   * TrackBy functions for performance optimization
+   */
+  trackByStatLabel(index: number, stat: StatCard | any): string {
+    return stat.label;
+  }
+
+  trackByCaseId(index: number, item: CashlessCase | ReimbursementCase): string {
+    return item.id;
+  }
 }

@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 
 /**
@@ -65,10 +65,18 @@ import { Router, RouterModule } from '@angular/router';
   styles: []
 })
 export class UnauthorizedComponent {
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   goBack(): void {
-    window.history.back();
+    if (isPlatformBrowser(this.platformId)) {
+      window.history.back();
+    } else {
+      // Fallback for SSR
+      this.router.navigate(['/dashboard']);
+    }
   }
 
   goToDashboard(): void {

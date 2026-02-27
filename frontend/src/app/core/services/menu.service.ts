@@ -32,20 +32,13 @@ export class MenuService {
   public menuItems$ = this.menuItemsSubject.asObservable();
 
   constructor(private permissionService: PermissionService) {
-    console.log('🔧 MenuService initialized');
     // Subscribe to permission changes and rebuild menu
     this.permissionService.userPermissions$.subscribe({
       next: (permissions) => {
-        console.log('📬 MenuService received permissions:', permissions);
         if (permissions) {
           const menuItems = this.buildMenuFromPermissions(permissions);
-          console.log(`✅ MenuService built ${menuItems.length} menu items, updating BehaviorSubject`);
-          console.log('🔔 Current BehaviorSubject value BEFORE update:', this.menuItemsSubject.value);
           this.menuItemsSubject.next(menuItems);
-          console.log('🔔 Current BehaviorSubject value AFTER update:', this.menuItemsSubject.value);
-          console.log('🔔 Number of observers:', (this.menuItemsSubject as any).observers?.length || 0);
         } else {
-          console.log('⚠️ No permissions received, setting default menu');
           // No permissions loaded yet, show default menu
           this.setDefaultMenuItems();
         }
@@ -85,7 +78,6 @@ export class MenuService {
 
     // Handle new category-based structure
     if (permissions && permissions.categories) {
-      console.log(`📦 Received ${permissions.categories.length} categories from backend`);
       // Process each category
       permissions.categories.forEach((category: any) => {
         const categoryChildren: MenuItem[] = [];
@@ -115,7 +107,6 @@ export class MenuService {
 
         // Only add category if it has visible modules
         if (categoryChildren.length > 0) {
-          console.log(`📁 Adding category: ${category.category_name} with ${categoryChildren.length} modules`);
           categoryItems.push({
             id: category.category_code.toLowerCase(),
             label: category.category_name,
@@ -126,12 +117,8 @@ export class MenuService {
         }
       });
 
-      console.log(`✅ Built ${categoryItems.length} category items`);
-      console.log('📋 Category structure:', JSON.stringify(categoryItems, null, 2));
-
       // Process uncategorized modules (add them as top-level items FIRST)
       if (permissions.uncategorized_modules && permissions.uncategorized_modules.length > 0) {
-        console.log(`📂 Processing ${permissions.uncategorized_modules.length} uncategorized modules`);
         permissions.uncategorized_modules.forEach((module: any) => {
           // Skip detail-view-only modules
           if (DETAIL_VIEW_MODULES.includes(module.module_code)) {
@@ -152,7 +139,6 @@ export class MenuService {
             });
           }
         });
-        console.log(`✅ Added ${menuItems.length} uncategorized modules (placed first)`);
       }
 
       // Add categories after uncategorized modules
@@ -160,8 +146,6 @@ export class MenuService {
     } 
     // Fallback to old flat structure for backward compatibility
     else if (permissions && permissions.modules) {
-      console.log('⚠️ Using fallback flat structure (no categories)');
-      console.log(`📦 Received ${permissions.modules.length} modules in flat structure`);
       const moduleMap = new Map<string, any>();
       
       // Group permissions by module with VIEW access
@@ -189,7 +173,6 @@ export class MenuService {
           moduleCode: module.module_code
         });
       });
-      console.log(`✅ Built ${menuItems.length} menu items from flat structure`);
     }
     else {
       console.warn('⚠️ No permissions data available for menu building');
@@ -197,7 +180,6 @@ export class MenuService {
 
     // If no menu items, provide default dashboard
     if (menuItems.length === 0) {
-      console.log('📊 No menu items built, adding default dashboard');
       menuItems.push({
         id: 'dashboard',
         label: 'Dashboard',
@@ -215,7 +197,6 @@ export class MenuService {
       // No route - handled via click event
     });
 
-    console.log(`🎯 Final menu structure: ${menuItems.length} top-level items`);
     return menuItems;
   }
 

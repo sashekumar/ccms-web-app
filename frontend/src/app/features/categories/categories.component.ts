@@ -222,4 +222,12 @@ export class CategoriesComponent implements OnInit, OnDestroy {
       this.errorMessage = '';
     }, 5000);
   }
+
+  /**
+   * TrackBy function for categories list
+   * Improves ngFor performance by tracking items by unique identifier
+   */
+  trackByCategoryId(index: number, category: Category): number {
+    return category.category_id;
+  }
 }

@@ -30,7 +30,7 @@
   <div *ngIf="activeTab === 'cashless'" class="animate-fadeIn">
     <!-- Stats Cards Row -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-      <div *ngFor="let stat of cashlessStats" class="bg-white rounded-lg shadow-sm border-0 p-4 hover:-translate-y-1 transition-transform cursor-pointer">
+      <div *ngFor="let stat of cashlessStats; trackBy: trackByStatLabel" class="bg-white rounded-lg shadow-sm border-0 p-4 hover:-translate-y-1 transition-transform cursor-pointer">
         <div class="flex items-center">
           <div [class]="'w-10 h-10 rounded-lg flex items-center justify-center text-lg mr-3' + ' ' + stat.iconBg">
             <i [class]="'fas fa-' + stat.icon + ' ' + stat.iconColor"></i>
@@ -69,7 +69,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of cashlessCases" class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer">
+              <tr *ngFor="let item of cashlessCases; trackBy: trackByCaseId" class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer">
                 <td class="px-4 py-3 text-sm">{{ item.patientName }}</td>
                 <td class="px-4 py-3 text-sm text-blue-600 font-mono">{{ item.refId }}</td>
                 <td class="px-4 py-3 text-sm text-gray-600">{{ item.hospital }}</td>
@@ -107,7 +107,7 @@
   <div *ngIf="activeTab === 'reimb'" class="animate-fadeIn">
     <!-- Stats Cards Row -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <div *ngFor="let stat of reimbStats" [class]="'bg-white rounded-lg shadow-sm p-4 border-l-4 ' + stat.borderColor">
+      <div *ngFor="let stat of reimbStats; trackBy: trackByStatLabel" [class]="'bg-white rounded-lg shadow-sm p-4 border-l-4 ' + stat.borderColor">
         <div class="flex justify-between">
           <span class="font-bold text-sm" [class.text-blue-600]="stat.color === 'info'" [class.text-yellow-600]="stat.color === 'warning'" [class.text-green-600]="stat.color === 'success'">
             {{ stat.label }}
@@ -143,7 +143,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of reimbCases" class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer">
+              <tr *ngFor="let item of reimbCases; trackBy: trackByCaseId" class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer">
                 <td class="px-4 py-3 text-sm">{{ item.claimant }}</td>
                 <td class="px-4 py-3 text-sm text-blue-600 font-mono">{{ item.policy }}</td>
                 <td class="px-4 py-3 text-sm font-semibold text-green-600">{{ item.amount }}</td>

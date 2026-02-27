@@ -178,6 +178,12 @@ export function getApiBaseUrl(): string {
  * ```
  */
 export function buildFullUrl(endpoint: string): string {
+  // SSR compatibility check
+  if (typeof window === 'undefined') {
+    // Fallback for SSR - return relative path or configured base URL
+    return endpoint;
+  }
+  
   const protocol = window.location.protocol;
   const host = window.location.host;
   return `${protocol}//${host}${endpoint}`;

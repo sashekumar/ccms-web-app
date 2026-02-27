@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { PermissionService } from '../../core/services/permission.service';
 import { CategoryService } from '../../core/services/category.service';
 import { Module, Category } from '../../shared/models/permission.model';
@@ -370,7 +371,7 @@ export class ModulesComponent implements OnInit, OnDestroy {
           this.applyFilters();
           this.loading = false;
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error loading data:', error);
           this.errorMessage = 'Error loading data';
           this.loading = false;
@@ -473,7 +474,7 @@ export class ModulesComponent implements OnInit, OnDestroy {
             this.loadData();
             this.clearMessages();
           },
-          error: (error: any) => {
+          error: (error: HttpErrorResponse) => {
             console.error('Error updating module:', error);
             this.errorMessage = 'Error updating module: ' + (error.error?.message || error.message);
             this.saving = false;
@@ -499,7 +500,7 @@ export class ModulesComponent implements OnInit, OnDestroy {
             this.loadData();
             this.clearMessages();
           },
-          error: (error: any) => {
+          error: (error: HttpErrorResponse) => {
             console.error('Error creating module:', error);
             this.errorMessage = 'Error creating module: ' + (error.error?.message || error.message);
             this.saving = false;
@@ -531,7 +532,7 @@ export class ModulesComponent implements OnInit, OnDestroy {
           this.loadData();
           this.clearMessages();
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error deleting module:', error);
           this.errorMessage = 'Error deleting module: ' + (error.error?.message || error.message);
           this.saving = false;

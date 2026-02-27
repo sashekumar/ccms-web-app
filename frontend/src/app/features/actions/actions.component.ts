@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { PermissionService } from '../../core/services/permission.service';
 import { Action } from '../../shared/models/permission.model';
 
@@ -331,7 +332,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
           this.applyFilters();
           this.loading = false;
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error loading actions:', error);
           this.errorMessage = 'Error loading actions';
           this.loading = false;
@@ -403,7 +404,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
             this.loadActions();
             this.clearMessages();
           },
-          error: (error: any) => {
+          error: (error: HttpErrorResponse) => {
             console.error('Error updating action:', error);
             this.errorMessage = 'Error updating action: ' + (error.error?.message || error.message);
             this.saving = false;
@@ -425,7 +426,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
             this.loadActions();
             this.clearMessages();
           },
-          error: (error: any) => {
+          error: (error: HttpErrorResponse) => {
             console.error('Error creating action:', error);
             this.errorMessage = 'Error creating action: ' + (error.error?.message || error.message);
             this.saving = false;
@@ -457,7 +458,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
           this.loadActions();
           this.clearMessages();
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error deleting action:', error);
           this.errorMessage = 'Error deleting action: ' + (error.error?.message || error.message);
           this.saving = false;

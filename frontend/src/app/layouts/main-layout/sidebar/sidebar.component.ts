@@ -30,7 +30,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    console.log('📱 Sidebar component initialized');
     this.sidebarService.isSidebarOpen$
       .pipe(takeUntil(this.destroy$))
       .subscribe(isOpen => this.isOpen = isOpen);
@@ -39,11 +38,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.menuService.getCurrentMenuItems()
       .pipe(takeUntil(this.destroy$))
       .subscribe(items => {
-        console.log('🎨 Sidebar received menu items update:', items);
-        console.log('🎨 Menu count:', items.length);
-        if (items.length > 0) {
-          console.log('🎨 First item:', items[0]);
-        }
         this.menuItems = items;
       });
 
@@ -95,7 +89,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (confirm('Are you sure you want to logout?')) {
       this.authService.logout().subscribe({
         next: () => {
-          console.log('✅ Logout successful');
+          // Navigate to login handled by auth service
         },
         error: (error) => {
           console.error('❌ Logout failed:', error);
@@ -104,5 +98,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  /**
+   * TrackBy function for menu items
+   * Improves ngFor performance by tracking items by unique identifier
+   */
+  trackByMenuId(index: number, item: MenuItem): string {
+    return item.id;
   }
 }

@@ -55,12 +55,10 @@ export class PermissionService {
    * Load current user's permissions
    */
   loadUserPermissions(): Observable<UserPermissionsResponse> {
-    console.log('🔄 Loading user permissions from API...');
     return this.api.get<ApiResponse<UserPermissionsResponse>>(
       API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT
     ).pipe(
       map(response => {
-        console.log('📦 Raw API response:', response);
         return response.data;
       }),
       tap(permissions => {
@@ -70,18 +68,6 @@ export class PermissionService {
         const oldStructureCount = permissions.modules?.length || 0;
         const totalModules = categoryModuleCount + uncategorizedCount || oldStructureCount;
         
-        console.log(`✅ Permissions loaded successfully: ${totalModules} modules`);
-        if (permissions.categories) {
-          console.log(`📁 Categories: ${permissions.categories.length}`);
-          permissions.categories.forEach(cat => {
-            console.log(`  └─ ${cat.category_name}: ${cat.modules.length} modules`);
-          });
-          if (uncategorizedCount > 0) {
-            console.log(`  └─ Uncategorized: ${uncategorizedCount} modules`);
-          }
-        } else if (permissions.modules) {
-          console.log('📋 Modules (flat):', permissions.modules.map(m => `${m.module_code} (${m.actions.length})`).join(', '));
-        }
         this.userPermissionsSubject.next(permissions);
         this.cacheTimestamp = Date.now();
       }),
@@ -115,12 +101,10 @@ export class PermissionService {
    */
   hasPermission(moduleCode: string, actionCode: string): Observable<boolean> {
     const cacheKey = `${moduleCode}.${actionCode}`;
-    console.log(`🔍 Checking permission: ${cacheKey}`);
     
     // Check cache first
     if (this.isCacheValid() && this.permissionCache.has(cacheKey)) {
       const cached = this.permissionCache.get(cacheKey)!;
-      console.log(`💾 Using cached result for ${cacheKey}: ${cached}`);
       return of(cached);
     }
 
@@ -131,15 +115,8 @@ export class PermissionService {
     const oldStructureCount = userPermissions?.modules?.length || 0;
     const totalModules = categoryModuleCount + uncategorizedCount || oldStructureCount;
     
-    console.log(`📊 Current permissions state:`, {
-      hasPermissions: !!userPermissions,
-      moduleCount: totalModules,
-      cacheValid: this.isCacheValid()
-    });
-    
     if (userPermissions && this.isCacheValid()) {
       const hasAccess = this.checkPermissionInMemory(userPermissions, moduleCode, actionCode);
-      console.log(`${hasAccess ? '✅' : '❌'} Permission check result for ${cacheKey}: ${hasAccess}`);
       this.permissionCache.set(cacheKey, hasAccess);
       return of(hasAccess);
     }
@@ -680,17 +657,10 @@ export class PermissionService {
     
     const module = allModules.find(m => m.module_code === moduleCode);
     if (!module) {
-      console.log(`⚠️ Module not found: ${moduleCode}`);
-      console.log(`📋 Available modules:`, allModules.map(m => m.module_code));
       return false;
     }
     
     const hasAction = module.actions.some((a: any) => a.action_code === actionCode);
-    if (!hasAction) {
-      console.log(`⚠️ Action not found in module ${moduleCode}: ${actionCode}`);
-      console.log(`📋 Available actions:`, module.actions.map((a: any) => a.action_code));
-    }
-    
     return hasAction;
   }
 }

@@ -92,7 +92,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
-          <tr *ngFor="let category of filteredCategories" class="hover:bg-gray-50">
+          <tr *ngFor="let category of filteredCategories; trackBy: trackByCategoryId" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-medium text-gray-900">{{ category.category_name }}</div>
               <div *ngIf="category.description" class="text-sm text-gray-500">{{ category.description }}</div>

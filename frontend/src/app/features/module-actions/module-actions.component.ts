@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { PermissionService } from '../../core/services/permission.service';
 import { Module, Action, ModuleAction } from '../../shared/models/permission.model';
 
@@ -362,7 +363,7 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
           this.applyFilters();
           this.loading = false;
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error loading data:', error);
           this.errorMessage = 'Error loading data';
           this.loading = false;
@@ -412,9 +413,9 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
     };
     this.showModal = true;
   }
-
-  toggleAction(actionId: number, event: any): void {
-    if (event.target.checked) {
+  toggleAction(actionId: number, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    if (checkbox.checked) {
       this.formData.actionIds.push(actionId);
     } else {
       const index = this.formData.actionIds.indexOf(actionId);
@@ -424,7 +425,7 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
     }
   }
 
-  openEditModal(item: any): void {
+  openEditModal(item: ModuleAction): void {
     this.editingItem = item;
     this.formData = {
       moduleId: item.module_id.toString(),
@@ -458,7 +459,7 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
             this.loadData();
             this.clearMessages();
           },
-          error: (error: any) => {
+          error: (error: HttpErrorResponse) => {
             console.error('Error updating module-action:', error);
             this.errorMessage = 'Error updating module-action: ' + (error.error?.message || error.message);
             this.saving = false;
@@ -494,7 +495,7 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
                 this.handleBatchComplete(successCount, errorCount, totalActions);
               }
             },
-            error: (error: any) => {
+            error: (error: HttpErrorResponse) => {
               console.error('Error creating module-action:', error);
               errorCount++;
               if (successCount + errorCount === totalActions) {
@@ -522,7 +523,7 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
     this.clearMessages();
   }
 
-  confirmDelete(item: any): void {
+  confirmDelete(item: ModuleAction): void {
     this.itemToDelete = item;
     this.showDeleteConfirm = true;
   }
@@ -544,7 +545,7 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
           this.loadData();
           this.clearMessages();
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error deleting module-action:', error);
           this.errorMessage = 'Error deleting module-action: ' + (error.error?.message || error.message);
           this.saving = false;
