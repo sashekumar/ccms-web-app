@@ -295,7 +295,14 @@ export class UsersRepository {
     const result = await pool.request()
       .input('username', sql.VarChar(50), username)
       .query(`
-        SELECT * FROM ${DB_TABLES.USERS}
+        SELECT 
+          user_id,
+          username,
+          password_hash,
+          full_name,
+          is_active,
+          last_login
+        FROM ${DB_TABLES.USERS}
         WHERE username = @username AND is_active = 1
       `);
 

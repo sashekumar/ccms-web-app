@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { CategoryService } from '../../core/services/category.service';
 import { Category } from '../../shared/models/permission.model';
@@ -61,7 +62,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
           this.applyFilters();
           this.loading = false;
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error loading categories:', error);
           this.errorMessage = 'Error loading categories';
           this.loading = false;
@@ -144,7 +145,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
             this.loadCategories();
             this.clearMessages();
           },
-          error: (error: any) => {
+          error: (error: HttpErrorResponse) => {
             console.error('Error updating category:', error);
             this.errorMessage = 'Error updating category: ' + (error.error?.message || error.message);
             this.saving = false;
@@ -168,7 +169,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
             this.loadCategories();
             this.clearMessages();
           },
-          error: (error: any) => {
+          error: (error: HttpErrorResponse) => {
             console.error('Error creating category:', error);
             this.errorMessage = 'Error creating category: ' + (error.error?.message || error.message);
             this.saving = false;
@@ -200,7 +201,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
           this.loadCategories();
           this.clearMessages();
         },
-        error: (error: any) => {
+        error: (error: HttpErrorResponse) => {
           console.error('Error deleting category:', error);
           this.errorMessage = 'Error deleting category: ' + (error.error?.message || error.message);
           this.saving = false;

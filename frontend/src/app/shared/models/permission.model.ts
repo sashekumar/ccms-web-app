@@ -151,3 +151,69 @@ export interface RevokePermissionDto {
   role_id: number;
   module_action_id: number;
 }
+
+// Module DTOs
+export interface CreateModuleDto {
+  module_name: string;
+  module_code: string;
+  description?: string;
+  category_id?: number;
+  icon?: string;
+  route?: string;
+  display_order: number;
+}
+
+export interface UpdateModuleDto {
+  module_name?: string;
+  module_code?: string;
+  description?: string;
+  category_id?: number;
+  icon?: string;
+  route?: string;
+  display_order?: number;
+  is_active?: boolean;
+}
+
+// Action DTOs
+export interface CreateActionDto {
+  action_name: string;
+  action_code: string;
+  description?: string;
+}
+
+export interface UpdateActionDto {
+  action_name?: string;
+  action_code?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+// Module Action DTOs
+export interface CreateModuleActionDto {
+  module_id: number;
+  action_id: number;
+  action_label?: string;
+}
+
+export interface UpdateModuleActionDto {
+  module_id?: number;
+  action_id?: number;
+  action_label?: string;
+  is_active?: boolean;
+}
+
+// Permission Matrix Item (for role permissions matrix)
+export interface PermissionMatrixItem {
+  module_action_id: number;
+  module_id: number;
+  module_code: string;
+  module_name: string;
+  action_id: number;
+  action_code: string;
+  action_name: string;
+  action_label: string | null;
+  granted: boolean;
+  category_id: number | null;
+  category_name: string | null;
+  display_order: number;
+}

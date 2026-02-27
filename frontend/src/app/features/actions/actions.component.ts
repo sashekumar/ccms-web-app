@@ -411,7 +411,11 @@ export class ActionsComponent implements OnInit, OnDestroy {
           }
         });
     } else {
-      this.permissionService.createAction(this.formData)
+      this.permissionService.createAction({
+        action_name: this.formData.actionName,
+        action_code: this.formData.actionCode,
+        description: this.formData.description || undefined
+      })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {

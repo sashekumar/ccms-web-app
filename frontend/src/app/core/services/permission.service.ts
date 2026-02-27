@@ -9,12 +9,20 @@ import {
   Role,
   Module,
   Action,
+  ModuleAction,
   RolePermissionSummary,
   AssignRoleDto,
   CreateRoleDto,
   UpdateRoleDto,
   GrantPermissionDto,
-  RevokePermissionDto
+  RevokePermissionDto,
+  CreateModuleDto,
+  UpdateModuleDto,
+  CreateActionDto,
+  UpdateActionDto,
+  CreateModuleActionDto,
+  UpdateModuleActionDto,
+  PermissionMatrixItem
 } from '../../shared/models/permission.model';
 
 export interface ApiResponse<T> {
@@ -335,8 +343,8 @@ export class PermissionService {
   /**
    * Get role permissions matrix (all module-action combinations with grant status)
    */
-  getRolePermissionsMatrix(roleId: number): Observable<any[]> {
-    return this.api.post<ApiResponse<any[]>>(
+  getRolePermissionsMatrix(roleId: number): Observable<PermissionMatrixItem[]> {
+    return this.api.post<ApiResponse<PermissionMatrixItem[]>>(
       `${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS_MATRIX}`,
       { roleId }
     ).pipe(
@@ -465,7 +473,7 @@ export class PermissionService {
   /**
    * Create module
    */
-  createModule(data: any): Observable<number> {
+  createModule(data: CreateModuleDto): Observable<number> {
     return this.api.post<ApiResponse<{ moduleId: number }>>(
       `${API_ENDPOINTS.PERMISSIONS.MODULES.CREATE}`,
       data
@@ -481,7 +489,7 @@ export class PermissionService {
   /**
    * Update module
    */
-  updateModule(moduleId: number, data: any): Observable<void> {
+  updateModule(moduleId: number, data: UpdateModuleDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       `${API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE}`,
       { moduleId, ...data }
@@ -513,7 +521,7 @@ export class PermissionService {
   /**
    * Create action
    */
-  createAction(data: any): Observable<number> {
+  createAction(data: CreateActionDto): Observable<number> {
     return this.api.post<ApiResponse<{ actionId: number }>>(
       `${API_ENDPOINTS.PERMISSIONS.ACTIONS.CREATE}`,
       data
@@ -529,7 +537,7 @@ export class PermissionService {
   /**
    * Update action
    */
-  updateAction(actionId: number, data: any): Observable<void> {
+  updateAction(actionId: number, data: UpdateActionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       `${API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE}`,
       { actionId, ...data }
@@ -561,8 +569,8 @@ export class PermissionService {
   /**
    * Get all module-actions
    */
-  getAllModuleActions(): Observable<any[]> {
-    return this.api.post<ApiResponse<any[]>>(
+  getAllModuleActions(): Observable<ModuleAction[]> {
+    return this.api.post<ApiResponse<ModuleAction[]>>(
       `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.LIST}`,
       {}
     ).pipe(
@@ -577,7 +585,7 @@ export class PermissionService {
   /**
    * Create module-action
    */
-  createModuleAction(data: any): Observable<number> {
+  createModuleAction(data: CreateModuleActionDto): Observable<number> {
     return this.api.post<ApiResponse<{ moduleActionId: number }>>(
       `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.CREATE}`,
       data
@@ -593,7 +601,7 @@ export class PermissionService {
   /**
    * Update module-action
    */
-  updateModuleAction(moduleActionId: number, data: any): Observable<void> {
+  updateModuleAction(moduleActionId: number, data: UpdateModuleActionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.UPDATE}`,
       { moduleActionId, ...data }

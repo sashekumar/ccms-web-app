@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { PermissionService } from '../../core/services/permission.service';
-import { Module, Action } from '../../shared/models/permission.model';
+import { Module, Action, ModuleAction } from '../../shared/models/permission.model';
 
 @Component({
   selector: 'app-module-actions',
@@ -307,16 +307,16 @@ import { Module, Action } from '../../shared/models/permission.model';
   `
 })
 export class ModuleActionsComponent implements OnInit, OnDestroy {
-  moduleActions: any[] = [];
-  filteredModuleActions: any[] = [];
+  moduleActions: ModuleAction[] = [];
+  filteredModuleActions: ModuleAction[] = [];
   modules: Module[] = [];
   actions: Action[] = [];
   loading = true;
   saving = false;
   showModal = false;
   showDeleteConfirm = false;
-  editingItem: any = null;
-  itemToDelete: any = null;
+  editingItem: ModuleAction | null = null;
+  itemToDelete: ModuleAction | null = null;
   successMessage = '';
   errorMessage = '';
 
@@ -377,8 +377,8 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
       if (this.searchTerm) {
         const search = this.searchTerm.toLowerCase();
         const matchesSearch = 
-          item.module_name.toLowerCase().includes(search) ||
-          item.action_name.toLowerCase().includes(search) ||
+          item.module_name?.toLowerCase().includes(search) ||
+          item.action_name?.toLowerCase().includes(search) ||
           (item.action_label && item.action_label.toLowerCase().includes(search));
         if (!matchesSearch) return false;
       }
@@ -446,8 +446,8 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
 
     if (this.editingItem) {
       this.permissionService.updateModuleAction(this.editingItem.module_action_id, {
-        actionLabel: this.formData.actionLabel || null,
-        isActive: this.formData.isActive
+        action_label: this.formData.actionLabel || undefined,
+        is_active: this.formData.isActive
       })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -482,9 +482,9 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
 
       this.formData.actionIds.forEach((actionId, index) => {
         this.permissionService.createModuleAction({
-          moduleId: moduleId,
-          actionId: actionId,
-          actionLabel: this.formData.actionLabel || undefined
+          module_id: moduleId,
+          action_id: actionId,
+          action_label: this.formData.actionLabel || undefined
         })
           .pipe(takeUntil(this.destroy$))
           .subscribe({

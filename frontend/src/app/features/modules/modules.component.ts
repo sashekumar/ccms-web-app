@@ -481,7 +481,15 @@ export class ModulesComponent implements OnInit, OnDestroy {
           }
         });
     } else {
-      this.permissionService.createModule(this.formData)
+      this.permissionService.createModule({
+        module_name: this.formData.moduleName,
+        module_code: this.formData.moduleCode,
+        description: this.formData.description || undefined,
+        category_id: this.formData.categoryId || undefined,
+        icon: this.formData.icon || undefined,
+        route: this.formData.route || undefined,
+        display_order: this.formData.displayOrder
+      })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {

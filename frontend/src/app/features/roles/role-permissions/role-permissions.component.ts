@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Role, Module, Action, RolePermissionSummary } from '../../../shared/models/permission.model';
+import { Role, Module, Action, RolePermissionSummary, PermissionMatrixItem } from '../../../shared/models/permission.model';
 
 interface PermissionMatrixRow {
   module: Module;
@@ -242,13 +242,13 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
       });
   }
 
-  private buildMatrixFromData(data: any[]): void {
+  private buildMatrixFromData(data: PermissionMatrixItem[]): void {
     // First, extract all unique actions and modules
     const actionMap = new Map<number, Action>();
-    const moduleDataMap = new Map<number, any>();
-    const moduleActionMap = new Map<string, any>();
+    const moduleDataMap = new Map<number, Module>();
+    const moduleActionMap = new Map<string, PermissionMatrixItem>();
     
-    data.forEach((item: any) => {
+    data.forEach((item: PermissionMatrixItem) => {
       // Collect unique actions
       if (!actionMap.has(item.action_id)) {
         actionMap.set(item.action_id, {
@@ -267,10 +267,10 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
           module_name: item.module_name,
           module_code: item.module_code,
           description: null,
-          category_id: null,
+          category_id: item.category_id,
           icon: null,
           route: null,
-          display_order: 0,
+          display_order: item.display_order,
           is_active: true,
           created_at: new Date(),
           updated_at: null
@@ -295,7 +295,7 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
           
           return {
             action: action,
-            isGranted: item ? (item.granted === 1) : false,
+            isGranted: item ? item.granted : false,
             module_action_id: item ? item.module_action_id : undefined
           };
         })
