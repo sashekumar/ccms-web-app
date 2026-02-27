@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { API_ENDPOINTS } from '../constants';
 import {
   User,
   UserDetail,
@@ -31,7 +32,7 @@ export class UserService {
    */
   getUsers(filters: UserFilters = {}): Observable<PaginatedUsers> {
     return this.api.post<ApiResponse<PaginatedUsers>>(
-      'users/list',
+      API_ENDPOINTS.USERS.LIST,
       filters
     ).pipe(
       map(response => response.data),
@@ -47,7 +48,7 @@ export class UserService {
    */
   getUserById(userId: number): Observable<UserDetail> {
     return this.api.get<ApiResponse<UserDetail>>(
-      `users/${userId}`
+      API_ENDPOINTS.USERS.getById(userId)
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -62,7 +63,7 @@ export class UserService {
    */
   createUser(dto: CreateUserDto): Observable<number> {
     return this.api.post<ApiResponse<{ userId: number }>>(
-      'users',
+      API_ENDPOINTS.USERS.CREATE,
       dto
     ).pipe(
       map(response => response.data.userId),
@@ -78,7 +79,7 @@ export class UserService {
    */
   updateUser(userId: number, dto: UpdateUserDto): Observable<void> {
     return this.api.put<ApiResponse<void>>(
-      `users/${userId}`,
+      API_ENDPOINTS.USERS.update(userId),
       dto
     ).pipe(
       map(() => undefined),
@@ -94,7 +95,7 @@ export class UserService {
    */
   deleteUser(userId: number): Observable<void> {
     return this.api.delete<ApiResponse<void>>(
-      `users/${userId}`
+      API_ENDPOINTS.USERS.delete(userId)
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -109,7 +110,7 @@ export class UserService {
    */
   checkUsernameAvailability(username: string, excludeUserId?: number): Observable<boolean> {
     return this.api.post<ApiResponse<{ available: boolean }>>(
-      'users/check-username',
+      API_ENDPOINTS.USERS.CHECK_USERNAME,
       { username, excludeUserId }
     ).pipe(
       map(response => response.data.available),

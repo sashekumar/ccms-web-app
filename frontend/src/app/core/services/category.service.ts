@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { API_ENDPOINTS } from '../constants';
 import { Category } from '../../shared/models/permission.model';
 
 export interface ApiResponse<T> {
@@ -42,7 +43,7 @@ export class CategoryService {
    */
   getAllCategories(): Observable<Category[]> {
     return this.api.get<ApiResponse<Category[]>>(
-      'permissions/categories'
+      API_ENDPOINTS.PERMISSIONS.CATEGORIES.LIST
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -58,7 +59,7 @@ export class CategoryService {
    */
   getCategoryById(categoryId: number): Observable<Category> {
     return this.api.get<ApiResponse<Category>>(
-      `permissions/categories/${categoryId}`
+      API_ENDPOINTS.PERMISSIONS.CATEGORIES.getById(categoryId)
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -74,7 +75,7 @@ export class CategoryService {
    */
   createCategory(data: CreateCategoryDto): Observable<number> {
     return this.api.post<ApiResponse<{ category_id: number }>>(
-      'permissions/categories',
+      API_ENDPOINTS.PERMISSIONS.CATEGORIES.CREATE,
       data
     ).pipe(
       map(response => response.data.category_id),
@@ -91,7 +92,7 @@ export class CategoryService {
    */
   updateCategory(categoryId: number, data: UpdateCategoryDto): Observable<void> {
     return this.api.put<ApiResponse<void>>(
-      `permissions/categories/${categoryId}`,
+      API_ENDPOINTS.PERMISSIONS.CATEGORIES.update(categoryId),
       data
     ).pipe(
       map(() => undefined),
@@ -108,7 +109,7 @@ export class CategoryService {
    */
   deleteCategory(categoryId: number): Observable<void> {
     return this.api.delete<ApiResponse<void>>(
-      `permissions/categories/${categoryId}`
+      API_ENDPOINTS.PERMISSIONS.CATEGORIES.delete(categoryId)
     ).pipe(
       map(() => undefined),
       catchError(error => {

@@ -3,6 +3,7 @@ import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { tap, switchMap, catchError, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ApiService } from './api.service';
+import { API_ENDPOINTS } from '../constants';
 import { PermissionService } from './permission.service';
 import { User } from '../../shared/models/user.model';
 
@@ -42,7 +43,7 @@ export class AuthService {
    */
   initializeAuth(): Promise<void> {
     return new Promise((resolve) => {
-      this.api.get<ApiResponse<User>>('/auth/me').subscribe({
+      this.api.get<ApiResponse<User>>(API_ENDPOINTS.AUTH.ME).subscribe({
         next: (response) => {
           if (response.success && response.data) {
             this.currentUserSubject.next(response.data);
@@ -81,7 +82,7 @@ export class AuthService {
    * Get CSRF token for login
    */
   getCsrfToken(): Observable<ApiResponse<{ csrfToken: string }>> {
-    return this.api.get<ApiResponse<{ csrfToken: string }>>('/auth/csrf-token');
+    return this.api.get<ApiResponse<{ csrfToken: string }>>(API_ENDPOINTS.AUTH.CSRF_TOKEN);
   }
 
   /**
@@ -94,7 +95,7 @@ export class AuthService {
         const csrfToken = tokenResponse.data.csrfToken;
         
         return this.api.post<ApiResponse<User>>(
-          '/auth/login',
+          API_ENDPOINTS.AUTH.LOGIN,
           { username, password },
           {
             'X-CSRF-Token': csrfToken
@@ -133,7 +134,7 @@ export class AuthService {
    * Logout user
    */
   logout(): Observable<ApiResponse<null>> {
-    return this.api.post<ApiResponse<null>>('/auth/logout', {}).pipe(
+    return this.api.post<ApiResponse<null>>(API_ENDPOINTS.AUTH.LOGOUT, {}).pipe(
       tap(() => {
         this.currentUserSubject.next(null);
         sessionStorage.removeItem('currentUser');
@@ -156,7 +157,7 @@ export class AuthService {
     this.isRefreshing = true;
     this.refreshTokenSubject.next(false);
 
-    return this.api.post<ApiResponse<null>>('/auth/refresh', {}).pipe(
+    return this.api.post<ApiResponse<null>>(API_ENDPOINTS.AUTH.REFRESH, {}).pipe(
       tap((response) => {
         if (response.success) {
           console.log('✅ Token refreshed successfully');

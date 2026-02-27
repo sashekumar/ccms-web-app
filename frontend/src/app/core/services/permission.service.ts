@@ -49,7 +49,7 @@ export class PermissionService {
   loadUserPermissions(): Observable<UserPermissionsResponse> {
     console.log('🔄 Loading user permissions from API...');
     return this.api.get<ApiResponse<UserPermissionsResponse>>(
-      `${API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT}`
+      API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT
     ).pipe(
       map(response => {
         console.log('📦 Raw API response:', response);
@@ -228,7 +228,7 @@ export class PermissionService {
    */
   getUserPermissionsById(userId: number): Observable<UserPermissionsResponse> {
     return this.api.get<ApiResponse<UserPermissionsResponse>>(
-      `${API_ENDPOINTS.PERMISSIONS.USER.getById(userId)}`
+      API_ENDPOINTS.PERMISSIONS.USER.getById(userId)
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -243,7 +243,7 @@ export class PermissionService {
    */
   assignRole(dto: AssignRoleDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.USER.ASSIGN_ROLE}`,
+      API_ENDPOINTS.PERMISSIONS.USER.ASSIGN_ROLE,
       dto
     ).pipe(
       map(() => undefined),
@@ -259,7 +259,7 @@ export class PermissionService {
    */
   detachRole(userId: number, roleId: number): Observable<void> {
     return this.api.delete<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.USER.detachRole(userId, roleId)}`
+      API_ENDPOINTS.PERMISSIONS.USER.detachRole(userId, roleId)
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -274,7 +274,7 @@ export class PermissionService {
    */
   getUserRoles(userId: number): Observable<number[]> {
     return this.api.get<ApiResponse<{ roleIds: number[] }>>(
-      `${API_ENDPOINTS.PERMISSIONS.USER.getRoles(userId)}`
+      API_ENDPOINTS.PERMISSIONS.USER.getRoles(userId)
     ).pipe(
       map(response => response.data.roleIds),
       catchError(error => {

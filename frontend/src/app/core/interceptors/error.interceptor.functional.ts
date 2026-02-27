@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError, switchMap, filter, take } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { API_ENDPOINTS } from '../constants';
 
 /**
  * Error Interceptor (Functional) - Global HTTP error handling with automatic token refresh
@@ -26,12 +27,17 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         switch (error.status) {
           case 401:
             // Skip refresh for certain endpoints
-            const skipRefreshEndpoints = ['/auth/login', '/auth/refresh', '/auth/me', '/auth/csrf-token'];
+            const skipRefreshEndpoints = [
+              API_ENDPOINTS.AUTH.LOGIN,
+              API_ENDPOINTS.AUTH.REFRESH,
+              API_ENDPOINTS.AUTH.ME,
+              API_ENDPOINTS.AUTH.CSRF_TOKEN
+            ];
             const shouldSkipRefresh = skipRefreshEndpoints.some(endpoint => req.url.includes(endpoint));
 
             if (shouldSkipRefresh) {
               // For /me endpoint, fail silently (expected during session check)
-              if (req.url.includes('/auth/me')) {
+              if (req.url.includes(API_ENDPOINTS.AUTH.ME)) {
                 return throwError(() => error);
               }
 
@@ -98,7 +104,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       // Only log non-401 errors or 401 errors from skipped endpoints
-      if (error.status !== 401 || req.url.includes('/auth/me')) {
+      if (error.status !== 401 || req.url.includes(API_ENDPOINTS.AUTH.ME)) {
         console.error(errorMessage);
       }
       

@@ -34,6 +34,7 @@ export const AUTH_ENDPOINTS = {
   LOGOUT: `${API_BASE}/auth/logout`,
   REFRESH: `${API_BASE}/auth/refresh`,
   ME: `${API_BASE}/auth/me`,
+  CSRF_TOKEN: `${API_BASE}/auth/csrf-token`,
   CHANGE_PASSWORD: `${API_BASE}/auth/change-password`
 } as const;
 
@@ -43,13 +44,13 @@ export const AUTH_ENDPOINTS = {
 
 export const USERS_ENDPOINTS = {
   LIST: `${API_BASE}/users/list`,
-  CREATE: `${API_BASE}/users/create`,
-  UPDATE: `${API_BASE}/users/update`,
-  DELETE: `${API_BASE}/users/delete`,
+  CREATE: `${API_BASE}/users`,
   CHECK_USERNAME: `${API_BASE}/users/check-username`,
   
   // Parameterized endpoints
-  getById: (id: number) => `${API_BASE}/users/${id}`
+  getById: (id: number) => `${API_BASE}/users/${id}`,
+  update: (id: number) => `${API_BASE}/users/${id}`,
+  delete: (id: number) => `${API_BASE}/users/${id}`
 } as const;
 
 // ============================================================================
