@@ -47,11 +47,17 @@ export class AuthService {
     // Update last login
     await this.authRepository.updateLastLogin(user.user_id);
 
+    // Get user roles
+    const roles = await this.authRepository.getUserRoles(user.user_id);
+
     return {
       user: {
-        userId: user.user_id,
+        user_id: user.user_id,
         username: user.username,
-        fullName: user.full_name
+        full_name: user.full_name,
+        is_active: user.is_active,
+        last_login: user.last_login,
+        roles: roles
       },
       accessToken,
       refreshToken
@@ -72,10 +78,16 @@ export class AuthService {
       throw new Error('Account is inactive');
     }
 
+    // Get user roles
+    const roles = await this.authRepository.getUserRoles(userId);
+
     return {
-      userId: user.user_id,
+      user_id: user.user_id,
       username: user.username,
-      fullName: user.full_name
+      full_name: user.full_name,
+      is_active: user.is_active,
+      last_login: user.last_login,
+      roles: roles
     };
   }
 

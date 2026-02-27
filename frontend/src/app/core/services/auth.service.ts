@@ -5,12 +5,7 @@ import { tap, switchMap, catchError, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { PermissionService } from './permission.service';
-
-export interface User {
-  userId: number;
-  username: string;
-  fullName: string;
-}
+import { User } from '../../shared/models/user.model';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -40,7 +35,50 @@ export class AuthService {
     private router: Router,
     private permissionService: PermissionService
   ) {
-    this.loadCurrentUser();
+    // Don't call loadCurrentUser in constructor - use APP_INITIALIZER instead
+  }
+
+  /**
+   * Initialize authentication (called by APP_INITIALIZER)
+   * Returns a promise that resolves when auth check is complete
+   */
+  initializeAuth(): Promise<void> {
+    return new Promise((resolve) => {
+      this.http.get<ApiResponse<User>>(`${this.apiUrl}/auth/me`, {
+        withCredentials: true
+      }).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.currentUserSubject.next(response.data);
+            sessionStorage.setItem('currentUser', JSON.stringify(response.data));
+            console.log('✅ User authenticated on app init');
+            
+            // Load permissions
+            this.permissionService.loadUserPermissions().subscribe({
+              next: (permissions) => {
+                const totalModules = (permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0) +
+                                    (permissions.uncategorized_modules?.length || 0) +
+                                    (permissions.modules?.length || 0);
+                console.log('✅ Permissions loaded on app init:', totalModules, 'modules');
+                resolve();
+              },
+              error: () => {
+                console.warn('⚠️ Failed to load permissions on init');
+                resolve(); // Resolve anyway, permissions can be retried later
+              }
+            });
+          } else {
+            console.log('⚠️ No auth data from /auth/me');
+            resolve();
+          }
+        },
+        error: () => {
+          // No valid session - user will be redirected to login by guard
+          console.log('⚠️ No active session');
+          resolve();
+        }
+      });
+    });
   }
 
   /**
@@ -180,52 +218,5 @@ export class AuthService {
    */
   isAuthenticated(): boolean {
     return this.currentUserSubject.value !== null;
-  }
-
-  /**
-   * Load current user from API
-   */
-  private loadCurrentUser(): void {
-    // Try to load from session storage first
-    const savedUser = sessionStorage.getItem('currentUser');
-    if (savedUser) {
-      this.currentUserSubject.next(JSON.parse(savedUser));
-      
-      // Verify with server only if user exists in session
-      this.http.get<ApiResponse<User>>(`${this.apiUrl}/auth/me`, {
-        withCredentials: true
-      }).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.currentUserSubject.next(response.data);
-            sessionStorage.setItem('currentUser', JSON.stringify(response.data));
-            
-            // Load user permissions with error handling
-            this.permissionService.loadUserPermissions().subscribe({
-              next: (permissions) => {
-                const totalModules = (permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0) +
-                                    (permissions.uncategorized_modules?.length || 0) +
-                                    (permissions.modules?.length || 0);
-                console.log('✅ Permissions loaded on app init:', totalModules, 'modules');
-              },
-              error: (error) => {
-                console.error('❌ Failed to load permissions on app init:', error);
-                // Clear user session if permissions can't load
-                this.currentUserSubject.next(null);
-                sessionStorage.removeItem('currentUser');
-                this.permissionService.clearAllData();
-              }
-            });
-          }
-        },
-        error: (err) => {
-          // Session expired, clear local data (silently)
-          this.currentUserSubject.next(null);
-          sessionStorage.removeItem('currentUser');
-          this.permissionService.clearAllData();
-          // Don't log error - this is expected behavior when session expires
-        }
-      });
-    }
   }
 }

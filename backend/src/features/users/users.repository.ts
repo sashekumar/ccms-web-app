@@ -1,5 +1,6 @@
 import sql from 'mssql';
 import { connectionManager } from '../../core/database/connection-manager';
+import { DB_TABLES } from '../../core/constants';
 import { User, UserListItem, UserFilters, PaginatedUsers, UserDetailResponse } from './users.types';
 
 export class UsersRepository {
@@ -30,7 +31,7 @@ export class UsersRepository {
 
     if (filters.roleId) {
       whereClauses.push(`EXISTS (
-        SELECT 1 FROM ccms_user_roles ur 
+        SELECT 1 FROM ${DB_TABLES.USER_ROLES} ur 
         WHERE ur.user_id = u.user_id 
           AND ur.role_id = @roleId 
           AND ur.is_active = 1
@@ -49,7 +50,7 @@ export class UsersRepository {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM ccms_users u
+      FROM ${DB_TABLES.USERS} u
       ${whereClause}
     `;
     const countResult = await request.query(countQuery);
@@ -66,11 +67,11 @@ export class UsersRepository {
         r.role_id,
         r.role_name,
         r.role_code
-      FROM ccms_users u
-      LEFT JOIN ccms_user_roles ur ON u.user_id = ur.user_id 
+      FROM ${DB_TABLES.USERS} u
+      LEFT JOIN ${DB_TABLES.USER_ROLES} ur ON u.user_id = ur.user_id 
         AND ur.is_active = 1 
         AND (ur.expires_at IS NULL OR ur.expires_at > GETDATE())
-      LEFT JOIN ccms_roles r ON ur.role_id = r.role_id
+      LEFT JOIN ${DB_TABLES.ROLES} r ON ur.role_id = r.role_id
       ${whereClause}
       ${orderBy}
       OFFSET @offset ROWS
@@ -140,10 +141,10 @@ export class UsersRepository {
         ur.assigned_at,
         ur.assigned_by,
         ur.expires_at
-      FROM ccms_users u
-      LEFT JOIN ccms_user_roles ur ON u.user_id = ur.user_id 
+      FROM ${DB_TABLES.USERS} u
+      LEFT JOIN ${DB_TABLES.USER_ROLES} ur ON u.user_id = ur.user_id 
         AND ur.is_active = 1
-      LEFT JOIN ccms_roles r ON ur.role_id = r.role_id
+      LEFT JOIN ${DB_TABLES.ROLES} r ON ur.role_id = r.role_id
       WHERE u.user_id = @userId
     `;
 
@@ -186,7 +187,7 @@ export class UsersRepository {
 
     let query = `
       SELECT COUNT(*) as count 
-      FROM ccms_users 
+      FROM ${DB_TABLES.USERS} 
       WHERE username = @username
     `;
 
@@ -218,7 +219,7 @@ export class UsersRepository {
       .input('fullName', sql.NVarChar(255), fullName)
       .input('isActive', sql.Bit, isActive)
       .query(`
-        INSERT INTO ccms_users (
+        INSERT INTO ${DB_TABLES.USERS} (
           username, password_hash, full_name, is_active
         )
         OUTPUT INSERTED.user_id
@@ -266,7 +267,7 @@ export class UsersRepository {
     request.input('userId', sql.BigInt, userId);
 
     await request.query(`
-      UPDATE ccms_users
+      UPDATE ${DB_TABLES.USERS}
       SET ${updates.join(', ')}
       WHERE user_id = @userId
     `);
@@ -280,7 +281,7 @@ export class UsersRepository {
     await pool.request()
       .input('userId', sql.BigInt, userId)
       .query(`
-        UPDATE ccms_users
+        UPDATE ${DB_TABLES.USERS}
         SET is_active = 0
         WHERE user_id = @userId
       `);
@@ -294,7 +295,7 @@ export class UsersRepository {
     const result = await pool.request()
       .input('username', sql.VarChar(50), username)
       .query(`
-        SELECT * FROM ccms_users
+        SELECT * FROM ${DB_TABLES.USERS}
         WHERE username = @username AND is_active = 1
       `);
 

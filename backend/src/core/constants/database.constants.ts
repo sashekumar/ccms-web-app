@@ -23,14 +23,14 @@ export const DB_TABLES = {
   // User Management
   USERS: 'ccms_users',
   
-  // Permission Control System
-  ROLES: 'ccms_roles',
-  CATEGORIES: 'ccms_categories',
-  MODULES: 'ccms_modules',
-  ACTIONS: 'ccms_actions',
-  MODULE_ACTIONS: 'ccms_module_actions',
-  ROLE_PERMISSIONS: 'ccms_role_permissions',
-  USER_ROLES: 'ccms_user_roles'
+  // Permission Control System (v6 - ACL)
+  ROLES: 'ccms_acl_roles',
+  CATEGORIES: 'ccms_acl_categories',
+  MODULES: 'ccms_acl_modules',
+  ACTIONS: 'ccms_acl_actions',
+  MODULE_ACTIONS: 'ccms_acl_module_actions',
+  ROLE_PERMISSIONS: 'ccms_acl_role_permissions',
+  USER_ROLES: 'ccms_acl_user_roles'
 } as const;
 
 // ============================================================================
@@ -38,8 +38,8 @@ export const DB_TABLES = {
 // ============================================================================
 
 export const DB_VIEWS = {
-  USER_PERMISSIONS: 'vw_user_permissions',
-  ROLE_PERMISSIONS: 'vw_role_permissions'
+  USER_PERMISSIONS: 'vw_acl_user_permissions',
+  ROLE_PERMISSIONS: 'vw_acl_role_permissions'
 } as const;
 
 // ============================================================================

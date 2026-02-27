@@ -1,11 +1,10 @@
 -- ============================================================================
--- CCMS Users - Seed Test Data
+-- CCMS Users - Seed Test Data (v6)
 -- Creates initial Super Admin user and assigns role
 -- ============================================================================
 -- PREREQUISITES (Run in this order):
---   1. ccms_new_schema_2026_v3.sql (creates ccms_users table)
---   2. permission-control-schema.sql (creates RBAC tables: ccms_roles, ccms_user_roles, etc.)
---   3. This file (creates admin user and assigns Super Admin role)
+--   1. ccms_new_schema_2026_v6.sql (creates tables with integrated ACL system)
+--   2. This file (creates admin user and assigns Super Admin role)
 -- ============================================================================
 
 USE db_ccms;
@@ -24,7 +23,7 @@ PRINT '';
 IF OBJECT_ID('ccms_users', 'U') IS NULL
 BEGIN
     PRINT 'ERROR: ccms_users table does not exist!';
-    PRINT 'Please run ccms_new_schema_2026_v3.sql first to create the table structure.';
+    PRINT 'Please run ccms_new_schema_2026_v6.sql first to create the table structure.';
     PRINT '';
     RAISERROR('ccms_users table not found', 16, 1);
     RETURN;
@@ -37,11 +36,11 @@ END
 PRINT 'Clearing existing user data...';
 
 -- Disable foreign key constraints temporarily
-IF OBJECT_ID('ccms_user_roles', 'U') IS NOT NULL
+IF OBJECT_ID('ccms_acl_user_roles', 'U') IS NOT NULL
 BEGIN
-    ALTER TABLE ccms_user_roles NOCHECK CONSTRAINT ALL;
-    DELETE FROM ccms_user_roles;
-    PRINT '  - Cleared ccms_user_roles';
+    ALTER TABLE ccms_acl_user_roles NOCHECK CONSTRAINT ALL;
+    DELETE FROM ccms_acl_user_roles;
+    PRINT '  - Cleared ccms_acl_user_roles';
 END
 
 -- Clear users
@@ -53,9 +52,9 @@ DBCC CHECKIDENT ('ccms_users', RESEED, 0);
 PRINT '  - Reset identity seed';
 
 -- Re-enable foreign key constraints
-IF OBJECT_ID('ccms_user_roles', 'U') IS NOT NULL
+IF OBJECT_ID('ccms_acl_user_roles', 'U') IS NOT NULL
 BEGIN
-    ALTER TABLE ccms_user_roles CHECK CONSTRAINT ALL;
+    ALTER TABLE ccms_acl_user_roles CHECK CONSTRAINT ALL;
 END
 
 PRINT '';
@@ -79,13 +78,11 @@ INSERT INTO ccms_users (
     username, 
     password_hash, 
     full_name, 
-    role_id,
-    permissions_json,
     is_active, 
     last_login
 ) VALUES
 -- Super Admin
-(1, 'admin', '$2b$10$EhnDGo5anEg7Mc/I9rioF.wdA7bE2zMVHpO5deGiNa3kt1Kp0dQLa', 'System Administrator', NULL, NULL, 1, NULL);
+(1, 'admin', '$2b$10$EhnDGo5anEg7Mc/I9rioF.wdA7bE2zMVHpO5deGiNa3kt1Kp0dQLa', 'System Administrator', 1, NULL);
 
 SET IDENTITY_INSERT ccms_users OFF;
 
@@ -108,9 +105,9 @@ DECLARE @superAdminUserId BIGINT = (SELECT user_id FROM ccms_users WHERE usernam
 -- Assign Super Admin role (role_id: 1)
 IF @superAdminUserId IS NOT NULL
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM ccms_user_roles WHERE user_id = @superAdminUserId AND role_id = 1)
+    IF NOT EXISTS (SELECT 1 FROM ccms_acl_user_roles WHERE user_id = @superAdminUserId AND role_id = 1)
     BEGIN
-        INSERT INTO ccms_user_roles (user_id, role_id, is_active, assigned_by, assigned_at)
+        INSERT INTO ccms_acl_user_roles (user_id, role_id, is_active, assigned_by, assigned_at)
         VALUES (@superAdminUserId, 1, 1, 'SYSTEM', GETDATE());
         PRINT '  ✓ Assigned Super Admin role to admin';
     END
@@ -125,7 +122,7 @@ PRINT 'Role assignment completed!';
 PRINT '';
 
 -- Display role assignments
-IF EXISTS (SELECT 1 FROM ccms_user_roles)
+IF EXISTS (SELECT 1 FROM ccms_acl_user_roles)
 BEGIN
     PRINT 'Current Role Assignment:';
     SELECT 
@@ -134,16 +131,16 @@ BEGIN
         r.role_name,
         ur.is_active,
         ur.assigned_at
-    FROM ccms_user_roles ur
+    FROM ccms_acl_user_roles ur
     INNER JOIN ccms_users u ON ur.user_id = u.user_id
-    INNER JOIN ccms_roles r ON ur.role_id = r.role_id
+    INNER JOIN ccms_acl_roles r ON ur.role_id = r.role_id
     WHERE ur.is_active = 1
     ORDER BY r.role_id;
 END
 ELSE
 BEGIN
     PRINT '⚠ No role assignments found!';
-    PRINT 'Make sure ccms_user_roles table exists (run permission-control-schema.sql first).';
+    PRINT 'Make sure ccms_acl_user_roles table exists (run permission-control-schema.sql first).';
 END
 
 PRINT '';
@@ -157,7 +154,6 @@ SELECT
     user_id,
     username,
     full_name,
-    role_id,
     is_active
 FROM ccms_users
 ORDER BY user_id;
@@ -173,7 +169,7 @@ DECLARE @totalUsers INT = (SELECT COUNT(*) FROM ccms_users WHERE is_active = 1);
 PRINT 'Total Active Users: ' + CAST(@totalUsers AS VARCHAR(10));
 PRINT '';
 PRINT 'User List:';
-PRINT '  ID | Username           | Full Name                    | Role ID';
+PRINT '  ID | Username           | Full Name                    | Active';
 PRINT '  ---|--------------------|-----------------------------|--------';
 
 DECLARE @msg NVARCHAR(MAX) = '';
@@ -181,7 +177,7 @@ SELECT @msg = @msg +
     '  ' + RIGHT('   ' + CAST(user_id AS VARCHAR(3)), 3) + 
     ' | ' + LEFT(username + SPACE(18), 18) + 
     ' | ' + LEFT(full_name + SPACE(27), 27) + 
-    ' | ' + ISNULL(CAST(role_id AS VARCHAR(10)), 'NULL') + CHAR(13) + CHAR(10)
+    ' | ' + CAST(is_active AS VARCHAR(1)) + CHAR(13) + CHAR(10)
 FROM ccms_users
 WHERE is_active = 1
 ORDER BY user_id;
@@ -196,13 +192,12 @@ PRINT '- Default password: Password123!';
 PRINT '- ✅ Bcrypt hash included (ready to use)';
 PRINT '- ✅ Super Admin role assigned';
 PRINT '- ✅ Super Admin has FULL ACCESS to permission system';
-PRINT '- role_id column is NULL (legacy - not used by RBAC)';
-PRINT '- Roles are managed via ccms_user_roles table';
+PRINT '- ✅ v6: role_id and permissions_json removed (uses ACL only)';
+PRINT '- Roles are managed via ccms_acl_user_roles table';
 PRINT '';
 PRINT 'Prerequisites (must run in order):';
-PRINT '  1. ccms_new_schema_2026_v3.sql';
-PRINT '  2. permission-control-schema.sql';
-PRINT '  3. This file (users-seed-data.sql)';
+PRINT '  1. ccms_new_schema_2026_v6.sql (includes ACL tables)';
+PRINT '  2. This file (users-seed-data.sql)';
 PRINT '';
 PRINT 'Initial System Access:';
 PRINT '  Username: admin';

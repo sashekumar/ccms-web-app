@@ -51,6 +51,8 @@ export class PermissionsRepository {
           permission_id, granted, role_active, role_expires_at
         FROM ${DB_VIEWS.USER_PERMISSIONS}
         WHERE user_id = @userId
+          AND granted = 1
+          AND is_permission_active = 1
         ORDER BY module_name, action_name
       `);
 

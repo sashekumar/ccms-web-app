@@ -22,9 +22,16 @@ export interface TokenPayload {
 
 export interface LoginResponse {
   user: {
-    userId: number;
+    user_id: number;
     username: string;
-    fullName: string;
+    full_name: string;
+    is_active: boolean;
+    last_login: Date | null;
+    roles: {
+      role_id: number;
+      role_name: string;
+      role_code: string;
+    }[];
   };
   message: string;
 }
