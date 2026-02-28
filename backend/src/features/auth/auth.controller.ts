@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './auth.types';
 import { CsrfService } from '../../core/auth/csrf.service';
+import { ResponseUtil } from '../../core/utils/response.util';
 
 export class AuthController {
   private authService: AuthService;
@@ -22,11 +23,7 @@ export class AuthController {
     try {
       const token = CsrfService.generateToken();
       
-      res.status(200).json({
-        success: true,
-        message: 'CSRF token generated',
-        data: { csrfToken: token }
-      });
+      ResponseUtil.success(res, { csrfToken: token }, 'CSRF token generated');
     } catch (error) {
       next(error);
     }
@@ -47,11 +44,7 @@ export class AuthController {
 
       // Validate CSRF token
       if (!csrfToken || !CsrfService.validateToken(csrfToken)) {
-        res.status(403).json({
-          success: false,
-          message: 'Invalid or expired CSRF token',
-          data: null
-        });
+        ResponseUtil.forbidden(res, 'Invalid or expired CSRF token');
         return;
       }
 
@@ -72,11 +65,7 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
 
-      res.status(200).json({
-        success: true,
-        message: 'Login successful',
-        data: result.user
-      });
+      ResponseUtil.success(res, result.user, 'Login successful');
     } catch (error) {
       next(error);
     }
@@ -96,11 +85,7 @@ export class AuthController {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
 
-      res.status(200).json({
-        success: true,
-        message: 'Logout successful',
-        data: null
-      });
+      ResponseUtil.success(res, null, 'Logout successful');
     } catch (error) {
       next(error);
     }
@@ -119,21 +104,13 @@ export class AuthController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(401).json({
-          success: false,
-          message: 'Unauthorized',
-          data: null
-        });
+        ResponseUtil.unauthorized(res, 'Unauthorized');
         return;
       }
 
       const user = await this.authService.getCurrentUser(userId);
 
-      res.status(200).json({
-        success: true,
-        message: 'User retrieved successfully',
-        data: user
-      });
+      ResponseUtil.success(res, user, 'User retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -152,11 +129,7 @@ export class AuthController {
       const refreshToken = req.cookies.refreshToken;
 
       if (!refreshToken) {
-        res.status(401).json({
-          success: false,
-          message: 'Refresh token required',
-          data: null
-        });
+        ResponseUtil.unauthorized(res, 'Refresh token required');
         return;
       }
 
@@ -177,11 +150,7 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
 
-      res.status(200).json({
-        success: true,
-        message: 'Token refreshed successfully',
-        data: null
-      });
+      ResponseUtil.success(res, null, 'Token refreshed successfully');
     } catch (error) {
       next(error);
     }

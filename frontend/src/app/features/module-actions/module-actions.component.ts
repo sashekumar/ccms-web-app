@@ -52,7 +52,7 @@ import { Module, Action, ModuleAction } from '../../shared/models/permission.mod
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
             >
               <option [ngValue]="null">All Modules</option>
-              <option *ngFor="let module of modules" [ngValue]="module.module_id">{{ module.module_name }}</option>
+              <option *ngFor="let module of modules; trackBy: trackByModuleId" [ngValue]="module.module_id">{{ module.module_name }}</option>
             </select>
           </div>
 
@@ -65,7 +65,7 @@ import { Module, Action, ModuleAction } from '../../shared/models/permission.mod
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
             >
               <option [ngValue]="null">All Actions</option>
-              <option *ngFor="let action of actions" [ngValue]="action.action_id">{{ action.action_name }}</option>
+              <option *ngFor="let action of actions; trackBy: trackByActionId" [ngValue]="action.action_id">{{ action.action_name }}</option>
             </select>
           </div>
 
@@ -130,7 +130,7 @@ import { Module, Action, ModuleAction } from '../../shared/models/permission.mod
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let item of filteredModuleActions" class="hover:bg-gray-50">
+              <tr *ngFor="let item of filteredModuleActions; trackBy: trackByModuleActionId" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm font-medium text-gray-900">{{ item.module_name }}</div>
                   <div class="text-sm text-gray-500">{{ item.module_code }}</div>
@@ -199,7 +199,7 @@ import { Module, Action, ModuleAction } from '../../shared/models/permission.mod
                   <select [(ngModel)]="formData.moduleId" name="moduleId" required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
                     <option value="">Select Module</option>
-                    <option *ngFor="let module of modules" [value]="module.module_id">
+                    <option *ngFor="let module of modules; trackBy: trackByModuleId" [value]="module.module_id">
                       {{ module.module_name }} ({{ module.module_code }})
                     </option>
                   </select>
@@ -208,7 +208,7 @@ import { Module, Action, ModuleAction } from '../../shared/models/permission.mod
                 <div *ngIf="!editingItem">
                   <label class="block text-sm font-medium text-gray-700 mb-2">Actions * (Select Multiple)</label>
                   <div class="max-h-60 overflow-y-auto border rounded-md p-3 space-y-2">
-                    <div *ngFor="let action of actions" class="flex items-center">
+                    <div *ngFor="let action of actions; trackBy: trackByActionId" class="flex items-center">
                       <input 
                         type="checkbox" 
                         [id]="'action-' + action.action_id"
@@ -560,5 +560,20 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
       this.successMessage = '';
       this.errorMessage = '';
     }, 5000);
+  }
+
+  /**
+   * TrackBy functions for performance optimization
+   */
+  trackByModuleId(index: number, module: Module): number {
+    return module.module_id;
+  }
+
+  trackByActionId(index: number, action: Action): number {
+    return action.action_id;
+  }
+
+  trackByModuleActionId(index: number, item: ModuleAction): number {
+    return item.module_action_id;
   }
 }

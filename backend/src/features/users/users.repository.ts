@@ -2,8 +2,12 @@ import sql from 'mssql';
 import { connectionManager } from '../../core/database/connection-manager';
 import { DB_TABLES } from '../../core/constants';
 import { User, UserListItem, UserFilters, PaginatedUsers, UserDetailResponse } from './users.types';
+import { BaseRepository } from '../../core/base/base.repository';
 
-export class UsersRepository {
+export class UsersRepository extends BaseRepository<User> {
+  constructor() {
+    super(DB_TABLES.USERS, 'user_id', false);
+  }
   /**
    * Get paginated list of users with filters
    */
@@ -50,7 +54,7 @@ export class UsersRepository {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM ${DB_TABLES.USERS} u
+      FROM ${this.tableName} u
       ${whereClause}
     `;
     const countResult = await request.query(countQuery);
@@ -67,7 +71,7 @@ export class UsersRepository {
         r.role_id,
         r.role_name,
         r.role_code
-      FROM ${DB_TABLES.USERS} u
+      FROM ${this.tableName} u
       LEFT JOIN ${DB_TABLES.USER_ROLES} ur ON u.user_id = ur.user_id 
         AND ur.is_active = 1 
         AND (ur.expires_at IS NULL OR ur.expires_at > GETDATE())
@@ -141,7 +145,7 @@ export class UsersRepository {
         ur.assigned_at,
         ur.assigned_by,
         ur.expires_at
-      FROM ${DB_TABLES.USERS} u
+      FROM ${this.tableName} u
       LEFT JOIN ${DB_TABLES.USER_ROLES} ur ON u.user_id = ur.user_id 
         AND ur.is_active = 1
       LEFT JOIN ${DB_TABLES.ROLES} r ON ur.role_id = r.role_id
@@ -187,7 +191,7 @@ export class UsersRepository {
 
     let query = `
       SELECT COUNT(*) as count 
-      FROM ${DB_TABLES.USERS} 
+      FROM ${this.tableName} 
       WHERE username = @username
     `;
 
@@ -200,112 +204,5 @@ export class UsersRepository {
     const result = await request.query(query);
 
     return result.recordset[0].count > 0;
-  }
-
-  /**
-   * Create new user
-   */
-  public async createUser(
-    username: string,
-    passwordHash: string,
-    fullName: string,
-    isActive: boolean,
-    createdBy: string
-  ): Promise<number> {
-    const pool = await connectionManager.getPool();
-    const result = await pool.request()
-      .input('username', sql.VarChar(50), username)
-      .input('passwordHash', sql.VarChar(255), passwordHash)
-      .input('fullName', sql.NVarChar(255), fullName)
-      .input('isActive', sql.Bit, isActive)
-      .query(`
-        INSERT INTO ${DB_TABLES.USERS} (
-          username, password_hash, full_name, is_active
-        )
-        OUTPUT INSERTED.user_id
-        VALUES (
-          @username, @passwordHash, @fullName, @isActive
-        )
-      `);
-
-    return result.recordset[0].user_id;
-  }
-
-  /**
-   * Update user
-   */
-  public async updateUser(
-    userId: number,
-    fullName: string | undefined,
-    isActive: boolean | undefined,
-    passwordHash: string | undefined,
-    updatedBy: string
-  ): Promise<void> {
-    const updates: string[] = [];
-    const pool = await connectionManager.getPool();
-    const request = pool.request();
-
-    if (fullName !== undefined) {
-      updates.push('full_name = @fullName');
-      request.input('fullName', sql.NVarChar(255), fullName);
-    }
-
-    if (isActive !== undefined) {
-      updates.push('is_active = @isActive');
-      request.input('isActive', sql.Bit, isActive);
-    }
-
-    if (passwordHash !== undefined) {
-      updates.push('password_hash = @passwordHash');
-      request.input('passwordHash', sql.VarChar(255), passwordHash);
-    }
-
-    if (updates.length === 0) {
-      return; // Nothing to update
-    }
-
-    request.input('userId', sql.BigInt, userId);
-
-    await request.query(`
-      UPDATE ${DB_TABLES.USERS}
-      SET ${updates.join(', ')}
-      WHERE user_id = @userId
-    `);
-  }
-
-  /**
-   * Deactivate user (instead of soft delete)
-   */
-  public async deleteUser(userId: number, deletedBy: string): Promise<void> {
-    const pool = await connectionManager.getPool();
-    await pool.request()
-      .input('userId', sql.BigInt, userId)
-      .query(`
-        UPDATE ${DB_TABLES.USERS}
-        SET is_active = 0
-        WHERE user_id = @userId
-      `);
-  }
-
-  /**
-   * Get user by username (for auth)
-   */
-  public async findByUsername(username: string): Promise<User | null> {
-    const pool = await connectionManager.getPool();
-    const result = await pool.request()
-      .input('username', sql.VarChar(50), username)
-      .query(`
-        SELECT 
-          user_id,
-          username,
-          password_hash,
-          full_name,
-          is_active,
-          last_login
-        FROM ${DB_TABLES.USERS}
-        WHERE username = @username AND is_active = 1
-      `);
-
-    return result.recordset[0] || null;
   }
 }

@@ -1,5 +1,6 @@
 const NodeCache = require('node-cache');
 import { PermissionsRepository } from './permissions.repository';
+import { CategoriesRepository, ModulesRepository, ActionsRepository } from './repositories';
 import {
   UserPermissionsResponse,
   PermissionCheck,
@@ -14,19 +15,32 @@ import {
   RevokePermissionDto,
   Category,
   CreateCategoryDto,
-  UpdateCategoryDto
+  UpdateCategoryDto,
+  CreateModuleDto,
+  UpdateModuleDto,
+  CreateActionDto,
+  UpdateActionDto,
+  CreateModuleActionDto,
+  UpdateModuleActionDto,
+  ModuleActionWithDetails
 } from './permissions.types';
 
 // 5-minute cache TTL for permissions
 const PERMISSION_CACHE_TTL = 300;
 
 export class PermissionsService {
-  private permissionCache: any;
+  private permissionCache: typeof NodeCache;
   private repository: PermissionsRepository;
+  private categoriesRepo: CategoriesRepository;
+  private modulesRepo: ModulesRepository;
+  private actionsRepo: ActionsRepository;
 
   constructor() {
     this.permissionCache = new NodeCache({ stdTTL: PERMISSION_CACHE_TTL, checkperiod: 60 });
     this.repository = new PermissionsRepository();
+    this.categoriesRepo = new CategoriesRepository();
+    this.modulesRepo = new ModulesRepository();
+    this.actionsRepo = new ActionsRepository();
   }
 
   /**
@@ -165,7 +179,10 @@ export class PermissionsService {
       return cached;
     }
 
-    const modules = await this.repository.getAllModules();
+    const modules = await this.modulesRepo.findAll({
+      sortBy: 'display_order',
+      sortOrder: 'ASC'
+    });
     this.permissionCache.set(cacheKey, modules, 600); // 10-minute cache
 
     return modules;
@@ -182,7 +199,10 @@ export class PermissionsService {
       return cached;
     }
 
-    const actions = await this.repository.getAllActions();
+    const actions = await this.actionsRepo.findAll({
+      sortBy: 'action_name',
+      sortOrder: 'ASC'
+    });
     this.permissionCache.set(cacheKey, actions, 600); // 10-minute cache
 
     return actions;
@@ -301,40 +321,40 @@ export class PermissionsService {
   /**
    * Create module
    */
-  public async createModule(data: any, createdBy: string): Promise<number> {
-    const moduleId = await this.repository.createModule(
-      data.moduleName,
-      data.moduleCode,
-      data.description,
-      data.categoryId,
-      data.icon,
-      data.route,
-      data.displayOrder,
-      createdBy
-    );
+  public async createModule(data: CreateModuleDto, createdBy: string): Promise<number> {
+    const module = await this.modulesRepo.create({
+      module_name: data.moduleName,
+      module_code: data.moduleCode,
+      description: data.description || null,
+      category_id: data.categoryId || null,
+      icon: data.icon || null,
+      route: data.route || null,
+      display_order: data.displayOrder || 0,
+      is_active: true
+    });
     
     // Clear modules cache
     this.permissionCache.del('all-modules');
     
-    return moduleId;
+    return module.module_id;
   }
 
   /**
    * Update module
    */
-  public async updateModule(moduleId: number, data: any, updatedBy: string): Promise<void> {
-    await this.repository.updateModule(
-      moduleId,
-      data.moduleName,
-      data.moduleCode,
-      data.description,
-      data.categoryId,
-      data.icon,
-      data.route,
-      data.displayOrder,
-      data.isActive,
-      updatedBy
-    );
+  public async updateModule(moduleId: number, data: UpdateModuleDto, updatedBy: string): Promise<void> {
+    const updateData: Partial<Module> = {};
+    
+    if (data.moduleName !== undefined) updateData.module_name = data.moduleName;
+    if (data.moduleCode !== undefined) updateData.module_code = data.moduleCode;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.categoryId !== undefined) updateData.category_id = data.categoryId;
+    if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.route !== undefined) updateData.route = data.route;
+    if (data.displayOrder !== undefined) updateData.display_order = data.displayOrder;
+    if (data.isActive !== undefined) updateData.is_active = data.isActive;
+
+    await this.modulesRepo.update(moduleId, updateData);
     
     // Clear modules cache
     this.permissionCache.del('all-modules');
@@ -344,7 +364,7 @@ export class PermissionsService {
    * Delete module
    */
   public async deleteModule(moduleId: number): Promise<void> {
-    await this.repository.deleteModule(moduleId);
+    await this.modulesRepo.delete(moduleId);
     
     // Clear modules cache
     this.permissionCache.del('all-modules');
@@ -353,32 +373,32 @@ export class PermissionsService {
   /**
    * Create action
    */
-  public async createAction(data: any, createdBy: string): Promise<number> {
-    const actionId = await this.repository.createAction(
-      data.actionName,
-      data.actionCode,
-      data.description,
-      createdBy
-    );
+  public async createAction(data: CreateActionDto, createdBy: string): Promise<number> {
+    const action = await this.actionsRepo.create({
+      action_name: data.actionName,
+      action_code: data.actionCode,
+      description: data.description || null,
+      is_active: true
+    });
     
     // Clear actions cache
     this.permissionCache.del('all-actions');
     
-    return actionId;
+    return action.action_id;
   }
 
   /**
    * Update action
    */
-  public async updateAction(actionId: number, data: any, updatedBy: string): Promise<void> {
-    await this.repository.updateAction(
-      actionId,
-      data.actionName,
-      data.actionCode,
-      data.description,
-      data.isActive,
-      updatedBy
-    );
+  public async updateAction(actionId: number, data: UpdateActionDto, updatedBy: string): Promise<void> {
+    const updateData: Partial<Action> = {};
+    
+    if (data.actionName !== undefined) updateData.action_name = data.actionName;
+    if (data.actionCode !== undefined) updateData.action_code = data.actionCode;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.isActive !== undefined) updateData.is_active = data.isActive;
+
+    await this.actionsRepo.update(actionId, updateData);
     
     // Clear actions cache
     this.permissionCache.del('all-actions');
@@ -388,7 +408,7 @@ export class PermissionsService {
    * Delete action
    */
   public async deleteAction(actionId: number): Promise<void> {
-    await this.repository.deleteAction(actionId);
+    await this.actionsRepo.delete(actionId);
     
     // Clear actions cache
     this.permissionCache.del('all-actions');
@@ -397,9 +417,9 @@ export class PermissionsService {
   /**
    * Get all module-actions
    */
-  public async getAllModuleActions(): Promise<any[]> {
+  public async getAllModuleActions(): Promise<ModuleActionWithDetails[]> {
     const cacheKey = 'all-module-actions';
-    const cached = this.permissionCache.get(cacheKey) as any[] | undefined;
+    const cached = this.permissionCache.get(cacheKey) as ModuleActionWithDetails[] | undefined;
 
     if (cached) {
       return cached;
@@ -414,7 +434,7 @@ export class PermissionsService {
   /**
    * Create module-action
    */
-  public async createModuleAction(data: any, createdBy: string): Promise<number> {
+  public async createModuleAction(data: CreateModuleActionDto, createdBy: string): Promise<number> {
     const moduleActionId = await this.repository.createModuleAction(
       data.moduleId,
       data.actionId,
@@ -435,7 +455,7 @@ export class PermissionsService {
   /**
    * Update module-action
    */
-  public async updateModuleAction(moduleActionId: number, data: any, updatedBy: string): Promise<void> {
+  public async updateModuleAction(moduleActionId: number, data: UpdateModuleActionDto, updatedBy: string): Promise<void> {
     await this.repository.updateModuleAction(
       moduleActionId,
       data.actionLabel,
@@ -478,7 +498,10 @@ export class PermissionsService {
       return cached;
     }
 
-    const categories = await this.repository.getAllCategories();
+    const categories = await this.categoriesRepo.findAll({
+      sortBy: 'display_order',
+      sortOrder: 'ASC'
+    });
     this.permissionCache.set('all-categories', categories);
     return categories;
   }
@@ -487,14 +510,14 @@ export class PermissionsService {
    * Get category by ID
    */
   public async getCategoryById(categoryId: number): Promise<Category | null> {
-    return await this.repository.getCategoryById(categoryId);
+    return await this.categoriesRepo.findById(categoryId);
   }
 
   /**
    * Create new category
    */
   public async createCategory(dto: CreateCategoryDto): Promise<number> {
-    const categoryId = await this.repository.createCategory(dto);
+    const category = await this.categoriesRepo.create(dto);
     
     // Clear cache
     this.permissionCache.del('all-categories');
@@ -503,14 +526,14 @@ export class PermissionsService {
     const userPermKeys = keys.filter((key: string) => key.startsWith('user-perms:'));
     this.permissionCache.del(userPermKeys);
     
-    return categoryId;
+    return category.category_id;
   }
 
   /**
    * Update category
    */
   public async updateCategory(categoryId: number, dto: UpdateCategoryDto): Promise<void> {
-    await this.repository.updateCategory(categoryId, dto);
+    await this.categoriesRepo.update(categoryId, dto);
     
     // Clear cache
     this.permissionCache.del('all-categories');
@@ -524,7 +547,7 @@ export class PermissionsService {
    * Delete category
    */
   public async deleteCategory(categoryId: number): Promise<void> {
-    await this.repository.deleteCategory(categoryId);
+    await this.categoriesRepo.delete(categoryId);
     
     // Clear cache
     this.permissionCache.del('all-categories');

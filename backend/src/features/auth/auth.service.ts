@@ -1,13 +1,16 @@
 import { AuthRepository } from './auth.repository';
-import { LoginDto, LoginResponse } from './auth.types';
+import { LoginDto, LoginResponse, User } from './auth.types';
 import { JwtService } from '../../core/auth/jwt.service';
 import { CryptoUtil } from '../../core/utils/crypto.util';
+import { BaseService } from '../../core/base/base.service';
 
-export class AuthService {
+export class AuthService extends BaseService<User> {
   private authRepository: AuthRepository;
 
   constructor() {
-    this.authRepository = new AuthRepository();
+    const authRepository = new AuthRepository();
+    super(authRepository);
+    this.authRepository = authRepository;
   }
 
   /**

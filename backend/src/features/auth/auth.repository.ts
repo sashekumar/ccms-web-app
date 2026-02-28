@@ -1,10 +1,21 @@
+import { BaseRepository } from '../../core/base/base.repository';
 import { database } from '../../core/database/database.service';
 import { DB_TABLES } from '../../core/constants';
 import { User } from './auth.types';
 
-export class AuthRepository {
+/**
+ * Auth Repository
+ * Extends BaseRepository to inherit standard CRUD operations
+ * Adds authentication-specific queries
+ */
+export class AuthRepository extends BaseRepository<User> {
+  constructor() {
+    // ccms_users table with user_id as primary key, no soft delete
+    super(DB_TABLES.USERS, 'user_id', false);
+  }
+
   /**
-   * Find user by username
+   * Find user by username (auth-specific)
    */
   public async findByUsername(username: string): Promise<User | null> {
     const query = `
@@ -15,7 +26,7 @@ export class AuthRepository {
         full_name,
         is_active,
         last_login
-      FROM ${DB_TABLES.USERS}
+      FROM ${this.tableName}
       WHERE username = @username
     `;
 
@@ -23,11 +34,11 @@ export class AuthRepository {
   }
 
   /**
-   * Update last login timestamp
+   * Update last login timestamp (auth-specific)
    */
   public async updateLastLogin(userId: number): Promise<void> {
     const query = `
-      UPDATE ${DB_TABLES.USERS}
+      UPDATE ${this.tableName}
       SET last_login = GETDATE()
       WHERE user_id = @userId
     `;
@@ -36,26 +47,7 @@ export class AuthRepository {
   }
 
   /**
-   * Find user by ID
-   */
-  public async findById(userId: number): Promise<User | null> {
-    const query = `
-      SELECT 
-        user_id,
-        username,
-        password_hash,
-        full_name,
-        is_active,
-        last_login
-      FROM ${DB_TABLES.USERS}
-      WHERE user_id = @userId
-    `;
-
-    return database.findOne<User>(query, { userId });
-  }
-
-  /**
-   * Get user roles
+   * Get user roles (auth-specific)
    */
   public async getUserRoles(userId: number): Promise<any[]> {
     const query = `

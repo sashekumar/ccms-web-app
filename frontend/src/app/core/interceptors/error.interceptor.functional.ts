@@ -50,7 +50,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             }
 
             // Attempt automatic token refresh
-            console.log('🔄 Access token expired, attempting refresh...');
 
             // If already refreshing, wait for it to complete
             if (authService.isRefreshingToken()) {
@@ -58,7 +57,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
                 filter(refreshed => refreshed === true),
                 take(1),
                 switchMap(() => {
-                  console.log('♻️ Retrying original request after token refresh');
                   return next(req);
                 })
               );
@@ -68,7 +66,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             return authService.refreshAccessToken().pipe(
               switchMap((success) => {
                 if (success) {
-                  console.log('♻️ Retrying original request after successful refresh');
                   // Retry the original request with new token
                   return next(req);
                 }

@@ -3,6 +3,7 @@ import { Router, CanActivateFn, ActivatedRouteSnapshot } from '@angular/router';
 import { map, take, switchMap, filter } from 'rxjs/operators';
 import { PermissionService } from '../services/permission.service';
 import { APP_ROUTES } from '../constants';
+import { UserPermissionsResponse, CategoryPermissions } from '../../shared/models/permission.model';
 
 /**
  * Functional permission guard
@@ -49,44 +50,38 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
   }
 
   // Helper function to check if permissions are loaded
-  const hasPermissionsLoaded = (perms: any): boolean => {
+  const hasPermissionsLoaded = (perms: UserPermissionsResponse | null): boolean => {
     if (!perms) return false;
-    const categoryModules = perms.categories?.reduce((sum: number, cat: any) => sum + cat.modules.length, 0) || 0;
+    const categoryModules = perms.categories?.reduce((sum: number, cat: CategoryPermissions) => sum + cat.modules.length, 0) || 0;
     const uncategorized = perms.uncategorized_modules?.length || 0;
     const oldStructure = perms.modules?.length || 0;
     return (categoryModules + uncategorized + oldStructure) > 0;
   };
 
   // Wait for permissions to be loaded, then check
-  console.log(`🛡️ Permission guard activated for: ${moduleCode}.${actionCode}`);
   return permissionService.userPermissions$.pipe(
     switchMap(permissions => {
       // If permissions not loaded yet, load them first
       if (!hasPermissionsLoaded(permissions)) {
-        console.log('⏳ Permissions not loaded yet, triggering load...');
         return permissionService.loadUserPermissions().pipe(
           switchMap(() => {
-            console.log('🔄 Permissions loaded, now checking access...');
             return permissionService.hasPermission(moduleCode, actionCode);
           })
         );
       }
       // Permissions already loaded, check directly
-      const totalModules = (permissions?.categories?.reduce((sum: number, cat: any) => sum + cat.modules.length, 0) || 0) +
+      const totalModules = (permissions?.categories?.reduce((sum: number, cat: CategoryPermissions) => sum + cat.modules.length, 0) || 0) +
                           (permissions?.uncategorized_modules?.length || 0) +
                           (permissions?.modules?.length || 0);
-      console.log(`📦 Permissions already loaded (${totalModules} modules), checking access...`);
       return permissionService.hasPermission(moduleCode, actionCode);
     }),
     take(1),
     map(hasPermission => {
       if (!hasPermission) {
-        console.warn(`❌ GUARD DENIED: Access denied for permission: ${moduleCode}.${actionCode}`);
-        console.warn('🚫 Redirecting to /unauthorized');
+        console.warn(`Access denied for permission: ${moduleCode}.${actionCode}`);
         router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
         return false;
       }
-      console.log(`✅ GUARD APPROVED: Access granted for permission: ${moduleCode}.${actionCode}`);
       return true;
     })
   );
@@ -122,9 +117,9 @@ export const permissionAnyGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
   }
 
   // Helper function to check if permissions are loaded
-  const hasPermissionsLoaded = (perms: any): boolean => {
+  const hasPermissionsLoaded = (perms: UserPermissionsResponse | null): boolean => {
     if (!perms) return false;
-    const categoryModules = perms.categories?.reduce((sum: number, cat: any) => sum + cat.modules.length, 0) || 0;
+    const categoryModules = perms.categories?.reduce((sum: number, cat: CategoryPermissions) => sum + cat.modules.length, 0) || 0;
     const uncategorized = perms.uncategorized_modules?.length || 0;
     const oldStructure = perms.modules?.length || 0;
     return (categoryModules + uncategorized + oldStructure) > 0;
@@ -135,7 +130,6 @@ export const permissionAnyGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
     switchMap(userPerms => {
       // If permissions not loaded yet, load them first
       if (!hasPermissionsLoaded(userPerms)) {
-        console.log('⏳ Permissions not loaded, loading now...');
         return permissionService.loadUserPermissions().pipe(
           switchMap(() => permissionService.hasAnyPermission(permissions))
         );
@@ -146,7 +140,7 @@ export const permissionAnyGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
     take(1),
     map(hasPermission => {
       if (!hasPermission) {
-        console.warn('❌ Access denied: User lacks any of the required permissions');
+        console.warn('Access denied: User lacks any of the required permissions');
         router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
         return false;
       }
@@ -185,9 +179,9 @@ export const permissionAllGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
   }
 
   // Helper function to check if permissions are loaded
-  const hasPermissionsLoaded = (perms: any): boolean => {
+  const hasPermissionsLoaded = (perms: UserPermissionsResponse | null): boolean => {
     if (!perms) return false;
-    const categoryModules = perms.categories?.reduce((sum: number, cat: any) => sum + cat.modules.length, 0) || 0;
+    const categoryModules = perms.categories?.reduce((sum: number, cat: CategoryPermissions) => sum + cat.modules.length, 0) || 0;
     const uncategorized = perms.uncategorized_modules?.length || 0;
     const oldStructure = perms.modules?.length || 0;
     return (categoryModules + uncategorized + oldStructure) > 0;
@@ -198,7 +192,6 @@ export const permissionAllGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
     switchMap(userPerms => {
       // If permissions not loaded yet, load them first
       if (!hasPermissionsLoaded(userPerms)) {
-        console.log('⏳ Permissions not loaded, loading now...');
         return permissionService.loadUserPermissions().pipe(
           switchMap(() => permissionService.hasAllPermissions(permissions))
         );
@@ -209,7 +202,7 @@ export const permissionAllGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
     take(1),
     map(hasPermission => {
       if (!hasPermission) {
-        console.warn('❌ Access denied: User lacks all required permissions');
+        console.warn('Access denied: User lacks all required permissions');
         router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
         return false;
       }

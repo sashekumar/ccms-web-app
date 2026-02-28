@@ -9,6 +9,14 @@ interface StatCard {
   label: string;
 }
 
+interface ReimbStat {
+  label: string;
+  count: number;
+  color: string;
+  borderColor: string;
+  desc: string;
+}
+
 interface CashlessCase {
   id: string;
   patientName: string;
@@ -44,7 +52,7 @@ export class DashboardComponent implements OnInit {
     { icon: 'times-circle', iconColor: 'text-red-600', iconBg: 'bg-red-100', count: 2, label: 'Declined / KIV' }
   ];
 
-  reimbStats = [
+  reimbStats: ReimbStat[] = [
     { label: 'NEW CLAIMS', count: 42, color: 'info', borderColor: 'border-blue-500', desc: 'Awaiting Data Entry' },
     { label: 'PENDING APPROVAL', count: 12, color: 'warning', borderColor: 'border-yellow-500', desc: 'Medical Review In Progress' },
     { label: 'APPROVED', count: 128, color: 'success', borderColor: 'border-green-500', desc: 'Payment Scheduled' }
@@ -92,7 +100,7 @@ export class DashboardComponent implements OnInit {
   /**
    * TrackBy functions for performance optimization
    */
-  trackByStatLabel(index: number, stat: StatCard | any): string {
+  trackByStatLabel(index: number, stat: StatCard | ReimbStat): string {
     return stat.label;
   }
 

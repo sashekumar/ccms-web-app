@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { PermissionService } from './permission.service';
+import { UserPermissionsResponse, CategoryPermissions, ModulePermissions } from '../../shared/models/permission.model';
 
 export interface MenuItem {
   id: string;
@@ -71,19 +72,18 @@ export class MenuService {
    * Build menu structure from user permissions
    * Uses category-based structure from backend for dynamic menu generation
    */
-  private buildMenuFromPermissions(permissions: any): MenuItem[] {
-    console.log('🔨 Building menu from permissions:', permissions);
+  private buildMenuFromPermissions(permissions: UserPermissionsResponse): MenuItem[] {
     const menuItems: MenuItem[] = [];
     const categoryItems: MenuItem[] = [];
 
     // Handle new category-based structure
     if (permissions && permissions.categories) {
       // Process each category
-      permissions.categories.forEach((category: any) => {
+      permissions.categories.forEach((category: CategoryPermissions) => {
         const categoryChildren: MenuItem[] = [];
 
         // Process modules in this category
-        category.modules.forEach((module: any) => {
+        category.modules.forEach((module: ModulePermissions) => {
           // Skip detail-view-only modules
           if (DETAIL_VIEW_MODULES.includes(module.module_code)) {
             return;
@@ -91,7 +91,7 @@ export class MenuService {
 
           // Only include modules with VIEW permission
           const hasViewPermission = module.actions.some(
-            (action: any) => action.action_code === 'VIEW'
+            (action: { action_code: string }) => action.action_code === 'VIEW'
           );
 
           if (hasViewPermission) {
@@ -108,8 +108,8 @@ export class MenuService {
         // Only add category if it has visible modules
         if (categoryChildren.length > 0) {
           categoryItems.push({
-            id: category.category_code.toLowerCase(),
-            label: category.category_name,
+            id: (category.category_code || 'uncategorized').toLowerCase(),
+            label: category.category_name || 'Uncategorized',
             icon: category.category_icon || 'folder',
             children: categoryChildren,
             expanded: true  // Auto-expand categories
@@ -119,14 +119,14 @@ export class MenuService {
 
       // Process uncategorized modules (add them as top-level items FIRST)
       if (permissions.uncategorized_modules && permissions.uncategorized_modules.length > 0) {
-        permissions.uncategorized_modules.forEach((module: any) => {
+        permissions.uncategorized_modules.forEach((module: ModulePermissions) => {
           // Skip detail-view-only modules
           if (DETAIL_VIEW_MODULES.includes(module.module_code)) {
             return;
           }
 
           const hasViewPermission = module.actions.some(
-            (action: any) => action.action_code === 'VIEW'
+            (action: { action_code: string }) => action.action_code === 'VIEW'
           );
 
           if (hasViewPermission) {
@@ -146,17 +146,17 @@ export class MenuService {
     } 
     // Fallback to old flat structure for backward compatibility
     else if (permissions && permissions.modules) {
-      const moduleMap = new Map<string, any>();
+      const moduleMap = new Map<string, ModulePermissions>();
       
       // Group permissions by module with VIEW access
-      permissions.modules.forEach((module: any) => {
+      permissions.modules.forEach((module: ModulePermissions) => {
         // Skip detail-view-only modules
         if (DETAIL_VIEW_MODULES.includes(module.module_code)) {
           return;
         }
 
         const hasViewPermission = module.actions.some(
-          (action: any) => action.action_code === 'VIEW'
+          (action: { action_code: string }) => action.action_code === 'VIEW'
         );
         if (hasViewPermission) {
           moduleMap.set(module.module_code, module);

@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../core/auth/jwt.service';
 import { TokenPayload } from '../features/auth/auth.types';
 import { PermissionsRepository } from '../features/permissions/permissions.repository';
+import { getErrorMessage } from '../core/utils/error.util';
+import { ResponseUtil } from '../core/utils/response.util';
 
 const permissionsRepository = new PermissionsRepository();
 
@@ -29,10 +31,7 @@ export const authenticateToken = async (
     }
 
     if (!token) {
-      res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
+      ResponseUtil.unauthorized(res, 'Authentication required');
       return;
     }
 
@@ -40,10 +39,7 @@ export const authenticateToken = async (
     const payload: TokenPayload = JwtService.verifyToken(token);
 
     if (payload.tokenType !== 'access') {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid token type'
-      });
+      ResponseUtil.unauthorized(res, 'Invalid token type');
       return;
     }
 
@@ -58,20 +54,15 @@ export const authenticateToken = async (
     };
 
     next();
-  } catch (error: any) {
-    if (error.message === 'Invalid or expired token') {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid or expired token'
-      });
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+    
+    if (errorMessage === 'Invalid or expired token') {
+      ResponseUtil.unauthorized(res, 'Invalid or expired token');
       return;
     }
 
-    res.status(500).json({
-      success: false,
-      message: 'Authentication error',
-      error: error.message
-    });
+    ResponseUtil.error(res, 'Authentication error', 500, errorMessage);
   }
 };
 

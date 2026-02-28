@@ -46,7 +46,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         filter(event => event instanceof NavigationEnd),
         takeUntil(this.destroy$)
       )
-      .subscribe((event: any) => {
+      .subscribe((event: NavigationEnd) => {
         this.currentRoute = event.url;
         // Auto-close sidebar on mobile after navigation
         if (typeof window !== 'undefined' && window.innerWidth < 768) {

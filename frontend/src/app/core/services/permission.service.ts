@@ -22,7 +22,8 @@ import {
   UpdateActionDto,
   CreateModuleActionDto,
   UpdateModuleActionDto,
-  PermissionMatrixItem
+  PermissionMatrixItem,
+  ModulePermissions
 } from '../../shared/models/permission.model';
 
 export interface ApiResponse<T> {
@@ -274,7 +275,7 @@ export class PermissionService {
    */
   getAllRoles(): Observable<Role[]> {
     return this.api.post<ApiResponse<Role[]>>(
-      `${API_ENDPOINTS.PERMISSIONS.ROLES.LIST}`,
+      API_ENDPOINTS.PERMISSIONS.ROLES.LIST,
       {}
     ).pipe(
       map(response => response.data),
@@ -290,7 +291,7 @@ export class PermissionService {
    */
   getRoleById(roleId: number): Observable<Role> {
     return this.api.post<ApiResponse<Role>>(
-      `${API_ENDPOINTS.PERMISSIONS.ROLES.GET}`,
+      API_ENDPOINTS.PERMISSIONS.ROLES.GET,
       { roleId }
     ).pipe(
       map(response => response.data),
@@ -306,7 +307,7 @@ export class PermissionService {
    */
   getRolePermissions(roleId: number): Observable<RolePermissionSummary[]> {
     return this.api.post<ApiResponse<RolePermissionSummary[]>>(
-      `${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS}`,
+      API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS,
       { roleId }
     ).pipe(
       map(response => response.data),
@@ -322,7 +323,7 @@ export class PermissionService {
    */
   getRolePermissionsMatrix(roleId: number): Observable<PermissionMatrixItem[]> {
     return this.api.post<ApiResponse<PermissionMatrixItem[]>>(
-      `${API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS_MATRIX}`,
+      API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS_MATRIX,
       { roleId }
     ).pipe(
       map(response => response.data),
@@ -338,7 +339,7 @@ export class PermissionService {
    */
   createRole(dto: CreateRoleDto): Observable<number> {
     return this.api.post<ApiResponse<{ roleId: number }>>(
-      `${API_ENDPOINTS.PERMISSIONS.ROLES.CREATE}`,
+      API_ENDPOINTS.PERMISSIONS.ROLES.CREATE,
       dto
     ).pipe(
       map(response => response.data.roleId),
@@ -354,7 +355,7 @@ export class PermissionService {
    */
   updateRole(roleId: number, dto: UpdateRoleDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE}`,
+      API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE,
       { roleId, ...dto }
     ).pipe(
       map(() => undefined),
@@ -370,7 +371,7 @@ export class PermissionService {
    */
   deleteRole(roleId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.ROLES.DELETE}`,
+      API_ENDPOINTS.PERMISSIONS.ROLES.DELETE,
       { roleId }
     ).pipe(
       map(() => undefined),
@@ -386,7 +387,7 @@ export class PermissionService {
    */
   getAllModules(): Observable<Module[]> {
     return this.api.post<ApiResponse<Module[]>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULES.LIST}`,
+      API_ENDPOINTS.PERMISSIONS.MODULES.LIST,
       {}
     ).pipe(
       map(response => response.data),
@@ -402,7 +403,7 @@ export class PermissionService {
    */
   getAllActions(): Observable<Action[]> {
     return this.api.post<ApiResponse<Action[]>>(
-      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.LIST}`,
+      API_ENDPOINTS.PERMISSIONS.ACTIONS.LIST,
       {}
     ).pipe(
       map(response => response.data),
@@ -418,7 +419,7 @@ export class PermissionService {
    */
   grantPermission(dto: GrantPermissionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.GRANT}`,
+      API_ENDPOINTS.PERMISSIONS.GRANT,
       dto
     ).pipe(
       map(() => undefined),
@@ -435,7 +436,7 @@ export class PermissionService {
    */
   revokePermission(dto: RevokePermissionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.REVOKE}`,
+      API_ENDPOINTS.PERMISSIONS.REVOKE,
       dto
     ).pipe(
       map(() => undefined),
@@ -452,7 +453,7 @@ export class PermissionService {
    */
   createModule(data: CreateModuleDto): Observable<number> {
     return this.api.post<ApiResponse<{ moduleId: number }>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULES.CREATE}`,
+      API_ENDPOINTS.PERMISSIONS.MODULES.CREATE,
       data
     ).pipe(
       map(response => response.data.moduleId),
@@ -468,7 +469,7 @@ export class PermissionService {
    */
   updateModule(moduleId: number, data: UpdateModuleDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE}`,
+      API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE,
       { moduleId, ...data }
     ).pipe(
       map(() => undefined),
@@ -484,7 +485,7 @@ export class PermissionService {
    */
   deleteModule(moduleId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULES.DELETE}`,
+      API_ENDPOINTS.PERMISSIONS.MODULES.DELETE,
       { moduleId }
     ).pipe(
       map(() => undefined),
@@ -500,7 +501,7 @@ export class PermissionService {
    */
   createAction(data: CreateActionDto): Observable<number> {
     return this.api.post<ApiResponse<{ actionId: number }>>(
-      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.CREATE}`,
+      API_ENDPOINTS.PERMISSIONS.ACTIONS.CREATE,
       data
     ).pipe(
       map(response => response.data.actionId),
@@ -516,7 +517,7 @@ export class PermissionService {
    */
   updateAction(actionId: number, data: UpdateActionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE}`,
+      API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE,
       { actionId, ...data }
     ).pipe(
       map(() => undefined),
@@ -532,7 +533,7 @@ export class PermissionService {
    */
   deleteAction(actionId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.ACTIONS.DELETE}`,
+      API_ENDPOINTS.PERMISSIONS.ACTIONS.DELETE,
       { actionId }
     ).pipe(
       map(() => undefined),
@@ -548,7 +549,7 @@ export class PermissionService {
    */
   getAllModuleActions(): Observable<ModuleAction[]> {
     return this.api.post<ApiResponse<ModuleAction[]>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.LIST}`,
+      API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.LIST,
       {}
     ).pipe(
       map(response => response.data),
@@ -564,7 +565,7 @@ export class PermissionService {
    */
   createModuleAction(data: CreateModuleActionDto): Observable<number> {
     return this.api.post<ApiResponse<{ moduleActionId: number }>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.CREATE}`,
+      API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.CREATE,
       data
     ).pipe(
       map(response => response.data.moduleActionId),
@@ -580,7 +581,7 @@ export class PermissionService {
    */
   updateModuleAction(moduleActionId: number, data: UpdateModuleActionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.UPDATE}`,
+      API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.UPDATE,
       { moduleActionId, ...data }
     ).pipe(
       map(() => undefined),
@@ -596,7 +597,7 @@ export class PermissionService {
    */
   deleteModuleAction(moduleActionId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
-      `${API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.DELETE}`,
+      API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.DELETE,
       { moduleActionId }
     ).pipe(
       map(() => undefined),
@@ -640,7 +641,7 @@ export class PermissionService {
     actionCode: string
   ): boolean {
     // Collect all modules from categories and uncategorized, or use old flat structure
-    const allModules: any[] = [];
+    const allModules: ModulePermissions[] = [];
     
     if (permissions.categories) {
       // New category-based structure
@@ -660,7 +661,7 @@ export class PermissionService {
       return false;
     }
     
-    const hasAction = module.actions.some((a: any) => a.action_code === actionCode);
+    const hasAction = module.actions.some((a: { action_code: string }) => a.action_code === actionCode);
     return hasAction;
   }
 }

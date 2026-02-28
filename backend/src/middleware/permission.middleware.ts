@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PermissionsService } from '../features/permissions/permissions.service';
+import { getErrorMessage } from '../core/utils/error.util';
+import { ResponseUtil } from '../core/utils/response.util';
 
 const permissionsService = new PermissionsService();
 
@@ -13,10 +15,7 @@ export const requirePermission = (moduleCode: string, actionCode: string) => {
       const user = (req as any).user;
 
       if (!user || !user.userId) {
-        res.status(401).json({
-          success: false,
-          message: 'Authentication required'
-        });
+        ResponseUtil.unauthorized(res, 'Authentication required');
         return;
       }
 
@@ -33,20 +32,13 @@ export const requirePermission = (moduleCode: string, actionCode: string) => {
       );
 
       if (!result.has_permission) {
-        res.status(403).json({
-          success: false,
-          message: `Access denied. Required permission: ${moduleCode}.${actionCode}`
-        });
+        ResponseUtil.forbidden(res, `Access denied. Required permission: ${moduleCode}.${actionCode}`);
         return;
       }
 
       next();
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Error checking permissions',
-        error: error.message
-      });
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error checking permissions', 500, getErrorMessage(error));
     }
   };
 };
@@ -61,10 +53,7 @@ export const requireAnyPermission = (permissions: [string, string][]) => {
       const user = (req as any).user;
 
       if (!user || !user.userId) {
-        res.status(401).json({
-          success: false,
-          message: 'Authentication required'
-        });
+        ResponseUtil.unauthorized(res, 'Authentication required');
         return;
       }
 
@@ -91,20 +80,13 @@ export const requireAnyPermission = (permissions: [string, string][]) => {
 
       if (!hasAnyPermission) {
         const permissionList = permissions.map(([m, a]) => `${m}.${a}`).join(' OR ');
-        res.status(403).json({
-          success: false,
-          message: `Access denied. Required permissions: ${permissionList}`
-        });
+        ResponseUtil.forbidden(res, `Access denied. Required permissions: ${permissionList}`);
         return;
       }
 
       next();
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Error checking permissions',
-        error: error.message
-      });
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error checking permissions', 500, getErrorMessage(error));
     }
   };
 };
@@ -119,10 +101,7 @@ export const requireAllPermissions = (permissions: [string, string][]) => {
       const user = (req as any).user;
 
       if (!user || !user.userId) {
-        res.status(401).json({
-          success: false,
-          message: 'Authentication required'
-        });
+        ResponseUtil.unauthorized(res, 'Authentication required');
         return;
       }
 
@@ -142,20 +121,13 @@ export const requireAllPermissions = (permissions: [string, string][]) => {
 
       if (!hasAllPermissions) {
         const permissionList = permissions.map(([m, a]) => `${m}.${a}`).join(' AND ');
-        res.status(403).json({
-          success: false,
-          message: `Access denied. Required permissions: ${permissionList}`
-        });
+        ResponseUtil.forbidden(res, `Access denied. Required permissions: ${permissionList}`);
         return;
       }
 
       next();
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Error checking permissions',
-        error: error.message
-      });
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error checking permissions', 500, getErrorMessage(error));
     }
   };
 };

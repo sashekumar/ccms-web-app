@@ -17,6 +17,15 @@ export interface UserRole {
   role_code: string;
 }
 
+export interface UserDetailRole {
+  role_id: number;
+  role_name: string;
+  role_code: string;
+  assigned_at: Date;
+  assigned_by: string;
+  expires_at: string | null;
+}
+
 export interface UserDetail {
   user: {
     user_id: number;
@@ -25,14 +34,7 @@ export interface UserDetail {
     is_active: boolean;
     last_login: Date | null;
   };
-  roles: {
-    role_id: number;
-    role_name: string;
-    role_code: string;
-    assigned_at: Date;
-    assigned_by: string;
-    expires_at: string | null;
-  }[];
+  roles: UserDetailRole[];
 }
 
 export interface CreateUserDto {

@@ -96,7 +96,6 @@ export class RoleService {
     if (role) {
       this.selectedRoleSubject.next(role);
       sessionStorage.setItem('selectedRole', roleId.toString());
-      console.log('Role changed to:', role.roleName);
     }
   }
 

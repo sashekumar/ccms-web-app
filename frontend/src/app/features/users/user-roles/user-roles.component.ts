@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { UserDetail } from '../../../shared/models/user.model';
+import { UserDetail, UserDetailRole } from '../../../shared/models/user.model';
 import { Role, AssignRoleDto } from '../../../shared/models/permission.model';
 
 interface RoleAssignment {
@@ -56,7 +56,7 @@ interface RoleAssignment {
               >
                 <option [value]="null">-- Select a role --</option>
                 <option
-                  *ngFor="let role of availableRoles"
+                  *ngFor="let role of availableRoles; trackBy: trackByRoleId"
                   [value]="role.role_id"
                 >
                   {{ role.role_name }} ({{ role.role_code }})
@@ -125,7 +125,7 @@ interface RoleAssignment {
           
           <div *ngIf="userDetail.roles.length > 0" class="space-y-3">
             <div
-              *ngFor="let role of userDetail.roles"
+              *ngFor="let role of userDetail.roles; trackBy: trackByRoleId"
               class="flex items-center justify-between rounded-lg border border-gray-200 p-4"
             >
               <div class="flex-1">
@@ -404,5 +404,13 @@ export class UserRolesComponent implements OnInit, OnDestroy {
     } else {
       this.router.navigate(['/admin/users']);
     }
+  }
+
+  /**
+   * TrackBy function for roles lists
+   * Improves ngFor performance by tracking items by unique identifier
+   */
+  trackByRoleId(index: number, role: Role | UserDetailRole): number {
+    return role.role_id;
   }
 }

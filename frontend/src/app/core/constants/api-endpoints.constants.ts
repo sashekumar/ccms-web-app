@@ -23,6 +23,7 @@
  */
 
 // Base API path - empty because environment.apiUrl already includes '/api'
+// Note: All endpoints are relative paths without leading slash to avoid double slashes
 const API_BASE = '';
 
 // ============================================================================
@@ -30,12 +31,12 @@ const API_BASE = '';
 // ============================================================================
 
 export const AUTH_ENDPOINTS = {
-  LOGIN: `${API_BASE}/auth/login`,
-  LOGOUT: `${API_BASE}/auth/logout`,
-  REFRESH: `${API_BASE}/auth/refresh`,
-  ME: `${API_BASE}/auth/me`,
-  CSRF_TOKEN: `${API_BASE}/auth/csrf-token`,
-  CHANGE_PASSWORD: `${API_BASE}/auth/change-password`
+  LOGIN: `auth/login`,
+  LOGOUT: `auth/logout`,
+  REFRESH: `auth/refresh`,
+  ME: `auth/me`,
+  CSRF_TOKEN: `auth/csrf-token`,
+  CHANGE_PASSWORD: `auth/change-password`
 } as const;
 
 // ============================================================================
@@ -43,14 +44,14 @@ export const AUTH_ENDPOINTS = {
 // ============================================================================
 
 export const USERS_ENDPOINTS = {
-  LIST: `${API_BASE}/users/list`,
-  CREATE: `${API_BASE}/users`,
-  CHECK_USERNAME: `${API_BASE}/users/check-username`,
+  LIST: `users/list`,
+  CREATE: `users`,
+  CHECK_USERNAME: `users/check-username`,
   
   // Parameterized endpoints
-  getById: (id: number) => `${API_BASE}/users/${id}`,
-  update: (id: number) => `${API_BASE}/users/${id}`,
-  delete: (id: number) => `${API_BASE}/users/${id}`
+  getById: (id: number) => `users/${id}`,
+  update: (id: number) => `users/${id}`,
+  delete: (id: number) => `users/${id}`
 } as const;
 
 // ============================================================================
@@ -59,63 +60,63 @@ export const USERS_ENDPOINTS = {
 
 export const PERMISSIONS_ENDPOINTS = {
   // Permission checks
-  CHECK: `${API_BASE}/permissions/check`,
-  GRANT: `${API_BASE}/permissions/grant`,
-  REVOKE: `${API_BASE}/permissions/revoke`,
+  CHECK: `permissions/check`,
+  GRANT: `permissions/grant`,
+  REVOKE: `permissions/revoke`,
   
   // User Permissions
   USER: {
-    GET_CURRENT: `${API_BASE}/permissions/user`,
-    ASSIGN_ROLE: `${API_BASE}/permissions/assign-role`,
+    GET_CURRENT: `permissions/user`,
+    ASSIGN_ROLE: `permissions/assign-role`,
     
-    getById: (userId: number) => `${API_BASE}/permissions/user/${userId}`,
-    detachRole: (userId: number, roleId: number) => `${API_BASE}/permissions/detach-role/${userId}/${roleId}`,
-    getRoles: (userId: number) => `${API_BASE}/permissions/user/${userId}/roles`
+    getById: (userId: number) => `permissions/user/${userId}`,
+    detachRole: (userId: number, roleId: number) => `permissions/detach-role/${userId}/${roleId}`,
+    getRoles: (userId: number) => `permissions/user/${userId}/roles`
   },
   
   // Role Management
   ROLES: {
-    LIST: `${API_BASE}/permissions/roles/list`,
-    GET: `${API_BASE}/permissions/roles/get`,
-    CREATE: `${API_BASE}/permissions/roles/create`,
-    UPDATE: `${API_BASE}/permissions/roles/update`,
-    DELETE: `${API_BASE}/permissions/roles/delete`,
-    PERMISSIONS: `${API_BASE}/permissions/roles/permissions`,
-    PERMISSIONS_MATRIX: `${API_BASE}/permissions/roles/permissions-matrix`
+    LIST: `permissions/roles/list`,
+    GET: `permissions/roles/get`,
+    CREATE: `permissions/roles/create`,
+    UPDATE: `permissions/roles/update`,
+    DELETE: `permissions/roles/delete`,
+    PERMISSIONS: `permissions/roles/permissions`,
+    PERMISSIONS_MATRIX: `permissions/roles/permissions-matrix`
   },
   
   // Category Management
   CATEGORIES: {
-    LIST: `${API_BASE}/permissions/categories`,
-    CREATE: `${API_BASE}/permissions/categories`,
+    LIST: `permissions/categories`,
+    CREATE: `permissions/categories`,
     
-    getById: (id: number) => `${API_BASE}/permissions/categories/${id}`,
-    update: (id: number) => `${API_BASE}/permissions/categories/${id}`,
-    delete: (id: number) => `${API_BASE}/permissions/categories/${id}`
+    getById: (id: number) => `permissions/categories/${id}`,
+    update: (id: number) => `permissions/categories/${id}`,
+    delete: (id: number) => `permissions/categories/${id}`
   },
   
   // Module Management
   MODULES: {
-    LIST: `${API_BASE}/permissions/modules/list`,
-    CREATE: `${API_BASE}/permissions/modules/create`,
-    UPDATE: `${API_BASE}/permissions/modules/update`,
-    DELETE: `${API_BASE}/permissions/modules/delete`
+    LIST: `permissions/modules/list`,
+    CREATE: `permissions/modules/create`,
+    UPDATE: `permissions/modules/update`,
+    DELETE: `permissions/modules/delete`
   },
   
   // Action Management
   ACTIONS: {
-    LIST: `${API_BASE}/permissions/actions/list`,
-    CREATE: `${API_BASE}/permissions/actions/create`,
-    UPDATE: `${API_BASE}/permissions/actions/update`,
-    DELETE: `${API_BASE}/permissions/actions/delete`
+    LIST: `permissions/actions/list`,
+    CREATE: `permissions/actions/create`,
+    UPDATE: `permissions/actions/update`,
+    DELETE: `permissions/actions/delete`
   },
   
   // Module Action Management
   MODULE_ACTIONS: {
-    LIST: `${API_BASE}/permissions/module-actions/list`,
-    CREATE: `${API_BASE}/permissions/module-actions/create`,
-    UPDATE: `${API_BASE}/permissions/module-actions/update`,
-    DELETE: `${API_BASE}/permissions/module-actions/delete`
+    LIST: `permissions/module-actions/list`,
+    CREATE: `permissions/module-actions/create`,
+    UPDATE: `permissions/module-actions/update`,
+    DELETE: `permissions/module-actions/delete`
   }
 } as const;
 
@@ -147,7 +148,7 @@ export const API_ENDPOINTS = {
  * // Returns: '/api/users/list?page=1&limit=10&search=john'
  * ```
  */
-export function buildApiUrl(endpoint: string, params?: Record<string, any>): string {
+export function buildApiUrl(endpoint: string, params?: Record<string, string | number | boolean>): string {
   if (!params || Object.keys(params).length === 0) {
     return endpoint;
   }

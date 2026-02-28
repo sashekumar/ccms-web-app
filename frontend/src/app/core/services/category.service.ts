@@ -1,15 +1,9 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants';
+import { BaseApiService, ApiResponse } from './base-api.service';
 import { Category } from '../../shared/models/permission.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 export interface CreateCategoryDto {
   category_name: string;
@@ -30,52 +24,41 @@ export interface UpdateCategoryDto {
 
 /**
  * Category Service - Handles category management operations
+ * Extends BaseApiService for standard CRUD operations
  */
 @Injectable({
   providedIn: 'root'
 })
-export class CategoryService {
-  constructor(private api: ApiService) {}
-
-  /**
-   * Get all categories
-   * GET /api/permissions/categories
-   */
-  getAllCategories(): Observable<Category[]> {
-    return this.api.get<ApiResponse<Category[]>>(
-      API_ENDPOINTS.PERMISSIONS.CATEGORIES.LIST
-    ).pipe(
-      map(response => response.data),
-      catchError(error => {
-        console.error('Error fetching categories:', error);
-        throw error;
-      })
-    );
+export class CategoryService extends BaseApiService<Category> {
+  constructor(http: HttpClient) {
+    // Pass base endpoint path
+    // environment.apiUrl already includes '/api'
+    super(http, '/permissions/categories');
   }
 
   /**
-   * Get category by ID
-   * GET /api/permissions/categories/:id
+   * Get all categories (inherited from BaseApiService as getAll)
+   * Alias method for backward compatibility
+   */
+  getAllCategories(): Observable<Category[]> {
+    return this.getAll();
+  }
+
+  /**
+   * Get category by ID (inherited from BaseApiService as getById)
+   * Alias method for backward compatibility
    */
   getCategoryById(categoryId: number): Observable<Category> {
-    return this.api.get<ApiResponse<Category>>(
-      API_ENDPOINTS.PERMISSIONS.CATEGORIES.getById(categoryId)
-    ).pipe(
-      map(response => response.data),
-      catchError(error => {
-        console.error('Error fetching category:', error);
-        throw error;
-      })
-    );
+    return this.getById(categoryId);
   }
 
   /**
    * Create new category
-   * POST /api/permissions/categories
+   * Uses BaseApiService infrastructure with custom response handling
    */
   createCategory(data: CreateCategoryDto): Observable<number> {
-    return this.api.post<ApiResponse<{ category_id: number }>>(
-      API_ENDPOINTS.PERMISSIONS.CATEGORIES.CREATE,
+    return this.http.post<ApiResponse<{ category_id: number }>>(
+      this.endpoint,
       data
     ).pipe(
       map(response => response.data.category_id),
@@ -88,34 +71,23 @@ export class CategoryService {
 
   /**
    * Update category
-   * PUT /api/permissions/categories/:id
+   * Uses custom DTO that doesn't match entity type exactly
    */
   updateCategory(categoryId: number, data: UpdateCategoryDto): Observable<void> {
-    return this.api.put<ApiResponse<void>>(
-      API_ENDPOINTS.PERMISSIONS.CATEGORIES.update(categoryId),
+    return this.http.put<ApiResponse<void>>(
+      `${this.endpoint}/${categoryId}`,
       data
     ).pipe(
       map(() => undefined),
-      catchError(error => {
-        console.error('Error updating category:', error);
-        throw error;
-      })
+      catchError(this.handleError)
     );
   }
 
   /**
-   * Delete category
-   * DELETE /api/permissions/categories/:id
+   * Delete category (inherited from BaseApiService as delete)
+   * Alias method for backward compatibility
    */
   deleteCategory(categoryId: number): Observable<void> {
-    return this.api.delete<ApiResponse<void>>(
-      API_ENDPOINTS.PERMISSIONS.CATEGORIES.delete(categoryId)
-    ).pipe(
-      map(() => undefined),
-      catchError(error => {
-        console.error('Error deleting category:', error);
-        throw error;
-      })
-    );
+    return this.delete(categoryId);
   }
 }

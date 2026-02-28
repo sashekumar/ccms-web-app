@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { User, UserFilters } from '../../../shared/models/user.model';
+import { User, UserFilters, UserRole } from '../../../shared/models/user.model';
 import { Role } from '../../../shared/models/permission.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 
@@ -71,7 +71,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
             >
               <option [ngValue]="undefined">All Roles</option>
-              <option *ngFor="let role of roles" [ngValue]="role.role_id">{{ role.role_name }}</option>
+              <option *ngFor="let role of roles; trackBy: trackByRoleId" [ngValue]="role.role_id">{{ role.role_name }}</option>
             </select>
           </div>
 
@@ -111,7 +111,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let user of users" class="transition hover:bg-gray-50">
+              <tr *ngFor="let user of users; trackBy: trackByUserId" class="transition hover:bg-gray-50">
                 <td class="whitespace-nowrap px-6 py-4">
                   <div class="flex items-center">
                     <div class="h-10 w-10 flex-shrink-0">
@@ -127,7 +127,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex flex-wrap gap-1">
-                    <span *ngFor="let role of user.roles" class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                    <span *ngFor="let role of user.roles; trackBy: trackByUserRoleId" class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
                       {{ role.role_name }}
                     </span>
                   </div>
@@ -238,7 +238,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
                   </svg>
                 </button>
                 <button
-                  *ngFor="let page of getPageNumbers()"
+                  *ngFor="let page of getPageNumbers(); trackBy: trackByPageNumber"
                   (click)="goToPage(page)"
                   [class.bg-[#1e3c72]]="page === pagination.page"
                   [class.text-white]="page === pagination.page"
@@ -432,13 +432,14 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   openCreateModal(): void {
-    console.log('🎯 CREATE USER BUTTON CLICKED - Navigating to /admin/users/create');
     this.router.navigate(['/admin/users/create'])
       .then(success => {
-        console.log('🎯 Navigation result:', success ? 'SUCCESS' : 'FAILED');
+        if (!success) {
+          console.error('Navigation failed');
+        }
       })
       .catch(error => {
-        console.error('🎯 Navigation error:', error);
+        console.error('Navigation error:', error);
       });
   }
 
@@ -465,5 +466,24 @@ export class UserListComponent implements OnInit, OnDestroy {
           }
         });
     }
+  }
+
+  /**
+   * TrackBy functions for performance optimization
+   */
+  trackByRoleId(index: number, role: Role): number {
+    return role.role_id;
+  }
+
+  trackByUserId(index: number, user: User): number {
+    return user.user_id;
+  }
+
+  trackByUserRoleId(index: number, role: UserRole): number {
+    return role.role_id;
+  }
+
+  trackByPageNumber(index: number, page: number): number {
+    return page;
   }
 }

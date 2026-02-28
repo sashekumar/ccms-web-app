@@ -9,6 +9,8 @@ import {
   CreateCategoryDto,
   UpdateCategoryDto
 } from './permissions.types';
+import { getErrorMessage } from '../../core/utils/error.util';
+import { ResponseUtil } from '../../core/utils/response.util';
 
 export class PermissionsController {
   private service: PermissionsService;
@@ -28,10 +30,7 @@ export class PermissionsController {
       const { moduleCode, actionCode } = req.query;
 
       if (!moduleCode || !actionCode) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'moduleCode and actionCode are required' 
-        });
+        ResponseUtil.error(res, 'moduleCode and actionCode are required', 400);
         return;
       }
 
@@ -41,16 +40,9 @@ export class PermissionsController {
         actionCode as string
       );
 
-      res.json({ 
-        success: true, 
-        data: result 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error checking permission', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, result, 'Permission checked');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error checking permission', 500, getErrorMessage(error));
     }
   };
 
@@ -64,16 +56,9 @@ export class PermissionsController {
 
       const permissions = await this.service.getUserPermissions(userId);
 
-      res.json({ 
-        success: true, 
-        data: permissions 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching user permissions', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, permissions, 'User permissions retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching user permissions', 500, getErrorMessage(error));
     }
   };
 
@@ -86,25 +71,15 @@ export class PermissionsController {
       const userId = parseInt(req.params.userId);
 
       if (isNaN(userId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid user ID' 
-        });
+        ResponseUtil.error(res, 'Invalid user ID', 400);
         return;
       }
 
       const permissions = await this.service.getUserPermissions(userId);
 
-      res.json({ 
-        success: true, 
-        data: permissions 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching user permissions', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, permissions, 'User permissions retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching user permissions', 500, getErrorMessage(error));
     }
   };
 
@@ -119,25 +94,15 @@ export class PermissionsController {
       const dto: AssignRoleDto = req.body;
 
       if (!dto.user_id || !dto.role_id) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'user_id and role_id are required' 
-        });
+        ResponseUtil.error(res, 'user_id and role_id are required', 400);
         return;
       }
 
       await this.service.assignRole(dto, assignedBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Role assigned successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error assigning role', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Role assigned successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error assigning role', 500, getErrorMessage(error));
     }
   };
 
@@ -151,25 +116,15 @@ export class PermissionsController {
       const roleId = parseInt(req.params.roleId);
 
       if (isNaN(userId) || isNaN(roleId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid user ID or role ID' 
-        });
+        ResponseUtil.error(res, 'Invalid user ID or role ID', 400);
         return;
       }
 
       await this.service.detachRole(userId, roleId);
 
-      res.json({ 
-        success: true, 
-        message: 'Role detached successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error detaching role', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Role detached successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error detaching role', 500, getErrorMessage(error));
     }
   };
 
@@ -182,25 +137,15 @@ export class PermissionsController {
       const userId = parseInt(req.params.userId);
 
       if (isNaN(userId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid user ID' 
-        });
+        ResponseUtil.error(res, 'Invalid user ID', 400);
         return;
       }
 
       const roleIds = await this.service.getUserRoles(userId);
 
-      res.json({ 
-        success: true, 
-        data: { roleIds } 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching user roles', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, { roleIds }, 'User roles retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching user roles', 500, getErrorMessage(error));
     }
   };
 
@@ -212,16 +157,9 @@ export class PermissionsController {
     try {
       const roles = await this.service.getAllRoles();
 
-      res.json({ 
-        success: true, 
-        data: roles 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching roles', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, roles, 'Roles retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching roles', 500, getErrorMessage(error));
     }
   };
 
@@ -235,33 +173,20 @@ export class PermissionsController {
       const roleId = parseInt(req.body.roleId);
 
       if (isNaN(roleId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid role ID' 
-        });
+        ResponseUtil.error(res, 'Invalid role ID', 400);
         return;
       }
 
       const role = await this.service.getRoleById(roleId);
 
       if (!role) {
-        res.status(404).json({ 
-          success: false, 
-          message: 'Role not found' 
-        });
+        ResponseUtil.notFound(res, 'Role not found');
         return;
       }
 
-      res.json({ 
-        success: true, 
-        data: role 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching role', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, role, 'Role retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching role', 500, getErrorMessage(error));
     }
   };
 
@@ -275,25 +200,15 @@ export class PermissionsController {
       const roleId = parseInt(req.body.roleId);
 
       if (isNaN(roleId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid role ID' 
-        });
+        ResponseUtil.error(res, 'Invalid role ID', 400);
         return;
       }
 
       const permissions = await this.service.getRolePermissions(roleId);
 
-      res.json({ 
-        success: true, 
-        data: permissions 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching role permissions', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, permissions, 'Role permissions retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching role permissions', 500, getErrorMessage(error));
     }
   };
 
@@ -307,25 +222,15 @@ export class PermissionsController {
       const roleId = parseInt(req.body.roleId);
 
       if (isNaN(roleId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid role ID' 
-        });
+        ResponseUtil.error(res, 'Invalid role ID', 400);
         return;
       }
 
       const permissions = await this.service.getRolePermissionsMatrix(roleId);
 
-      res.json({ 
-        success: true, 
-        data: permissions 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching role permissions matrix', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, permissions, 'Role permissions matrix retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching role permissions matrix', 500, getErrorMessage(error));
     }
   };
 
@@ -340,26 +245,15 @@ export class PermissionsController {
       const dto: CreateRoleDto = req.body;
 
       if (!dto.role_name || !dto.role_code) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'role_name and role_code are required' 
-        });
+        ResponseUtil.error(res, 'role_name and role_code are required', 400);
         return;
       }
 
       const roleId = await this.service.createRole(dto, createdBy);
 
-      res.status(201).json({ 
-        success: true, 
-        message: 'Role created successfully', 
-        data: { roleId } 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error creating role', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, { roleId }, 'Role created successfully', 201);
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error creating role', 500, getErrorMessage(error));
     }
   };
 
@@ -375,33 +269,22 @@ export class PermissionsController {
       const dto: UpdateRoleDto = req.body;
 
       if (isNaN(roleId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid role ID' 
-        });
+        ResponseUtil.error(res, 'Invalid role ID', 400);
         return;
       }
 
       await this.service.updateRole(roleId, dto, updatedBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Role updated successfully' 
-      });
-    } catch (error: any) {
-      if (error.message === 'Cannot modify system roles') {
-        res.status(403).json({ 
-          success: false, 
-          message: error.message 
-        });
+      ResponseUtil.success(res, 'Role updated successfully');
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      
+      if (errorMessage === 'Cannot modify system roles') {
+        ResponseUtil.forbidden(res, errorMessage);
         return;
       }
 
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error updating role', 
-        error: error.message 
-      });
+      ResponseUtil.error(res, 'Error updating role', 500, errorMessage);
     }
   };
 
@@ -415,33 +298,22 @@ export class PermissionsController {
       const roleId = parseInt(req.body.roleId);
 
       if (isNaN(roleId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid role ID' 
-        });
+        ResponseUtil.error(res, 'Invalid role ID', 400);
         return;
       }
 
       await this.service.deleteRole(roleId);
 
-      res.json({ 
-        success: true, 
-        message: 'Role deleted successfully' 
-      });
-    } catch (error: any) {
-      if (error.message === 'Cannot delete system roles') {
-        res.status(403).json({ 
-          success: false, 
-          message: error.message 
-        });
+      ResponseUtil.success(res, 'Role deleted successfully');
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      
+      if (errorMessage === 'Cannot delete system roles') {
+        ResponseUtil.forbidden(res, errorMessage);
         return;
       }
 
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error deleting role', 
-        error: error.message 
-      });
+      ResponseUtil.error(res, 'Error deleting role', 500, errorMessage);
     }
   };
 
@@ -453,16 +325,9 @@ export class PermissionsController {
     try {
       const modules = await this.service.getAllModules();
 
-      res.json({ 
-        success: true, 
-        data: modules 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching modules', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, modules, 'Modules retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching modules', 500, getErrorMessage(error));
     }
   };
 
@@ -474,16 +339,9 @@ export class PermissionsController {
     try {
       const actions = await this.service.getAllActions();
 
-      res.json({ 
-        success: true, 
-        data: actions 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching actions', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, actions, 'Actions retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching actions', 500, getErrorMessage(error));
     }
   };
 
@@ -497,26 +355,15 @@ export class PermissionsController {
       const data = req.body;
 
       if (!data.moduleName || !data.moduleCode) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'moduleName and moduleCode are required' 
-        });
+        ResponseUtil.error(res, 'moduleName and moduleCode are required', 400);
         return;
       }
 
       const moduleId = await this.service.createModule(data, createdBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Module created successfully',
-        data: { moduleId }
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error creating module', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, { moduleId }, 'Module created successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error creating module', 500, getErrorMessage(error));
     }
   };
 
@@ -530,25 +377,15 @@ export class PermissionsController {
       const { moduleId, ...data } = req.body;
 
       if (!moduleId || isNaN(parseInt(moduleId))) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Valid moduleId is required' 
-        });
+        ResponseUtil.error(res, 'Valid moduleId is required', 400);
         return;
       }
 
       await this.service.updateModule(parseInt(moduleId), data, updatedBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Module updated successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error updating module', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Module updated successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error updating module', 500, getErrorMessage(error));
     }
   };
 
@@ -561,25 +398,15 @@ export class PermissionsController {
       const moduleId = parseInt(req.body.moduleId);
 
       if (isNaN(moduleId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Valid moduleId is required' 
-        });
+        ResponseUtil.error(res, 'Valid moduleId is required', 400);
         return;
       }
 
       await this.service.deleteModule(moduleId);
 
-      res.json({ 
-        success: true, 
-        message: 'Module deleted successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error deleting module', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Module deleted successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error deleting module', 500, getErrorMessage(error));
     }
   };
 
@@ -593,26 +420,15 @@ export class PermissionsController {
       const data = req.body;
 
       if (!data.actionName || !data.actionCode) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'actionName and actionCode are required' 
-        });
+        ResponseUtil.error(res, 'actionName and actionCode are required', 400);
         return;
       }
 
       const actionId = await this.service.createAction(data, createdBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Action created successfully',
-        data: { actionId }
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error creating action', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, { actionId }, 'Action created successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error creating action', 500, getErrorMessage(error));
     }
   };
 
@@ -626,25 +442,15 @@ export class PermissionsController {
       const { actionId, ...data } = req.body;
 
       if (!actionId || isNaN(parseInt(actionId))) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Valid actionId is required' 
-        });
+        ResponseUtil.error(res, 'Valid actionId is required', 400);
         return;
       }
 
       await this.service.updateAction(parseInt(actionId), data, updatedBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Action updated successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error updating action', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Action updated successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error updating action', 500, getErrorMessage(error));
     }
   };
 
@@ -657,25 +463,15 @@ export class PermissionsController {
       const actionId = parseInt(req.body.actionId);
 
       if (isNaN(actionId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Valid actionId is required' 
-        });
+        ResponseUtil.error(res, 'Valid actionId is required', 400);
         return;
       }
 
       await this.service.deleteAction(actionId);
 
-      res.json({ 
-        success: true, 
-        message: 'Action deleted successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error deleting action', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Action deleted successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error deleting action', 500, getErrorMessage(error));
     }
   };
 
@@ -687,16 +483,9 @@ export class PermissionsController {
     try {
       const moduleActions = await this.service.getAllModuleActions();
 
-      res.json({ 
-        success: true, 
-        data: moduleActions 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching module-actions', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, moduleActions, 'Module-actions retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching module-actions', 500, getErrorMessage(error));
     }
   };
 
@@ -710,26 +499,15 @@ export class PermissionsController {
       const data = req.body;
 
       if (!data.moduleId || !data.actionId) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'moduleId and actionId are required' 
-        });
+        ResponseUtil.error(res, 'moduleId and actionId are required', 400);
         return;
       }
 
       const moduleActionId = await this.service.createModuleAction(data, createdBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Module-Action created successfully',
-        data: { moduleActionId }
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error creating module-action', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, { moduleActionId }, 'Module-Action created successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error creating module-action', 500, getErrorMessage(error));
     }
   };
 
@@ -743,25 +521,15 @@ export class PermissionsController {
       const { moduleActionId, ...data } = req.body;
 
       if (!moduleActionId || isNaN(parseInt(moduleActionId))) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Valid moduleActionId is required' 
-        });
+        ResponseUtil.error(res, 'Valid moduleActionId is required', 400);
         return;
       }
 
       await this.service.updateModuleAction(parseInt(moduleActionId), data, updatedBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Module-Action updated successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error updating module-action', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Module-Action updated successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error updating module-action', 500, getErrorMessage(error));
     }
   };
 
@@ -774,25 +542,15 @@ export class PermissionsController {
       const moduleActionId = parseInt(req.body.moduleActionId);
 
       if (isNaN(moduleActionId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Valid moduleActionId is required' 
-        });
+        ResponseUtil.error(res, 'Valid moduleActionId is required', 400);
         return;
       }
 
       await this.service.deleteModuleAction(moduleActionId);
 
-      res.json({ 
-        success: true, 
-        message: 'Module-Action deleted successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error deleting module-action', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Module-Action deleted successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error deleting module-action', 500, getErrorMessage(error));
     }
   };
 
@@ -808,25 +566,15 @@ export class PermissionsController {
       const dto: GrantPermissionDto = req.body;
 
       if (!dto.role_id || !dto.module_action_id) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'role_id and module_action_id are required' 
-        });
+        ResponseUtil.error(res, 'role_id and module_action_id are required', 400);
         return;
       }
 
       await this.service.grantPermission(dto, grantedBy);
 
-      res.json({ 
-        success: true, 
-        message: 'Permission granted successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error granting permission', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Permission granted successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error granting permission', 500, getErrorMessage(error));
     }
   };
 
@@ -840,25 +588,15 @@ export class PermissionsController {
       const dto: RevokePermissionDto = req.body;
 
       if (!dto.role_id || !dto.module_action_id) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'role_id and module_action_id are required' 
-        });
+        ResponseUtil.error(res, 'role_id and module_action_id are required', 400);
         return;
       }
 
       await this.service.revokePermission(dto);
 
-      res.json({ 
-        success: true, 
-        message: 'Permission revoked successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error revoking permission', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Permission revoked successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error revoking permission', 500, getErrorMessage(error));
     }
   };
 
@@ -872,16 +610,9 @@ export class PermissionsController {
     try {
       const categories = await this.service.getAllCategories();
 
-      res.json({ 
-        success: true, 
-        data: categories 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching categories', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, categories, 'Categories retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching categories', 500, getErrorMessage(error));
     }
   };
 
@@ -894,33 +625,20 @@ export class PermissionsController {
       const categoryId = parseInt(req.params.categoryId);
 
       if (isNaN(categoryId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid category ID' 
-        });
+        ResponseUtil.error(res, 'Invalid category ID', 400);
         return;
       }
 
       const category = await this.service.getCategoryById(categoryId);
 
       if (!category) {
-        res.status(404).json({ 
-          success: false, 
-          message: 'Category not found' 
-        });
+        ResponseUtil.notFound(res, 'Category not found');
         return;
       }
 
-      res.json({ 
-        success: true, 
-        data: category 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error fetching category', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, category, 'Category retrieved');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching category', 500, getErrorMessage(error));
     }
   };
 
@@ -935,10 +653,7 @@ export class PermissionsController {
 
       // Validation
       if (!category_name || !category_code || display_order === undefined) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'category_name, category_code, and display_order are required' 
-        });
+        ResponseUtil.error(res, 'category_name, category_code, and display_order are required', 400);
         return;
       }
 
@@ -950,17 +665,9 @@ export class PermissionsController {
         display_order
       });
 
-      res.status(201).json({ 
-        success: true, 
-        message: 'Category created successfully',
-        data: { category_id: categoryId }
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error creating category', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, { category_id: categoryId }, 'Category created successfully', 201);
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error creating category', 500, getErrorMessage(error));
     }
   };
 
@@ -974,10 +681,7 @@ export class PermissionsController {
       const categoryId = parseInt(req.params.categoryId);
 
       if (isNaN(categoryId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid category ID' 
-        });
+        ResponseUtil.error(res, 'Invalid category ID', 400);
         return;
       }
 
@@ -986,10 +690,7 @@ export class PermissionsController {
       // Check if at least one field is provided
       if (!category_name && !category_code && description === undefined && 
           icon === undefined && display_order === undefined && is_active === undefined) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'At least one field must be provided for update' 
-        });
+        ResponseUtil.error(res, 'At least one field must be provided for update', 400);
         return;
       }
 
@@ -1002,16 +703,9 @@ export class PermissionsController {
         is_active
       });
 
-      res.json({ 
-        success: true, 
-        message: 'Category updated successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error updating category', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Category updated successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error updating category', 500, getErrorMessage(error));
     }
   };
 
@@ -1024,25 +718,15 @@ export class PermissionsController {
       const categoryId = parseInt(req.params.categoryId);
 
       if (isNaN(categoryId)) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Invalid category ID' 
-        });
+        ResponseUtil.error(res, 'Invalid category ID', 400);
         return;
       }
 
       await this.service.deleteCategory(categoryId);
 
-      res.json({ 
-        success: true, 
-        message: 'Category deleted successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error deleting category', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Category deleted successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error deleting category', 500, getErrorMessage(error));
     }
   };
 
@@ -1054,16 +738,9 @@ export class PermissionsController {
     try {
       this.service.clearAllCaches();
 
-      res.json({ 
-        success: true, 
-        message: 'Permission caches cleared successfully' 
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error clearing caches', 
-        error: error.message 
-      });
+      ResponseUtil.success(res, 'Permission caches cleared successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error clearing caches', 500, getErrorMessage(error));
     }
   };
 }

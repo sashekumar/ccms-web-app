@@ -11,7 +11,8 @@ import {
   AssignRoleDto,
   Category,
   CreateCategoryDto,
-  UpdateCategoryDto
+  UpdateCategoryDto,
+  ModuleActionWithDetails
 } from './permissions.types';
 
 export class PermissionsRepository {
@@ -189,7 +190,9 @@ export class PermissionsRepository {
           AND (expires_at IS NULL OR expires_at > GETDATE())
       `);
 
-    return result.recordset.map((r: any) => r.role_id);
+    return result.recordset.map((r: { role_id: number }) => r.role_id);
+
+    return result.recordset;
   }
 
   /**
@@ -197,14 +200,14 @@ export class PermissionsRepository {
    */
   public async getAllRoles(): Promise<Role[]> {
     const pool = await connectionManager.getPool();
-    const result = await pool.request().query(`
-      SELECT 
-        role_id, role_name, role_code, description, is_system_role, is_active,
-        created_at, updated_at, created_by, updated_by
-      FROM ${DB_TABLES.ROLES}
-      WHERE is_active = 1
-      ORDER BY role_id
-    `);
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          role_id, role_name, role_code, description, is_system_role, is_active,
+          created_at, updated_at, created_by, updated_by
+        FROM ${DB_TABLES.ROLES}
+        ORDER BY role_name
+      `);
 
     return result.recordset;
   }
@@ -632,7 +635,7 @@ export class PermissionsRepository {
   /**
    * Get all module-actions
    */
-  public async getAllModuleActions(): Promise<any[]> {
+  public async getAllModuleActions(): Promise<ModuleActionWithDetails[]> {
     const pool = await connectionManager.getPool();
     const result = await pool.request()
       .query(`

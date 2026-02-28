@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto, UserFilters } from './users.types';
+import { getErrorMessage } from '../../core/utils/error.util';
+import { ResponseUtil } from '../../core/utils/response.util';
 
 export class UsersController {
   private service: UsersService;
@@ -29,16 +31,9 @@ export class UsersController {
 
       const result = await this.service.getUsers(filters);
 
-      res.json({
-        success: true,
-        data: result
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching users',
-        error: error.message
-      });
+      ResponseUtil.success(res, result);
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching users', 500, getErrorMessage(error));
     }
   };
 
@@ -51,33 +46,20 @@ export class UsersController {
       const userId = parseInt(req.params.userId);
 
       if (isNaN(userId)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid user ID'
-        });
+        ResponseUtil.error(res, 'Invalid user ID', 400);
         return;
       }
 
       const user = await this.service.getUserById(userId);
 
       if (!user) {
-        res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
+        ResponseUtil.notFound(res, 'User not found');
         return;
       }
 
-      res.json({
-        success: true,
-        data: user
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching user',
-        error: error.message
-      });
+      ResponseUtil.success(res, user);
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching user', 500, getErrorMessage(error));
     }
   };
 
@@ -92,42 +74,27 @@ export class UsersController {
       const dto: CreateUserDto = req.body;
 
       if (!dto.username || !dto.password || !dto.full_name) {
-        res.status(400).json({
-          success: false,
-          message: 'username, password, and full_name are required'
-        });
+        ResponseUtil.error(res, 'username, password, and full_name are required', 400);
         return;
       }
 
       const userId = await this.service.createUser(dto, createdBy);
 
-      res.status(201).json({
-        success: true,
-        message: 'User created successfully',
-        data: { userId }
-      });
-    } catch (error: any) {
-      if (error.message === 'Username already exists') {
-        res.status(409).json({
-          success: false,
-          message: error.message
-        });
+      ResponseUtil.success(res, { userId }, 'User created successfully', 201);
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      
+      if (errorMessage === 'Username already exists') {
+        ResponseUtil.conflict(res, errorMessage);
         return;
       }
 
-      if (error.message.includes('must be')) {
-        res.status(400).json({
-          success: false,
-          message: error.message
-        });
+      if (errorMessage.includes('must be')) {
+        ResponseUtil.error(res, errorMessage, 400);
         return;
       }
 
-      res.status(500).json({
-        success: false,
-        message: 'Error creating user',
-        error: error.message
-      });
+      ResponseUtil.error(res, 'Error creating user', 500, errorMessage);
     }
   };
 
@@ -143,41 +110,27 @@ export class UsersController {
       const dto: UpdateUserDto = req.body;
 
       if (isNaN(userId)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid user ID'
-        });
+        ResponseUtil.error(res, 'Invalid user ID', 400);
         return;
       }
 
       await this.service.updateUser(userId, dto, updatedBy);
 
-      res.json({
-        success: true,
-        message: 'User updated successfully'
-      });
-    } catch (error: any) {
-      if (error.message === 'User not found') {
-        res.status(404).json({
-          success: false,
-          message: error.message
-        });
+      ResponseUtil.success(res, null, 'User updated successfully');
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      
+      if (errorMessage === 'User not found') {
+        ResponseUtil.notFound(res, errorMessage);
         return;
       }
 
-      if (error.message.includes('must be')) {
-        res.status(400).json({
-          success: false,
-          message: error.message
-        });
+      if (errorMessage.includes('must be')) {
+        ResponseUtil.error(res, errorMessage, 400);
         return;
       }
 
-      res.status(500).json({
-        success: false,
-        message: 'Error updating user',
-        error: error.message
-      });
+      ResponseUtil.error(res, 'Error updating user', 500, errorMessage);
     }
   };
 
@@ -192,42 +145,28 @@ export class UsersController {
       const userId = parseInt(req.params.userId);
 
       if (isNaN(userId)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid user ID'
-        });
+        ResponseUtil.error(res, 'Invalid user ID', 400);
         return;
       }
 
       // Prevent self-deletion
       if (userId === currentUserId) {
-        res.status(400).json({
-          success: false,
-          message: 'Cannot delete your own account'
-        });
+        ResponseUtil.error(res, 'Cannot delete your own account', 400);
         return;
       }
 
       await this.service.deleteUser(userId, deletedBy);
 
-      res.json({
-        success: true,
-        message: 'User deleted successfully'
-      });
-    } catch (error: any) {
-      if (error.message === 'User not found') {
-        res.status(404).json({
-          success: false,
-          message: error.message
-        });
+      ResponseUtil.success(res, null, 'User deleted successfully');
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      
+      if (errorMessage === 'User not found') {
+        ResponseUtil.notFound(res, errorMessage);
         return;
       }
 
-      res.status(500).json({
-        success: false,
-        message: 'Error deleting user',
-        error: error.message
-      });
+      ResponseUtil.error(res, 'Error deleting user', 500, errorMessage);
     }
   };
 
@@ -242,16 +181,9 @@ export class UsersController {
 
       const isAvailable = await this.service.checkUsernameAvailability(username, excludeUserId);
 
-      res.json({
-        success: true,
-        data: { available: isAvailable }
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Error checking username',
-        error: error.message
-      });
+      ResponseUtil.success(res, { available: isAvailable });
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error checking username', 500, getErrorMessage(error));
     }
   };
 }

@@ -17,7 +17,7 @@ export class ApiService {
   /**
    * GET request
    */
-  get<T>(endpoint: string, params?: any, headers?: any): Observable<T> {
+  get<T>(endpoint: string, params?: Record<string, string | number | boolean>, headers?: Record<string, string>): Observable<T> {
     let httpParams = new HttpParams();
     
     if (params) {
@@ -45,7 +45,7 @@ export class ApiService {
   /**
    * POST request
    */
-  post<T>(endpoint: string, body: any, headers?: any): Observable<T> {
+  post<T>(endpoint: string, body: unknown, headers?: Record<string, string>): Observable<T> {
     if (headers) {
       return this.http.post<T>(`${this.apiUrl}/${endpoint}`, body, {
         headers: new HttpHeaders(headers),
@@ -61,7 +61,7 @@ export class ApiService {
   /**
    * PUT request
    */
-  put<T>(endpoint: string, body: any): Observable<T> {
+  put<T>(endpoint: string, body: unknown): Observable<T> {
     return this.http.put<T>(`${this.apiUrl}/${endpoint}`, body, {
       withCredentials: true
     });
@@ -79,7 +79,7 @@ export class ApiService {
   /**
    * PATCH request
    */
-  patch<T>(endpoint: string, body: any): Observable<T> {
+  patch<T>(endpoint: string, body: unknown): Observable<T> {
     return this.http.patch<T>(`${this.apiUrl}/${endpoint}`, body, {
       withCredentials: true
     });

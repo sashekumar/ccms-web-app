@@ -58,6 +58,13 @@ export interface ModuleAction {
   created_at: Date;
 }
 
+export interface ModuleActionWithDetails extends ModuleAction {
+  module_name: string;
+  module_code: string;
+  action_name: string;
+  action_code: string;
+}
+
 export interface RolePermission {
   permission_id: number;
   role_id: number;

@@ -106,7 +106,7 @@ export const APP_ROUTES = {
  * // Returns: 'claims/123/edit/approve'
  * ```
  */
-export function buildRoute(template: string, params: Record<string, any>): string {
+export function buildRoute(template: string, params: Record<string, string | number | boolean>): string {
   return template.replace(/:(\w+)/g, (_, key) => {
     const value = params[key];
     if (value === undefined || value === null) {

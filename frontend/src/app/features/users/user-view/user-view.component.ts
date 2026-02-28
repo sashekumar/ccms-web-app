@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
-import { UserDetail } from '../../../shared/models/user.model';
+import { UserDetail, UserDetailRole } from '../../../shared/models/user.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 
 @Component({
@@ -113,7 +113,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
           </div>
           <div *ngIf="userDetail.roles.length > 0" class="space-y-3">
             <div
-              *ngFor="let role of userDetail.roles"
+              *ngFor="let role of userDetail.roles; trackBy: trackByRoleId"
               class="flex items-center justify-between rounded-lg border border-gray-200 p-4"
             >
               <div>
@@ -231,5 +231,13 @@ export class UserViewComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/admin/users']);
+  }
+
+  /**
+   * TrackBy function for user roles list
+   * Improves ngFor performance by tracking items by unique identifier
+   */
+  trackByRoleId(index: number, role: UserDetailRole): number {
+    return role.role_id;
   }
 }

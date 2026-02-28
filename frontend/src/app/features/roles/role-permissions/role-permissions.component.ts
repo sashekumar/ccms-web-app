@@ -96,7 +96,7 @@ interface PermissionMatrixRow {
                   Module
                 </th>
                 <th
-                  *ngFor="let action of actions"
+                  *ngFor="let action of actions; trackBy: trackByActionId"
                   class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500"
                 >
                   {{ action.action_name }}
@@ -107,7 +107,7 @@ interface PermissionMatrixRow {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let row of permissionMatrix" class="hover:bg-gray-50">
+              <tr *ngFor="let row of permissionMatrix; trackBy: trackByModuleId" class="hover:bg-gray-50">
                 <!-- Module Name -->
                 <td class="sticky left-0 z-10 bg-white whitespace-nowrap px-6 py-4">
                   <div class="text-sm font-medium text-gray-900">{{ row.module.module_name }}</div>
@@ -115,7 +115,7 @@ interface PermissionMatrixRow {
                 </td>
 
                 <!-- Action Checkboxes -->
-                <td *ngFor="let actionCell of row.actions" class="px-4 py-4 text-center">
+                <td *ngFor="let actionCell of row.actions; trackBy: trackByIndex" class="px-4 py-4 text-center">
                   <input
                     *ngIf="actionCell.module_action_id"
                     type="checkbox"
@@ -496,5 +496,21 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
       if (!confirmed) return;
     }
     this.router.navigate(['/admin/roles']);
+  }
+
+  /**
+   * TrackBy functions for permission matrix
+   * Improves ngFor performance by tracking items by unique identifier
+   */
+  trackByActionId(index: number, action: Action): number {
+    return action.action_id;
+  }
+
+  trackByModuleId(index: number, row: PermissionMatrixRow): number {
+    return row.module.module_id;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 }

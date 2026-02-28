@@ -104,7 +104,7 @@ import { Action } from '../../shared/models/permission.model';
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let action of filteredActions" class="hover:bg-gray-50">
+              <tr *ngFor="let action of filteredActions; trackBy: trackByActionId" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#1e3c72] to-[#2a5298]">
@@ -473,5 +473,13 @@ export class ActionsComponent implements OnInit, OnDestroy {
       this.successMessage = '';
       this.errorMessage = '';
     }, 5000);
+  }
+
+  /**
+   * TrackBy function for actions list
+   * Improves ngFor performance by tracking items by unique identifier
+   */
+  trackByActionId(index: number, action: Action): number {
+    return action.action_id;
   }
 }

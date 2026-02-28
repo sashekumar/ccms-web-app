@@ -1,12 +1,15 @@
 import { UsersRepository } from './users.repository';
-import { CreateUserDto, UpdateUserDto, UserFilters, PaginatedUsers, UserDetailResponse } from './users.types';
+import { CreateUserDto, UpdateUserDto, UserFilters, PaginatedUsers, UserDetailResponse, User } from './users.types';
 import { CryptoUtil } from '../../core/utils/crypto.util';
+import { BaseService } from '../../core/base/base.service';
 
-export class UsersService {
-  private repository: UsersRepository;
+export class UsersService extends BaseService<User> {
+  protected repository: UsersRepository;
 
   constructor() {
-    this.repository = new UsersRepository();
+    const repository = new UsersRepository();
+    super(repository);
+    this.repository = repository;
   }
 
   /**
@@ -46,16 +49,16 @@ export class UsersService {
     // Hash password
     const passwordHash = await CryptoUtil.hashPassword(dto.password);
 
-    // Create user
-    const userId = await this.repository.createUser(
-      dto.username,
-      passwordHash,
-      dto.full_name,
-      dto.is_active !== undefined ? dto.is_active : true,
-      createdBy
-    );
+    // Create user using base repository
+    const userData: Partial<User> = {
+      username: dto.username,
+      password_hash: passwordHash,
+      full_name: dto.full_name,
+      is_active: dto.is_active !== undefined ? dto.is_active : true
+    };
 
-    return userId;
+    const user = await this.repository.create(userData);
+    return user.user_id;
   }
 
   /**
@@ -68,25 +71,28 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    let passwordHash: string | undefined;
+    const updateData: Partial<User> = {};
+
+    if (dto.full_name !== undefined) {
+      updateData.full_name = dto.full_name;
+    }
+
+    if (dto.is_active !== undefined) {
+      updateData.is_active = dto.is_active;
+    }
+
     if (dto.password) {
       if (dto.password.length < 8) {
         throw new Error('Password must be at least 8 characters');
       }
-      passwordHash = await CryptoUtil.hashPassword(dto.password);
+      updateData.password_hash = await CryptoUtil.hashPassword(dto.password);
     }
 
-    await this.repository.updateUser(
-      userId,
-      dto.full_name,
-      dto.is_active,
-      passwordHash,
-      updatedBy
-    );
+    await this.repository.update(userId, updateData);
   }
 
   /**
-   * Delete user (soft delete)
+   * Delete user (soft delete by setting is_active to false)
    */
   public async deleteUser(userId: number, deletedBy: string): Promise<void> {
     // Check if user exists
@@ -99,7 +105,7 @@ export class UsersService {
     // This check should be done in the controller based on logged-in user
     // But added here as additional safeguard
 
-    await this.repository.deleteUser(userId, deletedBy);
+    await this.repository.update(userId, { is_active: false });
   }
 
   /**

@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { ApiService } from './api.service';
-import { API_ENDPOINTS } from '../constants';
+import { BaseApiService, ApiResponse } from './base-api.service';
 import {
   User,
   UserDetail,
@@ -12,27 +12,26 @@ import {
   PaginatedUsers
 } from '../../shared/models/user.model';
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
-
 /**
  * User Service - Handles user management operations
+ * Extends BaseApiService for standard CRUD operations
  */
 @Injectable({
   providedIn: 'root'
 })
-export class UserService {
-  constructor(private api: ApiService) {}
+export class UserService extends BaseApiService<UserDetail> {
+  constructor(http: HttpClient) {
+    // Pass base endpoint path without the '/list' or '/create' suffix
+    // environment.apiUrl already includes '/api'
+    super(http, '/users');
+  }
 
   /**
    * Get paginated list of users with filters
    */
   getUsers(filters: UserFilters = {}): Observable<PaginatedUsers> {
-    return this.api.post<ApiResponse<PaginatedUsers>>(
-      API_ENDPOINTS.USERS.LIST,
+    return this.http.post<ApiResponse<PaginatedUsers>>(
+      `${this.endpoint}/list`,
       filters
     ).pipe(
       map(response => response.data),
@@ -44,26 +43,20 @@ export class UserService {
   }
 
   /**
-   * Get user by ID
+   * Get user by ID (inherited from BaseApiService as getById)
+   * Alias method for backward compatibility
    */
   getUserById(userId: number): Observable<UserDetail> {
-    return this.api.get<ApiResponse<UserDetail>>(
-      API_ENDPOINTS.USERS.getById(userId)
-    ).pipe(
-      map(response => response.data),
-      catchError(error => {
-        console.error('Error fetching user:', error);
-        throw error;
-      })
-    );
+    return this.getById(userId);
   }
 
   /**
    * Create new user
+   * Uses BaseApiService.create() and extracts userId from response
    */
   createUser(dto: CreateUserDto): Observable<number> {
-    return this.api.post<ApiResponse<{ userId: number }>>(
-      API_ENDPOINTS.USERS.CREATE,
+    return this.http.post<ApiResponse<{ userId: number }>>(
+      this.endpoint,
       dto
     ).pipe(
       map(response => response.data.userId),
@@ -76,41 +69,32 @@ export class UserService {
 
   /**
    * Update user
+   * Uses custom DTO that doesn't match entity type
    */
   updateUser(userId: number, dto: UpdateUserDto): Observable<void> {
-    return this.api.put<ApiResponse<void>>(
-      API_ENDPOINTS.USERS.update(userId),
+    return this.http.put<ApiResponse<void>>(
+      `${this.endpoint}/${userId}`,
       dto
     ).pipe(
       map(() => undefined),
-      catchError(error => {
-        console.error('Error updating user:', error);
-        throw error;
-      })
+      catchError(this.handleError)
     );
   }
 
   /**
-   * Delete user (soft delete)
+   * Delete user (inherited from BaseApiService as delete)
+   * Alias method for backward compatibility
    */
   deleteUser(userId: number): Observable<void> {
-    return this.api.delete<ApiResponse<void>>(
-      API_ENDPOINTS.USERS.delete(userId)
-    ).pipe(
-      map(() => undefined),
-      catchError(error => {
-        console.error('Error deleting user:', error);
-        throw error;
-      })
-    );
+    return this.delete(userId);
   }
 
   /**
    * Check username availability
    */
   checkUsernameAvailability(username: string, excludeUserId?: number): Observable<boolean> {
-    return this.api.post<ApiResponse<{ available: boolean }>>(
-      API_ENDPOINTS.USERS.CHECK_USERNAME,
+    return this.http.post<ApiResponse<{ available: boolean }>>(
+      `${this.endpoint}/check-username`,
       { username, excludeUserId }
     ).pipe(
       map(response => response.data.available),

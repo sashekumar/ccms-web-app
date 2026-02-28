@@ -54,7 +54,7 @@ import { Module, Category } from '../../shared/models/permission.model';
             >
               <option [ngValue]="null">All Categories</option>
               <option [ngValue]="0">Uncategorized</option>
-              <option *ngFor="let category of categories" [ngValue]="category.category_id">
+              <option *ngFor="let category of categories; trackBy: trackByCategoryId" [ngValue]="category.category_id">
                 {{ category.category_name }}
               </option>
             </select>
@@ -124,7 +124,7 @@ import { Module, Category } from '../../shared/models/permission.model';
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let module of filteredModules" class="hover:bg-gray-50">
+              <tr *ngFor="let module of filteredModules; trackBy: trackByModuleId" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm font-medium text-gray-900">{{ module.module_name }}</div>
                   <div *ngIf="module.description" class="text-sm text-gray-500">{{ module.description }}</div>
@@ -229,7 +229,7 @@ import { Module, Category } from '../../shared/models/permission.model';
                   <select [(ngModel)]="formData.categoryId" name="categoryId"
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
                     <option [ngValue]="null">-- No Category (Uncategorized) --</option>
-                    <option *ngFor="let category of categories" [ngValue]="category.category_id">
+                    <option *ngFor="let category of categories; trackBy: trackByCategoryId" [ngValue]="category.category_id">
                       {{ category.category_name }}
                     </option>
                   </select>
@@ -547,5 +547,16 @@ export class ModulesComponent implements OnInit, OnDestroy {
       this.successMessage = '';
       this.errorMessage = '';
     }, 5000);
+  }
+
+  /**
+   * TrackBy functions for performance optimization
+   */
+  trackByCategoryId(index: number, category: Category): number {
+    return category.category_id;
+  }
+
+  trackByModuleId(index: number, module: Module): number {
+    return module.module_id;
   }
 }

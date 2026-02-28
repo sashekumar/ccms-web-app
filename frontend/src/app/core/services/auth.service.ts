@@ -48,7 +48,6 @@ export class AuthService {
           if (response.success && response.data) {
             this.currentUserSubject.next(response.data);
             sessionStorage.setItem('currentUser', JSON.stringify(response.data));
-            console.log('✅ User authenticated on app init');
             
             // Load permissions
             this.permissionService.loadUserPermissions().subscribe({
@@ -56,7 +55,6 @@ export class AuthService {
                 const totalModules = (permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0) +
                                     (permissions.uncategorized_modules?.length || 0) +
                                     (permissions.modules?.length || 0);
-                console.log('✅ Permissions loaded on app init:', totalModules, 'modules');
                 resolve();
               },
               error: () => {
@@ -65,13 +63,11 @@ export class AuthService {
               }
             });
           } else {
-            console.log('⚠️ No auth data from /auth/me');
             resolve();
           }
         },
         error: () => {
           // No valid session - user will be redirected to login by guard
-          console.log('⚠️ No active session');
           resolve();
         }
       });
@@ -108,14 +104,11 @@ export class AuthService {
           sessionStorage.setItem('currentUser', JSON.stringify(response.data));
           
           // Wait for user permissions to load before completing login
-          console.log('🔐 Login successful, now loading permissions...');
           return this.permissionService.loadUserPermissions().pipe(
             tap((permissions) => {
-              console.log('✅ LOGIN COMPLETE: Permissions loaded successfully');
               const totalModules = (permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0) +
                                   (permissions.uncategorized_modules?.length || 0) +
                                   (permissions.modules?.length || 0);
-              console.log(`📊 User has ${totalModules} permission modules`);
             }),
             switchMap(() => of(response)),
             catchError(error => {
@@ -160,7 +153,6 @@ export class AuthService {
     return this.api.post<ApiResponse<null>>(API_ENDPOINTS.AUTH.REFRESH, {}).pipe(
       tap((response) => {
         if (response.success) {
-          console.log('✅ Token refreshed successfully');
           this.isRefreshing = false;
           this.refreshTokenSubject.next(true);
         }

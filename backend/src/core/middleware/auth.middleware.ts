@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../auth/jwt.service';
 import { TokenPayload } from '../../features/auth/auth.types';
+import { ResponseUtil } from '../utils/response.util';
 
 declare global {
   namespace Express {
@@ -23,11 +24,7 @@ export const authMiddleware = (
     const token = req.cookies.accessToken;
 
     if (!token) {
-      res.status(401).json({
-        success: false,
-        message: 'Authentication required',
-        error: 'NO_TOKEN'
-      });
+      ResponseUtil.error(res, 'Authentication required', 401, 'NO_TOKEN');
       return;
     }
 
@@ -38,10 +35,6 @@ export const authMiddleware = (
     req.user = payload;
     next();
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: 'Invalid or expired token',
-      error: 'INVALID_TOKEN'
-    });
+    ResponseUtil.error(res, 'Invalid or expired token', 401, 'INVALID_TOKEN');
   }
 };

@@ -93,7 +93,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 bg-white">
-            <tr *ngFor="let role of filteredRoles" class="hover:bg-gray-50">
+            <tr *ngFor="let role of filteredRoles; trackBy: trackByRoleId" class="hover:bg-gray-50">
               <!-- Role Name -->
               <td class="whitespace-nowrap px-6 py-4">
                 <div class="text-sm font-medium text-gray-900">{{ role.role_name }}</div>
@@ -386,5 +386,13 @@ export class RoleListComponent implements OnInit, OnDestroy {
           }
         }
       });
+  }
+
+  /**
+   * TrackBy function for roles list
+   * Improves ngFor performance by tracking items by unique identifier
+   */
+  trackByRoleId(index: number, role: Role): number {
+    return role.role_id;
   }
 }
