@@ -8,7 +8,7 @@ import { Toast, ToastService } from '../../../../core/services/toast.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 min-w-[320px] max-w-md">
+    <div class="fixed top-4 right-4 z-[10000] flex flex-col gap-2 min-w-[320px] max-w-md">
       <div
         *ngFor="let toast of toasts"
         [ngClass]="getToastClass(toast.type)"
