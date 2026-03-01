@@ -1,5 +1,6 @@
 import mssql from 'mssql';
 import { databaseConfig } from '../../config/database.config';
+import { logger } from '../utils/logger.util';
 
 export class ConnectionManager {
   private static instance: ConnectionManager;
@@ -30,14 +31,14 @@ export class ConnectionManager {
 
   private async connect(): Promise<mssql.ConnectionPool> {
     try {
-      console.log('Connecting to database...');
+      logger.info('Connecting to database...');
       this.pool = await new mssql.ConnectionPool(databaseConfig).connect();
-      console.log('Database connected successfully');
+      logger.info('Database connected successfully');
       this.connecting = null;
       return this.pool;
     } catch (error) {
       this.connecting = null;
-      console.error('Database connection failed:', error);
+      logger.error('Database connection failed:', error);
       throw error;
     }
   }

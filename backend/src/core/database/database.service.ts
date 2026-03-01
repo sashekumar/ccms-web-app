@@ -1,5 +1,6 @@
 import mssql from 'mssql';
 import { connectionManager } from './connection-manager';
+import { logger } from '../utils/logger.util';
 
 export interface QueryResult<T = any> {
   recordset: T[];
@@ -23,7 +24,7 @@ export class DatabaseService {
 
       return await request.query(query);
     } catch (error) {
-      console.error('Query execution error:', error);
+      logger.error('Query execution error:', error);
       throw error;
     }
   }
