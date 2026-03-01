@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { User, UserRole } from '../../../shared/models/user.model';
 import { SidebarService } from '../../../core/services/sidebar.service';
+import { UserPermissionsResponse } from '../../../shared/models/permission.model';
 
 /**
  * Header component - Top navbar matching CCMS mockup design with sidebar toggle and role switcher
@@ -41,6 +42,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
         // Load or set active role
         if (user && user.roles && user.roles.length > 0) {
           this.loadActiveRole();
+        } else {
+          // Clear active role if user is null
+          this.activeRole = null;
+          this.activeRoleId = null;
         }
       });
   }
@@ -55,13 +60,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
    */
   private loadActiveRole(): void {
     if (!this.currentUser || !this.currentUser.roles || this.currentUser.roles.length === 0) {
+      this.activeRole = null;
+      this.activeRoleId = null;
       return;
     }
 
     const savedRoleId = sessionStorage.getItem('activeRoleId');
     
     if (savedRoleId) {
-      const roleId = parseInt(savedRoleId);
+      const roleId = parseInt(savedRoleId, 10);
       const role = this.currentUser.roles.find(r => r.role_id === roleId);
       if (role) {
         this.activeRole = role;
@@ -89,20 +96,77 @@ export class HeaderComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Save previous state for potential revert
+    const previousRole = this.activeRole;
+    const previousRoleId = this.activeRole?.role_id;
+    
+    // Optimistically update UI first (before API call)
     this.activeRole = role;
+    this.activeRoleId = role.role_id;
     sessionStorage.setItem('activeRoleId', role.role_id.toString());
 
     // Reload permissions for the new role
     this.permissionService.loadUserPermissions().subscribe({
-      next: () => {
-        console.log(`✅ Switched to role: ${role.role_name}`);
-        // Reload the current page to refresh permissions
-        window.location.reload();
+      next: (permissions) => {
+        // Find first accessible route from new permissions
+        const firstRoute = this.getFirstAccessibleRoute(permissions);
+        const targetRoute = firstRoute || '/dashboard';
+        
+        // Navigate to first accessible module
+        this.router.navigate([targetRoute]).catch(() => {
+          // Try dashboard as fallback if navigation fails
+          this.router.navigate(['/dashboard']);
+        });
       },
       error: (err) => {
-        console.error('❌ Error reloading permissions:', err);
+        // Revert to previous role on error
+        this.activeRole = previousRole;
+        this.activeRoleId = previousRoleId ?? null;
+        if (previousRoleId) {
+          sessionStorage.setItem('activeRoleId', previousRoleId.toString());
+        }
+        
+        // Only show alert for non-auth errors (401 handled by interceptor)
+        if (err?.status !== 401) {
+          console.error('Error switching role:', err);
+        }
       }
     });
+  }
+
+  /**
+   * Get first accessible route from user permissions
+   */
+  private getFirstAccessibleRoute(permissions: UserPermissionsResponse): string | null {
+    // Try categorized modules first (sorted by display_order)
+    if (permissions.categories && permissions.categories.length > 0) {
+      for (const category of permissions.categories) {
+        if (category.modules && category.modules.length > 0) {
+          const firstModule = category.modules[0];
+          if (firstModule.module_route) {
+            return firstModule.module_route;
+          }
+        }
+      }
+    }
+
+    // Try uncategorized modules
+    if (permissions.uncategorized_modules && permissions.uncategorized_modules.length > 0) {
+      const firstModule = permissions.uncategorized_modules[0];
+      if (firstModule.module_route) {
+        return firstModule.module_route;
+      }
+    }
+
+    // Fallback to old structure
+    if (permissions.modules && permissions.modules.length > 0) {
+      const firstModule = permissions.modules[0];
+      if ((firstModule as any).module_route) {
+        return (firstModule as any).module_route;
+      }
+    }
+
+    return null;
   }
 
   /**

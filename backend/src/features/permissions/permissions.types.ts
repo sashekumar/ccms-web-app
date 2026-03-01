@@ -10,6 +10,8 @@ export interface Category {
   is_active: boolean;
   created_at: Date;
   updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface Role {
@@ -37,6 +39,8 @@ export interface Module {
   is_active: boolean;
   created_at: Date;
   updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface Action {
@@ -47,6 +51,8 @@ export interface Action {
   is_active: boolean;
   created_at: Date;
   updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface ModuleAction {
@@ -56,6 +62,9 @@ export interface ModuleAction {
   action_label: string | null;
   is_active: boolean;
   created_at: Date;
+  updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface ModuleActionWithDetails extends ModuleAction {

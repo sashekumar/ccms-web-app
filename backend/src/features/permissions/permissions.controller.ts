@@ -49,12 +49,17 @@ export class PermissionsController {
   /**
    * Get all permissions for current user
    * GET /api/permissions/user
+   * Optional header: X-Active-Role-Id for role-specific permissions
    */
   public getUserPermissions = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = (req as any).user.userId;
+      
+      // Check for active role ID in header (for role switching)
+      const activeRoleIdHeader = req.headers['x-active-role-id'];
+      const activeRoleId = activeRoleIdHeader ? parseInt(activeRoleIdHeader as string, 10) : undefined;
 
-      const permissions = await this.service.getUserPermissions(userId);
+      const permissions = await this.service.getUserPermissions(userId, activeRoleId);
 
       ResponseUtil.success(res, permissions, 'User permissions retrieved');
     } catch (error: unknown) {
@@ -649,6 +654,7 @@ export class PermissionsController {
    */
   public createCategory = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user.userId.toString();
       const { category_name, category_code, description, icon, display_order } = req.body;
 
       // Validation
@@ -663,7 +669,7 @@ export class PermissionsController {
         description,
         icon,
         display_order
-      });
+      }, createdBy);
 
       ResponseUtil.success(res, { category_id: categoryId }, 'Category created successfully', 201);
     } catch (error: unknown) {
@@ -678,6 +684,7 @@ export class PermissionsController {
    */
   public updateCategory = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user.userId.toString();
       const categoryId = parseInt(req.params.categoryId);
 
       if (isNaN(categoryId)) {
@@ -701,7 +708,7 @@ export class PermissionsController {
         icon,
         display_order,
         is_active
-      });
+      }, updatedBy);
 
       ResponseUtil.success(res, 'Category updated successfully');
     } catch (error: unknown) {

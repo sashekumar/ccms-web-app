@@ -70,7 +70,9 @@ CREATE TABLE ccms_acl_categories (
     display_order INT NOT NULL DEFAULT 0,              -- Menu ordering (lower = appears first)
     is_active BIT NOT NULL DEFAULT 1,                  -- 0=Hidden from menu
     created_at DATETIME2 NOT NULL DEFAULT GETDATE(),   -- Record creation timestamp
-    updated_at DATETIME2 NULL                          -- Last modification timestamp
+    updated_at DATETIME2 NULL,                         -- Last modification timestamp
+    created_by VARCHAR(50) NULL,                       -- Who created this category (user_id as string)
+    updated_by VARCHAR(50) NULL                        -- Who last modified this category (user_id as string)
 );
 
 CREATE NONCLUSTERED INDEX idx_ccms_acl_categories_code ON ccms_acl_categories(category_code);
@@ -95,6 +97,8 @@ CREATE TABLE ccms_acl_modules (
     is_active BIT NOT NULL DEFAULT 1,                  -- 0=Hidden from menu and permission checks
     created_at DATETIME2 NOT NULL DEFAULT GETDATE(),   -- Record creation timestamp
     updated_at DATETIME2 NULL,                         -- Last modification timestamp
+    created_by VARCHAR(50) NULL,                       -- Who created this module (user_id as string)
+    updated_by VARCHAR(50) NULL,                       -- Who last modified this module (user_id as string)
     
     CONSTRAINT fk_ccms_acl_modules_category FOREIGN KEY (category_id) 
         REFERENCES ccms_acl_categories(category_id)
@@ -117,7 +121,9 @@ CREATE TABLE ccms_acl_actions (
     description NVARCHAR(500) NULL,                    -- Action purpose
     is_active BIT NOT NULL DEFAULT 1,                  -- 0=Action unavailable system-wide
     created_at DATETIME2 NOT NULL DEFAULT GETDATE(),   -- Record creation timestamp
-    updated_at DATETIME2 NULL                          -- Last modification timestamp
+    updated_at DATETIME2 NULL,                         -- Last modification timestamp
+    created_by VARCHAR(50) NULL,                       -- Who created this action (user_id as string)
+    updated_by VARCHAR(50) NULL                        -- Who last modified this action (user_id as string)
 );
 
 CREATE NONCLUSTERED INDEX idx_ccms_acl_actions_code ON ccms_acl_actions(action_code);
@@ -136,6 +142,9 @@ CREATE TABLE ccms_acl_module_actions (
     action_label NVARCHAR(200) NULL,                   -- Custom display label (e.g., 'Create New User')
     is_active BIT NOT NULL DEFAULT 1,                  -- 0=Permission unavailable for assignment
     created_at DATETIME2 NOT NULL DEFAULT GETDATE(),   -- Record creation timestamp
+    updated_at DATETIME2 NULL,                         -- Last modification timestamp
+    created_by VARCHAR(50) NULL,                       -- Who created this module-action link (user_id as string)
+    updated_by VARCHAR(50) NULL,                       -- Who last modified this module-action link (user_id as string)
     
     CONSTRAINT fk_ccms_acl_module_actions_module FOREIGN KEY (module_id) 
         REFERENCES ccms_acl_modules(module_id) ON DELETE CASCADE,

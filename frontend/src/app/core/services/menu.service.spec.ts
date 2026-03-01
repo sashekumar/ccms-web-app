@@ -413,5 +413,90 @@ describe('MenuService', () => {
         expect(testModule?.route).toBe('/test-module');
       });
     });
+
+    it('should skip DETAIL_VIEW_MODULES in uncategorized modules', () => {
+      const mockDetailViewModule: ModulePermissions = {
+        module_code: 'ROLE_PERMISSION_MANAGEMENT',
+        module_name: 'Role Permissions',
+        module_route: '/admin/roles/permissions',
+        icon: 'shield-alt',
+        actions: [{ action_code: 'VIEW', action_name: 'View' }]
+      };
+
+      const mockRegularModule: ModulePermissions = {
+        module_code: 'USER_MANAGEMENT',
+        module_name: 'User Management',
+        module_route: '/admin/users',
+        icon: 'users',
+        actions: [{ action_code: 'VIEW', action_name: 'View' }]
+      };
+
+      permissionServiceMock.getUserPermissions.mockReturnValue(of({
+        categories: [],
+        uncategorized_modules: [mockDetailViewModule, mockRegularModule]
+      }));
+
+      service.loadMenuItems();
+
+      service.menuItems$.pipe(take(1)).subscribe(items => {
+        // Should only include the regular module, not the detail view module
+        const regularModule = items.find(item => item.moduleCode === 'USER_MANAGEMENT');
+        const detailModule = items.find(item => item.moduleCode === 'ROLE_PERMISSION_MANAGEMENT');
+        
+        expect(regularModule).toBeDefined();
+        expect(detailModule).toBeUndefined();
+      });
+    });
+
+    it('should skip DETAIL_VIEW_MODULES in old flat structure', () => {
+      const mockDetailViewModule: ModulePermissions = {
+        module_code: 'USER_ROLE_ASSIGNMENT',
+        module_name: 'User Role Assignment',
+        module_route: '/admin/users/roles',
+        icon: 'user-tag',
+        actions: [{ action_code: 'VIEW', action_name: 'View' }]
+      };
+
+      const mockRegularModule: ModulePermissions = {
+        module_code: 'CATEGORY_MANAGEMENT',
+        module_name: 'Category Management',
+        module_route: '/admin/categories',
+        icon: 'folder',
+        actions: [{ action_code: 'VIEW', action_name: 'View' }]
+      };
+
+      permissionServiceMock.getUserPermissions.mockReturnValue(of({
+        modules: [mockDetailViewModule, mockRegularModule]
+      } as any));
+
+      service.loadMenuItems();
+
+      service.menuItems$.pipe(take(1)).subscribe(items => {
+        // Should only include the regular module, not the detail view module
+        const regularModule = items.find(item => item.moduleCode === 'CATEGORY_MANAGEMENT');
+        const detailModule = items.find(item => item.moduleCode === 'USER_ROLE_ASSIGNMENT');
+        
+        expect(regularModule).toBeDefined();
+        expect(detailModule).toBeUndefined();
+      });
+    });
+
+    it('should handle empty permissions with neither categories nor modules', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      permissionServiceMock.getUserPermissions.mockReturnValue(of({} as any));
+
+      service.loadMenuItems();
+
+      service.menuItems$.pipe(take(1)).subscribe(items => {
+        // Should show warning and provide default dashboard + logout
+        expect(consoleWarnSpy).toHaveBeenCalledWith('⚠️ No permissions data available for menu building');
+        expect(items.length).toBe(2); // Dashboard + Logout
+        expect(items[0].id).toBe('dashboard');
+        expect(items[1].id).toBe('logout');
+      });
+
+      consoleWarnSpy.mockRestore();
+    });
   });
 });

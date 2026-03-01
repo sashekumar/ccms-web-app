@@ -163,14 +163,26 @@ export class AuthService {
         this.isRefreshing = false;
         this.refreshTokenSubject.next(false);
         
-        // Clear session and redirect to login
-        this.currentUserSubject.next(null);
-        sessionStorage.removeItem('currentUser');
-        this.permissionService.clearAllData();
-        this.router.navigate(['/auth/login']);
+        // Only clear session and redirect if we haven't already
+        if (this.currentUserSubject.value) {
+          this.currentUserSubject.next(null);
+          sessionStorage.removeItem('currentUser');
+          sessionStorage.removeItem('activeRoleId');
+          this.permissionService.clearAllData();
+          
+          // Small delay to avoid race conditions during error handling
+          setTimeout(() => {
+            if (!this.router.url.startsWith('/auth')) {
+              this.router.navigate(['/auth/login'], { 
+                queryParams: { reason: 'session_expired' } 
+              });
+            }
+          }, 100);
+        }
         
         return throwError(() => error);
-      })
+      }),
+      shareReplay(1) // Share the result with all subscribers
     );
   }
 

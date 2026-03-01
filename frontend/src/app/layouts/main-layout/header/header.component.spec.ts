@@ -142,6 +142,31 @@ describe('HeaderComponent', () => {
 
       sessionStorage.removeItem('activeRoleId');
     });
+
+    it('should clear active role when user is null', () => {
+      // First set user and role
+      currentUserSubject.next(mockUser);
+      fixture.detectChanges();
+      
+      expect(component.activeRole).toBeTruthy();
+      
+      // Simulate logout by setting user to null
+      currentUserSubject.next(null);
+      // Don't call fixture.detectChanges() here - the subscription handles it synchronously
+      
+      expect(component.activeRole).toBeNull();
+      expect(component.activeRoleId).toBeNull();
+    });
+
+    it('should default to first role if saved role not found in user roles', () => {
+      sessionStorage.setItem('activeRoleId', '999'); // Non-existent role
+      currentUserSubject.next(mockUser);
+      fixture.detectChanges();
+
+      // Should fallback to first role
+      expect(component.activeRole?.role_id).toBe(mockUser.roles[0].role_id);
+      expect(component.activeRoleId).toBe(mockUser.roles[0].role_id);
+    });
   });
 
   describe('Role Switching', () => {
@@ -157,7 +182,24 @@ describe('HeaderComponent', () => {
     });
 
     it('should switch role when onRoleChange is called', () => {
-      mockPermissionService.loadUserPermissions.mockReturnValue(of({}));
+      const mockPermissions = {
+        categories: [{
+          category_code: 'ADMIN',
+          category_name: 'Administration',
+          category_icon: 'users',
+          display_order: 1,
+          modules: [{
+            module_code: 'USER_MANAGEMENT',
+            module_name: 'User Management',
+            module_route: '/admin/users',
+            icon: 'users',
+            actions: [{ action_code: 'VIEW', action_name: 'View' }]
+          }]
+        }],
+        uncategorized_modules: []
+      };
+      mockPermissionService.loadUserPermissions.mockReturnValue(of(mockPermissions));
+      mockRouter.navigate.mockReturnValue(Promise.resolve(true));
 
       component.activeRoleId = 2;
       component.onRoleChange();
@@ -168,12 +210,110 @@ describe('HeaderComponent', () => {
     });
 
     it('should reload permissions after role switch', () => {
-      mockPermissionService.loadUserPermissions.mockReturnValue(of({}));
+      const mockPermissions = {
+        categories: [{
+          category_code: 'ADMIN',
+          category_name: 'Administration',
+          category_icon: 'users',
+          display_order: 1,
+          modules: [{
+            module_code: 'DASHBOARD',
+            module_name: 'Dashboard',
+            module_route: '/dashboard',
+            icon: 'dashboard',
+            actions: [{ action_code: 'VIEW', action_name: 'View' }]
+          }]
+        }],
+        uncategorized_modules: []
+      };
+      mockPermissionService.loadUserPermissions.mockReturnValue(of(mockPermissions));
+      mockRouter.navigate.mockReturnValue(Promise.resolve(true));
 
       component.activeRoleId = 2;
       component.onRoleChange();
 
       expect(mockPermissionService.loadUserPermissions).toHaveBeenCalled();
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
+    });
+
+    it('should revert role selection on permission load error', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const previousRole = component.activeRole;
+      const previousRoleId = component.activeRoleId;
+      
+      mockPermissionService.loadUserPermissions.mockReturnValue(
+        throwError(() => new Error('Permission error'))
+      );
+
+      component.activeRoleId = 2;
+      component.onRoleChange();
+
+      // Wait for async error handling
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Should revert to previous role
+      expect(component.activeRole).toBe(previousRole);
+      expect(component.activeRoleId).toBe(previousRoleId);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
+      sessionStorage.removeItem('activeRoleId');
+    });
+
+    it('should handle 401 error during role switch without alert', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const previousRole = component.activeRole;
+      const error = { status: 401, message: 'Unauthorized' };
+      
+      mockPermissionService.loadUserPermissions.mockReturnValue(
+        throwError(() => error)
+      );
+
+      component.activeRoleId = 2;
+      component.onRoleChange();
+
+      // Wait for async error handling
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Should revert to previous role
+      expect(component.activeRole).toBe(previousRole);
+      // Should not log error for 401 (handled by interceptor)
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
+      sessionStorage.removeItem('activeRoleId');
+    });
+
+    it('should handle navigation failure and fallback to dashboard', async () => {
+      const mockPermissions = {
+        categories: [{
+          category_code: 'ADMIN',
+          category_name: 'Administration',
+          category_icon: 'users',
+          display_order: 1,
+          modules: [{
+            module_code: 'USER_MANAGEMENT',
+            module_name: 'User Management',
+            module_route: '/admin/users',
+            icon: 'users',
+            actions: [{ action_code: 'VIEW', action_name: 'View' }]
+          }]
+        }],
+        uncategorized_modules: []
+      };
+      mockPermissionService.loadUserPermissions.mockReturnValue(of(mockPermissions));
+      mockRouter.navigate.mockReturnValueOnce(Promise.reject('Navigation failed'))
+                         .mockReturnValueOnce(Promise.resolve(true));
+
+      component.activeRoleId = 2;
+      component.onRoleChange();
+
+      // Wait for async operations
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/users']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
     });
 
     it('should not switch if role is same as current', () => {
@@ -183,24 +323,6 @@ describe('HeaderComponent', () => {
       component.onRoleChange();
 
       expect(mockPermissionService.loadUserPermissions).not.toHaveBeenCalled();
-    });
-
-    it('should handle permission reload error', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockPermissionService.loadUserPermissions.mockReturnValue(
-        throwError(() => new Error('Permission error'))
-      );
-
-      component.activeRoleId = 2;
-      component.onRoleChange();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Error reloading permissions'),
-        expect.any(Error)
-      );
-
-      consoleErrorSpy.mockRestore();
-      sessionStorage.removeItem('activeRoleId');
     });
 
     it('should not change role if activeRoleId is null', () => {
@@ -216,6 +338,66 @@ describe('HeaderComponent', () => {
       component.onRoleChange();
 
       expect(mockPermissionService.loadUserPermissions).not.toHaveBeenCalled();
+    });
+
+    it('should redirect to first accessible route on role switch', () => {
+      const mockPermissions = {
+        categories: [{
+          category_code: 'OPERATIONS',
+          category_name: 'Operations',
+          category_icon: 'briefcase',
+          display_order: 1,
+          modules: [{
+            module_code: 'CLAIMS',
+            module_name: 'Claims',
+            module_route: '/operations/claims',
+            icon: 'file',
+            actions: [{ action_code: 'VIEW', action_name: 'View' }]
+          }]
+        }],
+        uncategorized_modules: []
+      };
+      mockPermissionService.loadUserPermissions.mockReturnValue(of(mockPermissions));
+      mockRouter.navigate.mockReturnValue(Promise.resolve(true));
+
+      component.activeRoleId = 2;
+      component.onRoleChange();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/operations/claims']);
+    });
+
+    it('should fallback to dashboard if no routes found', () => {
+      const mockPermissions = {
+        categories: [],
+        uncategorized_modules: []
+      };
+      mockPermissionService.loadUserPermissions.mockReturnValue(of(mockPermissions));
+      mockRouter.navigate.mockReturnValue(Promise.resolve(true));
+
+      component.activeRoleId = 2;
+      component.onRoleChange();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
+    });
+
+    it('should use uncategorized modules if no categories exist', () => {
+      const mockPermissions = {
+        categories: [],
+        uncategorized_modules: [{
+          module_code: 'PROFILE',
+          module_name: 'Profile',
+          module_route: '/profile',
+          icon: 'user',
+          actions: [{ action_code: 'VIEW', action_name: 'View' }]
+        }]
+      };
+      mockPermissionService.loadUserPermissions.mockReturnValue(of(mockPermissions));
+      mockRouter.navigate.mockReturnValue(Promise.resolve(true));
+
+      component.activeRoleId = 2;
+      component.onRoleChange();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/profile']);
     });
   });
 

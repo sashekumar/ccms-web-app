@@ -1,6 +1,7 @@
 const NodeCache = require('node-cache');
 import { PermissionsRepository } from './permissions.repository';
 import { CategoriesRepository, ModulesRepository, ActionsRepository } from './repositories';
+import { CACHE_KEYS, CACHE_PREFIXES, CacheKeyGenerators } from './permissions.cache-keys';
 import {
   UserPermissionsResponse,
   PermissionCheck,
@@ -47,7 +48,7 @@ export class PermissionsService {
    * Check if user has specific permission
    */
   public async checkPermission(userId: number, moduleCode: string, actionCode: string): Promise<PermissionCheck> {
-    const cacheKey = `perm:${userId}:${moduleCode}:${actionCode}`;
+    const cacheKey = CacheKeyGenerators.permission(userId, moduleCode, actionCode);
     const cached = this.permissionCache.get(cacheKey) as boolean | undefined;
 
     if (cached !== undefined) {
@@ -62,16 +63,18 @@ export class PermissionsService {
 
   /**
    * Get all user permissions with caching
+   * @param userId User ID
+   * @param roleId Optional role ID to filter permissions (for role switching)
    */
-  public async getUserPermissions(userId: number): Promise<UserPermissionsResponse> {
-    const cacheKey = `user-perms:${userId}`;
+  public async getUserPermissions(userId: number, roleId?: number): Promise<UserPermissionsResponse> {
+    const cacheKey = CacheKeyGenerators.userPermissions(userId, roleId);
     const cached = this.permissionCache.get(cacheKey) as UserPermissionsResponse | undefined;
 
     if (cached !== undefined) {
       return cached;
     }
 
-    const permissions = await this.repository.getUserPermissionsFormatted(userId);
+    const permissions = await this.repository.getUserPermissionsFormatted(userId, roleId);
     this.permissionCache.set(cacheKey, permissions);
 
     return permissions;
@@ -114,7 +117,7 @@ export class PermissionsService {
    * Get all roles
    */
   public async getAllRoles(): Promise<Role[]> {
-    const cacheKey = 'all-roles';
+    const cacheKey = CACHE_KEYS.ALL_ROLES;
     const cached = this.permissionCache.get(cacheKey) as Role[] | undefined;
 
     if (cached !== undefined) {
@@ -138,7 +141,7 @@ export class PermissionsService {
    * Get role permissions
    */
   public async getRolePermissions(roleId: number): Promise<RolePermissionSummary[]> {
-    const cacheKey = `role-perms:${roleId}`;
+    const cacheKey = CacheKeyGenerators.rolePermissions(roleId);
     const cached = this.permissionCache.get(cacheKey) as RolePermissionSummary[] | undefined;
 
     if (cached !== undefined) {
@@ -155,7 +158,7 @@ export class PermissionsService {
    * Get role permissions matrix (all module-action combinations with grant status)
    */
   public async getRolePermissionsMatrix(roleId: number): Promise<any[]> {
-    const cacheKey = `role-perms-matrix:${roleId}`;
+    const cacheKey = CacheKeyGenerators.rolePermissionsMatrix(roleId);
     const cached = this.permissionCache.get(cacheKey) as any[] | undefined;
 
     if (cached !== undefined) {
@@ -172,7 +175,7 @@ export class PermissionsService {
    * Get all modules
    */
   public async getAllModules(): Promise<Module[]> {
-    const cacheKey = 'all-modules';
+    const cacheKey = CACHE_KEYS.ALL_MODULES;
     const cached = this.permissionCache.get(cacheKey) as Module[] | undefined;
 
     if (cached !== undefined) {
@@ -192,7 +195,7 @@ export class PermissionsService {
    * Get all actions
    */
   public async getAllActions(): Promise<Action[]> {
-    const cacheKey = 'all-actions';
+    const cacheKey = CACHE_KEYS.ALL_ACTIONS;
     const cached = this.permissionCache.get(cacheKey) as Action[] | undefined;
 
     if (cached !== undefined) {
@@ -240,7 +243,7 @@ export class PermissionsService {
     );
     
     // Clear all roles cache
-    this.permissionCache.del('all-roles');
+    this.permissionCache.del(CACHE_KEYS.ALL_ROLES);
     
     return roleId;
   }
@@ -265,7 +268,7 @@ export class PermissionsService {
     );
     
     // Clear caches
-    this.permissionCache.del('all-roles');
+    this.permissionCache.del(CACHE_KEYS.ALL_ROLES);
     this.clearRolePermissionCache(roleId);
   }
 
@@ -282,7 +285,7 @@ export class PermissionsService {
     await this.repository.deleteRole(roleId);
     
     // Clear caches
-    this.permissionCache.del('all-roles');
+    this.permissionCache.del(CACHE_KEYS.ALL_ROLES);
     this.clearRolePermissionCache(roleId);
   }
 
@@ -292,7 +295,8 @@ export class PermissionsService {
   private clearUserPermissionCache(userId: number): void {
     const keys = this.permissionCache.keys();
     const userCacheKeys = keys.filter((key: string) => 
-      key.startsWith(`perm:${userId}:`) || key === `user-perms:${userId}`
+      key.startsWith(CacheKeyGenerators.userPermissionPrefix(userId)) || 
+      key === CacheKeyGenerators.userPermissions(userId)
     );
     this.permissionCache.del(userCacheKeys);
   }
@@ -302,12 +306,16 @@ export class PermissionsService {
    */
   private clearRolePermissionCache(roleId: number): void {
     // Clear role-specific cache
-    this.permissionCache.del(`role-perms:${roleId}`);
+    this.permissionCache.del(CacheKeyGenerators.rolePermissions(roleId));
+    this.permissionCache.del(CacheKeyGenerators.rolePermissionsMatrix(roleId));
     
     // Clear ALL user permission caches since we don't track role->user mappings in cache
     // This is a trade-off between complexity and performance
     const keys = this.permissionCache.keys();
-    const userCacheKeys = keys.filter((key: string) => key.startsWith('perm:') || key.startsWith('user-perms:'));
+    const userCacheKeys = keys.filter((key: string) => 
+      key.startsWith(CACHE_PREFIXES.PERMISSION) || 
+      key.startsWith(CACHE_PREFIXES.USER_PERMISSIONS)
+    );
     this.permissionCache.del(userCacheKeys);
   }
 
@@ -334,7 +342,7 @@ export class PermissionsService {
     });
     
     // Clear modules cache
-    this.permissionCache.del('all-modules');
+    this.permissionCache.del(CACHE_KEYS.ALL_MODULES);
     
     return module.module_id;
   }
@@ -357,7 +365,7 @@ export class PermissionsService {
     await this.modulesRepo.update(moduleId, updateData);
     
     // Clear modules cache
-    this.permissionCache.del('all-modules');
+    this.permissionCache.del(CACHE_KEYS.ALL_MODULES);
   }
 
   /**
@@ -367,7 +375,7 @@ export class PermissionsService {
     await this.modulesRepo.delete(moduleId);
     
     // Clear modules cache
-    this.permissionCache.del('all-modules');
+    this.permissionCache.del(CACHE_KEYS.ALL_MODULES);
   }
 
   /**
@@ -382,7 +390,7 @@ export class PermissionsService {
     });
     
     // Clear actions cache
-    this.permissionCache.del('all-actions');
+    this.permissionCache.del(CACHE_KEYS.ALL_ACTIONS);
     
     return action.action_id;
   }
@@ -401,7 +409,7 @@ export class PermissionsService {
     await this.actionsRepo.update(actionId, updateData);
     
     // Clear actions cache
-    this.permissionCache.del('all-actions');
+    this.permissionCache.del(CACHE_KEYS.ALL_ACTIONS);
   }
 
   /**
@@ -411,14 +419,14 @@ export class PermissionsService {
     await this.actionsRepo.delete(actionId);
     
     // Clear actions cache
-    this.permissionCache.del('all-actions');
+    this.permissionCache.del(CACHE_KEYS.ALL_ACTIONS);
   }
 
   /**
    * Get all module-actions
    */
   public async getAllModuleActions(): Promise<ModuleActionWithDetails[]> {
-    const cacheKey = 'all-module-actions';
+    const cacheKey = CACHE_KEYS.ALL_MODULE_ACTIONS;
     const cached = this.permissionCache.get(cacheKey) as ModuleActionWithDetails[] | undefined;
 
     if (cached) {
@@ -443,10 +451,10 @@ export class PermissionsService {
     );
     
     // Clear caches
-    this.permissionCache.del('all-module-actions');
+    this.permissionCache.del(CACHE_KEYS.ALL_MODULE_ACTIONS);
    // Clear role permissions matrix cache since it depends on module-actions
     const keys = this.permissionCache.keys();
-    const matrixKeys = keys.filter((key: string) => key.startsWith('role-perms-matrix:'));
+    const matrixKeys = keys.filter((key: string) => key.startsWith(CACHE_PREFIXES.ROLE_PERMISSIONS_MATRIX));
     this.permissionCache.del(matrixKeys);
     
     return moduleActionId;
@@ -464,10 +472,10 @@ export class PermissionsService {
     );
     
     // Clear caches
-    this.permissionCache.del('all-module-actions');
+    this.permissionCache.del(CACHE_KEYS.ALL_MODULE_ACTIONS);
     // Clear role permissions matrix cache
     const keys = this.permissionCache.keys();
-    const matrixKeys = keys.filter((key: string) => key.startsWith('role-perms-matrix:'));
+    const matrixKeys = keys.filter((key: string) => key.startsWith(CACHE_PREFIXES.ROLE_PERMISSIONS_MATRIX));
     this.permissionCache.del(matrixKeys);
   }
 
@@ -478,10 +486,10 @@ export class PermissionsService {
     await this.repository.deleteModuleAction(moduleActionId);
     
     // Clear caches
-    this.permissionCache.del('all-module-actions');
+    this.permissionCache.del(CACHE_KEYS.ALL_MODULE_ACTIONS);
     // Clear role permissions matrix cache
     const keys = this.permissionCache.keys();
-    const matrixKeys = keys.filter((key: string) => key.startsWith('role-perms-matrix:'));
+    const matrixKeys = keys.filter((key: string) => key.startsWith(CACHE_PREFIXES.ROLE_PERMISSIONS_MATRIX));
     this.permissionCache.del(matrixKeys);
   }
 
@@ -493,7 +501,7 @@ export class PermissionsService {
    * Get all categories
    */
   public async getAllCategories(): Promise<Category[]> {
-    const cached = this.permissionCache.get('all-categories') as Category[] | undefined;
+    const cached = this.permissionCache.get(CACHE_KEYS.ALL_CATEGORIES) as Category[] | undefined;
     if (cached) {
       return cached;
     }
@@ -502,7 +510,7 @@ export class PermissionsService {
       sortBy: 'display_order',
       sortOrder: 'ASC'
     });
-    this.permissionCache.set('all-categories', categories);
+    this.permissionCache.set(CACHE_KEYS.ALL_CATEGORIES, categories);
     return categories;
   }
 
@@ -516,30 +524,30 @@ export class PermissionsService {
   /**
    * Create new category
    */
-  public async createCategory(dto: CreateCategoryDto): Promise<number> {
-    const category = await this.categoriesRepo.create(dto);
+  public async createCategory(dto: CreateCategoryDto, createdBy: string): Promise<number> {
+    const categoryId = await this.repository.createCategory(dto, createdBy);
     
     // Clear cache
-    this.permissionCache.del('all-categories');
+    this.permissionCache.del(CACHE_KEYS.ALL_CATEGORIES);
     // Clear user permissions cache to refresh menu
     const keys = this.permissionCache.keys();
-    const userPermKeys = keys.filter((key: string) => key.startsWith('user-perms:'));
+    const userPermKeys = keys.filter((key: string) => key.startsWith(CACHE_PREFIXES.USER_PERMISSIONS));
     this.permissionCache.del(userPermKeys);
     
-    return category.category_id;
+    return categoryId;
   }
 
   /**
    * Update category
    */
-  public async updateCategory(categoryId: number, dto: UpdateCategoryDto): Promise<void> {
-    await this.categoriesRepo.update(categoryId, dto);
+  public async updateCategory(categoryId: number, dto: UpdateCategoryDto, updatedBy: string): Promise<void> {
+    await this.repository.updateCategory(categoryId, dto, updatedBy);
     
     // Clear cache
-    this.permissionCache.del('all-categories');
+    this.permissionCache.del(CACHE_KEYS.ALL_CATEGORIES);
     // Clear user permissions cache to refresh menu
     const keys = this.permissionCache.keys();
-    const userPermKeys = keys.filter((key: string) => key.startsWith('user-perms:'));
+    const userPermKeys = keys.filter((key: string) => key.startsWith(CACHE_PREFIXES.USER_PERMISSIONS));
     this.permissionCache.del(userPermKeys);
   }
 
@@ -550,10 +558,10 @@ export class PermissionsService {
     await this.categoriesRepo.delete(categoryId);
     
     // Clear cache
-    this.permissionCache.del('all-categories');
+    this.permissionCache.del(CACHE_KEYS.ALL_CATEGORIES);
     // Clear user permissions cache to refresh menu
     const keys = this.permissionCache.keys();
-    const userPermKeys = keys.filter((key: string) => key.startsWith('user-perms:'));
+    const userPermKeys = keys.filter((key: string) => key.startsWith(CACHE_PREFIXES.USER_PERMISSIONS));
     this.permissionCache.del(userPermKeys);
   }
 }

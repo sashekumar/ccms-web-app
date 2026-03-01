@@ -37,13 +37,27 @@ export class PermissionsRepository {
   }
 
   /**
-   * Get all permissions for a user
+   * Get all permissions for a user (optionally filtered by role)
+   * @param userId User ID
+   * @param roleId Optional role ID to filter permissions
    */
-  public async getUserPermissions(userId: number): Promise<UserPermission[]> {
+  public async getUserPermissions(userId: number, roleId?: number): Promise<UserPermission[]> {
     const pool = await connectionManager.getPool();
-    const result = await pool.request()
-      .input('userId', sql.BigInt, userId)
-      .query(`
+    const request = pool.request()
+      .input('userId', sql.BigInt, userId);
+    
+    let whereClause = `user_id = @userId
+          AND granted = 1
+          AND is_permission_active = 1`;
+    
+    // Filter by specific role if provided
+    if (roleId !== undefined) {
+      request.input('roleId', sql.BigInt, roleId);
+      whereClause += `
+          AND role_id = @roleId`;
+    }
+
+    const result = await request.query(`
         SELECT 
           user_id, username, full_name, role_id, role_name, role_code,
           module_id, module_name, module_code, module_icon, module_route, module_display_order,
@@ -51,9 +65,7 @@ export class PermissionsRepository {
           action_id, action_name, action_code, module_action_id, action_label,
           permission_id, granted, role_active, role_expires_at
         FROM ${DB_VIEWS.USER_PERMISSIONS}
-        WHERE user_id = @userId
-          AND granted = 1
-          AND is_permission_active = 1
+        WHERE ${whereClause}
         ORDER BY module_name, action_name
       `);
 
@@ -63,9 +75,11 @@ export class PermissionsRepository {
   /**
    * Get user permissions formatted for frontend
    * Groups modules by categories for dynamic menu generation
+   * @param userId User ID
+   * @param roleId Optional role ID to filter permissions
    */
-  public async getUserPermissionsFormatted(userId: number): Promise<UserPermissionsResponse> {
-    const permissions = await this.getUserPermissions(userId);
+  public async getUserPermissionsFormatted(userId: number, roleId?: number): Promise<UserPermissionsResponse> {
+    const permissions = await this.getUserPermissions(userId, roleId);
     
     // Group by category and module
     const categoriesMap = new Map<string | null, {
@@ -150,14 +164,27 @@ export class PermissionsRepository {
    */
   public async assignRole(dto: AssignRoleDto, assignedBy: string): Promise<void> {
     const pool = await connectionManager.getPool();
-    const request = pool.request();
-
-    request.input('user_id', sql.BigInt, dto.user_id);
-    request.input('role_id', sql.BigInt, dto.role_id);
-    request.input('assigned_by', sql.VarChar(50), assignedBy);
-    request.input('expires_at', sql.DateTime2, dto.expires_at || null);
-
-    await request.execute(DB_PROCEDURES.ASSIGN_ROLE_TO_USER);
+    await pool.request()
+      .input('userId', sql.BigInt, dto.user_id)
+      .input('roleId', sql.BigInt, dto.role_id)
+      .input('assignedBy', sql.VarChar(50), assignedBy)
+      .input('expiresAt', sql.DateTime2, dto.expires_at || null)
+      .query(`
+        IF EXISTS (SELECT 1 FROM ${DB_TABLES.USER_ROLES} WHERE user_id = @userId AND role_id = @roleId)
+        BEGIN
+          UPDATE ${DB_TABLES.USER_ROLES}
+          SET is_active = 1,
+              assigned_at = GETDATE(),
+              assigned_by = @assignedBy,
+              expires_at = @expiresAt
+          WHERE user_id = @userId AND role_id = @roleId
+        END
+        ELSE
+        BEGIN
+          INSERT INTO ${DB_TABLES.USER_ROLES} (user_id, role_id, assigned_by, expires_at)
+          VALUES (@userId, @roleId, @assignedBy, @expiresAt)
+        END
+      `);
   }
 
   /**
@@ -191,8 +218,6 @@ export class PermissionsRepository {
       `);
 
     return result.recordset.map((r: { role_id: number }) => r.role_id);
-
-    return result.recordset;
   }
 
   /**
@@ -787,7 +812,7 @@ export class PermissionsRepository {
   /**
    * Create new category
    */
-  public async createCategory(dto: CreateCategoryDto): Promise<number> {
+  public async createCategory(dto: CreateCategoryDto, createdBy: string): Promise<number> {
     const pool = await connectionManager.getPool();
     const result = await pool.request()
       .input('category_name', sql.NVarChar(100), dto.category_name)
@@ -795,10 +820,11 @@ export class PermissionsRepository {
       .input('description', sql.NVarChar(500), dto.description || null)
       .input('icon', sql.NVarChar(50), dto.icon || null)
       .input('display_order', sql.Int, dto.display_order)
+      .input('createdBy', sql.VarChar(50), createdBy)
       .query(`
-        INSERT INTO ${DB_TABLES.CATEGORIES} (category_name, category_code, description, icon, display_order)
+        INSERT INTO ${DB_TABLES.CATEGORIES} (category_name, category_code, description, icon, display_order, created_by)
         OUTPUT INSERTED.category_id
-        VALUES (@category_name, @category_code, @description, @icon, @display_order)
+        VALUES (@category_name, @category_code, @description, @icon, @display_order, @createdBy)
       `);
 
     return result.recordset[0].category_id;
@@ -807,7 +833,7 @@ export class PermissionsRepository {
   /**
    * Update category
    */
-  public async updateCategory(categoryId: number, dto: UpdateCategoryDto): Promise<void> {
+  public async updateCategory(categoryId: number, dto: UpdateCategoryDto, updatedBy: string): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
     const request = pool.request();
@@ -848,7 +874,9 @@ export class PermissionsRepository {
       return;
     }
 
+    updates.push('updated_by = @updatedBy');
     updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     await request.query(`
       UPDATE ${DB_TABLES.CATEGORIES}

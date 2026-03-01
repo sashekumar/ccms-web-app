@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { API_ENDPOINTS } from '../constants';
@@ -54,26 +54,32 @@ export class PermissionService {
 
   /**
    * Load current user's permissions
+   * Optionally filters by active role if role switching is enabled
    */
   loadUserPermissions(): Observable<UserPermissionsResponse> {
+    // Get active role ID from session storage (for role switching)
+    const activeRoleId = sessionStorage.getItem('activeRoleId');
+    const headers = activeRoleId ? { 'X-Active-Role-Id': activeRoleId } : undefined;
+
     return this.api.get<ApiResponse<UserPermissionsResponse>>(
-      API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT
+      API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT,
+      undefined,
+      headers
     ).pipe(
-      map(response => {
-        return response.data;
-      }),
+      map(response => response.data),
       tap(permissions => {
-        // Calculate total modules from both categories and uncategorized
-        const categoryModuleCount = permissions.categories?.reduce((sum, cat) => sum + cat.modules.length, 0) || 0;
-        const uncategorizedCount = permissions.uncategorized_modules?.length || 0;
-        const oldStructureCount = permissions.modules?.length || 0;
-        const totalModules = categoryModuleCount + uncategorizedCount || oldStructureCount;
-        
         this.userPermissionsSubject.next(permissions);
         this.cacheTimestamp = Date.now();
+        this.permissionCache.clear();
       }),
       catchError(error => {
-        console.error('❌ Error loading user permissions:', error);
+        // For 401 errors, rethrow to allow auth interceptor to handle
+        if (error?.status === 401) {
+          return throwError(() => error);
+        }
+        
+        // For other errors, return empty permissions
+        console.error('Error loading user permissions:', error);
         return of({ 
           categories: [], 
           uncategorized_modules: [],
