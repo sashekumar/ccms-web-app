@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { PermissionService } from '../../../core/services/permission.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Role, Module, Action, RolePermissionSummary, PermissionMatrixItem } from '../../../shared/models/permission.model';
+import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 
 interface PermissionMatrixRow {
   module: Module;
@@ -17,7 +20,7 @@ interface PermissionMatrixRow {
 @Component({
   selector: 'app-role-permissions',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LoadingSpinnerComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -58,9 +61,7 @@ interface PermissionMatrixRow {
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="flex items-center justify-center py-12">
-        <div class="h-12 w-12 animate-spin rounded-full border-4 border-[#1e3c72] border-t-transparent"></div>
-      </div>
+      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
       <!-- Success Message -->
       <div *ngIf="successMessage" class="mb-6 rounded-lg bg-green-50 p-4">
@@ -199,7 +200,9 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
   constructor(
     private permissionService: PermissionService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -235,7 +238,8 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading data:', error);
+          this.logger.error('Error loading role permissions data', error);
+          this.toast.error('Failed to load role permissions');
           this.errorMessage = 'Failed to load role permissions';
           this.loading = false;
         }
@@ -470,6 +474,7 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
+          this.toast.success('Permissions updated successfully');
           this.successMessage = 'Permissions updated successfully';
           this.saving = false;
           this.hasChanges = false;
@@ -483,8 +488,9 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
           }, 3000);
         },
         error: (error) => {
-          console.error('Error saving permissions:', error);
+          this.logger.error('Error saving permissions', error);
           this.errorMessage = error.error?.message || 'Failed to save permissions';
+          this.toast.error(this.errorMessage);
           this.saving = false;
         }
       });

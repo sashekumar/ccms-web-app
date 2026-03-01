@@ -5,6 +5,7 @@ import { Subject, takeUntil, filter } from 'rxjs';
 import { SidebarService } from '../../../core/services/sidebar.service';
 import { MenuService, MenuItem } from '../../../core/services/menu.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 /**
  * Sidebar navigation component with permission-based menu items
@@ -26,7 +27,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private sidebarService: SidebarService,
     private menuService: MenuService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private logger: LoggerService
   ) {}
 
   ngOnInit(): void {
@@ -92,7 +94,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           // Navigate to login handled by auth service
         },
         error: (error) => {
-          console.error('❌ Logout failed:', error);
+          this.logger.error('Logout failed', error);
           // Still navigate to login on error
           this.router.navigate(['/auth/login']);
         }

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { LoggerService } from './logger.service';
 import { API_ENDPOINTS } from '../constants';
 import {
   UserPermissionsResponse,
@@ -50,7 +51,10 @@ export class PermissionService {
   private cacheTimestamp: number = 0;
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private logger: LoggerService
+  ) {}
 
   /**
    * Load current user's permissions
@@ -79,7 +83,7 @@ export class PermissionService {
         }
         
         // For other errors, return empty permissions
-        console.error('Error loading user permissions:', error);
+        this.logger.error('Error loading user permissions:', error);
         return of({ 
           categories: [], 
           uncategorized_modules: [],
@@ -137,7 +141,7 @@ export class PermissionService {
         this.permissionCache.set(cacheKey, hasAccess);
       }),
       catchError(error => {
-        console.error('Error checking permission:', error);
+        this.logger.error('Error checking permission:', error);
         return of(false);
       })
     );
@@ -224,7 +228,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading user permissions:', error);
+        this.logger.error('Error loading user permissions:', error);
         throw error;
       })
     );
@@ -240,7 +244,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error assigning role:', error);
+        this.logger.error('Error assigning role:', error);
         throw error;
       })
     );
@@ -255,7 +259,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error detaching role:', error);
+        this.logger.error('Error detaching role:', error);
         throw error;
       })
     );
@@ -270,7 +274,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data.roleIds),
       catchError(error => {
-        console.error('Error getting user roles:', error);
+        this.logger.error('Error getting user roles:', error);
         return of([]);
       })
     );
@@ -286,7 +290,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading roles:', error);
+        this.logger.error('Error loading roles:', error);
         return of([]);
       })
     );
@@ -302,7 +306,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading role:', error);
+        this.logger.error('Error loading role:', error);
         throw error;
       })
     );
@@ -318,7 +322,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading role permissions:', error);
+        this.logger.error('Error loading role permissions:', error);
         return of([]);
       })
     );
@@ -334,7 +338,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading role permissions matrix:', error);
+        this.logger.error('Error loading role permissions matrix:', error);
         return of([]);
       })
     );
@@ -350,7 +354,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data.roleId),
       catchError(error => {
-        console.error('Error creating role:', error);
+        this.logger.error('Error creating role:', error);
         throw error;
       })
     );
@@ -366,7 +370,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating role:', error);
+        this.logger.error('Error updating role:', error);
         throw error;
       })
     );
@@ -382,7 +386,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting role:', error);
+        this.logger.error('Error deleting role:', error);
         throw error;
       })
     );
@@ -398,7 +402,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading modules:', error);
+        this.logger.error('Error loading modules:', error);
         return of([]);
       })
     );
@@ -414,7 +418,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading actions:', error);
+        this.logger.error('Error loading actions:', error);
         return of([]);
       })
     );
@@ -431,7 +435,7 @@ export class PermissionService {
       map(() => undefined),
       tap(() => this.clearCache()),
       catchError(error => {
-        console.error('Error granting permission:', error);
+        this.logger.error('Error granting permission:', error);
         throw error;
       })
     );
@@ -448,7 +452,7 @@ export class PermissionService {
       map(() => undefined),
       tap(() => this.clearCache()),
       catchError(error => {
-        console.error('Error revoking permission:', error);
+        this.logger.error('Error revoking permission:', error);
         throw error;
       })
     );
@@ -464,7 +468,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data.moduleId),
       catchError(error => {
-        console.error('Error creating module:', error);
+        this.logger.error('Error creating module:', error);
         throw error;
       })
     );
@@ -480,7 +484,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating module:', error);
+        this.logger.error('Error updating module:', error);
         throw error;
       })
     );
@@ -496,7 +500,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting module:', error);
+        this.logger.error('Error deleting module:', error);
         throw error;
       })
     );
@@ -512,7 +516,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data.actionId),
       catchError(error => {
-        console.error('Error creating action:', error);
+        this.logger.error('Error creating action:', error);
         throw error;
       })
     );
@@ -528,7 +532,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating action:', error);
+        this.logger.error('Error updating action:', error);
         throw error;
       })
     );
@@ -544,7 +548,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting action:', error);
+        this.logger.error('Error deleting action:', error);
         throw error;
       })
     );
@@ -560,7 +564,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error loading module-actions:', error);
+        this.logger.error('Error loading module-actions:', error);
         return of([]);
       })
     );
@@ -576,7 +580,7 @@ export class PermissionService {
     ).pipe(
       map(response => response.data.moduleActionId),
       catchError(error => {
-        console.error('Error creating module-action:', error);
+        this.logger.error('Error creating module-action:', error);
         throw error;
       })
     );
@@ -592,7 +596,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating module-action:', error);
+        this.logger.error('Error updating module-action:', error);
         throw error;
       })
     );
@@ -608,7 +612,7 @@ export class PermissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting module-action:', error);
+        this.logger.error('Error deleting module-action:', error);
         throw error;
       })
     );

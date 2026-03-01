@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { BaseApiService, ApiResponse } from './base-api.service';
+import { LoggerService } from './logger.service';
 import {
   User,
   UserDetail,
@@ -20,10 +21,13 @@ import {
   providedIn: 'root'
 })
 export class UserService extends BaseApiService<UserDetail> {
-  constructor(http: HttpClient) {
+  constructor(
+    http: HttpClient,
+    protected override logger: LoggerService
+  ) {
     // Pass base endpoint path without the '/list' or '/create' suffix
     // environment.apiUrl already includes '/api'
-    super(http, '/users');
+    super(http, '/users', logger);
   }
 
   /**
@@ -36,7 +40,7 @@ export class UserService extends BaseApiService<UserDetail> {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching users:', error);
+        this.logger.error('Error fetching users:', error);
         throw error;
       })
     );
@@ -61,7 +65,7 @@ export class UserService extends BaseApiService<UserDetail> {
     ).pipe(
       map(response => response.data.userId),
       catchError(error => {
-        console.error('Error creating user:', error);
+        this.logger.error('Error creating user:', error);
         throw error;
       })
     );
@@ -99,7 +103,7 @@ export class UserService extends BaseApiService<UserDetail> {
     ).pipe(
       map(response => response.data.available),
       catchError(error => {
-        console.error('Error checking username:', error);
+        this.logger.error('Error checking username:', error);
         return of(false);
       })
     );

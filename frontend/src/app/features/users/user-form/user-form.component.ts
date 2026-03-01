@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { CreateUserDto, UpdateUserDto } from '../../../shared/models/user.model';
 
 @Component({
@@ -175,7 +177,9 @@ export class UserFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private userService: UserService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService,
+    private toast: ToastService
   ) {
     this.userForm = this.createForm();
   }
@@ -251,7 +255,8 @@ export class UserFormComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading user:', error);
+          this.logger.error('Error loading user', error);
+          this.toast.error('Failed to load user data');
           this.errorMessage = 'Failed to load user data';
           this.loading = false;
         }
@@ -299,11 +304,13 @@ export class UserFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (userId) => {
           this.loading = false;
+          this.toast.success('User created successfully');
           this.router.navigate(['/admin/users']);
         },
         error: (error) => {
-          console.error('Error creating user:', error);
+          this.logger.error('Error creating user', error);
           this.errorMessage = error.error?.message || 'Failed to create user';
+          this.toast.error(this.errorMessage);
           this.loading = false;
         }
       });
@@ -327,11 +334,13 @@ export class UserFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.loading = false;
+          this.toast.success('User updated successfully');
           this.router.navigate(['/admin/users']);
         },
         error: (error) => {
-          console.error('Error updating user:', error);
+          this.logger.error('Error updating user', error);
           this.errorMessage = error.error?.message || 'Failed to update user';
+          this.toast.error(this.errorMessage);
           this.loading = false;
         }
       });

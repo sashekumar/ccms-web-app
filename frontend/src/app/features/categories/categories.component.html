@@ -47,35 +47,7 @@
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="loading" class="rounded-lg bg-white p-8 shadow text-center">
-    <div class="flex justify-center">
-      <svg class="h-8 w-8 animate-spin text-[#1e3c72]" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-    </div>
-    <p class="mt-2 text-sm text-gray-600">Loading categories...</p>
-  </div>
-
-  <!-- Success Message -->
-  <div *ngIf="successMessage" class="mb-4 rounded-md bg-green-50 p-4">
-    <div class="flex">
-      <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-      </svg>
-      <p class="ml-3 text-sm text-green-800">{{ successMessage }}</p>
-    </div>
-  </div>
-
-  <!-- Error Message -->
-  <div *ngIf="errorMessage" class="mb-4 rounded-md bg-red-50 p-4">
-    <div class="flex">
-      <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-      </svg>
-      <p class="ml-3 text-sm text-red-800">{{ errorMessage }}</p>
-    </div>
-  </div>
+  <app-loading-spinner *ngIf="loading" message="Loading categories..."></app-loading-spinner>
 
   <!-- Categories Table -->
   <div *ngIf="!loading" class="rounded-lg bg-white shadow overflow-hidden">
@@ -109,12 +81,7 @@
               {{ category.display_order }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <span *ngIf="category.is_active" class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">
-                Active
-              </span>
-              <span *ngIf="!category.is_active" class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold leading-5 text-red-800">
-                Inactive
-              </span>
+              <app-status-badge [active]="category.is_active"></app-status-badge>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
               <button (click)="openEditModal(category)" class="text-indigo-600 hover:text-indigo-900 mr-3">

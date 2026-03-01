@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError, switchMap, filter, take } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { LoggerService } from '../services/logger.service';
 import { API_ENDPOINTS } from '../constants';
 
 /**
@@ -11,6 +12,7 @@ import { API_ENDPOINTS } from '../constants';
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const authService = inject(AuthService);
+  const logger = inject(LoggerService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -73,7 +75,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
               }),
               catchError((refreshError) => {
                 // Refresh failed, redirect to login
-                console.error('❌ Token refresh failed, redirecting to login');
+                logger.error('Token refresh failed, redirecting to login');
                 return throwError(() => error);
               })
             );
@@ -81,7 +83,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           case 403:
             // Forbidden - log but don't redirect
             // Let the component handle this error (show message/toast)
-            console.warn('Access denied:', error.error?.message || 'You do not have permission to perform this action');
+            logger.warn('Access denied:', error.error?.message || 'You do not have permission to perform this action');
             
             // Only redirect if explicitly navigating to a protected route (not for button clicks/API calls)
             // This prevents unwanted redirects when users click buttons they shouldn't have access to
@@ -91,18 +93,18 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             break;
           case 404:
             // Not found
-            console.error('Resource not found');
+            logger.error('Resource not found');
             break;
           case 500:
             // Internal server error
-            console.error('Server error occurred');
+            logger.error('Server error occurred');
             break;
         }
       }
 
       // Only log non-401 errors or 401 errors from skipped endpoints
       if (error.status !== 401 || req.url.includes(API_ENDPOINTS.AUTH.ME)) {
-        console.error(errorMessage);
+        logger.error(errorMessage);
       }
       
       return throwError(() => error);

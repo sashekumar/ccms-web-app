@@ -4,12 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { CategoryService } from '../../core/services/category.service';
+import { LoggerService } from '../../core/services/logger.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Category } from '../../shared/models/permission.model';
+import { LoadingSpinnerComponent } from '../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { StatusBadgeComponent } from '../../common/components/status-badge/status-badge.component';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, StatusBadgeComponent],
   templateUrl: './categories.component.html',
   styles: []
 })
@@ -22,8 +26,6 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   editingCategory: Category | null = null;
   categoryToDelete: Category | null = null;
-  successMessage = '';
-  errorMessage = '';
 
   // Filters
   searchTerm = '';
@@ -41,7 +43,11 @@ export class CategoriesComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private categoryService: CategoryService) {}
+  constructor(
+    private categoryService: CategoryService,
+    private logger: LoggerService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.loadCategories();
@@ -63,10 +69,9 @@ export class CategoriesComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error: HttpErrorResponse) => {
-          console.error('Error loading categories:', error);
-          this.errorMessage = 'Error loading categories';
+          this.logger.error('Error loading categories', error);
+          this.toast.error('Error loading categories');
           this.loading = false;
-          this.clearMessages();
         }
       });
   }
@@ -125,7 +130,6 @@ export class CategoriesComponent implements OnInit, OnDestroy {
 
   saveCategory(): void {
     this.saving = true;
-    this.errorMessage = '';
 
     if (this.editingCategory) {
       this.categoryService.updateCategory(this.editingCategory.category_id, {
@@ -139,17 +143,15 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            this.successMessage = 'Category updated successfully';
+            this.toast.success('Category updated successfully');
             this.saving = false;
             this.closeModal();
             this.loadCategories();
-            this.clearMessages();
           },
           error: (error: HttpErrorResponse) => {
-            console.error('Error updating category:', error);
-            this.errorMessage = 'Error updating category: ' + (error.error?.message || error.message);
+            this.logger.error('Error updating category', error);
+            this.toast.error('Error updating category: ' + (error.error?.message || error.message));
             this.saving = false;
-            this.clearMessages();
           }
         });
     } else {
@@ -163,17 +165,15 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            this.successMessage = 'Category created successfully';
+            this.toast.success('Category created successfully');
             this.saving = false;
             this.closeModal();
             this.loadCategories();
-            this.clearMessages();
           },
           error: (error: HttpErrorResponse) => {
-            console.error('Error creating category:', error);
-            this.errorMessage = 'Error creating category: ' + (error.error?.message || error.message);
+            this.logger.error('Error creating category', error);
+            this.toast.error('Error creating category: ' + (error.error?.message || error.message));
             this.saving = false;
-            this.clearMessages();
           }
         });
     }
@@ -188,25 +188,22 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     if (!this.categoryToDelete) return;
 
     this.saving = true;
-    this.errorMessage = '';
 
     this.categoryService.deleteCategory(this.categoryToDelete.category_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.successMessage = 'Category deleted successfully';
+          this.toast.success('Category deleted successfully');
           this.saving = false;
           this.showDeleteConfirm = false;
           this.categoryToDelete = null;
           this.loadCategories();
-          this.clearMessages();
         },
         error: (error: HttpErrorResponse) => {
-          console.error('Error deleting category:', error);
-          this.errorMessage = 'Error deleting category: ' + (error.error?.message || error.message);
+          this.logger.error('Error deleting category', error);
+          this.toast.error('Error deleting category: ' + (error.error?.message || error.message));
           this.saving = false;
           this.showDeleteConfirm = false;
-          this.clearMessages();
         }
       });
   }
@@ -214,13 +211,6 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   cancelDelete(): void {
     this.showDeleteConfirm = false;
     this.categoryToDelete = null;
-  }
-
-  private clearMessages(): void {
-    setTimeout(() => {
-      this.successMessage = '';
-      this.errorMessage = '';
-    }, 5000);
   }
 
   /**

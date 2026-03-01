@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PermissionService } from '../../../core/services/permission.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { CreateRoleDto, UpdateRoleDto } from '../../../shared/models/permission.model';
 
 @Component({
@@ -175,7 +177,9 @@ export class RoleFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private permissionService: PermissionService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService,
+    private toast: ToastService
   ) {
     this.roleForm = this.createForm();
   }
@@ -238,7 +242,8 @@ export class RoleFormComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading role:', error);
+          this.logger.error('Error loading role', error);
+          this.toast.error('Failed to load role data');
           this.errorMessage = 'Failed to load role data';
           this.loading = false;
         }
@@ -275,12 +280,14 @@ export class RoleFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (roleId) => {
           this.loading = false;
+          this.toast.success('Role created successfully');
           // Navigate to permissions page to assign permissions
           this.router.navigate(['/admin/roles/permissions', roleId]);
         },
         error: (error) => {
-          console.error('Error creating role:', error);
+          this.logger.error('Error creating role', error);
           this.errorMessage = error.error?.message || 'Failed to create role';
+          this.toast.error(this.errorMessage);
           this.loading = false;
         }
       });
@@ -300,11 +307,13 @@ export class RoleFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.loading = false;
+          this.toast.success('Role updated successfully');
           this.router.navigate(['/admin/roles']);
         },
         error: (error) => {
-          console.error('Error updating role:', error);
+          this.logger.error('Error updating role', error);
           this.errorMessage = error.error?.message || 'Failed to update role';
+          this.toast.error(this.errorMessage);
           this.loading = false;
         }
       });

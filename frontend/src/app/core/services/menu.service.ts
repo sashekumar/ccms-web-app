@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { PermissionService } from './permission.service';
+import { LoggerService } from './logger.service';
 import { UserPermissionsResponse, CategoryPermissions, ModulePermissions } from '../../shared/models/permission.model';
 
 export interface MenuItem {
@@ -32,7 +33,10 @@ export class MenuService {
   private menuItemsSubject = new BehaviorSubject<MenuItem[]>([]);
   public menuItems$ = this.menuItemsSubject.asObservable();
 
-  constructor(private permissionService: PermissionService) {
+  constructor(
+    private permissionService: PermissionService,
+    private logger: LoggerService
+  ) {
     // Subscribe to permission changes and rebuild menu
     this.permissionService.userPermissions$.subscribe({
       next: (permissions) => {
@@ -45,7 +49,7 @@ export class MenuService {
         }
       },
       error: (err) => {
-        console.error('❌ Failed to load menu items:', err);
+        this.logger.error('Failed to load menu items:', err);
         this.setDefaultMenuItems();
       }
     });
@@ -61,7 +65,7 @@ export class MenuService {
         this.menuItemsSubject.next(menuItems);
       },
       error: (err) => {
-        console.error('Failed to load menu items:', err);
+        this.logger.error('Failed to load menu items:', err);
         // Set default menu items on error
         this.setDefaultMenuItems();
       }
@@ -175,7 +179,7 @@ export class MenuService {
       });
     }
     else {
-      console.warn('⚠️ No permissions data available for menu building');
+      this.logger.warn('No permissions data available for menu building');
     }
 
     // If no menu items, provide default dashboard

@@ -4,12 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PermissionService } from '../../core/services/permission.service';
+import { LoggerService } from '../../core/services/logger.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Action } from '../../shared/models/permission.model';
+import { LoadingSpinnerComponent } from '../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { StatusBadgeComponent } from '../../common/components/status-badge/status-badge.component';
 
 @Component({
   selector: 'app-actions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, StatusBadgeComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -60,15 +64,7 @@ import { Action } from '../../shared/models/permission.model';
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="rounded-lg bg-white p-8 shadow text-center">
-        <div class="flex justify-center">
-          <svg class="h-8 w-8 animate-spin text-[#1e3c72]" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </div>
-        <p class="mt-2 text-sm text-gray-600">Loading actions...</p>
-      </div>
+      <app-loading-spinner *ngIf="loading" message="Loading actions..."></app-loading-spinner>
 
       <!-- Success Message -->
       <div *ngIf="successMessage" class="mb-4 rounded-md bg-green-50 p-4">
@@ -126,12 +122,7 @@ import { Action } from '../../shared/models/permission.model';
                   {{ action.description || '-' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span *ngIf="action.is_active" class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">
-                    Active
-                  </span>
-                  <span *ngIf="!action.is_active" class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold leading-5 text-red-800">
-                    Inactive
-                  </span>
+                  <app-status-badge [active]="action.is_active"></app-status-badge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button (click)="openEditModal(action)" class="text-indigo-600 hover:text-indigo-900 mr-3">
@@ -311,7 +302,11 @@ export class ActionsComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private permissionService: PermissionService) {}
+  constructor(
+    private permissionService: PermissionService,
+    private logger: LoggerService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.loadActions();
@@ -333,7 +328,8 @@ export class ActionsComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error: HttpErrorResponse) => {
-          console.error('Error loading actions:', error);
+          this.logger.error('Error loading actions:', error);
+          this.toast.error('Error loading actions');
           this.errorMessage = 'Error loading actions';
           this.loading = false;
           this.clearMessages();
@@ -398,6 +394,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
+            this.toast.success('Action updated successfully');
             this.successMessage = 'Action updated successfully';
             this.saving = false;
             this.closeModal();
@@ -405,7 +402,8 @@ export class ActionsComponent implements OnInit, OnDestroy {
             this.clearMessages();
           },
           error: (error: HttpErrorResponse) => {
-            console.error('Error updating action:', error);
+            this.logger.error('Error updating action:', error);
+            this.toast.error('Error updating action: ' + (error.error?.message || error.message));
             this.errorMessage = 'Error updating action: ' + (error.error?.message || error.message);
             this.saving = false;
             this.clearMessages();
@@ -420,6 +418,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
+            this.toast.success('Action created successfully');
             this.successMessage = 'Action created successfully';
             this.saving = false;
             this.closeModal();
@@ -427,7 +426,8 @@ export class ActionsComponent implements OnInit, OnDestroy {
             this.clearMessages();
           },
           error: (error: HttpErrorResponse) => {
-            console.error('Error creating action:', error);
+            this.logger.error('Error creating action:', error);
+            this.toast.error('Error creating action: ' + (error.error?.message || error.message));
             this.errorMessage = 'Error creating action: ' + (error.error?.message || error.message);
             this.saving = false;
             this.clearMessages();
@@ -451,6 +451,7 @@ export class ActionsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
+          this.toast.success('Action deleted successfully');
           this.successMessage = 'Action deleted successfully';
           this.saving = false;
           this.showDeleteConfirm = false;
@@ -459,7 +460,8 @@ export class ActionsComponent implements OnInit, OnDestroy {
           this.clearMessages();
         },
         error: (error: HttpErrorResponse) => {
-          console.error('Error deleting action:', error);
+          this.logger.error('Error deleting action:', error);
+          this.toast.error('Error deleting action: ' + (error.error?.message || error.message));
           this.errorMessage = 'Error deleting action: ' + (error.error?.message || error.message);
           this.saving = false;
           this.showDeleteConfirm = false;

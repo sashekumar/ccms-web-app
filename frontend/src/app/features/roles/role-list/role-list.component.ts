@@ -4,13 +4,17 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PermissionService } from '../../../core/services/permission.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Role } from '../../../shared/models/permission.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
+import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
 
 @Component({
   selector: 'app-role-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, HasPermissionDirective],
+  imports: [CommonModule, FormsModule, HasPermissionDirective, LoadingSpinnerComponent, StatusBadgeComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -63,9 +67,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="flex items-center justify-center py-12">
-        <div class="h-12 w-12 animate-spin rounded-full border-4 border-[#1e3c72] border-t-transparent"></div>
-      </div>
+      <app-loading-spinner *ngIf="loading" message="Loading roles..."></app-loading-spinner>
 
       <!-- Roles Table -->
       <div *ngIf="!loading" class="overflow-hidden rounded-lg bg-white shadow">
@@ -129,12 +131,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
 
               <!-- Status -->
               <td class="whitespace-nowrap px-6 py-4">
-                <span
-                  [class]="role.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-                  class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                >
-                  {{ role.is_active ? 'Active' : 'Inactive' }}
-                </span>
+                <app-status-badge [active]="role.is_active"></app-status-badge>
               </td>
 
               <!-- Actions -->
@@ -274,7 +271,9 @@ export class RoleListComponent implements OnInit, OnDestroy {
 
   constructor(
     private permissionService: PermissionService,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -297,7 +296,8 @@ export class RoleListComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading roles:', error);
+          this.logger.error('Error loading roles', error);
+          this.toast.error('Failed to load roles');
           this.loading = false;
         }
       });
@@ -367,22 +367,22 @@ export class RoleListComponent implements OnInit, OnDestroy {
           this.roleToDelete = null;
           this.roleToDeleteName = '';
           this.loadRoles(); // Reload the list
-          alert('Role deleted successfully.');
+          this.toast.success('Role deleted successfully');
         },
         error: (error) => {
-          console.error('Error deleting role:', error);
+          this.logger.error('Error deleting role', error);
           this.deleting = false;
           this.showDeleteModal = false;
           
           // Show user-friendly error message based on status code
           if (error.status === 403) {
-            alert('Access Denied: You do not have permission to delete this role.');
+            this.toast.error('Access Denied: You do not have permission to delete this role.');
           } else if (error.status === 404) {
-            alert('Role not found. It may have already been deleted.');
+            this.toast.error('Role not found. It may have already been deleted.');
           } else if (error.status === 400 && error.error?.message) {
-            alert(error.error.message);
+            this.toast.error(error.error.message);
           } else {
-            alert('Failed to delete role. Please try again.');
+            this.toast.error('Failed to delete role. Please try again.');
           }
         }
       });

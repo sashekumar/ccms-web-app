@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { BaseApiService, ApiResponse } from './base-api.service';
+import { LoggerService } from './logger.service';
 import { Category } from '../../shared/models/permission.model';
 
 export interface CreateCategoryDto {
@@ -30,10 +31,13 @@ export interface UpdateCategoryDto {
   providedIn: 'root'
 })
 export class CategoryService extends BaseApiService<Category> {
-  constructor(http: HttpClient) {
+  constructor(
+    http: HttpClient,
+    protected override logger: LoggerService
+  ) {
     // Pass base endpoint path
     // environment.apiUrl already includes '/api'
-    super(http, '/permissions/categories');
+    super(http, '/permissions/categories', logger);
   }
 
   /**
@@ -63,7 +67,7 @@ export class CategoryService extends BaseApiService<Category> {
     ).pipe(
       map(response => response.data.category_id),
       catchError(error => {
-        console.error('Error creating category:', error);
+        this.logger.error('Error creating category:', error);
         throw error;
       })
     );

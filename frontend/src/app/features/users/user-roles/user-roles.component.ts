@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserDetail, UserDetailRole } from '../../../shared/models/user.model';
 import { Role, AssignRoleDto } from '../../../shared/models/permission.model';
 
@@ -235,7 +237,9 @@ export class UserRolesComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private permissionService: PermissionService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -271,7 +275,8 @@ export class UserRolesComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading data:', error);
+          this.logger.error('Error loading data', error);
+          this.toast.error('Failed to load user roles');
           this.loading = false;
         }
       });
@@ -318,7 +323,7 @@ export class UserRolesComponent implements OnInit, OnDestroy {
                   this.updateAvailableRoles();
                 },
                 error: (error) => {
-                  console.error('Error reloading user:', error);
+                  this.logger.error('Error reloading user after role assignment', error);
                 }
               });
           }
@@ -329,7 +334,8 @@ export class UserRolesComponent implements OnInit, OnDestroy {
           }, 3000);
         },
         error: (error) => {
-          console.error('Error assigning role:', error);
+          this.logger.error('Error assigning role', error);
+          this.toast.error(error.error?.message || 'Failed to assign role');
           this.errorMessage = error.error?.message || 'Failed to assign role';
           this.assigning = false;
         }
@@ -375,7 +381,7 @@ export class UserRolesComponent implements OnInit, OnDestroy {
                   this.updateAvailableRoles();
                 },
                 error: (error) => {
-                  console.error('Error reloading user:', error);
+                  this.logger.error('Error reloading user after role detachment', error);
                 }
               });
           }
@@ -386,7 +392,8 @@ export class UserRolesComponent implements OnInit, OnDestroy {
           }, 3000);
         },
         error: (error) => {
-          console.error('Error detaching role:', error);
+          this.logger.error('Error detaching role', error);
+          this.toast.error(error.error?.message || 'Failed to remove role');
           this.errorMessage = error.error?.message || 'Failed to remove role';
           this.detachingRoleId = null;
         }

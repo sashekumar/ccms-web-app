@@ -5,14 +5,18 @@ import { Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { User, UserFilters, UserRole } from '../../../shared/models/user.model';
 import { Role } from '../../../shared/models/permission.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
+import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, HasPermissionDirective],
+  imports: [CommonModule, FormsModule, HasPermissionDirective, LoadingSpinnerComponent, StatusBadgeComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -93,9 +97,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="flex items-center justify-center py-12">
-        <div class="h-12 w-12 animate-spin rounded-full border-4 border-[#1e3c72] border-t-transparent"></div>
-      </div>
+      <app-loading-spinner *ngIf="loading" message="Loading users..."></app-loading-spinner>
 
       <!-- Users Table -->
       <div *ngIf="!loading" class="overflow-hidden rounded-lg bg-white shadow">
@@ -133,12 +135,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
                   </div>
                 </td>
                 <td class="whitespace-nowrap px-6 py-4">
-                  <span
-                    [class]="user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-                    class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                  >
-                    {{ user.is_active ? 'Active' : 'Inactive' }}
-                  </span>
+                  <app-status-badge [active]="user.is_active"></app-status-badge>
                 </td>
                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                   {{ user.last_login ? (user.last_login | date:'short') : 'Never' }}
@@ -300,7 +297,9 @@ export class UserListComponent implements OnInit, OnDestroy {
   constructor(
     private userService: UserService,
     private permissionService: PermissionService,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService,
+    private toast: ToastService
   ) {
     // Setup search debounce
     this.searchSubject$
@@ -341,7 +340,8 @@ export class UserListComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading users:', error);
+          this.logger.error('Error loading users', error);
+          this.toast.error('Failed to load users. Please try again.');
           this.loading = false;
         }
       });
@@ -435,11 +435,11 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/admin/users/create'])
       .then(success => {
         if (!success) {
-          console.error('Navigation failed');
+          this.logger.error('Navigation to create user failed');
         }
       })
       .catch(error => {
-        console.error('Navigation error:', error);
+        this.logger.error('Navigation error', error);
       });
   }
 
@@ -450,18 +450,18 @@ export class UserListComponent implements OnInit, OnDestroy {
         .subscribe({
           next: () => {
             this.loadUsers();
-            alert('User deleted successfully.');
+            this.toast.success('User deleted successfully.');
           },
           error: (error) => {
-            console.error('Error deleting user:', error);
+            this.logger.error('Error deleting user', error);
             
             // Show user-friendly error message based on status code
             if (error.status === 403) {
-              alert('Access Denied: You do not have permission to delete this user.');
+              this.toast.error('Access Denied: You do not have permission to delete this user.');
             } else if (error.status === 404) {
-              alert('User not found. It may have already been deleted.');
+              this.toast.error('User not found. It may have already been deleted.');
             } else {
-              alert('Failed to delete user. Please try again.');
+              this.toast.error('Failed to delete user. Please try again.');
             }
           }
         });

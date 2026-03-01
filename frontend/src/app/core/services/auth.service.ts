@@ -3,6 +3,7 @@ import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { tap, switchMap, catchError, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ApiService } from './api.service';
+import { LoggerService } from './logger.service';
 import { API_ENDPOINTS } from '../constants';
 import { PermissionService } from './permission.service';
 import { User } from '../../shared/models/user.model';
@@ -32,7 +33,8 @@ export class AuthService {
   constructor(
     private api: ApiService,
     private router: Router,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private logger: LoggerService
   ) {
     // Don't call loadCurrentUser in constructor - use APP_INITIALIZER instead
   }
@@ -58,7 +60,7 @@ export class AuthService {
                 resolve();
               },
               error: () => {
-                console.warn('⚠️ Failed to load permissions on init');
+                this.logger.warn('Failed to load permissions on init');
                 resolve(); // Resolve anyway, permissions can be retried later
               }
             });
@@ -112,7 +114,7 @@ export class AuthService {
             }),
             switchMap(() => of(response)),
             catchError(error => {
-              console.error('⚠️ Failed to load permissions during login:', error);
+              this.logger.error('Failed to load permissions during login:', error);
               // Still allow login to proceed, permissions can be retried
               return of(response);
             })
@@ -159,7 +161,7 @@ export class AuthService {
       }),
       switchMap((response) => of(response.success)),
       catchError((error) => {
-        console.error('❌ Token refresh failed:', error);
+        this.logger.error('Token refresh failed:', error);
         this.isRefreshing = false;
         this.refreshTokenSubject.next(false);
         

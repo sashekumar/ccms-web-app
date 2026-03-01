@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { LoggerService } from '../../../core/services/logger.service';
 import { User, UserRole } from '../../../shared/models/user.model';
 import { SidebarService } from '../../../core/services/sidebar.service';
 import { UserPermissionsResponse } from '../../../shared/models/permission.model';
@@ -30,7 +31,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private permissionService: PermissionService,
     private sidebarService: SidebarService,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService
   ) {}
 
   ngOnInit(): void {
@@ -128,7 +130,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         
         // Only show alert for non-auth errors (401 handled by interceptor)
         if (err?.status !== 401) {
-          console.error('Error switching role:', err);
+          this.logger.error('Error switching role', err);
         }
       }
     });
@@ -187,7 +189,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
           sessionStorage.removeItem('activeRoleId');
         },
         error: (err) => {
-          console.error('❌ Logout error:', err);
+          this.logger.error('Logout error', err);
           sessionStorage.removeItem('activeRoleId');
           this.router.navigate(['/auth/login']);
         }

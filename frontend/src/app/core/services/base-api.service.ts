@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { LoggerService } from './logger.service';
 
 /**
  * Standard API response format
@@ -28,10 +29,12 @@ export abstract class BaseApiService<T> {
   /**
    * @param http - Angular HTTP client
    * @param endpoint - API endpoint path (e.g., '/users', '/roles')
+   * @param logger - Optional LoggerService for error logging
    */
   constructor(
     protected http: HttpClient,
-    endpoint: string
+    endpoint: string,
+    protected logger?: LoggerService
   ) {
     // Construct full URL from environment + endpoint
     this.endpoint = `${environment.apiUrl}${endpoint}`;
@@ -108,7 +111,11 @@ export abstract class BaseApiService<T> {
       }
     }
 
-    console.error('API Error:', errorMessage, error);
+    if (this.logger) {
+      this.logger.error(`API Error: ${errorMessage}`, error);
+    } else {
+      console.error('API Error:', errorMessage, error);
+    }
     return throwError(() => new Error(errorMessage));
   }
 

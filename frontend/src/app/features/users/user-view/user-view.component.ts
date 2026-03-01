@@ -3,13 +3,17 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserDetail, UserDetailRole } from '../../../shared/models/user.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
+import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
 
 @Component({
   selector: 'app-user-view',
   standalone: true,
-  imports: [CommonModule, HasPermissionDirective],
+  imports: [CommonModule, HasPermissionDirective, LoadingSpinnerComponent, StatusBadgeComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -54,9 +58,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="flex items-center justify-center py-12">
-        <div class="h-12 w-12 animate-spin rounded-full border-4 border-[#1e3c72] border-t-transparent"></div>
-      </div>
+      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
 
       <!-- User Details -->
       <div *ngIf="!loading && userDetail" class="mx-auto max-w-4xl space-y-6">
@@ -64,12 +66,7 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
         <div class="rounded-lg bg-white p-6 shadow">
           <div class="mb-4 flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Basic Information</h2>
-            <span
-              [class]="userDetail.user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-              class="inline-flex rounded-full px-3 py-1 text-sm font-semibold"
-            >
-              {{ userDetail.user.is_active ? 'Active' : 'Inactive' }}
-            </span>
+            <app-status-badge [active]="userDetail.user.is_active"></app-status-badge>
           </div>
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <!-- User Avatar -->
@@ -180,7 +177,9 @@ export class UserViewComponent implements OnInit, OnDestroy {
   constructor(
     private userService: UserService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -211,7 +210,8 @@ export class UserViewComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading user:', error);
+          this.logger.error('Error loading user', error);
+          this.toast.error('Failed to load user details');
           this.loading = false;
         }
       });

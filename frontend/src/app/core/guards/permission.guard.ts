@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn, ActivatedRouteSnapshot } from '@angular/router';
 import { map, take, switchMap, filter } from 'rxjs/operators';
 import { PermissionService } from '../services/permission.service';
+import { LoggerService } from '../services/logger.service';
 import { APP_ROUTES } from '../constants';
 import { UserPermissionsResponse, CategoryPermissions } from '../../shared/models/permission.model';
 
@@ -21,11 +22,12 @@ import { UserPermissionsResponse, CategoryPermissions } from '../../shared/model
 export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const permissionService = inject(PermissionService);
   const router = inject(Router);
+  const logger = inject(LoggerService);
 
   const permission = route.data['permission'];
 
   if (!permission) {
-    console.error('Permission guard requires "permission" in route data');
+    logger.error('Permission guard requires "permission" in route data');
     router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
     return false;
   }
@@ -36,7 +38,7 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
   if (typeof permission === 'string') {
     const parts = permission.split('.');
     if (parts.length !== 2) {
-      console.error(`Invalid permission format: ${permission}`);
+      logger.error(`Invalid permission format: ${permission}`);
       router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
       return false;
     }
@@ -44,7 +46,7 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
   } else if (Array.isArray(permission) && permission.length === 2) {
     [moduleCode, actionCode] = permission;
   } else {
-    console.error('Invalid permission format in route data');
+    logger.error('Invalid permission format in route data');
     router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
     return false;
   }
@@ -78,7 +80,7 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
     take(1),
     map(hasPermission => {
       if (!hasPermission) {
-        console.warn(`Access denied for permission: ${moduleCode}.${actionCode}`);
+        logger.warn(`Access denied for permission: ${moduleCode}.${actionCode}`);
         router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
         return false;
       }
@@ -107,11 +109,12 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
 export const permissionAnyGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const permissionService = inject(PermissionService);
   const router = inject(Router);
+  const logger = inject(LoggerService);
 
   const permissions = route.data['permissions'] as [string, string][];
 
   if (!permissions || !Array.isArray(permissions)) {
-    console.error('Permission ANY guard requires "permissions" array in route data');
+    logger.error('Permission ANY guard requires "permissions" array in route data');
     router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
     return false;
   }
@@ -140,7 +143,7 @@ export const permissionAnyGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
     take(1),
     map(hasPermission => {
       if (!hasPermission) {
-        console.warn('Access denied: User lacks any of the required permissions');
+        logger.warn('Access denied: User lacks any of the required permissions');
         router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
         return false;
       }
@@ -169,11 +172,12 @@ export const permissionAnyGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
 export const permissionAllGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const permissionService = inject(PermissionService);
   const router = inject(Router);
+  const logger = inject(LoggerService);
 
   const permissions = route.data['permissions'] as [string, string][];
 
   if (!permissions || !Array.isArray(permissions)) {
-    console.error('Permission ALL guard requires "permissions" array in route data');
+    logger.error('Permission ALL guard requires "permissions" array in route data');
     router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
     return false;
   }
@@ -202,7 +206,7 @@ export const permissionAllGuard: CanActivateFn = (route: ActivatedRouteSnapshot)
     take(1),
     map(hasPermission => {
       if (!hasPermission) {
-        console.warn('Access denied: User lacks all required permissions');
+        logger.warn('Access denied: User lacks all required permissions');
         router.navigate([APP_ROUTES.PUBLIC.UNAUTHORIZED]);
         return false;
       }

@@ -1,6 +1,7 @@
 import { Directive, Input, TemplateRef, ViewContainerRef, OnInit, OnDestroy } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { PermissionService } from '../../../core/services/permission.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 /**
  * Structural directive to show/hide elements based on permissions
@@ -25,7 +26,8 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
   constructor(
     private templateRef: TemplateRef<any>,
     private viewContainer: ViewContainerRef,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private logger: LoggerService
   ) {}
 
   ngOnInit(): void {
@@ -54,7 +56,7 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
       // Format: "MODULE_CODE.ACTION_CODE"
       const parts = permission.split('.');
       if (parts.length !== 2) {
-        console.error(`Invalid permission format: ${permission}. Expected "MODULE_CODE.ACTION_CODE"`);
+        this.logger.error(`Invalid permission format: ${permission}. Expected "MODULE_CODE.ACTION_CODE"`);
         this.removeView();
         return;
       }
@@ -63,7 +65,7 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
       // Format: ["MODULE_CODE", "ACTION_CODE"]
       [moduleCode, actionCode] = permission;
     } else {
-      console.error(`Invalid permission format:`, permission);
+      this.logger.error(`Invalid permission format:`, permission);
       this.removeView();
       return;
     }
