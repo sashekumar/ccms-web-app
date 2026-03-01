@@ -30,7 +30,14 @@ export const DB_TABLES = {
   ACTIONS: 'ccms_acl_actions',
   MODULE_ACTIONS: 'ccms_acl_module_actions',
   ROLE_PERMISSIONS: 'ccms_acl_role_permissions',
-  USER_ROLES: 'ccms_acl_user_roles'
+  USER_ROLES: 'ccms_acl_user_roles',
+  
+  // Master Data Tables
+  BANKS: 'ccms_m_banks',
+  CLAUSES: 'ccms_m_clauses',
+  LOOKUP_CATEGORIES: 'ccms_m_lookup_categories',
+  LOOKUPS: 'ccms_m_lookups',
+  LOOKUP_METADATA: 'ccms_m_lookup_metadata'
 } as const;
 
 // ============================================================================

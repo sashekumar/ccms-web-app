@@ -121,6 +121,59 @@ export const PERMISSIONS_ENDPOINTS = {
 } as const;
 
 // ============================================================================
+// MASTER DATA ENDPOINTS
+// ============================================================================
+
+export const BANKS_ENDPOINTS = {
+  LIST: `master/banks/list`,
+  GET: `master/banks/get`,
+  CREATE: `master/banks/create`,
+  UPDATE: `master/banks/update`,
+  DELETE: `master/banks/delete`,
+  CHECK_CODE: `master/banks/check-code`
+} as const;
+
+export const CLAUSES_ENDPOINTS = {
+  LIST: `master/clauses/list`,
+  GET: `master/clauses/get`,
+  CREATE: `master/clauses/create`,
+  UPDATE: `master/clauses/update`,
+  DELETE: `master/clauses/delete`,
+  CHECK_CODE: `master/clauses/check-code`
+} as const;
+
+export const LOOKUPS_ENDPOINTS = {
+  // Category Management
+  CATEGORIES: {
+    LIST: `master/lookups/categories/list`,
+    SINGLE: `master/lookups/categories/single`,
+    CREATE: `master/lookups/categories/create`,
+    UPDATE: `master/lookups/categories/update`,
+    DELETE: `master/lookups/categories/delete`,
+    CHECK_CODE: `master/lookups/categories/check-code`
+  },
+  
+  // Lookup Management
+  LIST: `master/lookups/list`,
+  ALL: `master/lookups/all`,
+  SINGLE: `master/lookups/single`,
+  CREATE: `master/lookups/create`,
+  UPDATE: `master/lookups/update`,
+  DELETE: `master/lookups/delete`,
+  CHECK_CODE: `master/lookups/check-code`,
+  
+  // Metadata Management
+  METADATA: {
+    LIST: `master/lookups/metadata/list`,
+    SINGLE: `master/lookups/metadata/single`,
+    CREATE: `master/lookups/metadata/create`,
+    UPDATE: `master/lookups/metadata/update`,
+    DELETE: `master/lookups/metadata/delete`,
+    CHECK_KEY: `master/lookups/metadata/check-key`
+  }
+} as const;
+
+// ============================================================================
 // FEATURE ENDPOINTS (Business/Application Features)
 // ============================================================================
 // Note: Add API endpoints here as features are implemented
@@ -132,7 +185,10 @@ export const PERMISSIONS_ENDPOINTS = {
 export const API_ENDPOINTS = {
   AUTH: AUTH_ENDPOINTS,
   USERS: USERS_ENDPOINTS,
-  PERMISSIONS: PERMISSIONS_ENDPOINTS
+  PERMISSIONS: PERMISSIONS_ENDPOINTS,
+  BANKS: BANKS_ENDPOINTS,
+  CLAUSES: CLAUSES_ENDPOINTS,
+  LOOKUPS: LOOKUPS_ENDPOINTS
 } as const;
 
 // ============================================================================

@@ -65,6 +65,18 @@ export const routes: Routes = [
         title: 'Module Actions - CCMS'
       },
       {
+        path: 'master/banks',
+        loadChildren: () => import('./features/banks/banks.routes').then(m => m.banksRoutes)
+      },
+      {
+        path: 'master/clauses',
+        loadChildren: () => import('./features/clauses/clauses.routes').then(m => m.clausesRoutes)
+      },
+      {
+        path: 'master/lookups',
+        loadChildren: () => import('./features/lookups/lookups.routes').then(m => m.lookupsRoutes)
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
         title: 'Profile - CCMS'

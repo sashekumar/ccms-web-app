@@ -3,6 +3,9 @@ import authRoutes from '../features/auth/auth.routes';
 import permissionsRoutes from '../features/permissions/permissions.routes';
 import usersRoutes from '../features/users/users.routes';
 import { ResponseUtil } from '../core/utils/response.util';
+import banksRoutes from '../features/banks/banks.routes';
+import clausesRoutes from '../features/clauses/clauses.routes';
+import lookupsRoutes from '../features/lookups/lookups.routes';
 
 const router = Router();
 
@@ -10,6 +13,11 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/permissions', permissionsRoutes);
 router.use('/users', usersRoutes);
+
+// Master data routes
+router.use('/master/banks', banksRoutes);
+router.use('/master/clauses', clausesRoutes);
+router.use('/master/lookups', lookupsRoutes);
 
 // Health check
 router.get('/health', (req, res) => {
