@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { HttpClient } from '@angular/common/http';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { firstValueFrom } from 'rxjs';
 import { CategoryService, CreateCategoryDto, UpdateCategoryDto } from './category.service';
+import { LoggerService } from './logger.service';
 import { Category } from '../../shared/models/permission.model';
 import { ApiResponse } from './base-api.service';
 import { environment } from '../../../environments/environment';
@@ -10,6 +12,7 @@ import { environment } from '../../../environments/environment';
 describe('CategoryService', () => {
   let service: CategoryService;
   let httpMock: HttpTestingController;
+  let loggerServiceMock: { error: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn>; debug: ReturnType<typeof vi.fn> };
   const apiUrl = environment.apiUrl;
 
   const mockCategory: Category = {
@@ -25,9 +28,19 @@ describe('CategoryService', () => {
   };
 
   beforeEach(() => {
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [CategoryService]
+      providers: [
+        CategoryService,
+        { provide: LoggerService, useValue: loggerServiceMock }
+      ]
     });
 
     service = TestBed.inject(CategoryService);
@@ -109,18 +122,25 @@ describe('CategoryService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle category not found', () => {
-      service.getCategoryById(999).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+    it('should handle category not found', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getCategoryById(999).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/permissions/categories/999`);
       req.flush({ message: 'Category not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 
@@ -152,20 +172,25 @@ describe('CategoryService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle validation errors', () => {
+    it('should handle validation errors', async () => {
       const invalidCategory: CreateCategoryDto = {
         category_code: '',
         category_name: '',
         display_order: -1
       };
 
-      service.createCategory(invalidCategory).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toBeTruthy();
-        }
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.createCategory(invalidCategory).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toBeTruthy();
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/permissions/categories`);
@@ -173,6 +198,8 @@ describe('CategoryService', () => {
         { message: 'Validation failed', error: 'Invalid data' },
         { status: 400, statusText: 'Bad Request' }
       );
+
+      await testPromise;
     });
   });
 
@@ -202,22 +229,29 @@ describe('CategoryService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle update of non-existent category', () => {
+    it('should handle update of non-existent category', async () => {
       const updates: UpdateCategoryDto = {
         category_name: 'Updated Category'
       };
 
-      service.updateCategory(999, updates).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.updateCategory(999, updates).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/permissions/categories/999`);
       req.flush({ message: 'Category not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 
@@ -240,18 +274,25 @@ describe('CategoryService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle deletion of non-existent category', () => {
-      service.deleteCategory(999).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+    it('should handle deletion of non-existent category', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.deleteCategory(999).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/permissions/categories/999`);
       req.flush({ message: 'Category not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 

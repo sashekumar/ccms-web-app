@@ -46,7 +46,7 @@ export abstract class BaseApiService<T> {
   getAll(): Observable<T[]> {
     return this.http.get<ApiResponse<T[]>>(this.endpoint).pipe(
       map(response => response.data),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 
@@ -56,7 +56,7 @@ export abstract class BaseApiService<T> {
   getById(id: string | number): Observable<T> {
     return this.http.get<ApiResponse<T>>(`${this.endpoint}/${id}`).pipe(
       map(response => response.data),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 
@@ -66,7 +66,7 @@ export abstract class BaseApiService<T> {
   create(data: Partial<T>): Observable<T> {
     return this.http.post<ApiResponse<T>>(this.endpoint, data).pipe(
       map(response => response.data),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 
@@ -76,7 +76,7 @@ export abstract class BaseApiService<T> {
   update(id: string | number, data: Partial<T>): Observable<T> {
     return this.http.put<ApiResponse<T>>(`${this.endpoint}/${id}`, data).pipe(
       map(response => response.data),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 
@@ -86,7 +86,7 @@ export abstract class BaseApiService<T> {
   delete(id: string | number): Observable<void> {
     return this.http.delete<ApiResponse<void>>(`${this.endpoint}/${id}`).pipe(
       map(() => undefined),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 
@@ -97,24 +97,34 @@ export abstract class BaseApiService<T> {
   protected handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An unknown error occurred';
 
-    if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      errorMessage = `Error: ${error.error.message}`;
-    } else {
-      // Server-side error
-      if (error.error?.message) {
-        errorMessage = error.error.message;
-      } else if (error.error?.error) {
-        errorMessage = error.error.error;
+    try {
+      if (error.error instanceof ErrorEvent) {
+        // Client-side error
+        errorMessage = `Error: ${error.error.message}`;
       } else {
-        errorMessage = `Server error: ${error.status} - ${error.statusText}`;
+        // Server-side error
+        const errorBody = error.error;
+        if (errorBody && typeof errorBody === 'object') {
+          if ('message' in errorBody && errorBody.message) {
+            errorMessage = String(errorBody.message);
+          } else if ('error' in errorBody && errorBody.error) {
+            errorMessage = String(errorBody.error);
+          } else {
+            errorMessage = `Server error: ${error.status} - ${error.statusText}`;
+          }
+        } else {
+          errorMessage = `Server error: ${error.status} - ${error.statusText}`;
+        }
       }
+    } catch (e) {
+      // If any error occurs while parsing, use status/statusText
+      errorMessage = `Server error: ${error.status || 0} - ${error.statusText || 'Unknown'}`;
     }
 
     if (this.logger) {
-      this.logger.error(`API Error: ${errorMessage}`, error);
+      this.logger.error(`API Error: ${errorMessage}`);
     } else {
-      console.error('API Error:', errorMessage, error);
+      console.error('API Error:', errorMessage);
     }
     return throwError(() => new Error(errorMessage));
   }

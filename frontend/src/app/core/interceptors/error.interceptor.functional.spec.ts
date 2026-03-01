@@ -4,6 +4,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { Router } from '@angular/router';
 import { errorInterceptor } from './error.interceptor.functional';
 import { AuthService } from '../services/auth.service';
+import { LoggerService } from '../services/logger.service';
 import { API_ENDPOINTS } from '../constants';
 import { of, throwError, BehaviorSubject } from 'rxjs';
 
@@ -12,6 +13,7 @@ describe('errorInterceptor (Functional)', () => {
   let httpMock: HttpTestingController;
   let routerMock: any;
   let authServiceMock: any;
+  let loggerServiceMock: any;
   let refreshStateSubject: BehaviorSubject<boolean | null>;
 
   beforeEach(() => {
@@ -28,10 +30,18 @@ describe('errorInterceptor (Functional)', () => {
       getRefreshState: vi.fn().mockReturnValue(refreshStateSubject.asObservable())
     };
 
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       providers: [
         { provide: Router, useValue: routerMock },
         { provide: AuthService, useValue: authServiceMock },
+        { provide: LoggerService, useValue: loggerServiceMock },
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting()
       ]

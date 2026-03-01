@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { firstValueFrom } from 'rxjs';
 import { UserService } from './user.service';
+import { LoggerService } from './logger.service';
 import { ApiResponse } from './base-api.service';
 import { UserDetail, UserFilters, PaginatedUsers } from '../../shared/models/user.model';
 import { environment } from '../../../environments/environment';
@@ -9,6 +11,7 @@ import { environment } from '../../../environments/environment';
 describe('UserService', () => {
   let service: UserService;
   let httpMock: HttpTestingController;
+  let loggerServiceMock: { error: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn>; debug: ReturnType<typeof vi.fn> };
   const apiUrl = environment.apiUrl;
 
   const mockUser: UserDetail = {
@@ -48,9 +51,19 @@ describe('UserService', () => {
   };
 
   beforeEach(() => {
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [UserService]
+      providers: [
+        UserService,
+        { provide: LoggerService, useValue: loggerServiceMock }
+      ]
     });
 
     service = TestBed.inject(UserService);
@@ -162,18 +175,25 @@ describe('UserService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle user not found', () => {
-      service.getUserById(999).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+    it('should handle user not found', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getUserById(999).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/users/999`);
       req.flush({ message: 'User not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 
@@ -204,7 +224,7 @@ describe('UserService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle validation errors', () => {
+    it('should handle validation errors', async () => {
       const invalidUser = {
         username: '',
         password: '123', // Too short
@@ -212,13 +232,18 @@ describe('UserService', () => {
         is_active: true
       };
 
-      service.createUser(invalidUser).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toBeTruthy();
-        }
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.createUser(invalidUser).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toBeTruthy();
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/users`);
@@ -226,6 +251,8 @@ describe('UserService', () => {
         { message: 'Validation failed', error: 'Invalid data' },
         { status: 400, statusText: 'Bad Request' }
       );
+
+      await testPromise;
     });
   });
 
@@ -274,18 +301,25 @@ describe('UserService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle deletion errors', () => {
-      service.deleteUser(999).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+    it('should handle deletion errors', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.deleteUser(999).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/users/999`);
       req.flush({ message: 'User not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 

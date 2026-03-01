@@ -83,7 +83,7 @@ export class CategoryService extends BaseApiService<Category> {
       data
     ).pipe(
       map(() => undefined),
-      catchError(this.handleError)
+      catchError(err => this.handleError(err))
     );
   }
 

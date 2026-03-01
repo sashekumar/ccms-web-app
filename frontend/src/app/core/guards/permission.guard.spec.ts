@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, ActivatedRouteSnapshot } from '@angular/router';
 import { permissionGuard, permissionAnyGuard, permissionAllGuard } from './permission.guard';
 import { PermissionService } from '../services/permission.service';
+import { LoggerService } from '../services/logger.service';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { UserPermissionsResponse, ModulePermissions, CategoryPermissions } from '../../shared/models/permission.model';
 import { APP_ROUTES } from '../constants';
@@ -9,6 +10,7 @@ import { APP_ROUTES } from '../constants';
 describe('Permission Guards', () => {
   let permissionServiceMock: any;
   let routerMock: any;
+  let loggerServiceMock: any;
   let route: ActivatedRouteSnapshot;
   let userPermissionsSubject: BehaviorSubject<UserPermissionsResponse | null>;
 
@@ -64,10 +66,18 @@ describe('Permission Guards', () => {
       navigate: vi.fn()
     };
 
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       providers: [
         { provide: PermissionService, useValue: permissionServiceMock },
-        { provide: Router, useValue: routerMock }
+        { provide: Router, useValue: routerMock },
+        { provide: LoggerService, useValue: loggerServiceMock }
       ]
     });
 

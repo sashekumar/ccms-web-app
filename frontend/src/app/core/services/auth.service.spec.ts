@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of, throwError, delay } from 'rxjs';
+import { of, throwError, delay, firstValueFrom } from 'rxjs';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AuthService, ApiResponse } from './auth.service';
 import { ApiService } from './api.service';
+import { LoggerService } from './logger.service';
 import { PermissionService } from './permission.service';
 import { User } from '../../shared/models/user.model';
 import { API_ENDPOINTS } from '../constants';
@@ -11,8 +12,9 @@ import { API_ENDPOINTS } from '../constants';
 describe('AuthService', () => {
   let service: AuthService;
   let apiServiceMock: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn> };
-  let routerMock: { navigate: ReturnType<typeof vi.fn> };
+  let routerMock: { navigate: ReturnType<typeof vi.fn>; url: string };
   let permissionServiceMock: { loadUserPermissions: ReturnType<typeof vi.fn>; clearAllData: ReturnType<typeof vi.fn> };
+  let loggerServiceMock: { error: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn>; debug: ReturnType<typeof vi.fn> };
 
   const mockUser: User = {
     user_id: 1,
@@ -48,11 +50,18 @@ describe('AuthService', () => {
       post: vi.fn()
     };
     routerMock = {
-      navigate: vi.fn()
+      navigate: vi.fn(),
+      url: '/dashboard' // Default URL for tests
     };
     permissionServiceMock = {
       loadUserPermissions: vi.fn(),
       clearAllData: vi.fn()
+    };
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
     };
 
     TestBed.configureTestingModule({
@@ -60,7 +69,8 @@ describe('AuthService', () => {
         AuthService,
         { provide: ApiService, useValue: apiServiceMock },
         { provide: Router, useValue: routerMock },
-        { provide: PermissionService, useValue: permissionServiceMock }
+        { provide: PermissionService, useValue: permissionServiceMock },
+        { provide: LoggerService, useValue: loggerServiceMock }
       ]
     });
 
@@ -219,7 +229,7 @@ describe('AuthService', () => {
       sessionStorage.setItem('currentUser', JSON.stringify(mockUser));
     });
 
-    it('should logout user successfully', () => {
+    it('should logout user successfully', async () => {
       const mockLogoutResponse: ApiResponse<null> = {
         success: true,
         message: 'Logged out',
@@ -228,15 +238,13 @@ describe('AuthService', () => {
 
       apiServiceMock.post.mockReturnValue(of(mockLogoutResponse));
 
-      service.logout().subscribe({
-        next: (response) => {
-          expect(response.success).toBe(true);
-          expect(service.getCurrentUser()).toBeNull();
-          expect(sessionStorage.getItem('currentUser')).toBeNull();
-          expect(permissionServiceMock.clearAllData).toHaveBeenCalled();
-          expect(routerMock.navigate).toHaveBeenCalledWith(['/auth/login']);
-        }
-      });
+      const response = await firstValueFrom(service.logout());
+      
+      expect(response.success).toBe(true);
+      expect(service.getCurrentUser()).toBeNull();
+      expect(sessionStorage.getItem('currentUser')).toBeNull();
+      expect(permissionServiceMock.clearAllData).toHaveBeenCalled();
+      expect(routerMock.navigate).toHaveBeenCalledWith(['/auth/login']);
     });
 
     it('should clear all user data on logout', () => {
@@ -274,23 +282,26 @@ describe('AuthService', () => {
       });
     });
 
-    it('should handle refresh failure and logout', () => {
+    it('should handle refresh failure and logout', async () => {
       service['currentUserSubject'].next(mockUser);
       
       apiServiceMock.post.mockReturnValue(
         throwError(() => new Error('Token expired'))
       );
 
-      service.refreshAccessToken().subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(service.getCurrentUser()).toBeNull();
-          expect(routerMock.navigate).toHaveBeenCalledWith(['/auth/login']);
-          expect(permissionServiceMock.clearAllData).toHaveBeenCalled();
-        }
-      });
+      try {
+        await firstValueFrom(service.refreshAccessToken());
+        throw new Error('Should have failed');
+      } catch (error: any) {
+        // Wait for setTimeout in handleError to complete
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        expect(service.getCurrentUser()).toBeNull();
+        expect(routerMock.navigate).toHaveBeenCalledWith(['/auth/login'], { 
+          queryParams: { reason: 'session_expired' } 
+        });
+        expect(permissionServiceMock.clearAllData).toHaveBeenCalled();
+      }
     });
 
     it('should prevent concurrent refresh requests', async () => {

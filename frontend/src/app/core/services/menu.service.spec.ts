@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { MenuService, MenuItem } from './menu.service';
 import { PermissionService } from './permission.service';
+import { LoggerService } from './logger.service';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { UserPermissionsResponse, ModulePermissions, CategoryPermissions } from '../../shared/models/permission.model';
 import { take } from 'rxjs/operators';
@@ -8,6 +9,7 @@ import { take } from 'rxjs/operators';
 describe('MenuService', () => {
   let service: MenuService;
   let permissionServiceMock: any;
+  let loggerServiceMock: { error: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn>; debug: ReturnType<typeof vi.fn> };
   let userPermissionsSubject: BehaviorSubject<UserPermissionsResponse | null>;
 
   const mockModule1: ModulePermissions = {
@@ -63,10 +65,18 @@ describe('MenuService', () => {
       getUserPermissions: vi.fn()
     };
 
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       providers: [
         MenuService,
-        { provide: PermissionService, useValue: permissionServiceMock }
+        { provide: PermissionService, useValue: permissionServiceMock },
+        { provide: LoggerService, useValue: loggerServiceMock }
       ]
     });
 
@@ -285,7 +295,7 @@ describe('MenuService', () => {
       userPermissionsSubject.error(new Error('Permission load failed'));
 
       // Create new service instance to trigger error subscription
-      const newService = new MenuService(permissionServiceMock);
+      const newService = new MenuService(permissionServiceMock, loggerServiceMock as any);
       
       newService.menuItems$.pipe(take(1)).subscribe(items => {
         const dashboard = items.find(item => item.id === 'dashboard');
@@ -482,21 +492,17 @@ describe('MenuService', () => {
     });
 
     it('should handle empty permissions with neither categories nor modules', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       permissionServiceMock.getUserPermissions.mockReturnValue(of({} as any));
 
       service.loadMenuItems();
 
       service.menuItems$.pipe(take(1)).subscribe(items => {
         // Should show warning and provide default dashboard + logout
-        expect(consoleWarnSpy).toHaveBeenCalledWith('⚠️ No permissions data available for menu building');
+        expect(loggerServiceMock.warn).toHaveBeenCalledWith('No permissions data available for menu building');
         expect(items.length).toBe(2); // Dashboard + Logout
         expect(items[0].id).toBe('dashboard');
         expect(items[1].id).toBe('logout');
       });
-
-      consoleWarnSpy.mockRestore();
     });
   });
 });

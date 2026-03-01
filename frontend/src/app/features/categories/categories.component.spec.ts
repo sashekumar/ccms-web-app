@@ -3,12 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { of, throwError } from 'rxjs';
 import { CategoriesComponent } from './categories.component';
 import { CategoryService } from '../../core/services/category.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Category } from '../../shared/models/permission.model';
 
 describe('CategoriesComponent', () => {
   let component: CategoriesComponent;
   let fixture: ComponentFixture<CategoriesComponent>;
   let categoryServiceMock: any;
+  let toastServiceMock: any;
 
   const mockCategories: Category[] = [
     {
@@ -54,10 +56,18 @@ describe('CategoriesComponent', () => {
       deleteCategory: vi.fn()
     };
 
+    toastServiceMock = {
+      success: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+      warning: vi.fn()
+    };
+
     await TestBed.configureTestingModule({
       imports: [CategoriesComponent, FormsModule],
       providers: [
-        { provide: CategoryService, useValue: categoryServiceMock }
+        { provide: CategoryService, useValue: categoryServiceMock },
+        { provide: ToastService, useValue: toastServiceMock }
       ]
     }).compileComponents();
 
@@ -112,7 +122,7 @@ describe('CategoriesComponent', () => {
 
       fixture.detectChanges();
 
-      expect(component.errorMessage).toBe('Error loading categories');
+      expect(toastServiceMock.error).toHaveBeenCalledWith('Error loading categories');
       expect(component.loading).toBe(false);
     });
   });
@@ -276,7 +286,7 @@ describe('CategoriesComponent', () => {
 
       component.saveCategory();
 
-      expect(component.successMessage).toBe('Category created successfully');
+      expect(toastServiceMock.success).toHaveBeenCalledWith('Category created successfully');
       expect(component.saving).toBe(false);
       expect(component.showModal).toBe(false);
     });
@@ -298,7 +308,7 @@ describe('CategoriesComponent', () => {
 
       component.saveCategory();
 
-      expect(component.errorMessage).toContain('Error creating category');
+      expect(toastServiceMock.error).toHaveBeenCalledWith(expect.stringContaining('Error creating category'));
       expect(component.saving).toBe(false);
     });
   });
@@ -336,7 +346,7 @@ describe('CategoriesComponent', () => {
 
       component.saveCategory();
 
-      expect(component.successMessage).toBe('Category updated successfully');
+      expect(toastServiceMock.success).toHaveBeenCalledWith('Category updated successfully');
       expect(component.saving).toBe(false);
       expect(component.showModal).toBe(false);
     });
@@ -356,7 +366,7 @@ describe('CategoriesComponent', () => {
 
       component.saveCategory();
 
-      expect(component.errorMessage).toContain('Error updating category');
+      expect(toastServiceMock.error).toHaveBeenCalledWith(expect.stringContaining('Error updating category'));
       expect(component.saving).toBe(false);
     });
   });
@@ -393,7 +403,7 @@ describe('CategoriesComponent', () => {
 
       component.deleteCategory();
 
-      expect(component.successMessage).toBe('Category deleted successfully');
+      expect(toastServiceMock.success).toHaveBeenCalledWith('Category deleted successfully');
       expect(component.showDeleteConfirm).toBe(false);
       expect(component.categoryToDelete).toBeNull();
     });
@@ -415,7 +425,7 @@ describe('CategoriesComponent', () => {
 
       component.deleteCategory();
 
-      expect(component.errorMessage).toContain('Error deleting category');
+      expect(toastServiceMock.error).toHaveBeenCalledWith(expect.stringContaining('Error deleting category'));
       expect(component.showDeleteConfirm).toBe(false);
     });
 

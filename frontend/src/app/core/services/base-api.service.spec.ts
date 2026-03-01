@@ -2,8 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { firstValueFrom } from 'rxjs';
 import { BaseApiService, ApiResponse } from './base-api.service';
+import { LoggerService } from './logger.service';
 import { environment } from '../../../environments/environment';
 
 // Test entity type
@@ -16,20 +18,31 @@ interface TestEntity {
 // Concrete implementation for testing
 @Injectable()
 class TestApiService extends BaseApiService<TestEntity> {
-  constructor(http: HttpClient) {
-    super(http, '/test-entities');
+  constructor(http: HttpClient, logger: LoggerService) {
+    super(http, '/test-entities', logger);
   }
 }
 
 describe('BaseApiService', () => {
   let service: TestApiService;
   let httpMock: HttpTestingController;
+  let loggerServiceMock: any;
   const apiUrl = environment.apiUrl;
 
   beforeEach(() => {
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [TestApiService]
+      providers: [
+        TestApiService,
+        { provide: LoggerService, useValue: loggerServiceMock }
+      ]
     });
 
     service = TestBed.inject(TestApiService);
@@ -88,20 +101,27 @@ describe('BaseApiService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle error response', () => {
+    it('should handle error response', async () => {
       const errorMessage = 'Failed to fetch entities';
 
-      service.getAll().subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain(errorMessage);
-        }
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getAll().subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain(errorMessage);
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities`);
       req.flush({ message: errorMessage }, { status: 500, statusText: 'Server Error' });
+
+      await testPromise;
     });
   });
 
@@ -143,18 +163,25 @@ describe('BaseApiService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle 404 not found', () => {
-      service.getById(999).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+    it('should handle 404 not found', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getById(999).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities/999`);
       req.flush({ message: 'Entity not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 
@@ -181,16 +208,21 @@ describe('BaseApiService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle validation errors', () => {
+    it('should handle validation errors', async () => {
       const invalidEntity: Partial<TestEntity> = { name: '', email: 'invalid' };
 
-      service.create(invalidEntity).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('Validation');
-        }
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.create(invalidEntity).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('Validation');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities`);
@@ -198,6 +230,8 @@ describe('BaseApiService', () => {
         { message: 'Validation failed', error: 'Invalid data' },
         { status: 400, statusText: 'Bad Request' }
       );
+
+      await testPromise;
     });
   });
 
@@ -224,20 +258,27 @@ describe('BaseApiService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle update of non-existent entity', () => {
+    it('should handle update of non-existent entity', async () => {
       const updates: Partial<TestEntity> = { name: 'Updated Name' };
 
-      service.update(999, updates).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.update(999, updates).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities/999`);
       req.flush({ message: 'Entity not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 
@@ -260,76 +301,111 @@ describe('BaseApiService', () => {
       req.flush(mockResponse);
     });
 
-    it('should handle deletion of non-existent entity', () => {
-      service.delete(999).subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('not found');
-        }
+    it('should handle deletion of non-existent entity', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.delete(999).subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('not found');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities/999`);
       req.flush({ message: 'Entity not found' }, { status: 404, statusText: 'Not Found' });
+
+      await testPromise;
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle client-side errors', () => {
-      service.getAll().subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('Server error: 0 - Network error');
-        }
+    it('should handle client-side errors', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getAll().subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('Server error: 0 - Network error');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities`);
       req.error(new ProgressEvent('error'), { statusText: 'Network error' });
+
+      await testPromise;
     });
 
-    it('should handle server errors with error field', () => {
-      service.getAll().subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toBe('Custom error message');
-        }
+    it('should handle server errors with error field', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getAll().subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toBe('Custom error message');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities`);
       req.flush({ error: 'Custom error message' }, { status: 500, statusText: 'Server Error' });
+
+      await testPromise;
     });
 
-    it('should handle server errors with message field', () => {
-      service.getAll().subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toBe('Custom message');
-        }
+    it('should handle server errors with message field', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getAll().subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toBe('Custom message');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities`);
       req.flush({ message: 'Custom message' }, { status: 500, statusText: 'Server Error' });
+
+      await testPromise;
     });
 
-    it('should handle generic server errors', () => {
-      service.getAll().subscribe({
-        next: () => {
-          throw new Error('Should have failed');
-        },
-        error: (error) => {
-          expect(error.message).toContain('Server error: 503');
-        }
+    it('should handle generic server errors', async () => {
+      const testPromise = new Promise<void>((resolve, reject) => {
+        service.getAll().subscribe({
+          next: () => reject(new Error('Should have failed')),
+          error: (error) => {
+            try {
+              expect(error.message).toContain('Server error: 503');
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
       });
 
       const req = httpMock.expectOne(`${apiUrl}/test-entities`);
       req.flush(null, { status: 503, statusText: 'Service Unavailable' });
+
+      await testPromise;
     });
   });
 });

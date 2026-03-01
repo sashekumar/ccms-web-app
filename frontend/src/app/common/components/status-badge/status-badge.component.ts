@@ -98,14 +98,15 @@ export class StatusBadgeComponent {
     // Auto-detect variant from status string
     if (this.status) {
       const statusLower = this.status.toLowerCase();
+      // Check negative statuses first to avoid false matches (e.g., "inactive" contains "active")
+      if (statusLower.includes('inactive') || statusLower.includes('rejected') || statusLower.includes('blocked')) {
+        return 'danger';
+      }
       if (statusLower.includes('active') || statusLower.includes('approved') || statusLower.includes('complete')) {
         return 'success';
       }
       if (statusLower.includes('pending') || statusLower.includes('progress')) {
         return 'warning';
-      }
-      if (statusLower.includes('inactive') || statusLower.includes('rejected') || statusLower.includes('blocked')) {
-        return 'danger';
       }
     }
 

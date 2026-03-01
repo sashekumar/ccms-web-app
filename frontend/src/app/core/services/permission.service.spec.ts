@@ -3,12 +3,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 import { PermissionService, ApiResponse } from './permission.service';
 import { ApiService } from './api.service';
+import { LoggerService } from './logger.service';
 import { API_ENDPOINTS } from '../constants';
 import { UserPermissionsResponse, ModulePermissions, Role, AssignRoleDto } from '../../shared/models/permission.model';
 
 describe('PermissionService', () => {
   let service: PermissionService;
   let apiServiceMock: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
+  let loggerServiceMock: { error: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn>; debug: ReturnType<typeof vi.fn> };
 
   const mockModulePermissions: ModulePermissions = {
     module_code: 'USER_MGMT',
@@ -55,10 +57,18 @@ describe('PermissionService', () => {
       delete: vi.fn()
     };
 
+    loggerServiceMock = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       providers: [
         PermissionService,
-        { provide: ApiService, useValue: apiServiceMock }
+        { provide: ApiService, useValue: apiServiceMock },
+        { provide: LoggerService, useValue: loggerServiceMock }
       ]
     });
 
@@ -101,7 +111,9 @@ describe('PermissionService', () => {
 
       service.loadUserPermissions().subscribe(permissions => {
         expect(permissions).toEqual(mockUserPermissions);
-        expect(apiServiceMock.get).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT);
+        // Using a more flexible matcher for headers parameter
+        expect(apiServiceMock.get).toHaveBeenCalled();
+        expect(apiServiceMock.get.mock.calls[0][0]).toBe(API_ENDPOINTS.PERMISSIONS.USER.GET_CURRENT);
       });
     });
 
@@ -524,7 +536,9 @@ describe('PermissionService', () => {
 
       service.getUserPermissionsById(1).subscribe(permissions => {
         expect(permissions).toEqual(mockUserPermissions);
-        expect(apiServiceMock.get).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.USER.getById(1));
+        // Using a more flexible matcher for headers parameter
+        expect(apiServiceMock.get).toHaveBeenCalled();
+        expect(apiServiceMock.get.mock.calls[0][0]).toBe(API_ENDPOINTS.PERMISSIONS.USER.getById(1));
       });
     });
 
