@@ -58,7 +58,7 @@ describe('ToastComponent', () => {
       expect(container).toBeTruthy();
       expect(container?.classList.contains('top-4')).toBe(true);
       expect(container?.classList.contains('right-4')).toBe(true);
-      expect(container?.classList.contains('z-50')).toBe(true);
+      expect(container?.classList.contains('z-[10000]')).toBe(true);
     });
   });
 
