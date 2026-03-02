@@ -528,6 +528,44 @@
             justify-content: center;
             flex-direction: column;
         }
+
+        /* Hospital Management Styles */
+        .hosp-screen-section {
+            display: none;
+        }
+
+        .hosp-screen-section.active {
+            display: block;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .badge-panel {
+            background-color: #198754;
+            color: white;
+        }
+
+        .badge-non-panel {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .table-actions .btn-link {
+            padding: 0.25rem 0.5rem;
+            text-decoration: none;
+        }
+
+        .table-actions .btn-link:hover {
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -1993,6 +2031,566 @@
         </div>
     </div>
 
+    <!-- HOSPITAL MANAGEMENT VIEW -->
+    <div id="view-hospital-mgmt" class="view-section workspace-content">
+        <div class="container-fluid px-4" style="padding-top: 80px; padding-bottom: 40px;">
+            <!-- SCREEN 1: HOSPITAL LIST (Default View) -->
+            <div id="hosp-screen-list" class="hosp-screen-section active">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3><i class="fas fa-hospital-alt me-2 text-primary"></i>Hospital Management</h3>
+                        <p class="text-muted mb-0 small">Manage provider facilities and related information</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="showHospScreen('create')">
+                        <i class="fas fa-plus me-2"></i>Create Hospital
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="dash-stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">Total Hospitals</div>
+                                    <h3 class="mb-0 fw-bold">245</h3>
+                                </div>
+                                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                    <i class="fas fa-hospital"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dash-stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">Panel Hospitals</div>
+                                    <h3 class="mb-0 fw-bold">189</h3>
+                                </div>
+                                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dash-stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">Active Staff</div>
+                                    <h3 class="mb-0 fw-bold">1,234</h3>
+                                </div>
+                                <div class="stat-icon bg-info bg-opacity-10 text-info">
+                                    <i class="fas fa-user-md"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dash-stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">Accredited</div>
+                                    <h3 class="mb-0 fw-bold">178</h3>
+                                </div>
+                                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                                    <i class="fas fa-certificate"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="dash-card mb-4">
+                    <div class="dash-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Search</label>
+                                <input type="text" class="form-control" placeholder="Hospital name or code">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Hospital Type</label>
+                                <select class="form-select">
+                                    <option>All Types</option>
+                                    <option>Private Hospital</option>
+                                    <option>Government Hospital</option>
+                                    <option>Specialist Centre</option>
+                                    <option>Clinic</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Panel Status</label>
+                                <select class="form-select">
+                                    <option>All</option>
+                                    <option>Panel</option>
+                                    <option>Non-Panel</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Accreditation</label>
+                                <select class="form-select">
+                                    <option>All</option>
+                                    <option>Accredited</option>
+                                    <option>Not Accredited</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Items per page</label>
+                                <select class="form-select">
+                                    <option>10</option>
+                                    <option>25</option>
+                                    <option selected>50</option>
+                                    <option>100</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="dash-card">
+                    <div class="dash-body p-0">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">Code</th>
+                                    <th>Hospital Name</th>
+                                    <th>Type</th>
+                                    <th>Panel Status</th>
+                                    <th>Accreditation</th>
+                                    <th>Staff Count</th>
+                                    <th class="text-end pe-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="ps-3"><code>HOSP001</code></td>
+                                    <td><strong>Gleneagles Hospital Kuala Lumpur</strong></td>
+                                    <td>Private Hospital</td>
+                                    <td><span class="badge badge-panel">Panel</span></td>
+                                    <td><span class="badge bg-success">JCI Accredited</span></td>
+                                    <td>45</td>
+                                    <td class="text-end pe-3 table-actions">
+                                        <button class="btn btn-sm btn-link text-primary" onclick="showHospScreen('detail')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-secondary" onclick="showHospScreen('create')" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-danger" onclick="deleteHospital('HOSP001', 'Gleneagles Hospital Kuala Lumpur')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3"><code>HOSP002</code></td>
+                                    <td><strong>Sunway Medical Centre</strong></td>
+                                    <td>Private Hospital</td>
+                                    <td><span class="badge badge-panel">Panel</span></td>
+                                    <td><span class="badge bg-success">MSQH Accredited</span></td>
+                                    <td>38</td>
+                                    <td class="text-end pe-3 table-actions">
+                                        <button class="btn btn-sm btn-link text-primary" onclick="showHospScreen('detail')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-secondary" onclick="showHospScreen('create')" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-danger" onclick="deleteHospital('HOSP002', 'Sunway Medical Centre')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3"><code>HOSP003</code></td>
+                                    <td><strong>Hospital Kuala Lumpur (HKL)</strong></td>
+                                    <td>Government Hospital</td>
+                                    <td><span class="badge badge-non-panel">Non-Panel</span></td>
+                                    <td><span class="badge bg-secondary">Not Accredited</span></td>
+                                    <td>125</td>
+                                    <td class="text-end pe-3 table-actions">
+                                        <button class="btn btn-sm btn-link text-primary" onclick="showHospScreen('detail')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-secondary" onclick="showHospScreen('create')" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-danger" onclick="deleteHospital('HOSP003', 'Hospital Kuala Lumpur (HKL)')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3"><code>HOSP004</code></td>
+                                    <td><strong>Pantai Hospital Kuala Lumpur</strong></td>
+                                    <td>Private Hospital</td>
+                                    <td><span class="badge badge-panel">Panel</span></td>
+                                    <td><span class="badge bg-success">MSQH Accredited</span></td>
+                                    <td>52</td>
+                                    <td class="text-end pe-3 table-actions">
+                                        <button class="btn btn-sm btn-link text-primary" onclick="showHospScreen('detail')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-secondary" onclick="showHospScreen('create')" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-danger" onclick="deleteHospital('HOSP004', 'Pantai Hospital Kuala Lumpur')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3"><code>HOSP005</code></td>
+                                    <td><strong>Prince Court Medical Centre</strong></td>
+                                    <td>Specialist Centre</td>
+                                    <td><span class="badge badge-panel">Panel</span></td>
+                                    <td><span class="badge bg-success">JCI Accredited</span></td>
+                                    <td>67</td>
+                                    <td class="text-end pe-3 table-actions">
+                                        <button class="btn btn-sm btn-link text-primary" onclick="showHospScreen('detail')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-secondary" onclick="showHospScreen('create')" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-link text-danger" onclick="deleteHospital('HOSP005', 'Prince Court Medical Centre')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="dash-body border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted small">Showing 1 to 5 of 245 hospitals</div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCREEN 2: HOSPITAL DETAIL VIEW -->
+            <div id="hosp-screen-detail" class="hosp-screen-section">
+                <div class="mb-4">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="showHospScreen('list')">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </button>
+                </div>
+
+                <!-- Hospital Header -->
+                <div class="dash-card mb-4">
+                    <div class="dash-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h4 class="mb-2">Gleneagles Hospital Kuala Lumpur</h4>
+                                <div class="mb-3">
+                                    <span class="badge badge-panel me-2">Panel Hospital</span>
+                                    <span class="badge bg-success me-2">JCI Accredited</span>
+                                    <span class="badge bg-info">Private Hospital</span>
+                                </div>
+                                <p class="mb-1"><i class="fas fa-code me-2 text-muted"></i><strong>Code:</strong> HOSP001</p>
+                                <p class="mb-1"><i class="fas fa-file-alt me-2 text-muted"></i><strong>Reg No:</strong> REG123456</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="showHospScreen('create')">
+                                    <i class="fas fa-edit me-2"></i>Edit Hospital
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteHospital('HOSP001', 'Gleneagles Hospital Kuala Lumpur')">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Tabs -->
+                <ul class="nav nav-pills mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="switchHospDetailTab('overview')">
+                            <i class="fas fa-info-circle me-1"></i>Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchHospDetailTab('addresses')">
+                            <i class="fas fa-map-marker-alt me-1"></i>Addresses (3)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchHospDetailTab('staff')">
+                            <i class="fas fa-user-md me-1"></i>Staff & Doctors (45)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchHospDetailTab('fees')">
+                            <i class="fas fa-dollar-sign me-1"></i>Fee Schedules
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchHospDetailTab('history')">
+                            <i class="fas fa-history me-1"></i>History
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Tab Content: Overview -->
+                <div id="detail-tab-overview" class="tab-content-section active">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-header">
+                                    <i class="fas fa-hospital me-2"></i>Hospital Information
+                                </div>
+                                <div class="dash-body">
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td class="text-muted">Hospital Name:</td>
+                                            <td><strong>Gleneagles Hospital Kuala Lumpur</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Hospital Code:</td>
+                                            <td><code>HOSP001</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Hospital Type:</td>
+                                            <td>Private Hospital</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Registration No:</td>
+                                            <td>REG123456</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Status:</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-header">
+                                    <i class="fas fa-handshake me-2"></i>Panel & Accreditation
+                                </div>
+                                <div class="dash-body">
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td class="text-muted">Panel Status:</td>
+                                            <td><span class="badge badge-panel">Active Panel</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Panel Effective:</td>
+                                            <td>2020-01-01</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Accreditation:</td>
+                                            <td><span class="badge bg-success">JCI Accredited</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Expiry Date:</td>
+                                            <td>2026-12-31</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Addresses -->
+                <div id="detail-tab-addresses" class="tab-content-section">
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Hospital Addresses</h5>
+                        <button class="btn btn-primary btn-sm" onclick="openAddAddressForm()">
+                            <i class="fas fa-plus me-2"></i>Add Address
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6><span class="badge bg-primary">PRIMARY</span></h6>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                    <p class="mb-1">286, Jalan Ampang</p>
+                                    <p class="mb-1">Kuala Lumpur</p>
+                                    <p class="mb-1">50450 Kuala Lumpur</p>
+                                    <p class="mb-0">Malaysia</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Staff -->
+                <div id="detail-tab-staff" class="tab-content-section">
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Staff & Doctors</h5>
+                        <button class="btn btn-primary btn-sm" onclick="openAddStaffForm()">
+                            <i class="fas fa-plus me-2"></i>Add Staff/Doctor
+                        </button>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-body p-0">
+                            <table class="table table-hover align-middle mb-0 small">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Specialty</th>
+                                        <th>Contact</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Dr. Ahmad bin Abdullah</strong></td>
+                                        <td><span class="badge bg-info">Doctor</span></td>
+                                        <td>Cardiology</td>
+                                        <td>012-3456789</td>
+                                        <td><span class="badge bg-success">Active</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Fees -->
+                <div id="detail-tab-fees" class="tab-content-section">
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Fee Schedules</h5>
+                        <button class="btn btn-primary btn-sm" onclick="openAddFeeForm()">
+                            <i class="fas fa-plus me-2"></i>Add Fee Schedule
+                        </button>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-body p-0">
+                            <table class="table table-hover align-middle mb-0 small">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Fee Type</th>
+                                        <th>Description</th>
+                                        <th>Amount (RM)</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge bg-primary">TPA</span></td>
+                                        <td>TPA Processing Fee</td>
+                                        <td class="text-end">150.00</td>
+                                        <td><span class="badge bg-success">Active</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: History -->
+                <div id="detail-tab-history" class="tab-content-section">
+                    <div class="dash-card">
+                        <div class="dash-body">
+                            <p class="text-muted">History timeline will be displayed here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCREEN 3: CREATE/EDIT HOSPITAL FORM -->
+            <div id="hosp-screen-create" class="hosp-screen-section">
+                <div class="mb-4">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="showHospScreen('list')">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </button>
+                </div>
+
+                <div class="dash-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Hospital</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="createHospitalForm">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Hospital Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="hospitalName" placeholder="Enter hospital name" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Hospital Code</label>
+                                    <input type="text" class="form-control" id="hospitalCode" placeholder="e.g., HOSP001">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Hospital Type</label>
+                                    <select class="form-select" id="hospitalType">
+                                        <option value="">Select type...</option>
+                                        <option value="Private Hospital">Private Hospital</option>
+                                        <option value="Government Hospital">Government Hospital</option>
+                                        <option value="Specialist Centre">Specialist Centre</option>
+                                        <option value="Clinic">Clinic</option>
+                                        <option value="Medical Centre">Medical Centre</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Registration No</label>
+                                    <input type="text" class="form-control" id="regNo" placeholder="e.g., REG123456">
+                                </div>
+                                <div class="col-md-12">
+                                    <hr class="my-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="isPanelSwitch">
+                                        <label class="form-check-label" for="isPanelSwitch">
+                                            <strong>Is Panel Hospital</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Panel Status</label>
+                                    <select class="form-select" id="panelStatus">
+                                        <option value="">Select status...</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Suspended">Suspended</option>
+                                        <option value="Terminated">Terminated</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-outline-secondary" onclick="showHospScreen('list')">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </button>
+                            <button class="btn btn-primary" onclick="saveHospital()">
+                                <i class="fas fa-save me-2"></i>Save Hospital
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- LOADING -->
     <div id="loadingOverlay">
         <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
@@ -2345,6 +2943,7 @@
             { id: 'dash', icon: 'fa-th-large', label: 'Dashboard', action: 'goBackToDashboard()', roles: ['all'], active: true },
             { id: 'adm', icon: 'fa-hospital-user', label: 'New Admission', action: 'openRegistration()', roles: ['assessor', 'submission'] },
             { id: 'reimb', icon: 'fa-file-invoice-dollar', label: 'New Claim Reg', action: 'openReimbRegistration()', roles: ['cs', 'settlement'] },
+            { id: 'hospitals', icon: 'fa-hospital-alt', label: 'Hospital Management', action: 'openHospitalManagement()', roles: ['all'] },
             { id: 'settlement', icon: 'fa-coins', label: 'Settlement Console (Appr)', action: 'openSettlementConsole()', roles: ['settlement', 'cs'] },
             { id: 'reim-approved', icon: 'fa-check-to-slot', label: 'Reim Sub Approved', action: 'openSettlementReimApprovedConsole()', roles: ['settlement', 'cs'] },
             { id: 'reim-declined', icon: 'fa-circle-xmark', label: 'Reim Sub Declined', action: 'openSettlementReimDeclinedConsole()', roles: ['settlement', 'cs'] },
@@ -2557,6 +3156,60 @@
         function openEscalationInitiateModal() {
             const modal = new bootstrap.Modal(document.getElementById('escalationInitiateModal'));
             modal.show();
+        }
+        function openHospitalManagement() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-hospital-mgmt').classList.add('active');
+            showHospScreen('list');
+            window.scrollTo(0, 0);
+        }
+
+        function showHospScreen(screenName) {
+            document.querySelectorAll('.hosp-screen-section').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById('hosp-screen-' + screenName).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function switchHospDetailTab(tabName) {
+            document.querySelectorAll('.nav-pills .nav-link').forEach(el => {
+                el.classList.remove('active');
+            });
+            event.target.closest('.nav-link').classList.add('active');
+            
+            document.querySelectorAll('[id^="detail-tab-"]').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById('detail-tab-' + tabName).classList.add('active');
+        }
+
+        function saveHospital() {
+            alert('Hospital saved successfully!\n\nIn the actual implementation:\n- Validation will be performed\n- Data will be sent to backend API\n- User will be redirected to detail view');
+            showHospScreen('list');
+        }
+
+        function deleteHospital(code, name) {
+            if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+                alert(`Hospital ${code} deleted successfully!`);
+                showHospScreen('list');
+            }
+        }
+
+        function openAddAddressForm() {
+            alert('Open Add Address Form\n\nIn actual implementation:\n- Modal or inline form will open\n- User can add new address\n- Saved to database via API');
+        }
+
+        function openAddStaffForm() {
+            alert('Open Add Staff/Doctor Form\n\nIn actual implementation:\n- Modal or inline form will open\n- User can add staff with contacts\n- Saved to database via API');
+        }
+
+        function openAddFeeForm() {
+            alert('Open Add Fee Schedule Form\n\nIn actual implementation:\n- Modal or inline form will open\n- User can add TPA/Wakalah/MMA fees\n- Saved to database via API');
+        }
+
+        function openAddInsurerCodeForm() {
+            alert('Open Add Insurer Code Form\n\nIn actual implementation:\n- Modal or inline form will open\n- User can add insurer-specific codes (ZURICH, FWD, MSIG, etc.)\n- Saved to database via API');
         }
         function saveCommunicationNote() {
             const caller = document.getElementById('commCallerName').value;

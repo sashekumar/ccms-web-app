@@ -1,0 +1,1068 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">{{ hospital?.hospital_name || 'Hospital Details' }}</h1>
+      <p class="mt-1 text-sm text-gray-600">View hospital information and related data</p>
+    </div>
+    <div class="flex gap-3">
+      <button
+        (click)="goBack()"
+        class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to List
+      </button>
+      <button
+        *hasPermission="PERMISSIONS.UPDATE"
+        (click)="editHospital()"
+        class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        Edit
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <app-loading-spinner *ngIf="loading" message="Loading hospital details..."></app-loading-spinner>
+
+  <!-- Content -->
+  <div *ngIf="!loading && hospital" class="space-y-6">
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 bg-white rounded-t-lg shadow">
+      <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+        <button
+          *ngFor="let tab of tabs"
+          (click)="onTabChange(tab.id)"
+          [class.border-[#1e3c72]]="activeTab === tab.id"
+          [class.text-[#1e3c72]]="activeTab === tab.id"
+          [class.border-transparent]="activeTab !== tab.id"
+          [class.text-gray-500]="activeTab !== tab.id"
+          class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition hover:border-gray-300 hover:text-gray-700"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="rounded-b-lg bg-white p-6 shadow">
+      <!-- Overview Tab -->
+      <div *ngIf="activeTab === 'overview'">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <!-- Basic Information -->
+          <div class="md:col-span-2">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Hospital Name</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.hospital_name }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Hospital Code</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.hospital_code || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Hospital Type</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.hospital_type || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Registration Number</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.reg_no || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Panel Status</label>
+            <div class="mt-1">
+              <span *ngIf="hospital.is_panel === true" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                Panel
+              </span>
+              <span *ngIf="hospital.is_panel === false" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
+                Non-Panel
+              </span>
+              <span *ngIf="hospital.is_panel === null" class="text-sm text-gray-400">Not Specified</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Panel Status Details</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.panel_status || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Panel Effective Date</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.panel_effective_date ? (hospital.panel_effective_date | date:'mediumDate') : '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Accreditation Status</label>
+            <div class="mt-1">
+              <span *ngIf="hospital.accreditation_status" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" 
+                [ngClass]="{
+                  'bg-blue-100 text-blue-800': hospital.accreditation_status === 'JCI Accredited',
+                  'bg-green-100 text-green-800': hospital.accreditation_status === 'MSQH Accredited',
+                  'bg-gray-100 text-gray-800': hospital.accreditation_status === 'Not Accredited'
+                }">
+                {{ hospital.accreditation_status }}
+              </span>
+              <span *ngIf="!hospital.accreditation_status" class="text-sm text-gray-400">Not Specified</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Accreditation Expiry</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.accreditation_expiry ? (hospital.accreditation_expiry | date:'mediumDate') : '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Bank</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.bank_id || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Bank Account Number</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.bank_acc_no || '-' }}</p>
+          </div>
+
+          <!-- System Information -->
+          <div class="md:col-span-2 mt-4">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 border-b pb-2">System Information</h3>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Hospital ID</label>
+            <p class="mt-1 text-sm font-mono text-gray-900">{{ hospital.hospital_id }}</p>
+          </div>
+
+          <div *ngIf="hospital.legacy_hospital_id">
+            <label class="block text-sm font-medium text-gray-500">Legacy Hospital ID</label>
+            <p class="mt-1 text-sm font-mono text-gray-900">{{ hospital.legacy_hospital_id }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Created At</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.created_at | date:'medium' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Last Updated</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.updated_at | date:'medium' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Addresses Tab -->
+      <ng-container *ngIf="activeTab === 'addresses'">
+        <div *hasPermission="PERMISSIONS.VIEW_ADDRESS">
+          <!-- Header with Add Button -->
+          <div *ngIf="!showAddressForm" class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Hospital Addresses</h3>
+            <button
+              *hasPermission="PERMISSIONS.MANAGE_ADDRESS"
+              (click)="showAddAddressForm()"
+              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Address
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="loadingAddresses" class="text-center py-12">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+            <p class="mt-4 text-gray-600">Loading addresses...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!loadingAddresses && addresses.length === 0 && !showAddressForm" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No addresses found</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding a new address</p>
+          </div>
+
+          <!-- Address Form -->
+          <div *ngIf="showAddressForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6">
+            <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingAddress ? 'Edit Address' : 'Add New Address' }}</h4>
+            <form #addressForm="ngForm" (ngSubmit)="saveAddress(addressForm)">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <!-- Address Type -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Address Type <span class="text-red-500">*</span></label>
+                  <select
+                    name="address_type"
+                    [(ngModel)]="addressFormData.address_type"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  >
+                    <option value="PRIMARY">Primary</option>
+                    <option value="BILLING">Billing</option>
+                    <option value="SHIPPING">Shipping</option>
+                  </select>
+                </div>
+
+                <!-- Is Primary -->
+                <div class="flex items-end">
+                  <label class="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_primary"
+                      [(ngModel)]="addressFormData.is_primary"
+                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                    />
+                    <span class="ml-2 text-sm text-gray-700">Set as primary address</span>
+                  </label>
+                </div>
+
+                <!-- Legacy Address ID -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Legacy Address ID <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="legacy_hospital_address_id"
+                    [(ngModel)]="addressFormData.legacy_hospital_address_id"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter legacy address ID for data migration"
+                  />
+                </div>
+
+                <!-- Street Line 1 -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Street Line 1 <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="street_line1"
+                    [(ngModel)]="addressFormData.street_line1"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Street Line 2 -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Street Line 2</label>
+                  <input
+                    type="text"
+                    name="street_line2"
+                    [(ngModel)]="addressFormData.street_line2"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Postal Code -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Postal Code</label>
+                  <input
+                    type="text"
+                    name="postal_code"
+                    [(ngModel)]="addressFormData.postal_code"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- City -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    [(ngModel)]="addressFormData.city"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- State -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">State</label>
+                  <input
+                    type="text"
+                    name="state"
+                    [(ngModel)]="addressFormData.state"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Country -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Country</label>
+                  <input
+                    type="text"
+                    name="country"
+                    [(ngModel)]="addressFormData.country"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  (click)="cancelAddressForm()"
+                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="addressForm.invalid"
+                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingAddress ? 'Update' : 'Save' }} Address
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Address List -->
+          <div *ngIf="!loadingAddresses && addresses.length > 0 && !showAddressForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div *ngFor="let address of addresses" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div class="flex flex-col h-full">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    [ngClass]="{
+                      'bg-blue-100 text-blue-800': address.address_type === 'PRIMARY',
+                      'bg-green-100 text-green-800': address.address_type === 'BILLING',
+                      'bg-purple-100 text-purple-800': address.address_type === 'SHIPPING'
+                    }">
+                    {{ address.address_type }}
+                  </span>
+                  <span *ngIf="address.is_primary" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                    Primary
+                  </span>
+                </div>
+                <div class="flex-1 text-sm text-gray-900 mb-3">
+                  <p *ngIf="address.street_line1">{{ address.street_line1 }}</p>
+                  <p *ngIf="address.street_line2">{{ address.street_line2 }}</p>
+                  <p *ngIf="address.postal_code || address.city">
+                    {{ address.postal_code }}{{ address.postal_code && address.city ? ', ' : '' }}{{ address.city }}
+                  </p>
+                  <p *ngIf="address.state || address.country">
+                    {{ address.state }}{{ address.state && address.country ? ', ' : '' }}{{ address.country }}
+                  </p>
+                </div>
+                <div class="flex gap-2 justify-end" *hasPermission="PERMISSIONS.MANAGE_ADDRESS">
+                  <button
+                    (click)="editAddress(address)"
+                    class="text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="deleteAddress(address.address_id)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Codes Tab -->
+      <ng-container *ngIf="activeTab === 'codes'">
+        <div *hasPermission="PERMISSIONS.VIEW_CODES">
+          <!-- Header with Add Button -->
+          <div *ngIf="!showCodeForm" class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Hospital Codes</h3>
+            <button
+              *hasPermission="PERMISSIONS.MANAGE_CODES"
+              (click)="showAddCodeForm()"
+              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Code
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="loadingCodes" class="text-center py-12">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+            <p class="mt-4 text-gray-600">Loading codes...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!loadingCodes && codes.length === 0 && !showCodeForm" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No codes found</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding a new insurer code</p>
+          </div>
+
+          <!-- Code Form -->
+          <div *ngIf="showCodeForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6">
+            <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingCode ? 'Edit Code' : 'Add New Code' }}</h4>
+            <form #codeForm="ngForm" (ngSubmit)="saveCode(codeForm)">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <!-- Code Type -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Code Type <span class="text-red-500">*</span></label>
+                  <select
+                    name="code_type"
+                    [(ngModel)]="codeFormData.code_type"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  >
+                    <option value="">Select code type</option>
+                    <option *ngFor="let type of codeTypes" [value]="type.value">{{ type.label }}</option>
+                  </select>
+                </div>
+
+                <!-- Is Active -->
+                <div class="flex items-end">
+                  <label class="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      [(ngModel)]="codeFormData.is_active"
+                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                    />
+                    <span class="ml-2 text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+
+                <!-- Code Value -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Code Value <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="code_value"
+                    [(ngModel)]="codeFormData.code_value"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter code value"
+                  />
+                </div>
+
+                <!-- Legacy Code ID -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Legacy Code ID</label>
+                  <input
+                    type="text"
+                    name="legacy_hospital_code_id"
+                    [(ngModel)]="codeFormData.legacy_hospital_code_id"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter legacy code ID for data migration (optional)"
+                  />
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  (click)="cancelCodeForm()"
+                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="codeForm.invalid"
+                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingCode ? 'Update' : 'Save' }} Code
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Code List -->
+          <div *ngIf="!loadingCodes && codes.length > 0 && !showCodeForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div *ngFor="let code of codes" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div class="flex flex-col h-full">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ code.code_type }}
+                  </span>
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    [ngClass]="code.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+                    {{ code.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+                <div class="flex-1 mb-3">
+                  <p class="text-sm font-medium text-gray-900">{{ code.code_value }}</p>
+                </div>
+                <div class="flex gap-2 justify-end" *hasPermission="PERMISSIONS.MANAGE_CODES">
+                  <button
+                    (click)="editCode(code)"
+                    class="text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="deleteCode(code.code_id)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Staff Tab -->
+      <ng-container *ngIf="activeTab === 'staff'">
+        <div *hasPermission="PERMISSIONS.VIEW_STAFF">
+          <!-- Header with Add Button -->
+          <div *ngIf="!showStaffForm" class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Hospital Staff</h3>
+            <button
+              *hasPermission="PERMISSIONS.MANAGE_STAFF"
+              (click)="showAddStaffForm()"
+              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Staff
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="loadingStaff" class="text-center py-12">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+            <p class="mt-4 text-gray-600">Loading staff...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!loadingStaff && staff.length === 0 && !showStaffForm" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No staff found</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding staff members</p>
+          </div>
+
+          <!-- Staff Form -->
+          <div *ngIf="showStaffForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6">
+            <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingStaff ? 'Edit Staff' : 'Add New Staff' }}</h4>
+            <form #staffForm="ngForm" (ngSubmit)="saveStaff(staffForm)">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <!-- Staff Name -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Staff Name <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="staff_name"
+                    [(ngModel)]="staffFormData.staff_name"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter staff name"
+                  />
+                </div>
+
+                <!-- Staff Type -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Staff Type</label>
+                  <select
+                    name="staff_type"
+                    [(ngModel)]="staffFormData.staff_type"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  >
+                    <option value="">Select staff type</option>
+                    <option *ngFor="let type of staffTypes" [value]="type.value">{{ type.label }}</option>
+                  </select>
+                </div>
+
+                <!-- Is Active -->
+                <div class="flex items-end">
+                  <label class="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      [(ngModel)]="staffFormData.is_active"
+                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                    />
+                    <span class="ml-2 text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+
+                <!-- Specialty -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Specialty</label>
+                  <input
+                    type="text"
+                    name="specialty"
+                    [(ngModel)]="staffFormData.specialty"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter specialty (e.g., Cardiology, Orthopedics)"
+                  />
+                </div>
+
+                <!-- Legacy Staff ID -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Legacy Staff ID</label>
+                  <input
+                    type="text"
+                    name="legacy_hospital_staff_id"
+                    [(ngModel)]="staffFormData.legacy_hospital_staff_id"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter legacy staff ID for data migration (optional)"
+                  />
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  (click)="cancelStaffForm()"
+                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="staffForm.invalid"
+                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingStaff ? 'Update' : 'Save' }} Staff
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Staff List -->
+          <div *ngIf="!loadingStaff && staff.length > 0 && !showStaffForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div *ngFor="let staffMember of staff" class="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <!-- Staff Card Header -->
+              <div class="p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ staffMember.staff_type || 'N/A' }}
+                  </span>
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    [ngClass]="staffMember.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+                    {{ staffMember.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+                <div class="mb-3">
+                  <p class="text-sm font-medium text-gray-900 mb-1">{{ staffMember.staff_name }}</p>
+                  <p class="text-xs text-gray-500">{{ staffMember.specialty || 'No specialty' }}</p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-2 justify-between items-center">
+                  <button
+                    (click)="toggleStaffContacts(staffMember.staff_id)"
+                    class="text-sm text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                    title="Manage Contacts"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    Contacts
+                  </button>
+                  <div class="flex gap-2" *hasPermission="PERMISSIONS.MANAGE_STAFF">
+                    <button
+                      (click)="editStaff(staffMember)"
+                      class="text-indigo-600 hover:text-indigo-900"
+                      title="Edit"
+                    >
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                    </button>
+                    <button
+                      (click)="deleteStaff(staffMember.staff_id)"
+                      class="text-red-600 hover:text-red-900"
+                      title="Delete"
+                    >
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Expandable Contacts Section -->
+              <div *ngIf="expandedStaffId === staffMember.staff_id" class="border-t border-gray-200 bg-gray-50 p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <h5 class="text-sm font-medium text-gray-900">Contact Information</h5>
+                  <button
+                    *hasPermission="PERMISSIONS.MANAGE_CONTACT"
+                    (click)="showAddContactForm(staffMember.staff_id)"
+                    class="text-xs text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                  >
+                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add Contact
+                  </button>
+                </div>
+
+                <!-- Loading Contacts -->
+                <div *ngIf="loadingContacts[staffMember.staff_id]" class="text-center py-4">
+                  <div class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                  <p class="mt-2 text-xs text-gray-600">Loading contacts...</p>
+                </div>
+
+                <!-- Contact Form -->
+                <div *ngIf="showContactForm[staffMember.staff_id]" class="mb-3 rounded border border-gray-200 bg-white p-3">
+                  <form #contactForm="ngForm" (ngSubmit)="saveContact(staffMember.staff_id, contactForm)">
+                    <div class="grid grid-cols-1 gap-2">
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700">Type <span class="text-red-500">*</span></label>
+                        <select
+                          name="contact_type"
+                          [(ngModel)]="contactFormData[staffMember.staff_id].contact_type"
+                          required
+                          class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                        >
+                          <option value="">Select type</option>
+                          <option *ngFor="let type of contactTypes" [value]="type.value">{{ type.label }}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700">Value <span class="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          name="contact_value"
+                          [(ngModel)]="contactFormData[staffMember.staff_id].contact_value"
+                          required
+                          class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                          placeholder="Enter contact value"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700">Legacy Contact ID</label>
+                        <input
+                          type="text"
+                          name="legacy_hospital_contact_id"
+                          [(ngModel)]="contactFormData[staffMember.staff_id].legacy_hospital_contact_id"
+                          class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                          placeholder="Optional legacy ID"
+                        />
+                      </div>
+                      <div>
+                        <label class="flex items-center">
+                          <input
+                            type="checkbox"
+                            name="is_primary"
+                            [(ngModel)]="contactFormData[staffMember.staff_id].is_primary"
+                            class="h-3 w-3 rounded border-gray-300 text-[#1e3c72]"
+                          />
+                          <span class="ml-2 text-xs text-gray-700">Primary Contact</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        (click)="cancelContactForm(staffMember.staff_id)"
+                        class="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        [disabled]="contactForm.invalid"
+                        class="flex-1 rounded bg-[#1e3c72] px-2 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+                      >
+                        {{ editingContact[staffMember.staff_id] ? 'Update' : 'Add' }}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Contact List -->
+                <div *ngIf="!loadingContacts[staffMember.staff_id] && !showContactForm[staffMember.staff_id]" class="space-y-2">
+                  <div
+                    *ngFor="let contact of staffContactsMap[staffMember.staff_id] || []"
+                    class="flex items-center justify-between rounded border border-gray-200 bg-white px-2 py-1.5"
+                  >
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
+                          {{ contact.contact_type }}
+                        </span>
+                        <span *ngIf="contact.is_primary" class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                          Primary
+                        </span>
+                      </div>
+                      <p class="text-xs text-gray-900 mt-1">{{ contact.contact_value }}</p>
+                    </div>
+                    <div class="flex gap-1" *hasPermission="PERMISSIONS.MANAGE_CONTACT">
+                      <button
+                        (click)="editContact(staffMember.staff_id, contact)"
+                        class="text-indigo-600 hover:text-indigo-900"
+                        title="Edit"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      </button>
+                      <button
+                        (click)="deleteContact(staffMember.staff_id, contact.contact_id)"
+                        class="text-red-600 hover:text-red-900"
+                        title="Delete"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div *ngIf="(staffContactsMap[staffMember.staff_id] || []).length === 0" class="text-center py-3 text-xs text-gray-500">
+                    No contacts available
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Fees Tab -->
+      <ng-container *ngIf="activeTab === 'fees'">
+        <div *hasPermission="PERMISSIONS.VIEW_FEES">
+          <!-- Header with Add Button -->
+          <div *ngIf="!showFeeForm" class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Fee Schedules</h3>
+            <button
+              *hasPermission="PERMISSIONS.MANAGE_FEES"
+              (click)="showAddFeeForm()"
+              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Fee Schedule
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="loadingFees" class="text-center py-12">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+            <p class="mt-4 text-gray-600">Loading fee schedules...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!loadingFees && fees.length === 0 && !showFeeForm" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No fee schedules found</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding a new fee schedule</p>
+          </div>
+
+          <!-- Fee Form -->
+          <div *ngIf="showFeeForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6">
+            <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingFee ? 'Edit Fee Schedule' : 'Add New Fee Schedule' }}</h4>
+            <form #feeForm="ngForm" (ngSubmit)="saveFee(feeForm)">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <!-- Fee Type -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Fee Type <span class="text-red-500">*</span></label>
+                  <select
+                    name="fee_type"
+                    [(ngModel)]="feeFormData.fee_type"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  >
+                    <option value="">Select fee type</option>
+                    <option *ngFor="let type of feeTypes" [value]="type.value">{{ type.label }}</option>
+                  </select>
+                </div>
+
+                <!-- Item Code -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Item Code</label>
+                  <input
+                    type="text"
+                    name="item_code"
+                    [(ngModel)]="feeFormData.item_code"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter item/service code"
+                  />
+                </div>
+
+                <!-- Description -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    name="description"
+                    [(ngModel)]="feeFormData.description"
+                    rows="2"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter fee description"
+                  ></textarea>
+                </div>
+
+                <!-- Amount -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Amount <span class="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    name="amount"
+                    [(ngModel)]="feeFormData.amount"
+                    required
+                    min="0"
+                    step="0.01"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <!-- Is Active -->
+                <div class="flex items-end">
+                  <label class="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      [(ngModel)]="feeFormData.is_active"
+                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                    />
+                    <span class="ml-2 text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+
+                <!-- Effective Date -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Effective Date</label>
+                  <input
+                    type="date"
+                    name="effective_date"
+                    [(ngModel)]="feeFormData.effective_date"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Expiry Date -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                  <input
+                    type="date"
+                    name="expiry_date"
+                    [(ngModel)]="feeFormData.expiry_date"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Legacy Fee Schedule ID -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Legacy Fee Schedule ID</label>
+                  <input
+                    type="text"
+                    name="legacy_fee_schedule_id"
+                    [(ngModel)]="feeFormData.legacy_fee_schedule_id"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Enter legacy fee schedule ID for data migration (optional)"
+                  />
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  (click)="cancelFeeForm()"
+                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="feeForm.invalid"
+                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingFee ? 'Update' : 'Save' }} Fee
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Fee List -->
+          <div *ngIf="!loadingFees && fees.length > 0 && !showFeeForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div *ngFor="let fee of fees" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div class="flex flex-col h-full">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800">
+                    {{ fee.fee_type }}
+                  </span>
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    [ngClass]="fee.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+                    {{ fee.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+                <div class="flex-1 mb-3">
+                  <p class="text-sm font-medium text-gray-900 mb-1">{{ fee.item_code || 'No code' }}</p>
+                  <p class="text-xs text-gray-500 mb-2">{{ fee.description || 'No description' }}</p>
+                  <p class="text-lg font-bold text-[#1e3c72]">RM {{ fee.amount?.toFixed(2) || '0.00' }}</p>
+                  <div class="mt-2 text-xs text-gray-400">
+                    <span *ngIf="fee.effective_date">From: {{ fee.effective_date | date:'dd/MM/yyyy' }}</span>
+                    <span *ngIf="fee.expiry_date" class="ml-2">To: {{ fee.expiry_date | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                </div>
+                <div class="flex gap-2 justify-end" *hasPermission="PERMISSIONS.MANAGE_FEES">
+                  <button
+                    (click)="editFee(fee)"
+                    class="text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="deleteFee(fee.fee_id)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && !hospital" class="rounded-lg bg-white p-12 text-center shadow">
+    <svg class="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">Hospital not found</h3>
+    <p class="mt-1 text-sm text-gray-500">The requested hospital could not be loaded</p>
+  </div>
+</div>

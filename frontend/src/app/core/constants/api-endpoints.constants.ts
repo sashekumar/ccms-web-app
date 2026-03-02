@@ -176,7 +176,61 @@ export const LOOKUPS_ENDPOINTS = {
 // ============================================================================
 // FEATURE ENDPOINTS (Business/Application Features)
 // ============================================================================
-// Note: Add API endpoints here as features are implemented
+
+export const HOSPITALS_ENDPOINTS = {
+  // Main Hospital Endpoints
+  LIST: `hospitals/list`,
+  GET: `hospitals/get`,
+  CREATE: `hospitals/create`,
+  UPDATE: `hospitals/update`,
+  DELETE: `hospitals/delete`,
+  CHECK_CODE: `hospitals/check-code`,
+  
+  // Address Management
+  ADDRESSES: {
+    list: (hospitalId: string) => `hospitals/${hospitalId}/addresses/list`,
+    create: (hospitalId: string) => `hospitals/${hospitalId}/addresses`,
+    getById: (hospitalId: string, addressId: string) => `hospitals/${hospitalId}/addresses/${addressId}`,
+    update: (hospitalId: string, addressId: string) => `hospitals/${hospitalId}/addresses/${addressId}`,
+    delete: (hospitalId: string, addressId: string) => `hospitals/${hospitalId}/addresses/${addressId}`
+  },
+  
+  // Code Management
+  CODES: {
+    list: (hospitalId: string) => `hospitals/${hospitalId}/codes/list`,
+    create: (hospitalId: string) => `hospitals/${hospitalId}/codes`,
+    getById: (hospitalId: string, codeId: string) => `hospitals/${hospitalId}/codes/${codeId}`,
+    update: (hospitalId: string, codeId: string) => `hospitals/${hospitalId}/codes/${codeId}`,
+    delete: (hospitalId: string, codeId: string) => `hospitals/${hospitalId}/codes/${codeId}`
+  },
+  
+  // Staff Management
+  STAFF: {
+    list: (hospitalId: string) => `hospitals/${hospitalId}/staff/list`,
+    create: (hospitalId: string) => `hospitals/${hospitalId}/staff`,
+    getById: (hospitalId: string, staffId: string) => `hospitals/${hospitalId}/staff/${staffId}`,
+    update: (hospitalId: string, staffId: string) => `hospitals/${hospitalId}/staff/${staffId}`,
+    delete: (hospitalId: string, staffId: string) => `hospitals/${hospitalId}/staff/${staffId}`
+  },
+  
+  // Staff Contact Management
+  CONTACTS: {
+    list: (hospitalId: string, staffId: string) => `hospitals/${hospitalId}/staff/${staffId}/contacts/list`,
+    create: (hospitalId: string, staffId: string) => `hospitals/${hospitalId}/staff/${staffId}/contacts`,
+    getById: (hospitalId: string, staffId: string, contactId: string) => `hospitals/${hospitalId}/staff/${staffId}/contacts/${contactId}`,
+    update: (hospitalId: string, staffId: string, contactId: string) => `hospitals/${hospitalId}/staff/${staffId}/contacts/${contactId}`,
+    delete: (hospitalId: string, staffId: string, contactId: string) => `hospitals/${hospitalId}/staff/${staffId}/contacts/${contactId}`
+  },
+  
+  // Fee Schedule Management
+  FEES: {
+    list: (hospitalId: string) => `hospitals/${hospitalId}/fees/list`,
+    create: (hospitalId: string) => `hospitals/${hospitalId}/fees`,
+    getById: (hospitalId: string, feeId: string) => `hospitals/${hospitalId}/fees/${feeId}`,
+    update: (hospitalId: string, feeId: string) => `hospitals/${hospitalId}/fees/${feeId}`,
+    delete: (hospitalId: string, feeId: string) => `hospitals/${hospitalId}/fees/${feeId}`
+  }
+} as const;
 
 // ============================================================================
 // CONSOLIDATED API ENDPOINTS
@@ -188,7 +242,8 @@ export const API_ENDPOINTS = {
   PERMISSIONS: PERMISSIONS_ENDPOINTS,
   BANKS: BANKS_ENDPOINTS,
   CLAUSES: CLAUSES_ENDPOINTS,
-  LOOKUPS: LOOKUPS_ENDPOINTS
+  LOOKUPS: LOOKUPS_ENDPOINTS,
+  HOSPITALS: HOSPITALS_ENDPOINTS
 } as const;
 
 // ============================================================================

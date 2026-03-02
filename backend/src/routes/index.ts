@@ -6,6 +6,7 @@ import { ResponseUtil } from '../core/utils/response.util';
 import banksRoutes from '../features/banks/banks.routes';
 import clausesRoutes from '../features/clauses/clauses.routes';
 import lookupsRoutes from '../features/lookups/lookups.routes';
+import hospitalsRoutes from '../features/hospitals/hospitals.routes';
 
 const router = Router();
 
@@ -18,6 +19,9 @@ router.use('/users', usersRoutes);
 router.use('/master/banks', banksRoutes);
 router.use('/master/clauses', clausesRoutes);
 router.use('/master/lookups', lookupsRoutes);
+
+// Hospital management routes
+router.use('/hospitals', hospitalsRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

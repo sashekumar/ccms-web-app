@@ -77,6 +77,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/lookups/lookups.routes').then(m => m.lookupsRoutes)
       },
       {
+        path: 'hospitals',
+        loadChildren: () => import('./features/hospitals/hospitals.routes').then(m => m.hospitalsRoutes)
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
         title: 'Profile - CCMS'

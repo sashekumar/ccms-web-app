@@ -97,9 +97,61 @@ export const USER_ROLE_ASSIGNMENT_PERMISSIONS = {
 } as const;
 
 // ============================================================================
+// MASTER DATA PERMISSIONS
+// ============================================================================
+
+export const BANK_MANAGEMENT_PERMISSIONS = {
+  VIEW: 'BANK_MGMT.VIEW',
+  CREATE: 'BANK_MGMT.CREATE',
+  UPDATE: 'BANK_MGMT.UPDATE',
+  DELETE: 'BANK_MGMT.DELETE'
+} as const;
+
+export const CLAUSE_MANAGEMENT_PERMISSIONS = {
+  VIEW: 'CLAUSE_MGMT.VIEW',
+  CREATE: 'CLAUSE_MGMT.CREATE',
+  UPDATE: 'CLAUSE_MGMT.UPDATE',
+  DELETE: 'CLAUSE_MGMT.DELETE'
+} as const;
+
+export const LOOKUP_MANAGEMENT_PERMISSIONS = {
+  VIEW: 'LOOKUP_MGMT.VIEW',
+  CREATE: 'LOOKUP_MGMT.CREATE',
+  UPDATE: 'LOOKUP_MGMT.UPDATE',
+  DELETE: 'LOOKUP_MGMT.DELETE'
+} as const;
+
+// ============================================================================
 // FEATURE PERMISSIONS (Business/Application Features)
 // ============================================================================
-// Note: Add permission constants here as features are implemented and added to database
+
+export const HOSPITAL_MANAGEMENT_PERMISSIONS = {
+  // Main Hospital Operations
+  VIEW: 'HOSPITAL_MGMT.VIEW',
+  CREATE: 'HOSPITAL_MGMT.CREATE',
+  UPDATE: 'HOSPITAL_MGMT.UPDATE',
+  DELETE: 'HOSPITAL_MGMT.DELETE',
+  
+  // Address Management
+  VIEW_ADDRESS: 'HOSPITAL_MGMT.VIEW_ADDRESS',
+  MANAGE_ADDRESS: 'HOSPITAL_MGMT.MANAGE_ADDRESS',
+  
+  // Code Management
+  VIEW_CODES: 'HOSPITAL_MGMT.VIEW_CODES',
+  MANAGE_CODES: 'HOSPITAL_MGMT.MANAGE_CODES',
+  
+  // Staff Management
+  VIEW_STAFF: 'HOSPITAL_MGMT.VIEW_STAFF',
+  MANAGE_STAFF: 'HOSPITAL_MGMT.MANAGE_STAFF',
+  
+  // Staff Contact Management
+  VIEW_CONTACT: 'HOSPITAL_MGMT.VIEW_CONTACT',
+  MANAGE_CONTACT: 'HOSPITAL_MGMT.MANAGE_CONTACT',
+  
+  // Fee Schedule Management
+  VIEW_FEES: 'HOSPITAL_MGMT.VIEW_FEES',
+  MANAGE_FEES: 'HOSPITAL_MGMT.MANAGE_FEES'
+} as const;
 
 // ============================================================================
 // CONSOLIDATED PERMISSIONS
@@ -116,7 +168,15 @@ export const PERMISSIONS = {
   ACTION_MANAGEMENT: ACTION_MANAGEMENT_PERMISSIONS,
   MODULE_ACTION_MANAGEMENT: MODULE_ACTION_MANAGEMENT_PERMISSIONS,
   ROLE_PERMISSION_MANAGEMENT: ROLE_PERMISSION_MANAGEMENT_PERMISSIONS,
-  USER_ROLE_ASSIGNMENT: USER_ROLE_ASSIGNMENT_PERMISSIONS
+  USER_ROLE_ASSIGNMENT: USER_ROLE_ASSIGNMENT_PERMISSIONS,
+  
+  // Master Data
+  BANK_MANAGEMENT: BANK_MANAGEMENT_PERMISSIONS,
+  CLAUSE_MANAGEMENT: CLAUSE_MANAGEMENT_PERMISSIONS,
+  LOOKUP_MANAGEMENT: LOOKUP_MANAGEMENT_PERMISSIONS,
+  
+  // Business Features
+  HOSPITAL_MANAGEMENT: HOSPITAL_MANAGEMENT_PERMISSIONS
 } as const;
 
 // ============================================================================

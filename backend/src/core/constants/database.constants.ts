@@ -37,7 +37,15 @@ export const DB_TABLES = {
   CLAUSES: 'ccms_m_clauses',
   LOOKUP_CATEGORIES: 'ccms_m_lookup_categories',
   LOOKUPS: 'ccms_m_lookups',
-  LOOKUP_METADATA: 'ccms_m_lookup_metadata'
+  LOOKUP_METADATA: 'ccms_m_lookup_metadata',
+  
+  // Hospital Management
+  HOSPITALS: 'ccms_hospitals',
+  HOSPITAL_ADDRESSES: 'ccms_hospital_addresses',
+  HOSPITAL_CODES: 'ccms_hospital_codes',
+  HOSPITAL_STAFF: 'ccms_hospital_staff',
+  HOSPITAL_STAFF_CONTACTS: 'ccms_hospital_staff_contacts',
+  FEE_SCHEDULES: 'ccms_fee_schedules'
 } as const;
 
 // ============================================================================
