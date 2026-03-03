@@ -1,0 +1,419 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">{{ product?.plan_code || 'Product Details' }}</h1>
+      <p class="mt-1 text-sm text-gray-600">{{ product?.plan_name || 'View product information and settings' }}</p>
+    </div>
+    <div class="flex gap-3">
+      <button
+        (click)="goBack()"
+        class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to List
+      </button>
+      <button
+        *hasPermission="PERMISSIONS.UPDATE"
+        (click)="editProduct()"
+        class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        Edit
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <app-loading-spinner *ngIf="loading" message="Loading product details..."></app-loading-spinner>
+
+  <!-- Content -->
+  <div *ngIf="!loading && product" class="space-y-6">
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 bg-white rounded-t-lg shadow">
+      <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+        <button
+          *ngFor="let tab of tabs"
+          (click)="onTabChange(tab.id)"
+          [class.border-[#1e3c72]]="activeTab === tab.id"
+          [class.text-[#1e3c72]]="activeTab === tab.id"
+          [class.border-transparent]="activeTab !== tab.id"
+          [class.text-gray-500]="activeTab !== tab.id"
+          class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition hover:border-gray-300 hover:text-gray-700"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="rounded-b-lg bg-white p-6 shadow">
+      <!-- Details Tab -->
+      <div *ngIf="activeTab === 'details'">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 border-b pb-2">Product Information</h3>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Plan Code</label>
+            <p class="mt-1 text-sm text-gray-900">{{ product.plan_code }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Plan Name</label>
+            <p class="mt-1 text-sm text-gray-900">{{ product.plan_name || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Insurer Name</label>
+            <p class="mt-1 text-sm text-gray-900">{{ product.insurer_name || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Status</label>
+            <div class="mt-1">
+              <span *ngIf="product.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                Active
+              </span>
+              <span *ngIf="!product.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
+                Inactive
+              </span>
+            </div>
+          </div>
+
+          <!-- System Information -->
+          <div class="md:col-span-2 mt-4">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 border-b pb-2">System Information</h3>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Product ID</label>
+            <p class="mt-1 text-sm font-mono text-gray-900">{{ product.product_id }}</p>
+          </div>
+
+          <div *ngIf="product.legacy_product_id">
+            <label class="block text-sm font-medium text-gray-500">Legacy Product ID</label>
+            <p class="mt-1 text-sm font-mono text-gray-900">{{ product.legacy_product_id }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Created At</label>
+            <p class="mt-1 text-sm text-gray-900">{{ product.created_at | date:'medium' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Limits Tab -->
+      <div *ngIf="activeTab === 'limits'">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">Product Limits</h3>
+          <button
+            *hasPermission="PERMISSIONS.MANAGE_LIMITS"
+            (click)="showLimitFormDialog()"
+            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Limit
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <app-loading-spinner *ngIf="loadingLimits" message="Loading limits..."></app-loading-spinner>
+
+        <!-- Limits Table -->
+        <div *ngIf="!loadingLimits" class="overflow-x-auto">
+          <table *ngIf="limits.length > 0" class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Amount</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <tr *ngFor="let limit of limits" class="transition hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ limit.limit_type || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ limit.limit_amount ? (limit.limit_amount | number:'1.2-2') : '-' }}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  <span *ngIf="limit.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Active</span>
+                  <span *ngIf="!limit.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">Inactive</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    *hasPermission="PERMISSIONS.MANAGE_LIMITS"
+                    (click)="showLimitFormDialog(limit)"
+                    class="mr-3 text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    *hasPermission="PERMISSIONS.MANAGE_LIMITS"
+                    (click)="deleteLimit(limit)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Empty State -->
+          <div *ngIf="limits.length === 0" class="py-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No limits configured</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding a limit.</p>
+          </div>
+        </div>
+
+        <!-- Limit Form Modal -->
+        <div *ngIf="showLimitForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div class="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+            <h3 class="mb-4 text-lg font-semibold">{{ editingLimit ? 'Edit Limit' : 'Add Limit' }}</h3>
+            <form #limitForm="ngForm" (ngSubmit)="saveLimit(limitForm)">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Limit Type *</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="limitFormData.limit_type"
+                    name="limit_type"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Limit Amount *</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="limitFormData.limit_amount"
+                    name="limit_amount"
+                    required
+                    step="0.01"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Legacy Limit ID</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="limitFormData.legacy_product_limit_id"
+                    name="legacy_product_limit_id"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                    placeholder="Optional legacy system ID"
+                  />
+                </div>
+
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="limitFormData.is_active"
+                    name="is_active"
+                    id="limit_is_active"
+                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72]"
+                  />
+                  <label for="limit_is_active" class="ml-2 block text-sm text-gray-700">Active</label>
+                </div>
+              </div>
+
+              <div class="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  (click)="cancelLimitForm()"
+                  class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="limitForm.invalid"
+                  class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingLimit ? 'Update' : 'Create' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Copay Tab -->
+      <div *ngIf="activeTab === 'copay'">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">Product Copay</h3>
+          <button
+            *hasPermission="PERMISSIONS.MANAGE_COPAY"
+            (click)="showCopayFormDialog()"
+            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Copay
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <app-loading-spinner *ngIf="loadingCopay" message="Loading copay..."></app-loading-spinner>
+
+        <!-- Copay Table -->
+        <div *ngIf="!loadingCopay" class="overflow-x-auto">
+          <table *ngIf="copayList.length > 0" class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Value</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Applies To</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <tr *ngFor="let copay of copayList" class="transition hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ copay.copay_type || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ copay.copay_value ? (copay.copay_value | number:'1.2-2') : '-' }}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">{{ copay.applies_to || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <span *ngIf="copay.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Active</span>
+                  <span *ngIf="!copay.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">Inactive</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    *hasPermission="PERMISSIONS.MANAGE_COPAY"
+                    (click)="showCopayFormDialog(copay)"
+                    class="mr-3 text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    *hasPermission="PERMISSIONS.MANAGE_COPAY"
+                    (click)="deleteCopay(copay)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Empty State -->
+          <div *ngIf="copayList.length === 0" class="py-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No copay configured</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding a copay.</p>
+          </div>
+        </div>
+
+        <!-- Copay Form Modal -->
+        <div *ngIf="showCopayForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div class="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+            <h3 class="mb-4 text-lg font-semibold">{{ editingCopay ? 'Edit Copay' : 'Add Copay' }}</h3>
+            <form #copayForm="ngForm" (ngSubmit)="saveCopay(copayForm)">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Copay Type *</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="copayFormData.copay_type"
+                    name="copay_type"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Copay Value *</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="copayFormData.copay_value"
+                    name="copay_value"
+                    required
+                    step="0.01"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Applies To</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="copayFormData.applies_to"
+                    name="applies_to"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                    placeholder="e.g., ALL, OUTPATIENT, INPATIENT"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Legacy Copay ID</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="copayFormData.legacy_product_copay_id"
+                    name="legacy_product_copay_id"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                    placeholder="Optional legacy system ID"
+                  />
+                </div>
+
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="copayFormData.is_active"
+                    name="copay_is_active"
+                    id="copay_is_active"
+                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72]"
+                  />
+                  <label for="copay_is_active" class="ml-2 block text-sm text-gray-700">Active</label>
+                </div>
+              </div>
+
+              <div class="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  (click)="cancelCopayForm()"
+                  class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="copayForm.invalid"
+                  class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingCopay ? 'Update' : 'Create' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

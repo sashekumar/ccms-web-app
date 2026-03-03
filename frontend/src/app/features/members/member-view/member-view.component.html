@@ -1,0 +1,1135 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">{{ member?.full_name || 'Member Details' }}</h1>
+      <p class="mt-1 text-sm text-gray-600">
+        <span *ngIf="member?.ic_no">IC: {{ member?.ic_no }}</span>
+        <span *ngIf="member?.fwd_member_no"> | Member No: {{ member?.fwd_member_no }}</span>
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <button
+        (click)="goBack()"
+        class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to List
+      </button>
+      <button
+        *hasPermission="PERMISSIONS.UPDATE"
+        (click)="editMember()"
+        [disabled]="member?.is_deleted"
+        class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        Edit
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <app-loading-spinner *ngIf="loading" message="Loading member details..."></app-loading-spinner>
+
+  <!-- Content -->
+  <div *ngIf="!loading && member" class="space-y-6">
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 bg-white rounded-t-lg shadow">
+      <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+        <button
+          *ngFor="let tab of tabs"
+          (click)="onTabChange(tab.id)"
+          [class.border-[#1e3c72]]="activeTab === tab.id"
+          [class.text-[#1e3c72]]="activeTab === tab.id"
+          [class.border-transparent]="activeTab !== tab.id"
+          [class.text-gray-500]="activeTab !== tab.id"
+          class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition hover:border-gray-300 hover:text-gray-700"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="rounded-b-lg bg-white p-6 shadow">
+      
+      <!-- ========================================= -->
+      <!-- DETAILS TAB -->
+      <!-- ========================================= -->
+      <div *ngIf="activeTab === 'details'">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 border-b pb-2">Member Information</h3>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Full Name</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.full_name }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">IC Number</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.ic_no }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Member Type</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.member_type || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Member Status</label>
+            <div class="mt-1">
+              <span *ngIf="!member.is_deleted" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                {{ member.member_status || 'Active' }}
+              </span>
+              <span *ngIf="member.is_deleted" class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+                Deleted
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Date of Birth</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.dob ? (member.dob | date:'dd/MM/yyyy') : '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Gender</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.gender === true ? 'Male' : member.gender === false ? 'Female' : '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Enrollment Date</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.enrollment_date ? (member.enrollment_date | date:'dd/MM/yyyy') : '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Termination Date</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.termination_date ? (member.termination_date | date:'dd/MM/yyyy') : '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Forward Member No.</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.fwd_member_no || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Forward Client No.</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.fwd_client_no || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Client ID</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.client_id || '-' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Bank Account</label>
+            <p class="mt-1 text-sm text-gray-900">
+              <span *ngIf="member.bank_id">Bank ID: {{ member.bank_id }}</span>
+              <span *ngIf="member.bank_acc_no"> - {{ member.bank_acc_no }}</span>
+              <span *ngIf="!member.bank_id && !member.bank_acc_no">-</span>
+            </p>
+          </div>
+
+          <!-- System Information -->
+          <div class="md:col-span-2 mt-4">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 border-b pb-2">System Information</h3>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Member ID</label>
+            <p class="mt-1 text-sm font-mono text-gray-900">{{ member.member_id }}</p>
+          </div>
+
+          <div *ngIf="member.legacy_member_id">
+            <label class="block text-sm font-medium text-gray-500">Legacy Member ID</label>
+            <p class="mt-1 text-sm font-mono text-gray-900">{{ member.legacy_member_id }}</p>
+          </div>
+
+          <div *ngIf="member.external_guid">
+            <label class="block text-sm font-medium text-gray-500">External GUID</label>
+            <p class="mt-1 text-sm font-mono text-gray-900">{{ member.external_guid }}</p>
+          </div>
+
+          <div *ngIf="member.created_at">
+            <label class="block text-sm font-medium text-gray-500">Created At</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <div *ngIf="member.created_by">
+            <label class="block text-sm font-medium text-gray-500">Created By</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.created_by }}</p>
+          </div>
+
+          <div *ngIf="member.updated_at">
+            <label class="block text-sm font-medium text-gray-500">Last Updated</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.updated_at | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <div *ngIf="member.updated_by">
+            <label class="block text-sm font-medium text-gray-500">Updated By</label>
+            <p class="mt-1 text-sm text-gray-900">{{ member.updated_by }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================= -->
+      <!-- ADDRESSES TAB -->
+      <!-- ========================================= -->
+      <div *ngIf="activeTab === 'addresses'">
+        <div class="mb-4 flex justify-between items-center">
+          <h3 class="text-lg font-semibold text-gray-900">Member Addresses</h3>
+          <button
+            *hasPermission="PERMISSIONS.MANAGE_ADDRESSES"
+            (click)="showAddressFormDialog()"
+            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Address
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loadingAddresses" class="text-center py-12">
+          <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+          <p class="mt-4 text-gray-600">Loading addresses...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loadingAddresses && addresses.length === 0 && !showAddressForm" class="text-center py-12">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No addresses found</h3>
+          <p class="mt-1 text-sm text-gray-500">Get started by adding a new address</p>
+        </div>
+
+        <!-- Address List (Card Layout) -->
+        <div *ngIf="!loadingAddresses && addresses.length > 0" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div *ngFor="let address of addresses" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col h-full">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  [ngClass]="{
+                    'bg-blue-100 text-blue-800': address.address_type === 'PRIMARY',
+                    'bg-green-100 text-green-800': address.address_type === 'BILLING',
+                    'bg-purple-100 text-purple-800': address.address_type === 'SHIPPING',
+                    'bg-gray-100 text-gray-800': !address.address_type || (address.address_type !== 'PRIMARY' && address.address_type !== 'BILLING' && address.address_type !== 'SHIPPING')
+                  }">
+                  {{ address.address_type || 'N/A' }}
+                </span>
+                <span *ngIf="address.is_primary" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                  Primary
+                </span>
+              </div>
+              <div class="flex-1 text-sm text-gray-900 mb-3">
+                <p *ngIf="address.street_line1">{{ address.street_line1 }}</p>
+                <p *ngIf="address.street_line2">{{ address.street_line2 }}</p>
+                <p *ngIf="address.postal_code || address.city">
+                  {{ address.postal_code }}{{ address.postal_code && address.city ? ', ' : '' }}{{ address.city }}
+                </p>
+                <p *ngIf="address.state || address.country">
+                  {{ address.state }}{{ address.state && address.country ? ', ' : '' }}{{ address.country }}
+                </p>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-gray-100">
+                <ng-container *hasPermission="PERMISSIONS.MANAGE_ADDRESSES">
+                  <button
+                    *ngIf="!address.is_primary"
+                    (click)="setPrimaryAddress(address)"
+                    class="text-xs text-blue-600 hover:text-blue-900"
+                    title="Set as Primary"
+                  >
+                    Set Primary
+                  </button>
+                </ng-container>
+                <div class="ml-auto flex gap-2" *hasPermission="PERMISSIONS.MANAGE_ADDRESSES">
+                  <button
+                    (click)="showAddressFormDialog(address)"
+                    class="text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="deleteAddress(address)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Address Form -->
+        <div *ngIf="showAddressForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6">
+          <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingAddress ? 'Edit Address' : 'Add New Address' }}</h4>
+          <form #addressForm="ngForm" (ngSubmit)="saveAddress(addressForm)">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <!-- Address Type -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Address Type <span class="text-red-500">*</span></label>
+                <select
+                  name="address_type"
+                  [(ngModel)]="addressFormData.address_type"
+                  required
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                >
+                  <option value="PRIMARY">Primary</option>
+                  <option value="BILLING">Billing</option>
+                  <option value="SHIPPING">Shipping</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
+              <!-- Is Primary -->
+              <div class="flex items-end">
+                <label class="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="is_primary"
+                    [(ngModel)]="addressFormData.is_primary"
+                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                  />
+                  <span class="ml-2 text-sm text-gray-700">Set as primary address</span>
+                </label>
+              </div>
+
+              <!-- Street Line 1 -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">Street Line 1 <span class="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="street_line1"
+                  [(ngModel)]="addressFormData.street_line1"
+                  required
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Street Line 2 -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">Street Line 2</label>
+                <input
+                  type="text"
+                  name="street_line2"
+                  [(ngModel)]="addressFormData.street_line2"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Postal Code -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Postal Code</label>
+                <input
+                  type="text"
+                  name="postal_code"
+                  [(ngModel)]="addressFormData.postal_code"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- City -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">City</label>
+                <input
+                  type="text"
+                  name="city"
+                  [(ngModel)]="addressFormData.city"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- State -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">State</label>
+                <input
+                  type="text"
+                  name="state"
+                  [(ngModel)]="addressFormData.state"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Country -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Country</label>
+                <input
+                  type="text"
+                  name="country"
+                  [(ngModel)]="addressFormData.country"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="mt-6 flex gap-3">
+              <button
+                type="button"
+                (click)="cancelAddressForm()"
+                class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="addressForm.invalid"
+                class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {{ editingAddress ? 'Update' : 'Save' }} Address
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ========================================= -->
+      <!-- CONTACTS TAB -->
+      <!-- ========================================= -->
+      <div *ngIf="activeTab === 'contacts'">
+        <div class="mb-4 flex justify-between items-center">
+          <h3 class="text-lg font-semibold text-gray-900">Member Contacts</h3>
+          <button
+            *hasPermission="PERMISSIONS.MANAGE_CONTACTS"
+            (click)="showContactFormDialog()"
+            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Contact
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loadingContacts" class="text-center py-12">
+          <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+          <p class="mt-4 text-gray-600">Loading contacts...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loadingContacts && contacts.length === 0 && !showContactForm" class="text-center py-12">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No contacts found</h3>
+          <p class="mt-1 text-sm text-gray-500">Get started by adding a new contact</p>
+        </div>
+
+        <!-- Contact List (Card Layout) -->
+        <div *ngIf="!loadingContacts && contacts.length > 0 && !showContactForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div *ngFor="let contact of contacts" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col h-full">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  [ngClass]="{
+                    'bg-blue-100 text-blue-800': contact.contact_type === 'EMAIL' || contact.contact_type === 'Email',
+                    'bg-green-100 text-green-800': contact.contact_type === 'MOBILE' || contact.contact_type === 'Mobile',
+                    'bg-purple-100 text-purple-800': contact.contact_type === 'PHONE' || contact.contact_type === 'Phone',
+                    'bg-orange-100 text-orange-800': contact.contact_type === 'FAX' || contact.contact_type === 'Fax',
+                    'bg-gray-100 text-gray-800': !contact.contact_type || (!['EMAIL', 'MOBILE', 'PHONE', 'FAX', 'Email', 'Mobile', 'Phone', 'Fax'].includes(contact.contact_type))
+                  }">
+                  {{ contact.contact_type || 'N/A' }}
+                </span>
+                <span *ngIf="contact.is_primary" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                  Primary
+                </span>
+              </div>
+              <div class="flex-1 mb-3">
+                <p class="text-sm font-medium text-gray-900 break-all">{{ contact.contact_value }}</p>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-gray-100">
+                <ng-container *hasPermission="PERMISSIONS.MANAGE_CONTACTS">
+                  <button
+                    *ngIf="!contact.is_primary"
+                    (click)="setPrimaryContact(contact)"
+                    class="text-xs text-blue-600 hover:text-blue-900"
+                    title="Set as Primary"
+                  >
+                    Set Primary
+                  </button>
+                </ng-container>
+                <div class="ml-auto flex gap-2" *hasPermission="PERMISSIONS.MANAGE_CONTACTS">
+                  <button
+                    (click)="showContactFormDialog(contact)"
+                    class="text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="deleteContact(contact)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div *ngIf="showContactForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6">
+          <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingContact ? 'Edit Contact' : 'Add New Contact' }}</h4>
+          <form #contactForm="ngForm" (ngSubmit)="saveContact(contactForm)">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <!-- Contact Type -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Contact Type <span class="text-red-500">*</span></label>
+                <select
+                  name="contact_type"
+                  [(ngModel)]="contactFormData.contact_type"
+                  required
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                >
+                  <option value="EMAIL">Email</option>
+                  <option value="PHONE">Phone</option>
+                  <option value="MOBILE">Mobile</option>
+                  <option value="FAX">Fax</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
+              <!-- Contact Value -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Contact Value <span class="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="contact_value"
+                  [(ngModel)]="contactFormData.contact_value"
+                  required
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Is Primary -->
+              <div class="flex items-end">
+                <label class="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="is_primary"
+                    [(ngModel)]="contactFormData.is_primary"
+                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                  />
+                  <span class="ml-2 text-sm text-gray-700">Set as primary contact</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="mt-6 flex gap-3">
+              <button
+                type="button"
+                (click)="cancelContactForm()"
+                class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="contactForm.invalid"
+                class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {{ editingContact ? 'Update' : 'Save' }} Contact
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Contact List (Card Layout) -->
+        <div *ngIf="!loadingContacts && contacts.length > 0 && !showContactForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <!-- Contact cards here (if needed in future) -->
+        </div>
+      </div>
+
+      <!-- ========================================= -->
+      <!-- POLICIES TAB -->
+      <!-- ========================================= -->
+      <div *ngIf="activeTab === 'policies'">
+        <div class="mb-4 flex justify-between items-center">
+          <h3 class="text-lg font-semibold text-gray-900">Member Policies</h3>
+          <button
+            *hasPermission="PERMISSIONS.MANAGE_POLICIES"
+            (click)="showPolicyFormDialog()"
+            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Policy
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loadingPolicies" class="text-center py-12">
+          <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+          <p class="mt-4 text-gray-600">Loading policies...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loadingPolicies && policies.length === 0 && !showPolicyForm" class="text-center py-12">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No policies found</h3>
+          <p class="mt-1 text-sm text-gray-500">Get started by adding a new policy</p>
+        </div>
+
+        <!-- Policy Form -->
+        <div *ngIf="showPolicyForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6 mb-6">
+          <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingPolicy ? 'Edit Policy' : 'Add New Policy' }}</h4>
+          <form #policyForm="ngForm" (ngSubmit)="savePolicy(policyForm)">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <!-- Policy Number -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Policy Number <span class="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="policy_no"
+                  [(ngModel)]="policyFormData.policy_no"
+                  required
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Product ID -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Product ID <span class="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="product_id"
+                  [(ngModel)]="policyFormData.product_id"
+                  required
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Effective Date -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Effective Date</label>
+                <input
+                  type="date"
+                  name="effective_date"
+                  [(ngModel)]="policyFormData.effective_date"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Expiry Date -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                <input
+                  type="date"
+                  name="expiry_date"
+                  [(ngModel)]="policyFormData.expiry_date"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <!-- Status -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Status</label>
+                <select
+                  name="status"
+                  [(ngModel)]="policyFormData.status"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                >
+                  <option value="">Select status</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="mt-6 flex gap-3">
+              <button
+                type="button"
+                (click)="cancelPolicyForm()"
+                class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="policyForm.invalid"
+                class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {{ editingPolicy ? 'Update' : 'Save' }} Policy
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Policy List Table -->
+        <div *ngIf="!loadingPolicies && policies.length > 0 && !showPolicyForm" class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy No.</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effective Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let policy of policies" class="transition hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ policy.policy_no }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{{ policy.product_id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ policy.effective_date ? (policy.effective_date | date:'dd/MM/yyyy') : '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ policy.expiry_date ? (policy.expiry_date | date:'dd/MM/yyyy') : '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <span *ngIf="!policy.is_deleted && policy.status" class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                    [ngClass]="{
+                      'bg-green-100 text-green-800': policy.status === 'ACTIVE' || policy.status === 'Active',
+                      'bg-yellow-100 text-yellow-800': policy.status === 'PENDING' || policy.status === 'Pending',
+                      'bg-gray-100 text-gray-800': policy.status === 'EXPIRED' || policy.status === 'Expired'
+                    }">
+                    {{ policy.status }}
+                  </span>
+                  <span *ngIf="policy.is_deleted" class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+                    Deleted
+                  </span>
+                  <span *ngIf="!policy.status && !policy.is_deleted" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                    Active
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    *hasPermission="PERMISSIONS.MANAGE_POLICIES"
+                    (click)="showPolicyFormDialog(policy)"
+                    class="text-indigo-600 hover:text-indigo-900 mr-3">
+                    Edit
+                  </button>
+                  <button
+                    *hasPermission="PERMISSIONS.MANAGE_POLICIES"
+                    (click)="deletePolicy(policy)"
+                    class="text-red-600 hover:text-red-900">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div *ngIf="activeTab === 'dependents'">
+        <!-- Dependents Section -->
+        <div [class.hidden]="selectedDependentForPEC">
+          <div class="mb-4 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-900">Dependents</h3>
+            <button
+              *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
+              (click)="showDependentFormDialog()"
+              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Dependent
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="loadingDependents" class="text-center py-12">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+            <p class="mt-4 text-gray-600">Loading dependents...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!loadingDependents && dependents.length === 0 && !showDependentForm" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No dependents found</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding a new dependent</p>
+          </div>
+
+          <div *ngIf="!loadingDependents && dependents.length > 0" class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IC Number</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let dependent of dependents" class="transition hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ dependent.full_name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.ic_no || '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.relationship_id || '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.dob ? (dependent.dob | date:'dd/MM/yyyy') : '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span *ngIf="dependent.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                      Active
+                    </span>
+                    <span *ngIf="!dependent.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
+                      Inactive
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      *hasPermission="PERMISSIONS.VIEW_PEC"
+                      (click)="viewDependentPEC(dependent)"
+                      class="text-blue-600 hover:text-blue-900 mr-3"
+                      title="View PEC Conditions">
+                      <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </button>
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
+                      (click)="showDependentFormDialog(dependent)"
+                      class="text-indigo-600 hover:text-indigo-900 mr-3"
+                      title="Edit">
+                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                    </button>
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
+                      (click)="toggleDependentActive(dependent)"
+                      [title]="dependent.is_active ? 'Deactivate' : 'Activate'"
+                      class="mr-3"
+                      [ngClass]="{
+                        'text-green-600 hover:text-green-900': !dependent.is_active,
+                        'text-orange-600 hover:text-orange-900': dependent.is_active
+                      }">
+                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" *ngIf="!dependent.is_active"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" *ngIf="dependent.is_active"/>
+                      </svg>
+                    </button>
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
+                      (click)="deleteDependent(dependent)"
+                      class="text-red-600 hover:text-red-900"
+                      title="Delete">
+                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Dependent Form -->
+          <div *ngIf="showDependentForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6 mb-6">
+            <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingDependent ? 'Edit Dependent' : 'Add New Dependent' }}</h4>
+            <form #dependentForm="ngForm" (ngSubmit)="saveDependent(dependentForm)">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <!-- Full Name -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="full_name"
+                    [(ngModel)]="dependentFormData.full_name"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- IC Number -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">IC Number <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="ic_no"
+                    [(ngModel)]="dependentFormData.ic_no"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Relationship ID -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Relationship ID</label>
+                  <input
+                    type="number"
+                    name="relationship_id"
+                    [(ngModel)]="dependentFormData.relationship_id"
+                    placeholder="e.g., 1 for Spouse, 2 for Child"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Date of Birth -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <input
+                    type="date"
+                    name="dob"
+                    [(ngModel)]="dependentFormData.dob"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Is Active -->
+                <div class="flex items-end">
+                  <label class="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      [(ngModel)]="dependentFormData.is_active"
+                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                    />
+                    <span class="ml-2 text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  (click)="cancelDependentForm()"
+                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="dependentForm.invalid"
+                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingDependent ? 'Update' : 'Save' }} Dependent
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- PEC Conditions Section (shown when dependent is selected) -->
+        <div *ngIf="selectedDependentForPEC" class="space-y-4">
+          <div class="flex items-center gap-4 mb-4">
+            <button
+              (click)="closePECView()"
+              class="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back to Dependents
+            </button>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h4 class="text-lg font-semibold text-blue-900">PEC Conditions for {{ selectedDependentForPEC.full_name }}</h4>
+            <p class="text-sm text-blue-700">IC: {{ selectedDependentForPEC.ic_no }}</p>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-900">Pre-Existing Conditions</h3>
+            <button
+              *hasPermission="PERMISSIONS.MANAGE_PEC"
+              (click)="showPECFormDialog()"
+              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add PEC
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="loadingPEC" class="text-center py-12">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+            <p class="mt-4 text-gray-600">Loading PEC conditions...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!loadingPEC && pecConditions.length === 0 && !showPECForm" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No PEC conditions found</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding a pre-existing condition</p>
+          </div>
+
+          <div *ngIf="!loadingPEC && pecConditions.length > 0" class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition Code</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diagnosis Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let pec of pecConditions" class="transition hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{{ pec.condition_code }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900">{{ pec.condition_name || '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ pec.diagnosis_date ? (pec.diagnosis_date | date:'dd/MM/yyyy') : '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span *ngIf="!pec.is_excluded" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                      Included
+                    </span>
+                    <span *ngIf="pec.is_excluded" class="inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+                      Excluded
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_PEC"
+                      (click)="showPECFormDialog(pec)"
+                      class="text-indigo-600 hover:text-indigo-900 mr-3"
+                      title="Edit">
+                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                    </button>
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_PEC"
+                      (click)="togglePECExcluded(pec)"
+                      [title]="pec.is_excluded ? 'Include in coverage' : 'Exclude from coverage'"
+                      class="mr-3"
+                      [ngClass]="{
+                        'text-green-600 hover:text-green-900': pec.is_excluded,
+                        'text-orange-600 hover:text-orange-900': !pec.is_excluded
+                      }">
+                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" *ngIf="pec.is_excluded"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" *ngIf="!pec.is_excluded"/>
+                      </svg>
+                    </button>
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_PEC"
+                      (click)="deletePEC(pec)"
+                      class="text-red-600 hover:text-red-900"
+                      title="Delete">
+                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- PEC Form -->
+          <div *ngIf="showPECForm" class="rounded-lg border border-gray-200 bg-gray-50 p-6 mb-6">
+            <h4 class="mb-4 text-lg font-medium text-gray-900">{{ editingPEC ? 'Edit PEC Condition' : 'Add New PEC Condition' }}</h4>
+            <form #pecForm="ngForm" (ngSubmit)="savePEC(pecForm)">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <!-- Condition Code -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Condition Code <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="condition_code"
+                    [(ngModel)]="pecFormData.condition_code"
+                    required
+                    placeholder="e.g., ICD10 code"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Diagnosis Date -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Diagnosis Date</label>
+                  <input
+                    type="date"
+                    name="diagnosis_date"
+                    [(ngModel)]="pecFormData.diagnosis_date"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  />
+                </div>
+
+                <!-- Condition Name -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Condition Name</label>
+                  <textarea
+                    name="condition_name"
+                    [(ngModel)]="pecFormData.condition_name"
+                    rows="2"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  ></textarea>
+                </div>
+
+                <!-- Notes -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Notes</label>
+                  <textarea
+                    name="notes"
+                    [(ngModel)]="pecFormData.notes"
+                    rows="3"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  ></textarea>
+                </div>
+
+                <!-- Is Excluded -->
+                <div class="flex items-end">
+                  <label class="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_excluded"
+                      [(ngModel)]="pecFormData.is_excluded"
+                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
+                    />
+                    <span class="ml-2 text-sm text-gray-700">Exclude from coverage</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  (click)="cancelPECForm()"
+                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="pecForm.invalid"
+                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingPEC ? 'Update' : 'Save' }} Condition
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

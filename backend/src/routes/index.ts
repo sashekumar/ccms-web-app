@@ -7,6 +7,8 @@ import banksRoutes from '../features/banks/banks.routes';
 import clausesRoutes from '../features/clauses/clauses.routes';
 import lookupsRoutes from '../features/lookups/lookups.routes';
 import hospitalsRoutes from '../features/hospitals/hospitals.routes';
+import productsRoutes from '../features/products/products.routes';
+import membersRoutes from '../features/members/members.routes';
 
 const router = Router();
 
@@ -22,6 +24,12 @@ router.use('/master/lookups', lookupsRoutes);
 
 // Hospital management routes
 router.use('/hospitals', hospitalsRoutes);
+
+// Products / Policy management routes
+router.use('/products', productsRoutes);
+
+// Members / Policy Holders routes
+router.use('/members', membersRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

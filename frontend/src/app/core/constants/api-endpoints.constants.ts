@@ -177,6 +177,38 @@ export const LOOKUPS_ENDPOINTS = {
 // FEATURE ENDPOINTS (Business/Application Features)
 // ============================================================================
 
+export const PRODUCTS_ENDPOINTS = {
+  // Main Product Endpoints
+  LIST: `products/list`,
+  GET: `products/get`,
+  CREATE: `products/create`,
+  UPDATE: `products/update`,
+  DELETE: `products/delete`,
+  CHECK_CODE: `products/check-code`,
+  
+  // Activation/Deactivation
+  activate: (productId: string) => `products/${productId}/activate`,
+  deactivate: (productId: string) => `products/${productId}/deactivate`,
+  
+  // Limits Management
+  LIMITS: {
+    list: (productId: string) => `products/${productId}/limits/list`,
+    get: (productId: string) => `products/${productId}/limits/get`,
+    create: (productId: string) => `products/${productId}/limits`,
+    update: (productId: string, limitId: string) => `products/${productId}/limits/${limitId}`,
+    delete: (productId: string, limitId: string) => `products/${productId}/limits/${limitId}`
+  },
+  
+  // Copay Management
+  COPAY: {
+    list: (productId: string) => `products/${productId}/copay/list`,
+    get: (productId: string) => `products/${productId}/copay/get`,
+    create: (productId: string) => `products/${productId}/copay`,
+    update: (productId: string, copayId: string) => `products/${productId}/copay/${copayId}`,
+    delete: (productId: string, copayId: string) => `products/${productId}/copay/${copayId}`
+  }
+} as const;
+
 export const HOSPITALS_ENDPOINTS = {
   // Main Hospital Endpoints
   LIST: `hospitals/list`,
@@ -236,6 +268,73 @@ export const HOSPITALS_ENDPOINTS = {
 // CONSOLIDATED API ENDPOINTS
 // ============================================================================
 
+// ============================================================================
+// MEMBERS (POLICY HOLDERS) ENDPOINTS
+// ============================================================================
+
+export const MEMBERS_ENDPOINTS = {
+  // Main Member Endpoints
+  LIST: `members/list`,
+  GET: `members/get`,
+  CREATE: `members/create`,
+  UPDATE: `members/update`,
+  DELETE: `members/delete`,
+  CHECK_IC: `members/check-ic`,
+  
+  // Restoration
+  restore: (memberId: string) => `members/${memberId}/restore`,
+  
+  // Address Management
+  ADDRESSES: {
+    list: (memberId: string) => `members/${memberId}/addresses/list`,
+    get: `members/addresses/get`,
+    create: `members/addresses/create`,
+    update: (addressId: string) => `members/addresses/${addressId}`,
+    delete: (addressId: string) => `members/addresses/${addressId}`,
+    setPrimary: (addressId: string) => `members/addresses/${addressId}/set-primary`
+  },
+  
+  // Contact Management
+  CONTACTS: {
+    list: (memberId: string) => `members/${memberId}/contacts/list`,
+    get: `members/contacts/get`,
+    create: `members/contacts/create`,
+    update: (contactId: string) => `members/contacts/${contactId}`,
+    delete: (contactId: string) => `members/contacts/${contactId}`,
+    setPrimary: (contactId: string) => `members/contacts/${contactId}/set-primary`
+  },
+  
+  // Policy Management
+  POLICIES: {
+    list: (memberId: string) => `members/${memberId}/policies/list`,
+    get: `members/policies/get`,
+    checkPolicyNo: `members/policies/check-policy-no`,
+    create: `members/policies/create`,
+    update: (policyId: string) => `members/policies/${policyId}`,
+    delete: (policyId: string) => `members/policies/${policyId}`
+  },
+  
+  // Dependent Management
+  DEPENDENTS: {
+    list: (memberId: string) => `members/${memberId}/dependents/list`,
+    get: `members/dependents/get`,
+    create: `members/dependents/create`,
+    update: (dependentId: string) => `members/dependents/${dependentId}`,
+    delete: (dependentId: string) => `members/dependents/${dependentId}`,
+    toggleActive: (dependentId: string) => `members/dependents/${dependentId}/toggle-active`
+  },
+  
+  // PEC Condition Management
+  PEC: {
+    list: (dependentId: string) => `members/dependents/${dependentId}/pec/list`,
+    get: `members/pec/get`,
+    create: `members/pec/create`,
+    update: (pecId: string) => `members/pec/${pecId}`,
+    delete: (pecId: string) => `members/pec/${pecId}`,
+    toggleExcluded: (pecId: string) => `members/pec/${pecId}/toggle-excluded`
+  }
+} as const;
+
 export const API_ENDPOINTS = {
   AUTH: AUTH_ENDPOINTS,
   USERS: USERS_ENDPOINTS,
@@ -243,7 +342,9 @@ export const API_ENDPOINTS = {
   BANKS: BANKS_ENDPOINTS,
   CLAUSES: CLAUSES_ENDPOINTS,
   LOOKUPS: LOOKUPS_ENDPOINTS,
-  HOSPITALS: HOSPITALS_ENDPOINTS
+  HOSPITALS: HOSPITALS_ENDPOINTS,
+  PRODUCTS: PRODUCTS_ENDPOINTS,
+  MEMBERS: MEMBERS_ENDPOINTS
 } as const;
 
 // ============================================================================

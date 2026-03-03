@@ -45,7 +45,20 @@ export const DB_TABLES = {
   HOSPITAL_CODES: 'ccms_hospital_codes',
   HOSPITAL_STAFF: 'ccms_hospital_staff',
   HOSPITAL_STAFF_CONTACTS: 'ccms_hospital_staff_contacts',
-  FEE_SCHEDULES: 'ccms_fee_schedules'
+  FEE_SCHEDULES: 'ccms_fee_schedules',
+  
+  // Products / Policy Management
+  PRODUCTS: 'ccms_products',
+  PRODUCT_LIMITS: 'ccms_product_limits',
+  PRODUCT_COPAY: 'ccms_product_copay',
+  
+  // Policy Holders / Members
+  MEMBERS: 'ccms_members',
+  MEMBER_ADDRESSES: 'ccms_member_addresses',
+  MEMBER_CONTACTS: 'ccms_member_contacts',
+  MEMBER_POLICIES: 'ccms_member_policies',
+  MEMBER_DEPENDENTS: 'ccms_member_dependents',
+  MEMBER_PEC_CONDITIONS: 'ccms_member_pec_conditions'
 } as const;
 
 // ============================================================================

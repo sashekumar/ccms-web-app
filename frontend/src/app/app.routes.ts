@@ -81,6 +81,17 @@ export const routes: Routes = [
         loadChildren: () => import('./features/hospitals/hospitals.routes').then(m => m.hospitalsRoutes)
       },
       {
+        path: 'products',
+        loadChildren: () => import('./features/products/products.routes').then(m => m.productsRoutes)
+      },
+      {
+        path: 'members',
+        loadChildren: () => import('./features/members/members.routes').then(m => m.MEMBER_ROUTES),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['POLICY_HOLDERS', 'VIEW'] },
+        title: 'Policy Holders - CCMS'
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
         title: 'Profile - CCMS'
