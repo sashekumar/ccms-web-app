@@ -8,14 +8,16 @@ module.exports = {
     '^.+\\.ts$': 'ts-jest',
   },
   collectCoverageFrom: [
-    // Only measure files that have test coverage
-    'src/core/auth/jwt.service.ts',
-    'src/core/utils/crypto.util.ts',
-    'src/features/auth/auth.repository.ts',
-    'src/features/auth/auth.service.ts',
-    'src/middleware/auth.middleware.ts',
-    'src/middleware/permission.middleware.ts',
-    // Note: permissions.service.ts excluded until more methods are tested
+    // Collect coverage from all TypeScript source files
+    'src/**/*.ts',
+    // Exclude test files, type definitions, and index files
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts',
+    '!src/**/*.types.ts',
+    '!src/**/index.ts',
+    '!src/server.ts',
+    '!src/app.ts',
+    '!src/scripts/**',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],

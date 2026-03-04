@@ -78,14 +78,58 @@ describe('PermissionsService', () => {
       assignRole: jest.fn(),
       detachRole: jest.fn(),
       getUserRoles: jest.fn(),
+      getAllRoles: jest.fn(),
+      getRolePermissions: jest.fn(),
+      getRolePermissionsMatrix: jest.fn(),
+      createRole: jest.fn(),
+      updateRole: jest.fn(),
+      deleteRole: jest.fn(),
+      grantPermission: jest.fn(),
+      revokePermission: jest.fn(),
+      getAllModuleActions: jest.fn(),
+      createModuleAction: jest.fn(),
+      updateModuleAction: jest.fn(),
+      deleteModuleAction: jest.fn(),
+      createCategory: jest.fn(),
+      updateCategory: jest.fn(),
     } as any;
 
-    mockCategoriesRepo = {} as any;
-    mockModulesRepo = {} as any;
-    mockActionsRepo = {} as any;
+    mockCategoriesRepo = {
+      findAll: jest.fn(),
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as any;
+
+    mockModulesRepo = {
+      findAll: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as any;
+
+    mockActionsRepo = {
+      findAll: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as any;
 
     (PermissionsRepository as jest.MockedClass<typeof PermissionsRepository>).mockImplementation(
       () => mockRepository
+    );
+
+    (CategoriesRepository as jest.MockedClass<typeof CategoriesRepository>).mockImplementation(
+      () => mockCategoriesRepo
+    );
+
+    (ModulesRepository as jest.MockedClass<typeof ModulesRepository>).mockImplementation(
+      () => mockModulesRepo
+    );
+
+    (ActionsRepository as jest.MockedClass<typeof ActionsRepository>).mockImplementation(
+      () => mockActionsRepo
     );
 
     permissionsService = new PermissionsService();
@@ -312,6 +356,464 @@ describe('PermissionsService', () => {
       await expect(
         permissionsService.checkPermission(1, 'USER_MANAGEMENT', 'VIEW')
       ).rejects.toThrow('Cache error');
+    });
+  });
+
+  describe('detachRole', () => {
+    it('should detach role successfully', async () => {
+      mockRepository.detachRole.mockResolvedValue(undefined);
+      mockCache.keys.mockReturnValue(['user:5:permissions', 'user:5:permissions:role:2']);
+
+      await permissionsService.detachRole(5, 2);
+
+      expect(mockRepository.detachRole).toHaveBeenCalledWith(5, 2);
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+
+    it('should handle errors', async () => {
+      mockRepository.detachRole.mockRejectedValue(new Error('Database error'));
+
+      await expect(permissionsService.detachRole(5, 2)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getUserRoles', () => {
+    it('should get user roles successfully', async () => {
+      mockRepository.getUserRoles.mockResolvedValue([1, 2, 3]);
+
+      const result = await permissionsService.getUserRoles(5);
+
+      expect(result).toEqual([1, 2, 3]);
+      expect(mockRepository.getUserRoles).toHaveBeenCalledWith(5);
+    });
+
+    it('should handle errors', async () => {
+      mockRepository.getUserRoles.mockRejectedValue(new Error('Database error'));
+
+      await expect(permissionsService.getUserRoles(5)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getAllRoles', () => {
+    it('should get all roles successfully', async () => {
+      const mockRoles = [mockRole];
+      mockRepository.getAllRoles.mockResolvedValue(mockRoles);
+
+      const result = await permissionsService.getAllRoles();
+
+      expect(result).toEqual(mockRoles);
+      expect(mockRepository.getAllRoles).toHaveBeenCalled();
+    });
+
+    it('should handle errors', async () => {
+      mockRepository.getAllRoles.mockRejectedValue(new Error('Database error'));
+
+      await expect(permissionsService.getAllRoles()).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getRoleById', () => {
+    it('should get role by ID successfully', async () => {
+      mockRepository.getRoleById.mockResolvedValue(mockRole);
+
+      const result = await permissionsService.getRoleById(2);
+
+      expect(result).toEqual(mockRole);
+      expect(mockRepository.getRoleById).toHaveBeenCalledWith(2);
+    });
+
+    it('should return null when role not found', async () => {
+      mockRepository.getRoleById.mockResolvedValue(null);
+
+      const result = await permissionsService.getRoleById(999);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getRolePermissions', () => {
+    it('should get role permissions successfully', async () => {
+      const mockPermissions: any = [
+        { role_id: 2, module_code: 'USERS', action_code: 'VIEW', granted: true }
+      ];
+      mockRepository.getRolePermissions.mockResolvedValue(mockPermissions);
+
+      const result = await permissionsService.getRolePermissions(2);
+
+      expect(result).toEqual(mockPermissions);
+      expect(mockRepository.getRolePermissions).toHaveBeenCalledWith(2);
+    });
+  });
+
+  describe('getRolePermissionsMatrix', () => {
+    it('should get role permissions matrix successfully', async () => {
+      const mockMatrix: any = [];
+      mockRepository.getRolePermissionsMatrix.mockResolvedValue(mockMatrix);
+
+      const result = await permissionsService.getRolePermissionsMatrix(2);
+
+      expect(result).toEqual(mockMatrix);
+      expect(mockRepository.getRolePermissionsMatrix).toHaveBeenCalledWith(2);
+    });
+  });
+
+  describe('createRole', () => {
+    it('should create role successfully', async () => {
+      const dto: CreateRoleDto = {
+        role_name: 'New Role',
+        role_code: 'NEW_ROLE',
+        description: 'Test role'
+      };
+      mockRepository.createRole.mockResolvedValue(10);
+
+      const result = await permissionsService.createRole(dto, 'admin');
+
+      expect(result).toBe(10);
+      expect(mockRepository.createRole).toHaveBeenCalledWith('New Role', 'NEW_ROLE', 'Test role', 'admin');
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+
+    it('should handle errors', async () => {
+      const dto: CreateRoleDto = { role_name: 'Test', role_code: 'TEST' };
+      mockRepository.createRole.mockRejectedValue(new Error('Duplicate role code'));
+
+      await expect(permissionsService.createRole(dto, 'admin')).rejects.toThrow('Duplicate role code');
+    });
+  });
+
+  describe('updateRole', () => {
+    it('should update role successfully', async () => {
+      mockRepository.getRoleById.mockResolvedValue(mockRole);
+      mockRepository.updateRole.mockResolvedValue(undefined);
+
+      await permissionsService.updateRole(2, { role_name: 'Updated' }, 'admin');
+
+      expect(mockRepository.getRoleById).toHaveBeenCalledWith(2);
+      expect(mockRepository.updateRole).toHaveBeenCalledWith(2, 'Updated', undefined, undefined, undefined, 'admin');
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+
+    it('should throw error for system roles', async () => {
+      const systemRole = { ...mockRole, is_system_role: true };
+      mockRepository.getRoleById.mockResolvedValue(systemRole);
+
+      await expect(
+        permissionsService.updateRole(1, { role_name: 'Updated' }, 'admin')
+      ).rejects.toThrow('Cannot modify system roles');
+    });
+
+    it('should not throw error if role not found', async () => {
+      mockRepository.getRoleById.mockResolvedValue(null);
+      mockRepository.updateRole.mockResolvedValue(undefined);
+
+      await expect(
+        permissionsService.updateRole(999, { role_name: 'Updated' }, 'admin')
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('deleteRole', () => {
+    it('should delete role successfully', async () => {
+      mockRepository.getRoleById.mockResolvedValue(mockRole);
+      mockRepository.deleteRole.mockResolvedValue(undefined);
+
+      await permissionsService.deleteRole(2);
+
+      expect(mockRepository.getRoleById).toHaveBeenCalledWith(2);
+      expect(mockRepository.deleteRole).toHaveBeenCalledWith(2);
+    });
+
+    it('should throw error for system roles', async () => {
+      const systemRole = { ...mockRole, is_system_role: true };
+      mockRepository.getRoleById.mockResolvedValue(systemRole);
+
+      await expect(permissionsService.deleteRole(1)).rejects.toThrow('Cannot delete system roles');
+    });
+
+    it('should not throw error if role not found', async () => {
+      mockRepository.getRoleById.mockResolvedValue(null);
+      mockRepository.deleteRole.mockResolvedValue(undefined);
+
+      await expect(permissionsService.deleteRole(999)).resolves.not.toThrow();
+    });
+  });
+
+  describe('grantPermission', () => {
+    it('should grant permission successfully', async () => {
+      const dto: any = { role_id: 2, module_action_id: 5 };
+      mockRepository.grantPermission.mockResolvedValue(undefined);
+
+      await permissionsService.grantPermission(dto, 'admin');
+
+      expect(mockRepository.grantPermission).toHaveBeenCalledWith(2, 5, 'admin');
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+
+    it('should handle errors', async () => {
+      const dto: any = { role_id: 2, module_action_id: 5 };
+      mockRepository.grantPermission.mockRejectedValue(new Error('Permission already exists'));
+
+      await expect(permissionsService.grantPermission(dto, 'admin')).rejects.toThrow('Permission already exists');
+    });
+  });
+
+  describe('revokePermission', () => {
+    it('should revoke permission successfully', async () => {
+      const dto: any = { role_id: 2, module_action_id: 5 };
+      mockRepository.revokePermission.mockResolvedValue(undefined);
+
+      await permissionsService.revokePermission(dto);
+
+      expect(mockRepository.revokePermission).toHaveBeenCalledWith(2, 5);
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+
+    it('should handle errors', async () => {
+      const dto: any = { role_id: 2, module_action_id: 5 };
+      mockRepository.revokePermission.mockRejectedValue(new Error('Permission not found'));
+
+      await expect(permissionsService.revokePermission(dto)).rejects.toThrow('Permission not found');
+    });
+  });
+
+  describe('getAllModules', () => {
+    it('should get all modules successfully', async () => {
+      const mockModules: any = [
+        { module_id: 1, module_name: 'Users', module_code: 'USERS' }
+      ];
+      mockModulesRepo.findAll.mockResolvedValue(mockModules);
+
+      const result = await permissionsService.getAllModules();
+
+      expect(result).toEqual(mockModules);
+      expect(mockModulesRepo.findAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('getAllActions', () => {
+    it('should get all actions successfully', async () => {
+      const mockActions: any = [
+        { action_id: 1, action_name: 'View', action_code: 'VIEW' }
+      ];
+      mockActionsRepo.findAll.mockResolvedValue(mockActions);
+
+      const result = await permissionsService.getAllActions();
+
+      expect(result).toEqual(mockActions);
+      expect(mockActionsRepo.findAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('createModule', () => {
+    it('should create module successfully', async () => {
+      const dto: any = { moduleName: 'New Module', moduleCode: 'NEW_MODULE' };
+      (mockModulesRepo.create as jest.Mock).mockResolvedValue({ module_id: 10 });
+
+      const result = await permissionsService.createModule(dto, 'admin');
+
+      expect(result).toBe(10);
+      expect(mockModulesRepo.create).toHaveBeenCalled();
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateModule', () => {
+    it('should update module successfully', async () => {
+      const dto: any = { moduleName: 'Updated Module' };
+      (mockModulesRepo.update as jest.Mock).mockResolvedValue(undefined);
+
+      await permissionsService.updateModule(5, dto, 'admin');
+
+      expect(mockModulesRepo.update).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({ module_name: 'Updated Module' }),
+        'admin'
+      );
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteModule', () => {
+    it('should delete module successfully', async () => {
+      mockModulesRepo.delete.mockResolvedValue(undefined);
+
+      await permissionsService.deleteModule(5);
+
+      expect(mockModulesRepo.delete).toHaveBeenCalledWith(5);
+    });
+  });
+
+  describe('createAction', () => {
+    it('should create action successfully', async () => {
+      const dto: any = { actionName: 'New Action', actionCode: 'NEW_ACTION' };
+      (mockActionsRepo.create as jest.Mock).mockResolvedValue({ action_id: 10 });
+
+      const result = await permissionsService.createAction(dto, 'admin');
+
+      expect(result).toBe(10);
+      expect(mockActionsRepo.create).toHaveBeenCalled();
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateAction', () => {
+    it('should update action successfully', async () => {
+      const dto: any = { actionName: 'Updated Action' };
+      (mockActionsRepo.update as jest.Mock).mockResolvedValue(undefined);
+
+      await permissionsService.updateAction(5, dto, 'admin');
+
+      expect(mockActionsRepo.update).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({ action_name: 'Updated Action' }),
+        'admin'
+      );
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteAction', () => {
+    it('should delete action successfully', async () => {
+      mockActionsRepo.delete.mockResolvedValue(undefined);
+
+      await permissionsService.deleteAction(5);
+
+      expect(mockActionsRepo.delete).toHaveBeenCalledWith(5);
+    });
+  });
+
+  describe('getAllModuleActions', () => {
+    it('should get all module actions successfully', async () => {
+      const mockModuleActions: any = [];
+      mockRepository.getAllModuleActions.mockResolvedValue(mockModuleActions);
+
+      const result = await permissionsService.getAllModuleActions();
+
+      expect(result).toEqual(mockModuleActions);
+      expect(mockRepository.getAllModuleActions).toHaveBeenCalled();
+    });
+  });
+
+  describe('createModuleAction', () => {
+    it('should create module action successfully', async () => {
+      const dto: any = { moduleId: 1, actionId: 2, actionLabel: 'View Users' };
+      mockRepository.createModuleAction.mockResolvedValue(10);
+
+      const result = await permissionsService.createModuleAction(dto, 'admin');
+
+      expect(result).toBe(10);
+      expect(mockRepository.createModuleAction).toHaveBeenCalledWith(1, 2, 'View Users', 'admin');
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+
+    it('should throw error for invalid data', async () => {
+      const dto: any = { module_id: 1, action_id: 2 };
+      mockRepository.createModuleAction.mockRejectedValue(new Error('Invalid module or action'));
+
+      await expect(permissionsService.createModuleAction(dto, 'admin')).rejects.toThrow('Invalid module or action');
+    });
+  });
+
+  describe('updateModuleAction', () => {
+    it('should update module action successfully', async () => {
+      const dto: any = { actionLabel: 'Updated Label', isActive: true };
+      mockRepository.updateModuleAction.mockResolvedValue(undefined);
+
+      await permissionsService.updateModuleAction(5, dto, 'admin');
+
+      expect(mockRepository.updateModuleAction).toHaveBeenCalledWith(5, 'Updated Label', true, 'admin');
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteModuleAction', () => {
+    it('should delete module action successfully', async () => {
+      mockRepository.deleteModuleAction.mockResolvedValue(undefined);
+
+      await permissionsService.deleteModuleAction(5);
+
+      expect(mockRepository.deleteModuleAction).toHaveBeenCalledWith(5);
+    });
+
+    it('should throw error if has dependencies', async () => {
+      mockRepository.deleteModuleAction.mockRejectedValue(new Error('Module action has associated permissions'));
+
+      await expect(permissionsService.deleteModuleAction(5)).rejects.toThrow('Module action has associated permissions');
+    });
+  });
+
+  describe('getAllCategories', () => {
+    it('should get all categories successfully', async () => {
+      const mockCategories: any = [];
+      mockCategoriesRepo.findAll.mockResolvedValue(mockCategories);
+
+      const result = await permissionsService.getAllCategories();
+
+      expect(result).toEqual(mockCategories);
+      expect(mockCategoriesRepo.findAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('getCategoryById', () => {
+    it('should get category by ID successfully', async () => {
+      const mockCategory: any = { category_id: 1, category_name: 'System' };
+      mockCategoriesRepo.findById.mockResolvedValue(mockCategory);
+
+      const result = await permissionsService.getCategoryById(1);
+
+      expect(result).toEqual(mockCategory);
+      expect(mockCategoriesRepo.findById).toHaveBeenCalledWith(1);
+    });
+
+    it('should return null when category not found', async () => {
+      mockCategoriesRepo.findById.mockResolvedValue(null);
+
+      const result = await permissionsService.getCategoryById(999);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('createCategory', () => {
+    it('should create category successfully', async () => {
+      const dto: any = { category_name: 'New Category', category_code: 'NEW_CAT' };
+      mockRepository.createCategory.mockResolvedValue(10);
+      mockCache.keys.mockReturnValue([]);
+
+      const result = await permissionsService.createCategory(dto, 'admin');
+
+      expect(result).toBe(10);
+      expect(mockRepository.createCategory).toHaveBeenCalledWith(dto, 'admin');
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateCategory', () => {
+    it('should update category successfully', async () => {
+      const dto: any = { category_name: 'Updated Category' };
+      mockRepository.updateCategory.mockResolvedValue(undefined);
+      mockCache.keys.mockReturnValue([]);
+
+      await permissionsService.updateCategory(5, dto, 'admin');
+
+      expect(mockRepository.updateCategory).toHaveBeenCalledWith(5, dto, 'admin');
+      expect(mockCache.del).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteCategory', () => {
+    it('should delete category successfully', async () => {
+      mockCategoriesRepo.delete.mockResolvedValue(undefined);
+
+      await permissionsService.deleteCategory(5);
+
+      expect(mockCategoriesRepo.delete).toHaveBeenCalledWith(5);
+    });
+
+    it('should throw error if category has modules', async () => {
+      mockCategoriesRepo.delete.mockRejectedValue(new Error('Category has associated modules'));
+
+      await expect(permissionsService.deleteCategory(5)).rejects.toThrow('Category has associated modules');
     });
   });
 });
