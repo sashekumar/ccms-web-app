@@ -136,8 +136,10 @@ export abstract class BaseRepository<T> {
 
   /**
    * Create a new record
+   * @param data - Record data to insert
+   * @param createdBy - Username of the user creating the record
    */
-  public async create(data: Partial<T>): Promise<T> {
+  public async create(data: Partial<T>, createdBy?: string): Promise<T> {
     const pool = await connectionManager.getPool();
     const request = pool.request();
 
@@ -151,8 +153,14 @@ export abstract class BaseRepository<T> {
     });
 
     // Add audit fields
-    columns.push('created_at', 'updated_at');
-    values.push('GETDATE()', 'GETDATE()');
+    columns.push('created_at');
+    values.push('GETDATE()');
+    
+    if (createdBy) {
+      columns.push('created_by');
+      values.push('@created_by');
+      request.input('created_by', sql.VarChar(50), createdBy);
+    }
     
     if (this.useSoftDelete) {
       columns.push('is_deleted');
@@ -171,8 +179,11 @@ export abstract class BaseRepository<T> {
 
   /**
    * Update a record by primary key
+   * @param id - Primary key value
+   * @param data - Record data to update
+   * @param updatedBy - Username of the user updating the record
    */
-  public async update(id: string | number, data: Partial<T>): Promise<T> {
+  public async update(id: string | number, data: Partial<T>, updatedBy?: string): Promise<T> {
     const pool = await connectionManager.getPool();
     const request = pool.request();
 
@@ -183,8 +194,13 @@ export abstract class BaseRepository<T> {
       request.input(key, value);
     });
 
-    // Update audit field
+    // Update audit fields
     setClauses.push('updated_at = GETDATE()');
+    
+    if (updatedBy) {
+      setClauses.push('updated_by = @updated_by');
+      request.input('updated_by', sql.VarChar(50), updatedBy);
+    }
 
     request.input('id', id);
     

@@ -1,10 +1,15 @@
 export interface User {
   user_id: number;
+  legacy_user_id: string | null;
   username: string;
   password_hash: string;
   full_name: string;
   is_active: boolean;
   last_login: Date | null;
+  created_at: Date;
+  created_by: string | null;
+  updated_at: Date | null;
+  updated_by: string | null;
 }
 
 export interface UserListItem {

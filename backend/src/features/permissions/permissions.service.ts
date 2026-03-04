@@ -339,7 +339,7 @@ export class PermissionsService {
       route: data.route || null,
       display_order: data.displayOrder || 0,
       is_active: true
-    });
+    }, createdBy);
     
     // Clear modules cache
     this.permissionCache.del(CACHE_KEYS.ALL_MODULES);
@@ -362,7 +362,7 @@ export class PermissionsService {
     if (data.displayOrder !== undefined) updateData.display_order = data.displayOrder;
     if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
-    await this.modulesRepo.update(moduleId, updateData);
+    await this.modulesRepo.update(moduleId, updateData, updatedBy);
     
     // Clear modules cache
     this.permissionCache.del(CACHE_KEYS.ALL_MODULES);
@@ -387,7 +387,7 @@ export class PermissionsService {
       action_code: data.actionCode,
       description: data.description || null,
       is_active: true
-    });
+    }, createdBy);
     
     // Clear actions cache
     this.permissionCache.del(CACHE_KEYS.ALL_ACTIONS);
@@ -406,7 +406,7 @@ export class PermissionsService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
-    await this.actionsRepo.update(actionId, updateData);
+    await this.actionsRepo.update(actionId, updateData, updatedBy);
     
     // Clear actions cache
     this.permissionCache.del(CACHE_KEYS.ALL_ACTIONS);
