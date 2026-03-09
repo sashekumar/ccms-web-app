@@ -31,6 +31,11 @@ export class DashboardPage extends BasePage {
       claims: 'a:has-text("Claim"), a[routerLink*="claims"]',
       members: 'a:has-text("Member"), a[routerLink*="members"]',
       reports: 'a:has-text("Report"), a[routerLink*="reports"]',
+      profile: 'a:has-text("Profile"), a[routerLink*="profile"]',
+      categories: 'a:has-text("Categories"), a[routerLink*="categories"]',
+      modules: 'a:has-text("Modules"), a[routerLink*="modules"]',
+      actions: 'a:has-text("Actions"), a[routerLink*="actions"]',
+      moduleActions: 'a:has-text("Module Actions"), a[routerLink*="module-actions"]',
     },
     
     // Dashboard widgets (stats cards)
@@ -97,6 +102,13 @@ export class DashboardPage extends BasePage {
    * Navigate to Users page
    */
   async navigateToUsers(): Promise<void> {
+    const isMobile = await this.page.evaluate(() => window.innerWidth < 768);
+    if (isMobile) {
+      await this.openSidebar();
+      await this.wait(TIMEOUTS.SIDEBAR_TRANSITION);
+      await this.expandCategory('System Administration');
+      await this.wait(TIMEOUTS.ANGULAR_RENDER_DELAY);
+    }
     await this.click(this.selectors.menu.users);
     await this.waitForNetworkIdle();
   }
@@ -105,6 +117,13 @@ export class DashboardPage extends BasePage {
    * Navigate to Roles page
    */
   async navigateToRoles(): Promise<void> {
+    const isMobile = await this.page.evaluate(() => window.innerWidth < 768);
+    if (isMobile) {
+      await this.openSidebar();
+      await this.wait(TIMEOUTS.SIDEBAR_TRANSITION);
+      await this.expandCategory('System Administration');
+      await this.wait(TIMEOUTS.ANGULAR_RENDER_DELAY);
+    }
     await this.click(this.selectors.menu.roles);
     await this.waitForNetworkIdle();
   }
@@ -138,6 +157,46 @@ export class DashboardPage extends BasePage {
    */
   async navigateToReports(): Promise<void> {
     await this.click(this.selectors.menu.reports);
+    await this.waitForNetworkIdle();
+  }
+
+  /**
+   * Navigate to Profile page
+   */
+  async navigateToProfile(): Promise<void> {
+    await this.click(this.selectors.menu.profile);
+    await this.waitForNetworkIdle();
+  }
+
+  /**
+   * Navigate to Categories page (ACL)
+   */
+  async navigateToCategories(): Promise<void> {
+    await this.click(this.selectors.menu.categories);
+    await this.waitForNetworkIdle();
+  }
+
+  /**
+   * Navigate to Modules page (ACL)
+   */
+  async navigateToModules(): Promise<void> {
+    await this.click(this.selectors.menu.modules);
+    await this.waitForNetworkIdle();
+  }
+
+  /**
+   * Navigate to Actions page (ACL)
+   */
+  async navigateToActions(): Promise<void> {
+    await this.click(this.selectors.menu.actions);
+    await this.waitForNetworkIdle();
+  }
+
+  /**
+   * Navigate to Module Actions page (ACL)
+   */
+  async navigateToModuleActions(): Promise<void> {
+    await this.click(this.selectors.menu.moduleActions);
     await this.waitForNetworkIdle();
   }
 
@@ -204,7 +263,26 @@ export class DashboardPage extends BasePage {
    * Open sidebar (useful for mobile where sidebar auto-closes)
    */
   async openSidebar(): Promise<void> {
-    // On mobile, use multiple clicks with verification to ensure sidebar opens
+    // Check if mobile viewport
+    const isMobile = await this.page.evaluate(() => window.innerWidth < 768);
+    
+    if (isMobile) {
+      // On mobile, sidebar might be completely hidden - look for toggle button and click
+      const toggleButton = this.page.locator(this.selectors.sidebarToggle);
+      const toggleCount = await toggleButton.count();
+      
+      if (toggleCount > 0) {
+        await toggleButton.click();
+        await this.wait(TIMEOUTS.SIDEBAR_TRANSITION);
+        
+        // Wait for sidebar to be visible
+        const sidebar = this.page.locator(this.selectors.sidebar);
+        await sidebar.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_VISIBLE });
+        return;
+      }
+    }
+    
+    // Desktop: On mobile, use multiple clicks with verification to ensure sidebar opens
     for (let attempt = 0; attempt < 3; attempt++) {
       const sidebar = this.page.locator(this.selectors.sidebar);
       const sidebarClass = await sidebar.getAttribute('class');

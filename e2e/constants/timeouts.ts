@@ -27,4 +27,7 @@ export const TIMEOUTS = {
   // User Interactions
   CLICK_DELAY: 100,
   TYPE_DELAY: 50,
+  
+  // Navigation
+  NAVIGATION: 30000,
 } as const;

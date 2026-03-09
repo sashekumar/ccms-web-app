@@ -14,6 +14,9 @@
     "test:auth": "playwright test tests/auth",
     "test:users": "playwright test tests/users",
     "test:roles": "playwright test tests/roles",
+    "test:acl": "playwright test tests/acl",
+    "test:admin": "playwright test tests/auth tests/users tests/roles tests/acl",
+    "test:admin-ui": "playwright test tests/auth tests/users tests/roles tests/acl --ui",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
     "codegen": "playwright codegen http://localhost:4200",
@@ -33,7 +36,7 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@playwright/test": "^1.42.1",
+    "@playwright/test": "^1.58.2",
     "@types/mssql": "^9.1.4",
     "@types/node": "^20.11.24",
     "mssql": "^10.0.2",
