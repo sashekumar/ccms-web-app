@@ -1,0 +1,201 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly tests at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  e2e-tests:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        node-version: [18.x, 20.x]
+
+    services:
+      # SQL Server Test Database
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: YourStrong@Passw0rd
+          MSSQL_PID: Express
+        ports:
+          - 1434:1433
+        options: >-
+          --health-cmd="/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q 'SELECT 1' || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --health-start-period=30s
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      # Install Backend Dependencies
+      - name: Install Backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      # Install Frontend Dependencies
+      - name: Install Frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      # Install E2E Dependencies
+      - name: Install E2E dependencies
+        run: |
+          cd e2e
+          npm ci
+
+      # Install Playwright Browsers
+      - name: Install Playwright browsers
+        run: |
+          cd e2e
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      # Initialize Test Database
+      - name: Initialize test database
+        run: |
+          # Wait for SQL Server to be ready
+          sleep 10
+          
+          # Run initialization script
+          /opt/mssql-tools/bin/sqlcmd \
+            -S localhost,1434 \
+            -U sa \
+            -P YourStrong@Passw0rd \
+            -i e2e/docker/init-db.sql
+
+      # Start Backend Server
+      - name: Start backend server
+        run: |
+          cd backend
+          npm run dev &
+          
+          # Wait for backend to start
+          timeout 60 bash -c 'until curl -s http://localhost:3000/health > /dev/null; do sleep 2; done'
+        env:
+          NODE_ENV: test
+          DB_SERVER: localhost
+          DB_PORT: 1434
+          DB_NAME: ccms_test
+          DB_USER: sa
+          DB_PASSWORD: YourStrong@Passw0rd
+
+      # Build Frontend
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # Start Frontend Server
+      - name: Start frontend server
+        run: |
+          cd frontend
+          npx http-server dist/ccms-web-app/browser -p 4200 &
+          
+          # Wait for frontend to start
+          timeout 60 bash -c 'until curl -s http://localhost:4200 > /dev/null; do sleep 2; done'
+
+      # Run E2E Tests
+      - name: Run E2E tests (${{ matrix.browser }})
+        run: |
+          cd e2e
+          npx playwright test --project=${{ matrix.browser }}
+        env:
+          CI: true
+          BASE_URL: http://localhost:4200
+          API_URL: http://localhost:3000
+          DB_SERVER: localhost
+          DB_PORT: 1434
+          DB_NAME: ccms_test
+          DB_USER: sa
+          DB_PASSWORD: YourStrong@Passw0rd
+
+      # Upload Test Results
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ matrix.browser }}-node${{ matrix.node-version }}
+          path: e2e/test-results/
+          retention-days: 7
+
+      # Upload Test Report
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}-node${{ matrix.node-version }}
+          path: e2e/playwright-report/
+          retention-days: 7
+
+      # Upload Screenshots/Videos on Failure
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failures-${{ matrix.browser }}-node${{ matrix.node-version }}
+          path: |
+            e2e/test-results/**/*.png
+            e2e/test-results/**/*.webm
+          retention-days: 7
+
+  # Summary Job
+  test-summary:
+    name: Test Summary
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.e2e-tests.result }}" == "failure" ]; then
+            echo "❌ E2E tests failed"
+            exit 1
+          else
+            echo "✅ E2E tests passed"
+          fi
+
+  # Notify on Failure (optional)
+  notify-failure:
+    name: Notify on Failure
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    if: failure() && (github.event_name == 'push' || github.event_name == 'schedule')
+
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "E2E tests failed on ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          # Add your notification logic here (Slack, Email, etc.)
