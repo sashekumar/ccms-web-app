@@ -125,12 +125,12 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
                   <app-status-badge [active]="action.is_active"></app-status-badge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button (click)="openEditModal(action)" class="text-indigo-600 hover:text-indigo-900 mr-3">
+                  <button (click)="openEditModal(action)" class="text-indigo-600 hover:text-indigo-900 mr-3" data-testid="edit-action-button" aria-label="Edit">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
                   </button>
-                  <button (click)="confirmDelete(action)" class="text-red-600 hover:text-red-900">
+                  <button (click)="confirmDelete(action)" class="text-red-600 hover:text-red-900" data-testid="delete-action-button" aria-label="Delete">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
@@ -192,17 +192,17 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
           </div>
 
           <!-- Modal Body (Scrollable) -->
-          <div class="flex-1 overflow-y-auto px-6 py-4">
+          <form (ngSubmit)="saveAction()" #actionForm="ngForm" class="flex-1 overflow-y-auto px-6 py-4">
             <div class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">Action Name *</label>
-                <input type="text" [(ngModel)]="formData.actionName" name="actionName" required
+                <input type="text" [(ngModel)]="formData.actionName" name="name" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-gray-700">Action Code *</label>
-                <input type="text" [(ngModel)]="formData.actionCode" name="actionCode" required
+                <input type="text" [(ngModel)]="formData.actionCode" name="code" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
               </div>
 
@@ -213,26 +213,26 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
               </div>
 
               <div *ngIf="editingAction" class="flex items-center">
-                <input type="checkbox" [(ngModel)]="formData.isActive" name="isActive" id="isActive"
+                <input type="checkbox" [(ngModel)]="formData.isActive" name="active" id="isActive"
                   class="h-4 w-4 text-[#1e3c72] focus:ring-[#1e3c72] border-gray-300 rounded">
                 <label for="isActive" class="ml-2 block text-sm text-gray-900">Active</label>
               </div>
             </div>
-          </div>
 
         <!-- Modal Footer -->
-        <div class="flex-shrink-0 border-t border-gray-200 px-6 py-4">
+        <div class="flex-shrink-0 border-t border-gray-200 px-6 py-4 mt-4">
           <div class="flex gap-3 justify-end">
             <button type="button" (click)="closeModal()" [disabled]="saving"
               class="rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
               Cancel
             </button>
-            <button type="button" (click)="saveAction()" [disabled]="saving"
+            <button type="submit" [disabled]="saving || !actionForm.valid"
               class="rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#1e3c72] text-sm font-medium text-white hover:bg-[#2a5298] disabled:opacity-50">
               {{ saving ? 'Saving...' : 'Save' }}
             </button>
           </div>
         </div>
+          </form>
       </div>
     </div>
 
@@ -389,7 +389,12 @@ export class ActionsComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     if (this.editingAction) {
-      this.permissionService.updateAction(this.editingAction.action_id, this.formData)
+      this.permissionService.updateAction(this.editingAction.action_id, {
+        action_name: this.formData.actionName || undefined,
+        action_code: this.formData.actionCode || undefined,
+        description: this.formData.description || undefined,
+        is_active: this.formData.isActive
+      })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {

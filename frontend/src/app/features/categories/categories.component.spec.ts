@@ -22,7 +22,9 @@ describe('CategoriesComponent', () => {
       display_order: 1,
       is_active: true,
       created_at: new Date('2024-01-01'),
-      updated_at: new Date('2024-01-01')
+      updated_at: new Date('2024-01-01'),
+      created_by: 'system',
+      updated_by: null
     },
     {
       category_id: 2,
@@ -33,7 +35,9 @@ describe('CategoriesComponent', () => {
       display_order: 2,
       is_active: true,
       created_at: new Date('2024-01-01'),
-      updated_at: new Date('2024-01-01')
+      updated_at: new Date('2024-01-01'),
+      created_by: 'system',
+      updated_by: null
     },
     {
       category_id: 3,
@@ -44,7 +48,9 @@ describe('CategoriesComponent', () => {
       display_order: 3,
       is_active: false,
       created_at: new Date('2024-01-01'),
-      updated_at: new Date('2024-01-01')
+      updated_at: new Date('2024-01-01'),
+      created_by: 'system',
+      updated_by: null
     }
   ];
 

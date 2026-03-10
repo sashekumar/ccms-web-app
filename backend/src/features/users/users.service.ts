@@ -57,7 +57,7 @@ export class UsersService extends BaseService<User> {
       is_active: dto.is_active !== undefined ? dto.is_active : true
     };
 
-    const user = await this.repository.create(userData);
+    const user = await this.repository.create(userData, createdBy);
     return user.user_id;
   }
 
@@ -88,7 +88,7 @@ export class UsersService extends BaseService<User> {
       updateData.password_hash = await CryptoUtil.hashPassword(dto.password);
     }
 
-    await this.repository.update(userId, updateData);
+    await this.repository.update(userId, updateData, updatedBy);
   }
 
   /**
@@ -105,7 +105,7 @@ export class UsersService extends BaseService<User> {
     // This check should be done in the controller based on logged-in user
     // But added here as additional safeguard
 
-    await this.repository.update(userId, { is_active: false });
+    await this.repository.update(userId, { is_active: false }, deletedBy);
   }
 
   /**

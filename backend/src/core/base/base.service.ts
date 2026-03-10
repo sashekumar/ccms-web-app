@@ -47,22 +47,27 @@ export abstract class BaseService<T> {
   /**
    * Create a new record
    * Override this method to add validation and business logic
+   * @param data - Record data to insert
+   * @param createdBy - Username of the user creating the record
    */
-  public async create(data: Partial<T>): Promise<T> {
+  public async create(data: Partial<T>, createdBy?: string): Promise<T> {
     // Add business logic validation here in child classes
-    return this.repository.create(data);
+    return this.repository.create(data, createdBy);
   }
 
   /**
    * Update a record
    * Override this method to add validation and business logic
+   * @param id - Primary key value
+   * @param data - Record data to update
+   * @param updatedBy - Username of the user updating the record
    */
-  public async update(id: string | number, data: Partial<T>): Promise<T> {
+  public async update(id: string | number, data: Partial<T>, updatedBy?: string): Promise<T> {
     // Verify record exists
     await this.getById(id);
     
     // Add business logic validation here in child classes
-    return this.repository.update(id, data);
+    return this.repository.update(id, data, updatedBy);
   }
 
   /**
