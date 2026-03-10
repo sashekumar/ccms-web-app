@@ -45,4 +45,11 @@ export class ModuleActionsPage extends AclBasePage {
     const checkbox = this.page.locator(`label:has-text("${actionName}") input[type="checkbox"], input[type="checkbox"]:near(:text("${actionName}"))`);
     await checkbox.click();
   }
+
+  /**
+   * Get search input (overrides base method for module-specific placeholder)
+   */
+  getSearchInput(): Locator {
+    return this.page.locator('input[placeholder*="Module"], input[placeholder*="action"]').first();
+  }
 }
