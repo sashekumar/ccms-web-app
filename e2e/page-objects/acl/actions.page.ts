@@ -17,7 +17,7 @@ export class ActionsPage extends AclBasePage {
   }
 
   /**
-   * Fill action form
+   * Fill action form (Template-Driven Forms with ngModel)
    */
   async fillActionForm(data: {
     actionCode?: string;
@@ -25,13 +25,13 @@ export class ActionsPage extends AclBasePage {
     description?: string;
   }): Promise<void> {
     if (data.actionCode) {
-      await this.page.locator('input[formcontrolname*="code"], input[name*="code"]').first().fill(data.actionCode);
+      await this.page.locator('input[name="code"]').fill(data.actionCode);
     }
     if (data.actionName) {
-      await this.page.locator('input[formcontrolname*="name"], input[name*="name"]').first().fill(data.actionName);
+      await this.page.locator('input[name="name"]').fill(data.actionName);
     }
     if (data.description) {
-      await this.page.locator('textarea, input[formcontrolname*="description"]').first().fill(data.description);
+      await this.page.locator('textarea[name="description"]').fill(data.description);
     }
   }
 }

@@ -33,9 +33,9 @@ export class RoleListPage extends BasePage {
     
     // Role row elements
     roleRow: (roleCode: string) => `tr:has-text("${roleCode}")`,
-    viewPermissionsButton: (roleCode: string) => `tr:has-text("${roleCode}") button[title="View Permissions"]`,
-    editButton: (roleCode: string) => `tr:has-text("${roleCode}") button[title="Edit"]`,
-    deleteButton: (roleCode: string) => `tr:has-text("${roleCode}") button[title="Delete"]`,
+    viewPermissionsButton: (roleCode: string) => `tr:has-text("${roleCode}") button[title*="View Permissions"]`,
+    editButton: (roleCode: string) => `tr:has-text("${roleCode}") [data-testid="edit-role-button"]`,
+    deleteButton: (roleCode: string) => `tr:has-text("${roleCode}") [data-testid="delete-role-button"]`,
     
     // Badges
     activeBadge: 'text=Active',
@@ -46,8 +46,8 @@ export class RoleListPage extends BasePage {
 
   // Expected URLs
   private readonly urls = {
-    roleList: '/roles',
-    roleCreate: '/roles/create',
+    roleList: '/admin/roles',
+    roleCreate: '/admin/roles/create',
     roleEdit: (id: number) => `/roles/edit/${id}`,
     rolePermissions: (id: number) => `/roles/${id}/permissions`,
   };
@@ -61,7 +61,7 @@ export class RoleListPage extends BasePage {
    */
   async goto(): Promise<void> {
     await super.goto(this.urls.roleList);
-    await this.waitForPageLoad();
+    await this.page.waitForLoadState('networkidle');
   }
 
   /**
@@ -149,7 +149,14 @@ export class RoleListPage extends BasePage {
    * @param roleCode - Role code to edit
    */
   async editRole(roleCode: string): Promise<void> {
-    await this.click(this.selectors.editButton(roleCode));
+    // Wait for row to be visible first
+    const row = this.page.locator(this.selectors.roleRow(roleCode)).first();
+    await row.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_VISIBLE });
+    
+    // Then click the edit button within that row
+    const editButton = row.locator('[data-testid="edit-role-button"]');
+    await editButton.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_VISIBLE });
+    await editButton.click();
     await this.waitForNetworkIdle();
   }
 
@@ -158,7 +165,14 @@ export class RoleListPage extends BasePage {
    * @param roleCode - Role code to delete
    */
   async deleteRole(roleCode: string): Promise<void> {
-    await this.click(this.selectors.deleteButton(roleCode));
+    // Wait for row to be visible first
+    const row = this.page.locator(this.selectors.roleRow(roleCode)).first();
+    await row.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_VISIBLE });
+    
+    // Then click the delete button within that row
+    const deleteButton = row.locator('[data-testid="delete-role-button"]');
+    await deleteButton.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_VISIBLE });
+    await deleteButton.click();
     await this.wait(TIMEOUTS.MODAL_ANIMATION);
   }
 

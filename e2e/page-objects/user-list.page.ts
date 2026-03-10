@@ -22,7 +22,7 @@ export class UserListPage extends BasePage {
     
     // Filters
     searchInput: 'input[placeholder*="Username"]',
-    statusFilter: 'select:near(label:has-text("Status"))',
+    statusFilter: 'div.grid select:near(label:has-text("Status"))',
     roleFilter: 'select:near(label:has-text("Role"))',
     itemsPerPageFilter: 'select:near(label:has-text("Items per page"))',
     
@@ -52,10 +52,10 @@ export class UserListPage extends BasePage {
 
   // Expected URLs
   private readonly urls = {
-    userList: '/users',
-    userCreate: '/users/create',
-    userEdit: (id: number) => `/users/edit/${id}`,
-    userView: (id: number) => `/users/view/${id}`,
+    userList: '/admin/users',
+    userCreate: '/admin/users/create',
+   userEdit: (id: number) => `/admin/users/edit/${id}`,
+    userView: (id: number) => `/admin/users/view/${id}`,
   };
 
   constructor(page: Page) {
@@ -111,7 +111,8 @@ export class UserListPage extends BasePage {
    * @param status - 'active', 'inactive', or 'all'
    */
   async filterByStatus(status: 'active' | 'inactive' | 'all'): Promise<void> {
-    const statusFilter = this.page.locator(this.selectors.statusFilter);
+    // Use nth(0) to select the first Status filter (avoids matching multiple selects)
+    const statusFilter = this.page.locator(this.selectors.statusFilter).nth(0);
     
     if (status === 'active') {
       await statusFilter.selectOption({ label: 'Active' });
@@ -182,7 +183,13 @@ export class UserListPage extends BasePage {
    * @param username - Username to edit
    */
   async editUser(username: string): Promise<void> {
-    await this.click(this.selectors.editButton(username));
+    // Wait for the row to be visible first
+    await this.page.locator(`tr:has-text("${username}")`).waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Then click the edit button
+    const editButton = this.page.locator(this.selectors.editButton(username));
+    await editButton.waitFor({ state: 'visible', timeout: 5000 });
+    await editButton.click();
     await this.waitForNetworkIdle();
   }
 

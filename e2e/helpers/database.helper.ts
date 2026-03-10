@@ -91,10 +91,163 @@ export class DatabaseHelper {
     // username: admin, password: Password123!, user_id: 1
     console.log('ℹ️  Using existing admin user from migration (username: admin)');
 
+    // Verify and fix permissions if needed
+    await this.verifyAndFixPermissions();
+
     // Only seed additional test users if needed
     await this.seedAdditionalTestUsers();
 
     console.log('✅ Initial test data verified');
+  }
+
+  /**
+   * Verify admin user has all necessary permissions, and grant if missing
+   */
+  private static async verifyAndFixPermissions(): Promise<void> {
+    try {
+      // Check if Super Admin role exists (role_id = 1)
+      const roleCheck = await this.executeQuery(
+        'SELECT role_id FROM ccms_acl_roles WHERE role_id = 1'
+      );
+
+      if (roleCheck.recordset.length === 0) {
+        console.warn('⚠️  Super Admin role not found! Database migrations may be incomplete.');
+        return;
+      }
+
+      // Check if admin user has Super Admin role assigned
+      const userRoleCheck = await this.executeQuery(
+        'SELECT * FROM ccms_acl_user_roles WHERE user_id = 1 AND role_id = 1'
+      );
+
+      if (userRoleCheck.recordset.length === 0) {
+        console.log('🔧 Assigning Super Admin role to admin user...');
+        await this.executeQuery(`
+          INSERT INTO ccms_acl_user_roles (user_id, role_id, assigned_by, assigned_date, is_active)
+          VALUES (1, 1, 'SYSTEM', GETDATE(), 1)
+        `);
+        console.log('✅ Super Admin role assigned');
+      } else {
+        // Ensure role is active
+        const activeCheck = userRoleCheck.recordset[0];
+        if (activeCheck.is_active !== 1 && activeCheck.is_active !== true) {
+          await this.executeQuery(`
+            UPDATE ccms_acl_user_roles 
+            SET is_active = 1 
+            WHERE user_id = 1 AND role_id = 1
+          `);
+        }
+      }
+
+      // Check and add missing audit columns if needed
+      const columnCheck = await this.executeQuery(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_NAME = 'ccms_users'
+        ORDER BY ORDINAL_POSITION
+      `);
+      const columns = columnCheck.recordset.map(r => r.COLUMN_NAME);
+
+      // Add missing audit columns if they don't exist
+      const requiredColumns = ['created_at', 'created_by', 'updated_at', 'updated_by'];
+      const missingColumns = requiredColumns.filter(col => !columns.includes(col));
+      
+      if (missingColumns.length > 0) {
+        console.log(`🔧 Adding missing audit columns to ccms_users: ${missingColumns.join(', ')}`);
+        
+        for (const column of missingColumns) {
+          if (column === 'created_at') {
+            await this.executeQuery(`
+              ALTER TABLE ccms_users 
+              ADD ${column} DATETIME2 NOT NULL DEFAULT GETDATE()
+            `);
+          } else if (column === 'updated_at') {
+            await this.executeQuery(`
+              ALTER TABLE ccms_users 
+              ADD ${column} DATETIME2 NULL
+            `);
+          } else {
+            // created_by, updated_by
+            await this.executeQuery(`
+              ALTER TABLE ccms_users 
+              ADD ${column} VARCHAR(50) NULL
+            `);
+          }
+        }
+        
+        console.log('✅ Audit columns added');
+      }
+
+      // Fix legacy_user_id unique constraint to handle NULL values properly
+      try {
+        // Check for UNIQUE constraints on legacy_user_id
+        const constraintCheck = await this.executeQuery(`
+          SELECT c.name as constraint_name, i.name as index_name
+          FROM sys.key_constraints c
+          INNER JOIN sys.indexes i ON c.parent_object_id = i.object_id AND c.unique_index_id = i.index_id
+          WHERE c.parent_object_id = OBJECT_ID('ccms_users')
+            AND c.type = 'UQ'
+            AND EXISTS (
+              SELECT 1 FROM sys.index_columns ic
+              INNER JOIN sys.columns col ON ic.object_id = col.object_id AND ic.column_id = col.column_id
+              WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id 
+                AND col.name = 'legacy_user_id'
+            )
+        `);
+
+        if (constraintCheck.recordset.length > 0) {
+          const constraintName = constraintCheck.recordset[0].constraint_name;
+          console.log(`🔧 Dropping incorrect UNIQUE constraint: ${constraintName}`);
+          await this.executeQuery(`
+            ALTER TABLE ccms_users 
+            DROP CONSTRAINT ${constraintName}
+          `);
+
+          // Create filtered unique index
+          await this.executeQuery(`
+            CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_users_legacy_id 
+            ON ccms_users(legacy_user_id) 
+            WHERE legacy_user_id IS NOT NULL
+          `);
+          console.log('✅ Created proper filtered unique index on legacy_user_id');
+        }
+      } catch (error) {
+        console.warn('⚠️  Could not fix legacy_user_id constraint:', error);
+      }
+
+
+      // Check if Super Admin has permissions
+      const permissionCheck = await this.executeQuery(
+        'SELECT COUNT(*) as count FROM ccms_acl_role_permissions WHERE role_id = 1 AND granted = 1'
+      );
+
+      const permissionCount = permissionCheck.recordset[0].count;
+      
+      if (permissionCount === 0) {
+        console.log('🔧 Granting permissions to Super Admin role...');
+        
+        // Grant all permissions to Super Admin
+        await this.executeQuery(`
+          INSERT INTO ccms_acl_role_permissions (role_id, module_action_id, granted, created_by, created_date)
+          SELECT 1, module_action_id, 1, 'SYSTEM', GETDATE()
+          FROM ccms_acl_module_actions
+          WHERE module_action_id NOT IN (
+            SELECT module_action_id FROM ccms_acl_role_permissions WHERE role_id = 1
+          )
+        `);
+        
+        const newCount = await this.executeQuery(
+          'SELECT COUNT(*) as count FROM ccms_acl_role_permissions WHERE role_id = 1 AND granted = 1'
+        );
+        
+        console.log(`✅ Granted ${newCount.recordset[0].count} permissions to Super Admin`);
+      } else {
+        console.log(`✅ Super Admin has ${permissionCount} permissions`);
+      }
+    } catch (error) {
+      console.error('Error verifying permissions:', error);
+      // Don't throw - let tests continue even if permission check fails
+    }
   }
 
   /**

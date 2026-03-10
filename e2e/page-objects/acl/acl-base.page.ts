@@ -22,7 +22,7 @@ export abstract class AclBasePage extends BasePage {
     createButton: 'button:has-text("Create"), button:has-text("Add"), button:has-text("New")',
     table: 'table',
     listContainer: '.list, .card, .item',
-    searchInput: 'input',
+    searchInput: 'input[placeholder*="Search"], input[placeholder*="search"]',
     statusFilter: 'select',
     form: 'form, [class*="form"]',
     submitButton: 'button[type="submit"], button:has-text("Save"), button:has-text("Submit")',

@@ -48,9 +48,9 @@ export class UserFormPage extends BasePage {
 
   // Expected URLs
   private readonly urls = {
-    userCreate: '/users/create',
-    userEdit: (id: number) => `/users/edit/${id}`,
-    userList: '/users',
+    userCreate: '/admin/users/create',
+    userEdit: (id: number) => `/admin/users/edit/${id}`,
+    userList: '/admin/users',
   };
 
   constructor(page: Page) {
@@ -98,7 +98,11 @@ export class UserFormPage extends BasePage {
    * @param fullName - Full name to enter
    */
   async fillFullName(fullName: string): Promise<void> {
-    await this.fill(this.selectors.fullNameInput, fullName);
+    const input = this.page.locator(this.selectors.fullNameInput);
+    await input.click();  // Focus the field
+    await input.press('Control+A');  // Select all
+    await input.press('Backspace');  // Delete
+    await input.fill(fullName);  // Type new value
   }
 
   /**
@@ -163,11 +167,12 @@ export class UserFormPage extends BasePage {
   }
 
   /**
-   * Click submit button
+   * Click submit button and wait for response
    */
   async submit(): Promise<void> {
     await this.click(this.selectors.submitButton);
-    await this.waitForNetworkIdle();
+    // Wait for network activity to complete (API call + navigation)
+    await this.page.waitForLoadState('networkidle', { timeout: TIMEOUTS.NAVIGATION });
   }
 
   /**

@@ -15,6 +15,11 @@ import { defineConfig, devices } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4200';
 const API_URL = process.env.API_URL || 'http://localhost:3000';
 
+// Detect if running in headed or UI mode (for sequential execution)
+const isHeadedOrUI = process.argv.includes('--headed') || 
+                     process.argv.includes('--ui') || 
+                     process.argv.includes('--debug');
+
 export default defineConfig({
   // Test directory
   testDir: './tests',
@@ -40,7 +45,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   
   // Opt out of parallel tests on CI (for stability)
-  workers: process.env.CI ? 1 : 4,
+  // Use 1 worker for headed/UI/debug modes to see tests sequentially
+  workers: process.env.CI ? 1 : (isHeadedOrUI ? 1 : 5),
   
   // Reporter to use
   reporter: [
