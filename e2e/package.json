@@ -1,0 +1,60 @@
+{
+  "name": "ccms-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for CCMS Web Application",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:mobile": "playwright test --project=mobile-chrome --project=mobile-safari",
+    "test:auth": "playwright test tests/auth",
+    "test:users": "playwright test tests/users",
+    "test:roles": "playwright test tests/roles",
+    "test:acl": "playwright test tests/acl",
+    "test:permissions": "playwright test tests/permissions",
+    "test:operations": "playwright test tests/users/user-operations.spec.ts tests/roles/role-operations.spec.ts",
+    "test:operations:ui": "playwright test tests/users/user-operations.spec.ts tests/roles/role-operations.spec.ts --project=chromium --ui",
+    "test:operations:acl": "playwright test tests/acl/*-operations.spec.ts --project=chromium",
+    "test:operations:acl:ui": "playwright test tests/acl/*-operations.spec.ts --project=chromium --ui",
+    "test:operations:all": "playwright test tests/users/user-operations.spec.ts tests/roles/role-operations.spec.ts tests/acl/*-operations.spec.ts --project=chromium",
+    "test:operations:all:ui": "playwright test tests/users/user-operations.spec.ts tests/roles/role-operations.spec.ts tests/acl/*-operations.spec.ts --project=chromium --ui",
+    "test:crud": "playwright test tests/**/*-operations.spec.ts --project=chromium",
+    "test:crud:ui": "playwright test tests/**/*-operations.spec.ts --project=chromium --ui",
+    "test:permission-flow": "playwright test tests/permissions/permission-flow.spec.ts --project=chromium",
+    "test:permission-flow:ui": "playwright test tests/permissions/permission-flow.spec.ts --project=chromium --ui",
+    "test:admin": "playwright test tests/auth tests/users tests/roles tests/acl",
+    "test:admin-ui": "playwright test tests/auth tests/users tests/roles tests/acl --ui",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen http://localhost:4200",
+    "install:browsers": "playwright install",
+    "db:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "db:down": "docker-compose -f docker/docker-compose.yml down",
+    "db:logs": "docker-compose -f docker/docker-compose.yml logs -f",
+    "db:restart": "docker-compose -f docker/docker-compose.yml restart"
+  },
+  "keywords": [
+    "e2e",
+    "testing",
+    "playwright",
+    "ccms"
+  ],
+  "author": "CCMS Development Team",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@playwright/test": "^1.58.2",
+    "@types/mssql": "^9.1.4",
+    "@types/node": "^20.11.24",
+    "mssql": "^10.0.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

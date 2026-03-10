@@ -12,6 +12,8 @@ export interface Category {
   is_active: boolean;
   created_at: Date;
   updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface Role {
@@ -22,7 +24,9 @@ export interface Role {
   is_system_role: boolean;
   is_active: boolean;
   created_at: Date;
-  created_by: string;
+  updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface Module {
@@ -38,6 +42,8 @@ export interface Module {
   is_active: boolean;
   created_at: Date;
   updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface Action {
@@ -46,6 +52,10 @@ export interface Action {
   action_code: string;
   description: string | null;
   is_active: boolean;
+  created_at: Date;
+  updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
 }
 
 export interface ModuleAction {
@@ -55,6 +65,9 @@ export interface ModuleAction {
   action_label: string | null;
   is_active: boolean;
   created_at: Date;
+  updated_at: Date | null;
+  created_by: string | null;
+  updated_by: string | null;
   module_name?: string;
   module_code?: string;
   action_name?: string;
@@ -160,7 +173,7 @@ export interface CreateModuleDto {
   category_id?: number;
   icon?: string;
   route?: string;
-  display_order: number;
+  display_order?: number;
 }
 
 export interface UpdateModuleDto {
@@ -196,9 +209,7 @@ export interface CreateModuleActionDto {
 }
 
 export interface UpdateModuleActionDto {
-  module_id?: number;
-  action_id?: number;
-  action_label?: string;
+  action_label?: string | null;
   is_active?: boolean;
 }
 

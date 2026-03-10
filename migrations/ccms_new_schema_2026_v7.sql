@@ -157,25 +157,34 @@ PRINT 'Creating Master Lookups & Configuration tables...';
 -- Replaces: Multiple legacy lookup tables (dt_Admission_Types, dt_Master_Reject_Diagnosis, DT_IC, DT_SUB_IC, etc.)
 CREATE TABLE ccms_m_lookup_categories (
     category_id INT IDENTITY(1,1) PRIMARY KEY,
-    legacy_category_id UNIQUEIDENTIFIER UNIQUE,    -- Maps to legacy lookup category source (for data migration verification)
+    legacy_category_id UNIQUEIDENTIFIER NULL,    -- Maps to legacy lookup category source (for data migration verification)
     category_name VARCHAR(100) NOT NULL UNIQUE,
     description NVARCHAR(255),
-    is_active BIT DEFAULT 1
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_m_lookup_categories_legacy_id ON ccms_m_lookup_categories(legacy_category_id) WHERE legacy_category_id IS NOT NULL;
 
 -- Replaces: All legacy lookup tables (dt_Admission_Types, dt_Master_Reject_Diagnosis, DT_IC, DT_SUB_IC, DT_IC_INDEX, DT_STATE)
 CREATE TABLE ccms_m_lookups (
     lookup_id INT IDENTITY(1,1) PRIMARY KEY,
-    legacy_lookup_id UNIQUEIDENTIFIER UNIQUE,     -- Maps to original lookup record from legacy tables (for data migration verification)
+    legacy_lookup_id UNIQUEIDENTIFIER NULL,     -- Maps to original lookup record from legacy tables (for data migration verification)
     category_id INT NOT NULL,
     lookup_code VARCHAR(50) NOT NULL,
     lookup_value NVARCHAR(MAX) NOT NULL,
     sort_order INT DEFAULT 0,
     is_active BIT DEFAULT 1,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Lookup_Category FOREIGN KEY (category_id) REFERENCES ccms_m_lookup_categories(category_id),
     CONSTRAINT UQ_Lookup_Code UNIQUE (category_id, lookup_code)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_m_lookups_legacy_id ON ccms_m_lookups(legacy_lookup_id) WHERE legacy_lookup_id IS NOT NULL;
 
 -- Replaces: Extra attributes from legacy lookup tables (e.g., insurer-specific codes, additional metadata)
 CREATE TABLE ccms_m_lookup_metadata (
@@ -183,6 +192,10 @@ CREATE TABLE ccms_m_lookup_metadata (
     lookup_id INT NOT NULL,
     metadata_key VARCHAR(100) NOT NULL,
     metadata_value NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_LookupMeta_Lookup FOREIGN KEY (lookup_id) REFERENCES ccms_m_lookups(lookup_id),
     CONSTRAINT UQ_LookupMeta_Key UNIQUE (lookup_id, metadata_key)
 );
@@ -190,21 +203,31 @@ CREATE TABLE ccms_m_lookup_metadata (
 -- Replaces: dt_Bank_Details (core bank data)
 CREATE TABLE ccms_m_banks (
     bank_id INT IDENTITY(1,1) PRIMARY KEY,
-    legacy_bank_id UNIQUEIDENTIFIER UNIQUE,       -- Maps to dt_Bank_Details.ID (for data migration verification)
+    legacy_bank_id UNIQUEIDENTIFIER NULL,       -- Maps to dt_Bank_Details.ID (for data migration verification)
     bank_name NVARCHAR(255) NOT NULL UNIQUE,
     bank_code VARCHAR(50),
-    is_active BIT DEFAULT 1
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_m_banks_legacy_id ON ccms_m_banks(legacy_bank_id) WHERE legacy_bank_id IS NOT NULL;
 
 -- Replaces: dt_Config (clause-related config entries)
 CREATE TABLE ccms_m_clauses (
     clause_id INT IDENTITY(1,1) PRIMARY KEY,
-    legacy_config_id UNIQUEIDENTIFIER UNIQUE,     -- Maps to dt_Config.ID (for data migration verification)
+    legacy_config_id UNIQUEIDENTIFIER NULL,     -- Maps to dt_Config.ID (for data migration verification)
     clause_category VARCHAR(50),
     clause_code VARCHAR(20) NOT NULL UNIQUE,
     clause_text NVARCHAR(MAX),
-    is_active BIT DEFAULT 1
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_m_clauses_legacy_id ON ccms_m_clauses(legacy_config_id) WHERE legacy_config_id IS NOT NULL;
 
 PRINT '  ✓ Master Lookups created (5 tables)';
 GO
@@ -220,7 +243,7 @@ PRINT 'Creating Provider tables...';
 -- Replaces: dt_Hospital (core hospital/provider data)
 CREATE TABLE ccms_hospitals (
     hospital_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_hospital_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_Hospital.ID (for data migration verification)
+    legacy_hospital_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_Hospital.ID (for data migration verification)
     hospital_name NVARCHAR(255) NOT NULL,
     hospital_code VARCHAR(50),
     hospital_type VARCHAR(50),
@@ -239,11 +262,12 @@ CREATE TABLE ccms_hospitals (
     is_deleted BIT DEFAULT 0,
     CONSTRAINT FK_Hosp_Bank FOREIGN KEY (bank_id) REFERENCES ccms_m_banks(bank_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_hospitals_legacy_id ON ccms_hospitals(legacy_hospital_id) WHERE legacy_hospital_id IS NOT NULL;
 
 -- Replaces: dt_Hospital (address fields normalized out)
 CREATE TABLE ccms_hospital_addresses (
     address_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_hospital_address_id UNIQUEIDENTIFIER UNIQUE, -- Maps to address record from dt_Hospital (for data migration verification)
+    legacy_hospital_address_id UNIQUEIDENTIFIER NULL, -- Maps to address record from dt_Hospital (for data migration verification)
     hospital_id BIGINT NOT NULL,
     address_type VARCHAR(50) DEFAULT 'PRIMARY',
     street_line1 NVARCHAR(255),
@@ -255,48 +279,68 @@ CREATE TABLE ccms_hospital_addresses (
     latitude DECIMAL(10,8),
     longitude DECIMAL(11,8),
     is_primary BIT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_HospAddr_Hosp FOREIGN KEY (hospital_id) REFERENCES ccms_hospitals(hospital_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_hospital_addresses_legacy_id ON ccms_hospital_addresses(legacy_hospital_address_id) WHERE legacy_hospital_address_id IS NOT NULL;
 
 -- Replaces: dt_Hospital (insurer-specific codes normalized out: ZURICH_HOSP_CODE, FWD_HOSP_CODE, etc.)
 CREATE TABLE ccms_hospital_codes (
     code_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_hospital_code_id UNIQUEIDENTIFIER UNIQUE, -- Maps to code record from dt_Hospital (for data migration verification)
+    legacy_hospital_code_id UNIQUEIDENTIFIER NULL, -- Maps to code record from dt_Hospital (for data migration verification)
     hospital_id BIGINT NOT NULL,
     code_type VARCHAR(50), -- ZURICH_HOSP_CODE, FWD_HOSP_CODE, INSURER_CODE
     code_value VARCHAR(100),
     is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_HospCode_Hosp FOREIGN KEY (hospital_id) REFERENCES ccms_hospitals(hospital_id),
     CONSTRAINT UQ_HospCode UNIQUE (hospital_id, code_type)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_hospital_codes_legacy_id ON ccms_hospital_codes(legacy_hospital_code_id) WHERE legacy_hospital_code_id IS NOT NULL;
 
 -- Replaces: dt_Hospital_Doctors
 CREATE TABLE ccms_hospital_staff (
     staff_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_hospital_staff_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Hospital_Doctors.ID (for data migration verification)
+    legacy_hospital_staff_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Hospital_Doctors.ID (for data migration verification)
     hospital_id BIGINT NOT NULL,
     staff_name NVARCHAR(255) NOT NULL,
     staff_type VARCHAR(50),
     specialty NVARCHAR(255),
     is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Staff_Hosp FOREIGN KEY (hospital_id) REFERENCES ccms_hospitals(hospital_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_hospital_staff_legacy_id ON ccms_hospital_staff(legacy_hospital_staff_id) WHERE legacy_hospital_staff_id IS NOT NULL;
 
 -- Replaces: DT_HOSPITAL_CONTACTS, dt_Hospital_Doctors (contact fields normalized out)
 CREATE TABLE ccms_hospital_staff_contacts (
     contact_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_hospital_contact_id UNIQUEIDENTIFIER UNIQUE, -- Maps to DT_HOSPITAL_CONTACTS.ID (for data migration verification)
+    legacy_hospital_contact_id UNIQUEIDENTIFIER NULL, -- Maps to DT_HOSPITAL_CONTACTS.ID (for data migration verification)
     staff_id BIGINT NOT NULL,
     contact_type VARCHAR(50), -- EMAIL, MOBILE, PHONE, EXT
     contact_value VARCHAR(100),
     is_primary BIT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_StaffContact_Staff FOREIGN KEY (staff_id) REFERENCES ccms_hospital_staff(staff_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_hospital_staff_contacts_legacy_id ON ccms_hospital_staff_contacts(legacy_hospital_contact_id) WHERE legacy_hospital_contact_id IS NOT NULL;
 
 -- Replaces: dt_Fee_Schedule, dt_TPAFee, dt_WakalahFee
 CREATE TABLE ccms_fee_schedules (
     fee_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_fee_schedule_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Fee_Schedule.ID or dt_TPAFee.ID or dt_WakalahFee.ID (for data migration verification)
+    legacy_fee_schedule_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Fee_Schedule.ID or dt_TPAFee.ID or dt_WakalahFee.ID (for data migration verification)
     hospital_id BIGINT,
     fee_type VARCHAR(50), -- TPA, Wakalah, MMA
     item_code VARCHAR(50),
@@ -305,8 +349,13 @@ CREATE TABLE ccms_fee_schedules (
     effective_date DATE,
     expiry_date DATE,
     is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Fee_Hosp FOREIGN KEY (hospital_id) REFERENCES ccms_hospitals(hospital_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_fee_schedules_legacy_id ON ccms_fee_schedules(legacy_fee_schedule_id) WHERE legacy_fee_schedule_id IS NOT NULL;
 
 PRINT '  ✓ Provider tables created (6 tables)';
 GO
@@ -323,41 +372,55 @@ PRINT 'Creating Products & Members tables...';
 -- Replaces: dt_Product (core product/plan data)
 CREATE TABLE ccms_products (
     product_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_product_id UNIQUEIDENTIFIER UNIQUE,     -- Maps to dt_Product.ID (for data migration verification)
+    legacy_product_id UNIQUEIDENTIFIER NULL,     -- Maps to dt_Product.ID (for data migration verification)
     insurer_name NVARCHAR(255),
     plan_code VARCHAR(50) NOT NULL UNIQUE,
     plan_name NVARCHAR(255),
     is_active BIT DEFAULT 1,
-    created_at DATETIME2 DEFAULT GETDATE()
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_products_legacy_id ON ccms_products(legacy_product_id) WHERE legacy_product_id IS NOT NULL;
 
 -- Replaces: dt_Product_Details (limit fields normalized out)
 CREATE TABLE ccms_product_limits (
     limit_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_product_limit_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Product_Details limit record (for data migration verification)
+    legacy_product_limit_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Product_Details limit record (for data migration verification)
     product_id BIGINT NOT NULL,
     limit_type VARCHAR(50), -- ANNUAL, LIFETIME, ROOM_BOARD, SURGICAL
     limit_amount MONEY,
     is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_ProdLimit_Prod FOREIGN KEY (product_id) REFERENCES ccms_products(product_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_product_limits_legacy_id ON ccms_product_limits(legacy_product_limit_id) WHERE legacy_product_limit_id IS NOT NULL;
 
 -- Replaces: dt_Product_Details (copay fields normalized out)
 CREATE TABLE ccms_product_copay (
     copay_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_product_copay_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Product_Details copay record (for data migration verification)
+    legacy_product_copay_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Product_Details copay record (for data migration verification)
     product_id BIGINT NOT NULL,
     copay_type VARCHAR(50), -- PERCENTAGE, FIXED
     copay_value DECIMAL(10,2),
     applies_to NVARCHAR(255), -- Description of what this copay applies to
     is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_ProdCopay_Prod FOREIGN KEY (product_id) REFERENCES ccms_products(product_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_product_copay_legacy_id ON ccms_product_copay(legacy_product_copay_id) WHERE legacy_product_copay_id IS NOT NULL;
 
 -- Replaces: dt_PolicyHolder (core member/policyholder data)
 CREATE TABLE ccms_members (
     member_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_member_id UNIQUEIDENTIFIER UNIQUE,      -- Maps to dt_PolicyHolder.ID (for data migration verification)
+    legacy_member_id UNIQUEIDENTIFIER NULL,      -- Maps to dt_PolicyHolder.ID (for data migration verification)
     external_guid UNIQUEIDENTIFIER DEFAULT NEWSEQUENTIALID(),
     full_name NVARCHAR(255) NOT NULL,
     ic_no VARCHAR(20) NOT NULL UNIQUE,
@@ -379,11 +442,12 @@ CREATE TABLE ccms_members (
     is_deleted BIT DEFAULT 0,
     CONSTRAINT FK_Member_Bank FOREIGN KEY (bank_id) REFERENCES ccms_m_banks(bank_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_members_legacy_id ON ccms_members(legacy_member_id) WHERE legacy_member_id IS NOT NULL;
 
 -- Replaces: dt_PolicyHolder (address fields normalized out)
 CREATE TABLE ccms_member_addresses (
     address_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_member_address_id UNIQUEIDENTIFIER UNIQUE, -- Maps to address record from dt_PolicyHolder (for data migration verification)
+    legacy_member_address_id UNIQUEIDENTIFIER NULL, -- Maps to address record from dt_PolicyHolder (for data migration verification)
     member_id BIGINT NOT NULL,
     address_type VARCHAR(50) DEFAULT 'PRIMARY',
     street_line1 NVARCHAR(255),
@@ -393,24 +457,34 @@ CREATE TABLE ccms_member_addresses (
     postal_code VARCHAR(20),
     country VARCHAR(100),
     is_primary BIT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_MemAddr_Mem FOREIGN KEY (member_id) REFERENCES ccms_members(member_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_member_addresses_legacy_id ON ccms_member_addresses(legacy_member_address_id) WHERE legacy_member_address_id IS NOT NULL;
 
 -- Replaces: dt_PolicyHolder (contact fields normalized out: EMAIL, MOBILE, PHONE, FAX)
 CREATE TABLE ccms_member_contacts (
     contact_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_member_contact_id UNIQUEIDENTIFIER UNIQUE, -- Maps to contact record from dt_PolicyHolder (for data migration verification)
+    legacy_member_contact_id UNIQUEIDENTIFIER NULL, -- Maps to contact record from dt_PolicyHolder (for data migration verification)
     member_id BIGINT NOT NULL,
     contact_type VARCHAR(50), -- EMAIL, MOBILE, PHONE, FAX
     contact_value VARCHAR(100),
     is_primary BIT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_MemContact_Mem FOREIGN KEY (member_id) REFERENCES ccms_members(member_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_member_contacts_legacy_id ON ccms_member_contacts(legacy_member_contact_id) WHERE legacy_member_contact_id IS NOT NULL;
 
 -- Replaces: dt_PolicyHolder_Policy, dt_policyno_details
 CREATE TABLE ccms_member_policies (
     policy_record_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_policy_id UNIQUEIDENTIFIER UNIQUE,      -- Maps to dt_PolicyHolder_Policy.ID (for data migration verification)
+    legacy_policy_id UNIQUEIDENTIFIER NULL,      -- Maps to dt_PolicyHolder_Policy.ID (for data migration verification)
     member_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
     policy_no VARCHAR(100) NOT NULL,
@@ -418,35 +492,52 @@ CREATE TABLE ccms_member_policies (
     expiry_date DATE,
     status VARCHAR(50),
     is_deleted BIT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
+    deleted_at DATETIME2 NULL,
+    deleted_by VARCHAR(50) NULL,
     CONSTRAINT FK_Pol_Mem FOREIGN KEY (member_id) REFERENCES ccms_members(member_id),
     CONSTRAINT FK_Pol_Prod FOREIGN KEY (product_id) REFERENCES ccms_products(product_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_member_policies_legacy_id ON ccms_member_policies(legacy_policy_id) WHERE legacy_policy_id IS NOT NULL;
 
 -- Replaces: dt_PolicyHolder_Dependents
 CREATE TABLE ccms_member_dependents (
     dependent_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_dependent_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_PolicyHolder_Dependents.ID (for data migration verification)
+    legacy_dependent_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_PolicyHolder_Dependents.ID (for data migration verification)
     principal_member_id BIGINT NOT NULL,
     full_name NVARCHAR(255) NOT NULL,
     ic_no VARCHAR(20),
     relationship_id INT,
     dob DATE,
     is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Dep_Princ FOREIGN KEY (principal_member_id) REFERENCES ccms_members(member_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_member_dependents_legacy_id ON ccms_member_dependents(legacy_dependent_id) WHERE legacy_dependent_id IS NOT NULL;
 
 -- Replaces: DT_PH_DEP_PEC
 CREATE TABLE ccms_member_pec_conditions (
     pec_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_pec_id UNIQUEIDENTIFIER UNIQUE,         -- Maps to DT_PH_DEP_PEC.ID (for data migration verification)
+    legacy_pec_id UNIQUEIDENTIFIER NULL,         -- Maps to DT_PH_DEP_PEC.ID (for data migration verification)
     dependent_id BIGINT NOT NULL,
     condition_code VARCHAR(50),
     condition_name NVARCHAR(255),
     diagnosis_date DATE,
     is_excluded BIT DEFAULT 1,
     notes NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_PEC_Dep FOREIGN KEY (dependent_id) REFERENCES ccms_member_dependents(dependent_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_member_pec_conditions_legacy_id ON ccms_member_pec_conditions(legacy_pec_id) WHERE legacy_pec_id IS NOT NULL;
 
 PRINT '  ✓ Products & Members tables created (9 tables)';
 GO
@@ -462,7 +553,7 @@ PRINT 'Creating Claims & Admissions tables...';
 -- Replaces: dt_Claim (core claim/reimbursement data)
 CREATE TABLE ccms_claims (
     claim_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_claim_id UNIQUEIDENTIFIER UNIQUE,       -- Maps to dt_Claim.ID (for data migration verification)
+    legacy_claim_id UNIQUEIDENTIFIER NULL,       -- Maps to dt_Claim.ID (for data migration verification)
     claim_ref_no VARCHAR(50) NOT NULL UNIQUE,
     fwd_claim_ref_no VARCHAR(50),
     file_no VARCHAR(50),
@@ -512,11 +603,12 @@ CREATE TABLE ccms_claims (
     CONSTRAINT FK_Claim_Policy FOREIGN KEY (policy_record_id) REFERENCES ccms_member_policies(policy_record_id),
     CONSTRAINT FK_Claim_Hospital FOREIGN KEY (hospital_id) REFERENCES ccms_hospitals(hospital_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claims_legacy_id ON ccms_claims(legacy_claim_id) WHERE legacy_claim_id IS NOT NULL;
 
 -- Replaces: dt_Admission (GL/admission-specific data)
 CREATE TABLE ccms_admissions (
     admission_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_admission_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_Admission.ID (for data migration verification)
+    legacy_admission_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_Admission.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     gl_ref_no VARCHAR(50),
     admission_date DATETIME,
@@ -538,50 +630,62 @@ CREATE TABLE ccms_admissions (
     is_deleted BIT DEFAULT 0,
     CONSTRAINT FK_Adm_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_admissions_legacy_id ON ccms_admissions(legacy_admission_id) WHERE legacy_admission_id IS NOT NULL;
 
 -- Replaces: dt_Admission_Assessment (dynamic assessment fields normalized to EAV pattern)
 CREATE TABLE ccms_admission_assessments (
     assessment_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_assessment_id UNIQUEIDENTIFIER UNIQUE,  -- Maps to dt_Admission_Assessment record (for data migration verification)
+    legacy_assessment_id UNIQUEIDENTIFIER NULL,  -- Maps to dt_Admission_Assessment record (for data migration verification)
     admission_id BIGINT NOT NULL,
     field_name VARCHAR(100),
     field_value NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Assess_Adm FOREIGN KEY (admission_id) REFERENCES ccms_admissions(admission_id),
     CONSTRAINT UQ_Assessment UNIQUE (admission_id, field_name)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_admission_assessments_legacy_id ON ccms_admission_assessments(legacy_assessment_id) WHERE legacy_assessment_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Remarks, dt_Reminder_MQ_HOSP.REMINDER_REMARKS, dt_Reminder_MQ_PH.REMINDER_REMARKS
 -- Generic polymorphic remarks table supporting multiple entity types
 CREATE TABLE ccms_remarks (
     remark_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_remark_id UNIQUEIDENTIFIER UNIQUE,      -- Maps to dt_Claim_Remarks.ID or reminder remarks (for data migration verification)
+    legacy_remark_id UNIQUEIDENTIFIER NULL,      -- Maps to dt_Claim_Remarks.ID or reminder remarks (for data migration verification)
     ref_type VARCHAR(50) NOT NULL,        -- CLAIM, ADMISSION, ESCALATION, INVESTIGATION, PA, REMINDER, etc.
     ref_id BIGINT NOT NULL,               -- ID of the referenced entity
     ref_desc VARCHAR(100),                -- Description/title of reference
     action_for VARCHAR(50),               -- Purpose: INVESTIGATION, APPROVAL, CLARIFICATION, FOLLOW_UP, MQ_RESPONSE, etc.
     remark_text NVARCHAR(MAX),            -- The actual remark content
     created_by VARCHAR(50),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
     updated_by VARCHAR(50),
-    updated_at DATETIME2
+    updated_at DATETIME2 NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_remarks_legacy_id ON ccms_remarks(legacy_remark_id) WHERE legacy_remark_id IS NOT NULL;
 
 -- Replaces: dt_Config (LOS alert configuration)
 CREATE TABLE ccms_los_alert_thresholds (
     threshold_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_los_threshold_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Config LOS threshold record (for data migration verification)
+    legacy_los_threshold_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Config LOS threshold record (for data migration verification)
     product_id BIGINT,
     diagnosis_category VARCHAR(100),
     threshold_days INT,
     alert_level INT,
     is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_LOSThreshold_Prod FOREIGN KEY (product_id) REFERENCES ccms_products(product_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_los_alert_thresholds_legacy_id ON ccms_los_alert_thresholds(legacy_los_threshold_id) WHERE legacy_los_threshold_id IS NOT NULL;
 
 -- Replaces: dt_LOS_Alert (Length of Stay alerts)
 CREATE TABLE ccms_los_alerts (
     alert_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_los_alert_id UNIQUEIDENTIFIER UNIQUE,    -- Maps to dt_LOS_Alert.ID (for data migration verification)
+    legacy_los_alert_id UNIQUEIDENTIFIER NULL,    -- Maps to dt_LOS_Alert.ID (for data migration verification)
     admission_id BIGINT NOT NULL,
     alert_level INT,
     triggered_at DATETIME2 DEFAULT GETDATE(),
@@ -591,13 +695,18 @@ CREATE TABLE ccms_los_alerts (
     acknowledged_by VARCHAR(50),
     acknowledged_at DATETIME2,
     notes NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_LOSAlert_Adm FOREIGN KEY (admission_id) REFERENCES ccms_admissions(admission_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_los_alerts_legacy_id ON ccms_los_alerts(legacy_los_alert_id) WHERE legacy_los_alert_id IS NOT NULL;
 
 -- Replaces: dt_8HM_Monitoring (8-hour monitoring checks)
 CREATE TABLE ccms_8hm_monitoring (
     monitoring_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_8hm_monitoring_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_8HM_Monitoring.ID (for data migration verification)
+    legacy_8hm_monitoring_id UNIQUEIDENTIFIER NULL, -- Maps to dt_8HM_Monitoring.ID (for data migration verification)
     admission_id BIGINT NOT NULL,
     check_time DATETIME2,
     hours_elapsed INT,
@@ -605,8 +714,13 @@ CREATE TABLE ccms_8hm_monitoring (
     checked_by VARCHAR(50),
     notes NVARCHAR(MAX),
     next_check_due DATETIME2,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_8HM_Adm FOREIGN KEY (admission_id) REFERENCES ccms_admissions(admission_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_8hm_monitoring_legacy_id ON ccms_8hm_monitoring(legacy_8hm_monitoring_id) WHERE legacy_8hm_monitoring_id IS NOT NULL;
 
 PRINT '  ✓ Claims & Admissions tables created (8 tables)';
 GO
@@ -622,7 +736,7 @@ PRINT 'Creating Financial tables...';
 -- Replaces: dt_Payment_Advice (core payment advice data)
 CREATE TABLE ccms_payment_advice (
     pa_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_pa_id UNIQUEIDENTIFIER UNIQUE,          -- Maps to dt_Payment_Advice.ID (for data migration verification)
+    legacy_pa_id UNIQUEIDENTIFIER NULL,          -- Maps to dt_Payment_Advice.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     pa_ref_no VARCHAR(50) NOT NULL UNIQUE,
     hospital_invoice_no VARCHAR(100),
@@ -651,75 +765,96 @@ CREATE TABLE ccms_payment_advice (
     physical_folder_status VARCHAR(50),
     CONSTRAINT FK_PA_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_payment_advice_legacy_id ON ccms_payment_advice(legacy_pa_id) WHERE legacy_pa_id IS NOT NULL;
 
 -- Replaces: dt_PA_Details (payment advice line items)
 CREATE TABLE ccms_pa_line_items (
     item_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_pa_line_item_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_PA_Details.ID (for data migration verification)
+    legacy_pa_line_item_id UNIQUEIDENTIFIER NULL, -- Maps to dt_PA_Details.ID (for data migration verification)
     pa_id BIGINT NOT NULL,
     benefit_name NVARCHAR(255),
     billed_amt MONEY,
     approved_amt MONEY,
     non_reimb_reason NVARCHAR(MAX),
     is_consultation_breakdown BIT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_PALine_PA FOREIGN KEY (pa_id) REFERENCES ccms_payment_advice(pa_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_pa_line_items_legacy_id ON ccms_pa_line_items(legacy_pa_line_item_id) WHERE legacy_pa_line_item_id IS NOT NULL;
 
 -- Replaces: dt_PA_SOB_Summary (statement of benefit summary)
 CREATE TABLE ccms_pa_summary (
     summary_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_pa_summary_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_PA_SOB_Summary.ID (for data migration verification)
+    legacy_pa_summary_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_PA_SOB_Summary.ID (for data migration verification)
     pa_id BIGINT NOT NULL,
     sob_type VARCHAR(50),
     sob_category VARCHAR(100),
     amount_ia MONEY,
     amount_ra MONEY,
     amount_nra MONEY,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_PASummary_PA FOREIGN KEY (pa_id) REFERENCES ccms_payment_advice(pa_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_pa_summary_legacy_id ON ccms_pa_summary(legacy_pa_summary_id) WHERE legacy_pa_summary_id IS NOT NULL;
 
 -- Replaces: dt_PA_Consultation_Breakdown (consultation charges breakdown)
 CREATE TABLE ccms_pa_consultation_breakdown (
     consultation_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_consultation_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_PA_Consultation_Breakdown.ID (for data migration verification)
+    legacy_consultation_id UNIQUEIDENTIFIER NULL, -- Maps to dt_PA_Consultation_Breakdown.ID (for data migration verification)
     pa_id BIGINT NOT NULL,
     consultation_type VARCHAR(100),
     consultation_amount MONEY,
     doctor_id BIGINT,
     consultation_date DATE,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Consultation_PA FOREIGN KEY (pa_id) REFERENCES ccms_payment_advice(pa_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_pa_consultation_breakdown_legacy_id ON ccms_pa_consultation_breakdown(legacy_consultation_id) WHERE legacy_consultation_id IS NOT NULL;
 
 -- Replaces: dt_PA_Consultation_Breakdown_History (consultation changes audit trail)
 CREATE TABLE ccms_pa_consultation_breakdown_history (
     history_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_consultation_history_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_PA_Consultation_Breakdown_History.ID (for data migration verification)
+    legacy_consultation_history_id UNIQUEIDENTIFIER NULL, -- Maps to dt_PA_Consultation_Breakdown_History.ID (for data migration verification)
     consultation_id BIGINT NOT NULL,
     old_amount MONEY,
     new_amount MONEY,
     changed_by VARCHAR(50),
     changed_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
     CONSTRAINT FK_ConsultHistory_Cons FOREIGN KEY (consultation_id) REFERENCES ccms_pa_consultation_breakdown(consultation_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_pa_consultation_breakdown_history_legacy_id ON ccms_pa_consultation_breakdown_history(legacy_consultation_history_id) WHERE legacy_consultation_history_id IS NOT NULL;
 
 -- Replaces: dt_PA_Uncovered_Charges (non-covered/excluded charges)
 CREATE TABLE ccms_pa_uncovered_charges (
     uncovered_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_uncovered_charge_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_PA_Uncovered_Charges.ID (for data migration verification)
+    legacy_uncovered_charge_id UNIQUEIDENTIFIER NULL, -- Maps to dt_PA_Uncovered_Charges.ID (for data migration verification)
     pa_id BIGINT NOT NULL,
     charge_description NVARCHAR(MAX),
     charge_amount MONEY,
     uncovered_reason NVARCHAR(MAX),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Uncovered_PA FOREIGN KEY (pa_id) REFERENCES ccms_payment_advice(pa_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_pa_uncovered_charges_legacy_id ON ccms_pa_uncovered_charges(legacy_uncovered_charge_id) WHERE legacy_uncovered_charge_id IS NOT NULL;
 
 -- Replaces: dt_PA_Payment (payment transactions)
 CREATE TABLE ccms_pa_payments (
     payment_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_pa_payment_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_PA_Payment.ID (for data migration verification)
+    legacy_pa_payment_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_PA_Payment.ID (for data migration verification)
     pa_id BIGINT NOT NULL,
     payment_amount MONEY,
     payment_method VARCHAR(50),
@@ -728,35 +863,46 @@ CREATE TABLE ccms_pa_payments (
     payment_status VARCHAR(50),
     member_ic VARCHAR(20),
     member_name NVARCHAR(255),
-    created_at DATETIME2 DEFAULT GETDATE(),
-    created_by VARCHAR(50),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Payment_PA FOREIGN KEY (pa_id) REFERENCES ccms_payment_advice(pa_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_pa_payments_legacy_id ON ccms_pa_payments(legacy_pa_payment_id) WHERE legacy_pa_payment_id IS NOT NULL;
 
 -- Replaces: dt_Multi_Payment_Advice (multiple PA header)
 CREATE TABLE ccms_multi_payment_advice (
     mpa_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_mpa_id UNIQUEIDENTIFIER UNIQUE,          -- Maps to dt_Multi_Payment_Advice.ID (for data migration verification)
+    legacy_mpa_id UNIQUEIDENTIFIER NULL,          -- Maps to dt_Multi_Payment_Advice.ID (for data migration verification)
     mpa_ref_no VARCHAR(50) NOT NULL UNIQUE,
     claim_id BIGINT NOT NULL,
     total_amount MONEY,
     pa_count INT,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    created_by VARCHAR(50),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_MPA_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_multi_payment_advice_legacy_id ON ccms_multi_payment_advice(legacy_mpa_id) WHERE legacy_mpa_id IS NOT NULL;
 
 -- Replaces: dt_Multi_Payment_Advice_Details (multiple PA line items)
 CREATE TABLE ccms_multi_payment_advice_details (
     mpa_detail_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_mpa_detail_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_Multi_Payment_Advice_Details.ID (for data migration verification)
+    legacy_mpa_detail_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_Multi_Payment_Advice_Details.ID (for data migration verification)
     mpa_id BIGINT NOT NULL,
     pa_id BIGINT NOT NULL,
     pa_amount MONEY,
     sequence_no INT,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_MPADetail_MPA FOREIGN KEY (mpa_id) REFERENCES ccms_multi_payment_advice(mpa_id),
     CONSTRAINT FK_MPADetail_PA FOREIGN KEY (pa_id) REFERENCES ccms_payment_advice(pa_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_multi_payment_advice_details_legacy_id ON ccms_multi_payment_advice_details(legacy_mpa_detail_id) WHERE legacy_mpa_detail_id IS NOT NULL;
 
 PRINT '  ✓ Financial tables created (10 tables)';
 GO
@@ -772,18 +918,22 @@ PRINT 'Creating Upload & Sync tables...';
 -- Replaces: dt_Claim_Upload (file upload tracking)
 CREATE TABLE ccms_claim_uploads (
     upload_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_upload_id UNIQUEIDENTIFIER UNIQUE,       -- Maps to dt_Claim_Upload.ID (for data migration verification)
+    legacy_upload_id UNIQUEIDENTIFIER NULL,       -- Maps to dt_Claim_Upload.ID (for data migration verification)
     batch_no VARCHAR(50),
     file_type VARCHAR(50),
     processing_status VARCHAR(20),
     error_details NVARCHAR(MAX),
-    created_at DATETIME2 DEFAULT GETDATE()
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_uploads_legacy_id ON ccms_claim_uploads(legacy_upload_id) WHERE legacy_upload_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Upload_Batch (batch processing header)
 CREATE TABLE ccms_claim_upload_batch (
     batch_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_batch_id UNIQUEIDENTIFIER UNIQUE,        -- Maps to dt_Claim_Upload_Batch.ID (for data migration verification)
+    legacy_batch_id UNIQUEIDENTIFIER NULL,        -- Maps to dt_Claim_Upload_Batch.ID (for data migration verification)
     batch_no VARCHAR(50) NOT NULL UNIQUE,
     file_type VARCHAR(50),
     upload_date DATETIME2 DEFAULT GETDATE(),
@@ -791,13 +941,18 @@ CREATE TABLE ccms_claim_upload_batch (
     record_count INT,
     processing_status VARCHAR(20),
     error_count INT DEFAULT 0,
-    success_count INT DEFAULT 0
+    success_count INT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_upload_batch_legacy_id ON ccms_claim_upload_batch(legacy_batch_id) WHERE legacy_batch_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Upload_Notification_Details (notification upload details)
 CREATE TABLE ccms_claim_upload_notification_details (
     notification_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_notification_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Claim_Upload_Notification_Details.ID (for data migration verification)
+    legacy_notification_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Claim_Upload_Notification_Details.ID (for data migration verification)
     batch_id BIGINT NOT NULL,
     claim_id BIGINT NOT NULL,
     insurer_claim_no VARCHAR(50),
@@ -807,30 +962,38 @@ CREATE TABLE ccms_claim_upload_notification_details (
     kiv_reason NVARCHAR(MAX),
     deleted_by VARCHAR(50),
     deleted_at DATETIME2,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_NotifDetail_Batch FOREIGN KEY (batch_id) REFERENCES ccms_claim_upload_batch(batch_id),
     CONSTRAINT FK_NotifDetail_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_upload_notification_details_legacy_id ON ccms_claim_upload_notification_details(legacy_notification_id) WHERE legacy_notification_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Upload_Offer (offer upload details)
 CREATE TABLE ccms_claim_upload_offer (
     offer_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_offer_id UNIQUEIDENTIFIER UNIQUE,        -- Maps to dt_Claim_Upload_Offer.ID (for data migration verification)
+    legacy_offer_id UNIQUEIDENTIFIER NULL,        -- Maps to dt_Claim_Upload_Offer.ID (for data migration verification)
     batch_id BIGINT NOT NULL,
     claim_id BIGINT NOT NULL,
     insurer_claim_no VARCHAR(50),
     offer_amount MONEY,
     offer_date DATETIME2,
     offer_status VARCHAR(50),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Offer_Batch FOREIGN KEY (batch_id) REFERENCES ccms_claim_upload_batch(batch_id),
     CONSTRAINT FK_Offer_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_upload_offer_legacy_id ON ccms_claim_upload_offer(legacy_offer_id) WHERE legacy_offer_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Upload_Payment_Details (payment upload details)
 CREATE TABLE ccms_claim_upload_payment_details (
     payment_detail_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_payment_detail_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Claim_Upload_Payment_Details.ID (for data migration verification)
+    legacy_payment_detail_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Claim_Upload_Payment_Details.ID (for data migration verification)
     batch_id BIGINT NOT NULL,
     claim_id BIGINT NOT NULL,
     insurer_claim_no VARCHAR(50),
@@ -840,15 +1003,19 @@ CREATE TABLE ccms_claim_upload_payment_details (
     refund_amount MONEY DEFAULT 0,
     short_reason NVARCHAR(MAX),
     payment_date DATETIME2,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_PaymentDetail_Batch FOREIGN KEY (batch_id) REFERENCES ccms_claim_upload_batch(batch_id),
     CONSTRAINT FK_PaymentDetail_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_upload_payment_details_legacy_id ON ccms_claim_upload_payment_details(legacy_payment_detail_id) WHERE legacy_payment_detail_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Upload_Error (upload error tracking)
 CREATE TABLE ccms_claim_upload_error (
     error_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_error_id UNIQUEIDENTIFIER UNIQUE,        -- Maps to dt_Claim_Upload_Error.ID (for data migration verification)
+    legacy_error_id UNIQUEIDENTIFIER NULL,        -- Maps to dt_Claim_Upload_Error.ID (for data migration verification)
     batch_id BIGINT NOT NULL,
     claim_id BIGINT,
     error_code VARCHAR(20),
@@ -859,19 +1026,29 @@ CREATE TABLE ccms_claim_upload_error (
     resolution_notes NVARCHAR(MAX),
     resolved_by VARCHAR(50),
     resolved_at DATETIME2,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Error_Batch FOREIGN KEY (batch_id) REFERENCES ccms_claim_upload_batch(batch_id),
     CONSTRAINT FK_Error_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_upload_error_legacy_id ON ccms_claim_upload_error(legacy_error_id) WHERE legacy_error_id IS NOT NULL;
 
 -- Replaces: dt_RA_Matrix (risk assessment matrix)
 CREATE TABLE ccms_ra_matrix (
     ra_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_ra_id UNIQUEIDENTIFIER UNIQUE,           -- Maps to dt_RA_Matrix.ID (for data migration verification)
+    legacy_ra_id UNIQUEIDENTIFIER NULL,           -- Maps to dt_RA_Matrix.ID (for data migration verification)
     ra_code VARCHAR(20),
     ra_description NVARCHAR(MAX),
     ra_percentage DECIMAL(5,2),
-    is_active BIT DEFAULT 1
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_ra_matrix_legacy_id ON ccms_ra_matrix(legacy_ra_id) WHERE legacy_ra_id IS NOT NULL;
 
 PRINT '  ✓ Upload & Sync tables created (8 tables)';
 GO
@@ -886,79 +1063,105 @@ PRINT 'Creating Workflow tables...';
 -- Replaces: dt_Escalation (escalation case data)
 CREATE TABLE ccms_escalations (
     esc_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_escalation_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_Escalation.ID (for data migration verification)
+    legacy_escalation_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_Escalation.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     source_id INT,
     nature_id INT,
     assigned_to VARCHAR(50),
     status VARCHAR(20),
     priority VARCHAR(20),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
     closed_at DATETIME2,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Esc_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_escalations_legacy_id ON ccms_escalations(legacy_escalation_id) WHERE legacy_escalation_id IS NOT NULL;
 
 -- Replaces: dt_Escalation_Source (escalation source lookup)
 CREATE TABLE ccms_escalation_source (
     source_id INT IDENTITY(1,1) PRIMARY KEY,
-    legacy_source_id UNIQUEIDENTIFIER UNIQUE,       -- Maps to dt_Escalation_Source.ID (for data migration verification)
+    legacy_source_id UNIQUEIDENTIFIER NULL,       -- Maps to dt_Escalation_Source.ID (for data migration verification)
     source_code VARCHAR(20),
     source_description VARCHAR(100),
-    is_active BIT DEFAULT 1
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_escalation_source_legacy_id ON ccms_escalation_source(legacy_source_id) WHERE legacy_source_id IS NOT NULL;
 
 -- Replaces: dt_Escalation_Nature (escalation nature lookup)
 CREATE TABLE ccms_escalation_nature (
     nature_id INT IDENTITY(1,1) PRIMARY KEY,
-    legacy_nature_id UNIQUEIDENTIFIER UNIQUE,       -- Maps to dt_Escalation_Nature.ID (for data migration verification)
+    legacy_nature_id UNIQUEIDENTIFIER NULL,       -- Maps to dt_Escalation_Nature.ID (for data migration verification)
     nature_code VARCHAR(20),
     nature_description VARCHAR(100),
-    is_active BIT DEFAULT 1
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_escalation_nature_legacy_id ON ccms_escalation_nature(legacy_nature_id) WHERE legacy_nature_id IS NOT NULL;
 
 -- Replaces: dt_Escalation_Update (escalation progress updates)
 CREATE TABLE ccms_escalation_updates (
     update_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_escalation_update_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Escalation_Update.ID (for data migration verification)
+    legacy_escalation_update_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Escalation_Update.ID (for data migration verification)
     esc_id BIGINT NOT NULL,
     update_description NVARCHAR(MAX),
     updated_by VARCHAR(50),
     updated_at DATETIME2 DEFAULT GETDATE(),
     remarks NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
     CONSTRAINT FK_EscUpdate_Esc FOREIGN KEY (esc_id) REFERENCES ccms_escalations(esc_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_escalation_updates_legacy_id ON ccms_escalation_updates(legacy_escalation_update_id) WHERE legacy_escalation_update_id IS NOT NULL;
 
 -- Replaces: dt_Escalation_Settlement (escalation settlement details)
 CREATE TABLE ccms_escalation_settlement (
     settlement_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_settlement_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_Escalation_Settlement.ID (for data migration verification)
+    legacy_settlement_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_Escalation_Settlement.ID (for data migration verification)
     esc_id BIGINT NOT NULL,
     settlement_amount MONEY,
     settlement_date DATETIME2,
     settlement_status VARCHAR(50),
     approved_by VARCHAR(50),
     approved_at DATETIME2,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_EscSettle_Esc FOREIGN KEY (esc_id) REFERENCES ccms_escalations(esc_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_escalation_settlement_legacy_id ON ccms_escalation_settlement(legacy_settlement_id) WHERE legacy_settlement_id IS NOT NULL;
 
 -- Replaces: dt_Investigation (investigation case data)
 CREATE TABLE ccms_investigations (
     ix_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_investigation_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Investigation.ID (for data migration verification)
+    legacy_investigation_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Investigation.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     ix_status VARCHAR(50),
     clinic_id BIGINT,
     findings NVARCHAR(MAX),
     request_payment_amt MONEY,
     is_pec_found BIT DEFAULT 0,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_IX_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_investigations_legacy_id ON ccms_investigations(legacy_investigation_id) WHERE legacy_investigation_id IS NOT NULL;
 
 -- Replaces: dt_Investigation_Request (investigation document requests)
 CREATE TABLE ccms_investigation_request (
     request_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_investigation_request_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Investigation_Request.ID (for data migration verification)
+    legacy_investigation_request_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Investigation_Request.ID (for data migration verification)
     ix_id BIGINT NOT NULL,
     request_type VARCHAR(50),
     request_date DATETIME2,
@@ -966,47 +1169,61 @@ CREATE TABLE ccms_investigation_request (
     expected_date DATETIME2,
     received_date DATETIME2,
     status VARCHAR(50),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_IXRequest_IX FOREIGN KEY (ix_id) REFERENCES ccms_investigations(ix_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_investigation_request_legacy_id ON ccms_investigation_request(legacy_investigation_request_id) WHERE legacy_investigation_request_id IS NOT NULL;
 
 -- Replaces: dt_Investigation_Request_History (request status change history)
 CREATE TABLE ccms_investigation_request_history (
     history_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_request_history_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Investigation_Request_History.ID (for data migration verification)
+    legacy_request_history_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Investigation_Request_History.ID (for data migration verification)
     request_id BIGINT NOT NULL,
     status_change VARCHAR(50),
     changed_by VARCHAR(50),
     changed_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
     CONSTRAINT FK_IXReqHist_Req FOREIGN KEY (request_id) REFERENCES ccms_investigation_request(request_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_investigation_request_history_legacy_id ON ccms_investigation_request_history(legacy_request_history_id) WHERE legacy_request_history_id IS NOT NULL;
 
 -- Replaces: dt_Investigation_Call_Log (investigation call tracking)
 CREATE TABLE ccms_investigation_call_log (
     call_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_call_log_id UNIQUEIDENTIFIER UNIQUE,     -- Maps to dt_Investigation_Call_Log.ID (for data migration verification)
+    legacy_call_log_id UNIQUEIDENTIFIER NULL,     -- Maps to dt_Investigation_Call_Log.ID (for data migration verification)
     ix_id BIGINT NOT NULL,
     call_date DATETIME2,
     called_party NVARCHAR(255),
     call_duration INT,
     call_notes NVARCHAR(MAX),
     called_by VARCHAR(50),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_IXCall_IX FOREIGN KEY (ix_id) REFERENCES ccms_investigations(ix_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_investigation_call_log_legacy_id ON ccms_investigation_call_log(legacy_call_log_id) WHERE legacy_call_log_id IS NOT NULL;
 
 -- Replaces: dt_Checklist (dynamic checklist items)
 CREATE TABLE ccms_checklists (
     checklist_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_checklist_id UNIQUEIDENTIFIER UNIQUE,    -- Maps to dt_Checklist.ID (for data migration verification)
+    legacy_checklist_id UNIQUEIDENTIFIER NULL,    -- Maps to dt_Checklist.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     checklist_type VARCHAR(50),
     check_key VARCHAR(100),
     check_value NVARCHAR(MAX),
     updated_by VARCHAR(50),
     updated_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
     CONSTRAINT FK_Checklist_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_checklists_legacy_id ON ccms_checklists(legacy_checklist_id) WHERE legacy_checklist_id IS NOT NULL;
 
 PRINT '  ✓ Workflow tables created (10 tables)';
 GO
@@ -1022,7 +1239,7 @@ PRINT 'Creating Reminders & Documents tables...';
 -- Replaces: dt_Documents (file attachments/uploads)
 CREATE TABLE ccms_documents (
     doc_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_document_id UNIQUEIDENTIFIER UNIQUE,     -- Maps to dt_Documents.ID (for data migration verification)
+    legacy_document_id UNIQUEIDENTIFIER NULL,     -- Maps to dt_Documents.ID (for data migration verification)
     ref_type VARCHAR(20),
     ref_id BIGINT NOT NULL,
     file_name NVARCHAR(255) NOT NULL,
@@ -1033,27 +1250,37 @@ CREATE TABLE ccms_documents (
     file_size_bytes BIGINT,
     is_deleted BIT DEFAULT 0,
     uploaded_at DATETIME2 DEFAULT GETDATE(),
-    uploaded_by VARCHAR(50)
+    uploaded_by VARCHAR(50),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_documents_legacy_id ON ccms_documents(legacy_document_id) WHERE legacy_document_id IS NOT NULL;
 
 -- Replaces: dt_Reminder_MQ_HOSP, dt_Reminder_MQ_PH (reminder tracking header)
 -- Note: REMINDER_REMARKS from legacy tables → stored in ccms_remarks table (ref_type='REMINDER')
 -- Note: Document references (REF_DOC_FILEID, REPLY_REF_DOC_FILEID) → stored in ccms_documents table
 CREATE TABLE ccms_reminders (
     reminder_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_reminder_id UNIQUEIDENTIFIER UNIQUE,     -- Maps to dt_Reminder_MQ_HOSP.ID or dt_Reminder_MQ_PH.ID (for data migration verification)
+    legacy_reminder_id UNIQUEIDENTIFIER NULL,     -- Maps to dt_Reminder_MQ_HOSP.ID or dt_Reminder_MQ_PH.ID (for data migration verification)
     ref_type VARCHAR(20),                 -- REMINDER_HOSP, REMINDER_PH, or other reminder types
     ref_id BIGINT NOT NULL,               -- ID of the reminder instance
     reminder_level INT,
     reminder_type VARCHAR(50),            -- MQ_SOURCE value (e.g., INCOMPLETE_ADMISSION_FORM, MEDICAL_QUESTIONNAIRE)
     sent_at DATETIME2,
-    status VARCHAR(20)                    -- PENDING, SENT, ACKNOWLEDGED, RECEIVED, etc.
+    status VARCHAR(20),                   -- PENDING, SENT, ACKNOWLEDGED, RECEIVED, etc.
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_reminders_legacy_id ON ccms_reminders(legacy_reminder_id) WHERE legacy_reminder_id IS NOT NULL;
 
 -- Replaces: DT_QUERY_CATEGORY (medical query template header/configuration)
 CREATE TABLE ccms_query_templates (
     template_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_query_template_id UNIQUEIDENTIFIER UNIQUE, -- Maps to DT_QUERY_CATEGORY.ID (for data migration verification)
+    legacy_query_template_id UNIQUEIDENTIFIER NULL, -- Maps to DT_QUERY_CATEGORY.ID (for data migration verification)
     template_code VARCHAR(100) NOT NULL UNIQUE,
     template_category VARCHAR(255) NOT NULL,
     recipient_type VARCHAR(20), -- HOSP (Hospital), PH (Policy Holder)
@@ -1066,28 +1293,30 @@ CREATE TABLE ccms_query_templates (
     auto_reminder_days INT,
     status VARCHAR(50),
     is_active BIT DEFAULT 1,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    created_by VARCHAR(50),
-    updated_at DATETIME2,
-    updated_by VARCHAR(50)
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_query_templates_legacy_id ON ccms_query_templates(legacy_query_template_id) WHERE legacy_query_template_id IS NOT NULL;
 
 -- Replaces: DT_QUERY_DETAILS (medical query template questions)
 CREATE TABLE ccms_query_template_questions (
     question_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_query_question_id UNIQUEIDENTIFIER UNIQUE, -- Maps to DT_QUERY_DETAILS.ID (for data migration verification)
+    legacy_query_question_id UNIQUEIDENTIFIER NULL, -- Maps to DT_QUERY_DETAILS.ID (for data migration verification)
     template_id BIGINT NOT NULL,
     question_text NVARCHAR(MAX) NOT NULL,
     required_lines INT DEFAULT 0, -- Number of lines for response area (0 = single line)
     sort_order INT DEFAULT 0,
     status VARCHAR(50),
     is_active BIT DEFAULT 1,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    created_by VARCHAR(50),
-    updated_at DATETIME2,
-    updated_by VARCHAR(50),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_QueryQuestion_Template FOREIGN KEY (template_id) REFERENCES ccms_query_templates(template_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_query_template_questions_legacy_id ON ccms_query_template_questions(legacy_query_question_id) WHERE legacy_query_question_id IS NOT NULL;
 
 PRINT '  ✓ Reminders & Documents tables created (4 tables)';
 GO
@@ -1102,7 +1331,7 @@ PRINT 'Creating Stop Loss tables...';
 -- Replaces: dt_StopLoss_Data (stop loss calculations)
 CREATE TABLE ccms_stop_loss_data (
     sl_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_stop_loss_id UNIQUEIDENTIFIER UNIQUE,    -- Maps to dt_StopLoss_Data.ID (for data migration verification)
+    legacy_stop_loss_id UNIQUEIDENTIFIER NULL,    -- Maps to dt_StopLoss_Data.ID (for data migration verification)
     product_id BIGINT,
     period_type VARCHAR(10),
     period_date DATE,
@@ -1112,9 +1341,13 @@ CREATE TABLE ccms_stop_loss_data (
     claims_reim MONEY,
     tpa_fees MONEY,
     is_history_record BIT DEFAULT 0,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_SL_Prod FOREIGN KEY (product_id) REFERENCES ccms_products(product_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_stop_loss_data_legacy_id ON ccms_stop_loss_data(legacy_stop_loss_id) WHERE legacy_stop_loss_id IS NOT NULL;
 
 PRINT '  ✓ Stop Loss tables created (1 table)';
 GO
@@ -1129,40 +1362,52 @@ PRINT 'Creating Claims Tracking tables...';
 -- Replaces: dt_Claim_Status_Log (claim status change history)
 CREATE TABLE ccms_claim_status_log (
     log_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_status_log_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_Claim_Status_Log.ID (for data migration verification)
+    legacy_status_log_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_Claim_Status_Log.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     old_status VARCHAR(50),
     new_status VARCHAR(50),
     changed_by VARCHAR(50),
     changed_at DATETIME2 DEFAULT GETDATE(),
     notes NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_StatusLog_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_status_log_legacy_id ON ccms_claim_status_log(legacy_status_log_id) WHERE legacy_status_log_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Milestone (processing milestone tracking)
 CREATE TABLE ccms_claim_processing_milestones (
     milestone_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_milestone_id UNIQUEIDENTIFIER UNIQUE,    -- Maps to dt_Claim_Milestone.ID (for data migration verification)
+    legacy_milestone_id UNIQUEIDENTIFIER NULL,    -- Maps to dt_Claim_Milestone.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     milestone_name VARCHAR(100),
     milestone_date DATETIME2,
     created_by VARCHAR(50),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Milestone_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_processing_milestones_legacy_id ON ccms_claim_processing_milestones(legacy_milestone_id) WHERE legacy_milestone_id IS NOT NULL;
 
 -- Replaces: dt_Claim_Duration (claim processing time tracking)
 CREATE TABLE ccms_claim_durations (
     duration_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_duration_id UNIQUEIDENTIFIER UNIQUE,     -- Maps to dt_Claim_Duration.ID (for data migration verification)
+    legacy_duration_id UNIQUEIDENTIFIER NULL,     -- Maps to dt_Claim_Duration.ID (for data migration verification)
     claim_id BIGINT NOT NULL,
     start_date DATETIME2,
     end_date DATETIME2,
     duration_days INT,
     status VARCHAR(50),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_Duration_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_claim_durations_legacy_id ON ccms_claim_durations(legacy_duration_id) WHERE legacy_duration_id IS NOT NULL;
 
 PRINT '  ✓ Claims Tracking tables created (3 tables)';
 GO
@@ -1178,52 +1423,68 @@ PRINT 'Creating FWD Accumulation tables...';
 -- Replaces: dt_FWD_Accumulation_Client (client benefit accumulation)
 CREATE TABLE ccms_fwd_accumulation_client (
     client_acc_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_fwd_client_acc_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_FWD_Accumulation_Client.ID (for data migration verification)
+    legacy_fwd_client_acc_id UNIQUEIDENTIFIER NULL, -- Maps to dt_FWD_Accumulation_Client.ID (for data migration verification)
     member_id BIGINT NOT NULL,
     fwd_client_no VARCHAR(50),
     period_year INT,
     period_month INT,
     accumulated_amount MONEY,
     as_at_date DATETIME2,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_FWDAccClient_Member FOREIGN KEY (member_id) REFERENCES ccms_members(member_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_fwd_accumulation_client_legacy_id ON ccms_fwd_accumulation_client(legacy_fwd_client_acc_id) WHERE legacy_fwd_client_acc_id IS NOT NULL;
 
 -- Replaces: dt_FWD_Accumulation_Disability (disability benefit accumulation)
 CREATE TABLE ccms_fwd_accumulation_disability (
     disability_acc_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_fwd_disability_acc_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_FWD_Accumulation_Disability.ID (for data migration verification)
+    legacy_fwd_disability_acc_id UNIQUEIDENTIFIER NULL, -- Maps to dt_FWD_Accumulation_Disability.ID (for data migration verification)
     disability_code VARCHAR(50),
     period_year INT,
     period_month INT,
     accumulated_amount MONEY,
-    created_at DATETIME2 DEFAULT GETDATE()
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_fwd_accumulation_disability_legacy_id ON ccms_fwd_accumulation_disability(legacy_fwd_disability_acc_id) WHERE legacy_fwd_disability_acc_id IS NOT NULL;
 
 -- Replaces: dt_FWD_Accumulation_Onetime (one-time benefit accumulation)
 CREATE TABLE ccms_fwd_accumulation_onetime (
     onetime_acc_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_fwd_onetime_acc_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_FWD_Accumulation_Onetime.ID (for data migration verification)
+    legacy_fwd_onetime_acc_id UNIQUEIDENTIFIER NULL, -- Maps to dt_FWD_Accumulation_Onetime.ID (for data migration verification)
     member_id BIGINT NOT NULL,
     fwd_member_no VARCHAR(50),
     benefit_code VARCHAR(50),
     accumulated_amount MONEY,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_FWDAccOnetime_Member FOREIGN KEY (member_id) REFERENCES ccms_members(member_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_fwd_accumulation_onetime_legacy_id ON ccms_fwd_accumulation_onetime(legacy_fwd_onetime_acc_id) WHERE legacy_fwd_onetime_acc_id IS NOT NULL;
 
 -- Replaces: dt_FWD_Accumulation_PA (PA-specific benefit accumulation)
 CREATE TABLE ccms_fwd_accumulation_pa (
     pa_acc_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_fwd_pa_acc_id UNIQUEIDENTIFIER UNIQUE,   -- Maps to dt_FWD_Accumulation_PA.ID (for data migration verification)
+    legacy_fwd_pa_acc_id UNIQUEIDENTIFIER NULL,   -- Maps to dt_FWD_Accumulation_PA.ID (for data migration verification)
     pa_id BIGINT NOT NULL,
     claim_id BIGINT NOT NULL,
     accumulated_amount MONEY,
     as_at_date DATETIME2,
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_FWDAccPA_PA FOREIGN KEY (pa_id) REFERENCES ccms_payment_advice(pa_id),
     CONSTRAINT FK_FWDAccPA_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_fwd_accumulation_pa_legacy_id ON ccms_fwd_accumulation_pa(legacy_fwd_pa_acc_id) WHERE legacy_fwd_pa_acc_id IS NOT NULL;
 
 PRINT '  ✓ FWD Accumulation tables created (4 tables)';
 GO
@@ -1238,14 +1499,19 @@ PRINT 'Creating Audit & Logging tables...';
 -- Replaces: dt_Admission_Log (admission change audit trail)
 CREATE TABLE ccms_admission_log (
     log_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_admission_log_id UNIQUEIDENTIFIER UNIQUE, -- Maps to dt_Admission_Log.ID (for data migration verification)
+    legacy_admission_log_id UNIQUEIDENTIFIER NULL, -- Maps to dt_Admission_Log.ID (for data migration verification)
     admission_id BIGINT NOT NULL,
     change_type VARCHAR(50),
     change_description NVARCHAR(MAX),
     changed_by VARCHAR(50),
     changed_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_AdmLog_Admission FOREIGN KEY (admission_id) REFERENCES ccms_admissions(admission_id)
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_admission_log_legacy_id ON ccms_admission_log(legacy_admission_log_id) WHERE legacy_admission_log_id IS NOT NULL;
 
 -- Replaces: dt_SMS_Tran
 CREATE TABLE ccms_log_notifications (
@@ -1258,6 +1524,9 @@ CREATE TABLE ccms_log_notifications (
     send_status VARCHAR(50),
     sent_at DATETIME2 DEFAULT GETDATE(),
     created_by VARCHAR(50),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL,
     CONSTRAINT FK_LogNotif_Claim FOREIGN KEY (claim_id) REFERENCES ccms_claims(claim_id)
 );
 
@@ -1275,37 +1544,52 @@ PRINT 'Creating System & Security tables...';
 -- Replaces: dt_Users (user accounts) - v6: removed role_id and permissions_json
 CREATE TABLE ccms_users (
     user_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_user_id UNIQUEIDENTIFIER UNIQUE,         -- Maps to dt_Users.ID (for data migration verification)
+    legacy_user_id UNIQUEIDENTIFIER NULL,         -- Maps to dt_Users.ID (for data migration verification)
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255),
     full_name NVARCHAR(255),
     is_active BIT DEFAULT 1,
-    last_login DATETIME2
+    last_login DATETIME2,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_users_legacy_id ON ccms_users(legacy_user_id) WHERE legacy_user_id IS NOT NULL;
 
 -- Note: ccms_user_permissions table REMOVED - replaced by ACL system (ccms_acl_* tables)
 
 -- Replaces: dt_Audit_Log (system-wide audit trail)
 CREATE TABLE ccms_audit_logs (
     audit_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    legacy_audit_log_id UNIQUEIDENTIFIER UNIQUE,    -- Maps to dt_Audit_Log.ID (for data migration verification)
+    legacy_audit_log_id UNIQUEIDENTIFIER NULL,    -- Maps to dt_Audit_Log.ID (for data migration verification)
     table_name VARCHAR(100),
     record_id BIGINT,
     action_type VARCHAR(20),
     old_value NVARCHAR(MAX),
     new_value NVARCHAR(MAX),
     changed_by VARCHAR(50),
-    changed_at DATETIME2 DEFAULT GETDATE()
+    changed_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_audit_logs_legacy_id ON ccms_audit_logs(legacy_audit_log_id) WHERE legacy_audit_log_id IS NOT NULL;
 
 -- Replaces: dt_System_Version (schema version tracking)
 CREATE TABLE ccms_system_version (
     version_id INT IDENTITY(1,1) PRIMARY KEY,
-    legacy_version_id UNIQUEIDENTIFIER UNIQUE,      -- Maps to dt_System_Version ID (for data migration verification)
+    legacy_version_id UNIQUEIDENTIFIER NULL,      -- Maps to dt_System_Version ID (for data migration verification)
     version_no VARCHAR(20),
     release_notes NVARCHAR(MAX),
-    applied_at DATETIME2 DEFAULT GETDATE()
+    applied_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
+CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_system_version_legacy_id ON ccms_system_version(legacy_version_id) WHERE legacy_version_id IS NOT NULL;
 
 -- Replaces: dt_FileNo (Stores last running number for various prefixes)
 CREATE TABLE ccms_sys_doc_sequences (
@@ -1313,7 +1597,11 @@ CREATE TABLE ccms_sys_doc_sequences (
     description NVARCHAR(255),
     prefix_format VARCHAR(20),             -- e.g. 'RE/{YYYY}/{MM}/'
     current_value BIGINT DEFAULT 0,
-    last_updated DATETIME2 DEFAULT GETDATE()
+    last_updated DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(50) NULL,
+    updated_at DATETIME2 NULL,
+    updated_by VARCHAR(50) NULL
 );
 
 PRINT '  ✓ System & Security tables created (4 tables - NO legacy permissions)';

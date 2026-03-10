@@ -24,7 +24,9 @@ describe('CategoryService', () => {
     display_order: 1,
     is_active: true,
     created_at: new Date(),
-    updated_at: new Date()
+    updated_at: new Date(),
+    created_by: 'system',
+    updated_by: null
   };
 
   beforeEach(() => {

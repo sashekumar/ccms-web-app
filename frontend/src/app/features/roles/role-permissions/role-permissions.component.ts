@@ -260,7 +260,11 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
           action_name: item.action_name,
           action_code: item.action_code,
           description: item.action_label,
-          is_active: true
+          is_active: true,
+          created_at: new Date(),
+          updated_at: null,
+          created_by: null,
+          updated_by: null
         });
       }
       
@@ -277,7 +281,9 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
           display_order: item.display_order,
           is_active: true,
           created_at: new Date(),
-          updated_at: null
+          updated_at: null,
+          created_by: null,
+          updated_by: null
         });
       }
       

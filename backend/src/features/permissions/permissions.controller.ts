@@ -359,8 +359,8 @@ export class PermissionsController {
       const createdBy = (req as any).user.username;
       const data = req.body;
 
-      if (!data.moduleName || !data.moduleCode) {
-        ResponseUtil.error(res, 'moduleName and moduleCode are required', 400);
+      if (!data.module_name || !data.module_code) {
+        ResponseUtil.error(res, 'module_name and module_code are required', 400);
         return;
       }
 
@@ -424,8 +424,8 @@ export class PermissionsController {
       const createdBy = (req as any).user.username;
       const data = req.body;
 
-      if (!data.actionName || !data.actionCode) {
-        ResponseUtil.error(res, 'actionName and actionCode are required', 400);
+      if (!data.action_name || !data.action_code) {
+        ResponseUtil.error(res, 'action_name and action_code are required', 400);
         return;
       }
 
@@ -503,8 +503,8 @@ export class PermissionsController {
       const createdBy = (req as any).user.username;
       const data = req.body;
 
-      if (!data.moduleId || !data.actionId) {
-        ResponseUtil.error(res, 'moduleId and actionId are required', 400);
+      if (!data.module_id || !data.action_id) {
+        ResponseUtil.error(res, 'module_id and action_id are required', 400);
         return;
       }
 
