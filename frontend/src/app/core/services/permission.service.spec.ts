@@ -47,7 +47,9 @@ describe('PermissionService', () => {
     is_system_role: false,
     is_active: true,
     created_at: new Date(),
-    created_by: 'system'
+    updated_at: null,
+    created_by: 'system',
+    updated_by: null
   };
 
   beforeEach(() => {

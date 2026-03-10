@@ -331,13 +331,13 @@ export class PermissionsService {
    */
   public async createModule(data: CreateModuleDto, createdBy: string): Promise<number> {
     const module = await this.modulesRepo.create({
-      module_name: data.moduleName,
-      module_code: data.moduleCode,
+      module_name: data.module_name,
+      module_code: data.module_code,
       description: data.description || null,
-      category_id: data.categoryId || null,
+      category_id: data.category_id || null,
       icon: data.icon || null,
       route: data.route || null,
-      display_order: data.displayOrder || 0,
+      display_order: data.display_order || 0,
       is_active: true
     }, createdBy);
     
@@ -353,14 +353,14 @@ export class PermissionsService {
   public async updateModule(moduleId: number, data: UpdateModuleDto, updatedBy: string): Promise<void> {
     const updateData: Partial<Module> = {};
     
-    if (data.moduleName !== undefined) updateData.module_name = data.moduleName;
-    if (data.moduleCode !== undefined) updateData.module_code = data.moduleCode;
+    if (data.module_name !== undefined) updateData.module_name = data.module_name;
+    if (data.module_code !== undefined) updateData.module_code = data.module_code;
     if (data.description !== undefined) updateData.description = data.description;
-    if (data.categoryId !== undefined) updateData.category_id = data.categoryId;
+    if (data.category_id !== undefined) updateData.category_id = data.category_id;
     if (data.icon !== undefined) updateData.icon = data.icon;
     if (data.route !== undefined) updateData.route = data.route;
-    if (data.displayOrder !== undefined) updateData.display_order = data.displayOrder;
-    if (data.isActive !== undefined) updateData.is_active = data.isActive;
+    if (data.display_order !== undefined) updateData.display_order = data.display_order;
+    if (data.is_active !== undefined) updateData.is_active = data.is_active;
 
     await this.modulesRepo.update(moduleId, updateData, updatedBy);
     
@@ -383,8 +383,8 @@ export class PermissionsService {
    */
   public async createAction(data: CreateActionDto, createdBy: string): Promise<number> {
     const action = await this.actionsRepo.create({
-      action_name: data.actionName,
-      action_code: data.actionCode,
+      action_name: data.action_name,
+      action_code: data.action_code,
       description: data.description || null,
       is_active: true
     }, createdBy);
@@ -401,10 +401,10 @@ export class PermissionsService {
   public async updateAction(actionId: number, data: UpdateActionDto, updatedBy: string): Promise<void> {
     const updateData: Partial<Action> = {};
     
-    if (data.actionName !== undefined) updateData.action_name = data.actionName;
-    if (data.actionCode !== undefined) updateData.action_code = data.actionCode;
+    if (data.action_name !== undefined) updateData.action_name = data.action_name;
+    if (data.action_code !== undefined) updateData.action_code = data.action_code;
     if (data.description !== undefined) updateData.description = data.description;
-    if (data.isActive !== undefined) updateData.is_active = data.isActive;
+    if (data.is_active !== undefined) updateData.is_active = data.is_active;
 
     await this.actionsRepo.update(actionId, updateData, updatedBy);
     
@@ -444,9 +444,9 @@ export class PermissionsService {
    */
   public async createModuleAction(data: CreateModuleActionDto, createdBy: string): Promise<number> {
     const moduleActionId = await this.repository.createModuleAction(
-      data.moduleId,
-      data.actionId,
-      data.actionLabel,
+      data.module_id,
+      data.action_id,
+      data.action_label,
       createdBy
     );
     
@@ -466,8 +466,8 @@ export class PermissionsService {
   public async updateModuleAction(moduleActionId: number, data: UpdateModuleActionDto, updatedBy: string): Promise<void> {
     await this.repository.updateModuleAction(
       moduleActionId,
-      data.actionLabel,
-      data.isActive,
+      data.action_label,
+      data.is_active,
       updatedBy
     );
     

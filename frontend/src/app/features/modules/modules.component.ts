@@ -149,12 +149,12 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
                   <app-status-badge [active]="module.is_active"></app-status-badge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button (click)="openEditModal(module)" class="text-indigo-600 hover:text-indigo-900 mr-3">
+                  <button (click)="openEditModal(module)" class="text-indigo-600 hover:text-indigo-900 mr-3" data-testid="edit-module-button" aria-label="Edit">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
                   </button>
-                  <button (click)="confirmDelete(module)" class="text-red-600 hover:text-red-900">
+                  <button (click)="confirmDelete(module)" class="text-red-600 hover:text-red-900" data-testid="delete-module-button" aria-label="Delete">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
@@ -194,30 +194,31 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
 
           <!-- Modal Body (Scrollable) -->
           <div class="flex-1 overflow-y-auto px-6 py-4">
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Module Name *</label>
-                <input type="text" [(ngModel)]="formData.moduleName" name="moduleName" required
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-              </div>
+            <form id="moduleForm" #moduleFormRef="ngForm" (ngSubmit)="saveModule()">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Module Name *</label>
+                  <input type="text" [(ngModel)]="formData.moduleName" name="name" required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Module Code *</label>
-                <input type="text" [(ngModel)]="formData.moduleCode" name="moduleCode" required
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-              </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Module Code *</label>
+                  <input type="text" [(ngModel)]="formData.moduleCode" name="code" required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Description</label>
-                <textarea [(ngModel)]="formData.description" name="description" rows="2"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2"></textarea>
-              </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea [(ngModel)]="formData.description" name="description" rows="2"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2"></textarea>
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Category</label>
-                <select [(ngModel)]="formData.categoryId" name="categoryId"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-                  <option [ngValue]="null">-- No Category (Uncategorized) --</option>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Category</label>
+                  <select [(ngModel)]="formData.categoryId" name="category"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
+                    <option [ngValue]="null">-- No Category (Uncategorized) --</option>
                   <option *ngFor="let category of categories; trackBy: trackByCategoryId" [ngValue]="category.category_id">
                     {{ category.category_name }}
                   </option>
@@ -239,16 +240,17 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
 
               <div>
                 <label class="block text-sm font-medium text-gray-700">Display Order</label>
-                <input type="number" [(ngModel)]="formData.displayOrder" name="displayOrder"
+                <input type="number" [(ngModel)]="formData.displayOrder" name="order"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
               </div>
 
               <div *ngIf="editingModule" class="flex items-center">
-                <input type="checkbox" [(ngModel)]="formData.isActive" name="isActive" id="isActive"
+                <input type="checkbox" [(ngModel)]="formData.isActive" name="active" id="isActive"
                   class="h-4 w-4 text-[#1e3c72] focus:ring-[#1e3c72] border-gray-300 rounded">
                 <label for="isActive" class="ml-2 block text-sm text-gray-900">Active</label>
               </div>
             </div>
+          </form>
           </div>
 
         <!-- Modal Footer -->
@@ -258,7 +260,7 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
               class="rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
               Cancel
             </button>
-            <button type="button" (click)="saveModule()" [disabled]="saving"
+            <button type="submit" form="moduleForm" [disabled]="saving || !moduleFormRef.valid"
               class="rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#1e3c72] text-sm font-medium text-white hover:bg-[#2a5298] disabled:opacity-50">
               {{ saving ? 'Saving...' : 'Save' }}
             </button>
@@ -457,7 +459,16 @@ export class ModulesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     if (this.editingModule) {
-      this.permissionService.updateModule(this.editingModule.module_id, this.formData)
+      this.permissionService.updateModule(this.editingModule.module_id, {
+        module_name: this.formData.moduleName || undefined,
+        module_code: this.formData.moduleCode || undefined,
+        description: this.formData.description || undefined,
+        category_id: this.formData.categoryId ?? undefined,
+        icon: this.formData.icon || undefined,
+        route: this.formData.route || undefined,
+        display_order: this.formData.displayOrder,
+        is_active: this.formData.isActive
+      })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {

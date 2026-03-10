@@ -69,6 +69,26 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
       <!-- Loading State -->
       <app-loading-spinner *ngIf="loading" message="Loading roles..."></app-loading-spinner>
 
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="mb-4 rounded-md bg-green-50 p-4">
+        <div class="flex">
+          <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <p class="ml-3 text-sm text-green-800">{{ successMessage }}</p>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="mb-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+          <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <p class="ml-3 text-sm text-red-800">{{ errorMessage }}</p>
+        </div>
+      </div>
+
       <!-- Roles Table -->
       <div *ngIf="!loading" class="overflow-hidden rounded-lg bg-white shadow">
         <table class="min-w-full divide-y divide-gray-200">
@@ -153,6 +173,8 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
                     [disabled]="role.is_system_role"
                     class="text-indigo-600 hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
                     [title]="role.is_system_role ? 'System roles cannot be edited' : 'Edit Role'"
+                    data-testid="edit-role-button"
+                    aria-label="Edit"
                   >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -164,6 +186,8 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
                     [disabled]="role.is_system_role"
                     class="text-red-600 hover:text-red-900 disabled:cursor-not-allowed disabled:opacity-50"
                     [title]="role.is_system_role ? 'System roles cannot be deleted' : 'Delete Role'"
+                    data-testid="delete-role-button"
+                    aria-label="Delete"
                   >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -260,6 +284,8 @@ export class RoleListComponent implements OnInit, OnDestroy {
   filteredRoles: Role[] = [];
   loading = false;
   deleting = false;
+  successMessage = '';
+  errorMessage = '';
   
   // Filters
   searchTerm = '';
@@ -358,6 +384,7 @@ export class RoleListComponent implements OnInit, OnDestroy {
     if (!this.roleToDelete) return;
 
     this.deleting = true;
+    this.errorMessage = '';
     this.permissionService.deleteRole(this.roleToDelete)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -368,6 +395,8 @@ export class RoleListComponent implements OnInit, OnDestroy {
           this.roleToDeleteName = '';
           this.loadRoles(); // Reload the list
           this.toast.success('Role deleted successfully');
+          this.successMessage = 'Role deleted successfully';
+          this.clearMessages();
         },
         error: (error) => {
           this.logger.error('Error deleting role', error);
@@ -375,17 +404,31 @@ export class RoleListComponent implements OnInit, OnDestroy {
           this.showDeleteModal = false;
           
           // Show user-friendly error message based on status code
+          let errorMsg = '';
           if (error.status === 403) {
-            this.toast.error('Access Denied: You do not have permission to delete this role.');
+            errorMsg = 'Access Denied: You do not have permission to delete this role.';
           } else if (error.status === 404) {
-            this.toast.error('Role not found. It may have already been deleted.');
+            errorMsg = 'Role not found. It may have already been deleted.';
           } else if (error.status === 400 && error.error?.message) {
-            this.toast.error(error.error.message);
+            errorMsg = error.error.message;
           } else {
-            this.toast.error('Failed to delete role. Please try again.');
+            errorMsg = 'Failed to delete role. Please try again.';
           }
+          this.toast.error(errorMsg);
+          this.errorMessage = errorMsg;
+          this.clearMessages();
         }
       });
+  }
+
+  /**
+   * Clear success and error messages after a delay
+   */
+  private clearMessages(): void {
+    setTimeout(() => {
+      this.successMessage = '';
+      this.errorMessage = '';
+    }, 5000);
   }
 
   /**
