@@ -124,24 +124,24 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
       await editButton.click();
       await authenticatedPage.waitForLoadState('networkidle');
       
-      // Update display order
-      const orderInput = authenticatedPage.locator('input[formcontrolname*="order"], input[type="number"]').first();
-      if (await orderInput.count() > 0) {
-        await orderInput.clear();
-        await orderInput.fill('999');
-      }
+      // Update custom action label
+      const labelInput = authenticatedPage.locator('input[name="label"]').first();
+      const testLabel = 'Updated Label ' + Date.now();
+      
+      await labelInput.clear();
+      await labelInput.fill(testLabel);
       
       await authenticatedPage.locator('button[type="submit"]').click();
       await authenticatedPage.waitForLoadState('networkidle');
       
-      // Verify update
-      const orderCell = authenticatedPage.locator('td:has-text("999")');
-      const hasUpdated = await orderCell.isVisible().catch(() => false);
+      // Verify update - check for success message
+      const successMessage = authenticatedPage.locator('text=/updated successfully/i');
+      const hasSuccessMessage = await successMessage.isVisible({ timeout: 5000 }).catch(() => false);
       
-      if (hasUpdated) {
+      if (hasSuccessMessage) {
         console.log('✅ UPDATE: Successfully updated module-action');
       } else {
-        console.log('ℹ️  UPDATE: Could not verify display order update');
+        console.log('ℹ️  UPDATE: Update completed but no success message found');
       }
     }
   });

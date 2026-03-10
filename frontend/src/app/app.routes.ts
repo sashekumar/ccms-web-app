@@ -30,11 +30,15 @@ export const routes: Routes = [
       },
       {
         path: 'admin/users',
-        loadChildren: () => import('./features/users/users.routes').then(m => m.usersRoutes)
+        loadChildren: () => import('./features/users/users.routes').then(m => m.usersRoutes),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['USER_MANAGEMENT', 'VIEW'] }
       },
       {
         path: 'admin/roles',
-        loadChildren: () => import('./features/roles/roles.routes').then(m => m.rolesRoutes)
+        loadChildren: () => import('./features/roles/roles.routes').then(m => m.rolesRoutes),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['ROLE_MANAGEMENT', 'VIEW'] }
       },
       {
         path: 'admin/categories',
