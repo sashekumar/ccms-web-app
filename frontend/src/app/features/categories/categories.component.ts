@@ -26,6 +26,8 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   editingCategory: Category | null = null;
   categoryToDelete: Category | null = null;
+  successMessage = '';
+  errorMessage = '';
 
   // Filters
   searchTerm = '';
@@ -71,7 +73,9 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         error: (error: HttpErrorResponse) => {
           this.logger.error('Error loading categories', error);
           this.toast.error('Error loading categories');
+          this.errorMessage = 'Error loading categories';
           this.loading = false;
+          this.clearMessages();
         }
       });
   }
@@ -130,6 +134,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
 
   saveCategory(): void {
     this.saving = true;
+    this.errorMessage = '';
 
     if (this.editingCategory) {
       this.categoryService.updateCategory(this.editingCategory.category_id, {
@@ -144,14 +149,18 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         .subscribe({
           next: () => {
             this.toast.success('Category updated successfully');
+            this.successMessage = 'Category updated successfully';
             this.saving = false;
             this.closeModal();
             this.loadCategories();
+            this.clearMessages();
           },
           error: (error: HttpErrorResponse) => {
             this.logger.error('Error updating category', error);
             this.toast.error('Error updating category: ' + (error.error?.message || error.message));
+            this.errorMessage = 'Error updating category: ' + (error.error?.message || error.message);
             this.saving = false;
+            this.clearMessages();
           }
         });
     } else {
@@ -166,14 +175,18 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         .subscribe({
           next: () => {
             this.toast.success('Category created successfully');
+            this.successMessage = 'Category created successfully';
             this.saving = false;
             this.closeModal();
             this.loadCategories();
+            this.clearMessages();
           },
           error: (error: HttpErrorResponse) => {
             this.logger.error('Error creating category', error);
             this.toast.error('Error creating category: ' + (error.error?.message || error.message));
+            this.errorMessage = 'Error creating category: ' + (error.error?.message || error.message);
             this.saving = false;
+            this.clearMessages();
           }
         });
     }
@@ -188,22 +201,27 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     if (!this.categoryToDelete) return;
 
     this.saving = true;
+    this.errorMessage = '';
 
     this.categoryService.deleteCategory(this.categoryToDelete.category_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('Category deleted successfully');
+          this.successMessage = 'Category deleted successfully';
           this.saving = false;
           this.showDeleteConfirm = false;
           this.categoryToDelete = null;
           this.loadCategories();
+          this.clearMessages();
         },
         error: (error: HttpErrorResponse) => {
           this.logger.error('Error deleting category', error);
           this.toast.error('Error deleting category: ' + (error.error?.message || error.message));
+          this.errorMessage = 'Error deleting category: ' + (error.error?.message || error.message);
           this.saving = false;
           this.showDeleteConfirm = false;
+          this.clearMessages();
         }
       });
   }
@@ -211,6 +229,16 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   cancelDelete(): void {
     this.showDeleteConfirm = false;
     this.categoryToDelete = null;
+  }
+
+  /**
+   * Clear success and error messages after a delay
+   */
+  private clearMessages(): void {
+    setTimeout(() => {
+      this.successMessage = '';
+      this.errorMessage = '';
+    }, 5000);
   }
 
   /**

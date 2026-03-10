@@ -1,173 +1,50 @@
-<div class="min-h-screen bg-gray-100 px-4 py-4">
-  <!-- Page Header -->
-  <div class="flex justify-between items-center mb-4 mt-2">
-    <h4 class="text-2xl font-bold text-gray-800 mb-0">Claims Overview</h4>
-
-    <!-- Tab Navigation Pills -->
-    <nav class="flex gap-1 border-b-0">
-      <button
-        (click)="setActiveTab('cashless')"
-        [class]="'px-6 py-2.5 font-semibold text-sm transition-all ' + (activeTab === 'cashless' ? 'text-blue-600 border-b-[3px] border-blue-600 bg-transparent' : 'text-gray-600 border-b-[3px] border-transparent hover:text-blue-500')"
-      >
-        <i class="fas fa-hospital me-2"></i> Online (GL)
-      </button>
-      <button
-        (click)="setActiveTab('reimb')"
-        [class]="'px-6 py-2.5 font-semibold text-sm transition-all ' + (activeTab === 'reimb' ? 'text-blue-600 border-b-[3px] border-blue-600 bg-transparent' : 'text-gray-600 border-b-[3px] border-transparent hover:text-blue-500')"
-      >
-        <i class="fas fa-file-invoice-dollar me-2"></i> Reimbursement
-      </button>
-      <button
-        (click)="setActiveTab('members')"
-        [class]="'px-6 py-2.5 font-semibold text-sm transition-all ' + (activeTab === 'members' ? 'text-blue-600 border-b-[3px] border-blue-600 bg-transparent' : 'text-gray-600 border-b-[3px] border-transparent hover:text-blue-500')"
-      >
-        <i class="fas fa-users me-2"></i> Members
-      </button>
-    </nav>
-  </div>
-
-  <!-- CASHLESS TAB CONTENT -->
-  <div *ngIf="activeTab === 'cashless'" class="animate-fadeIn">
-    <!-- Stats Cards Row -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-      <div *ngFor="let stat of cashlessStats; trackBy: trackByStatLabel" class="bg-white rounded-lg shadow-sm border-0 p-4 hover:-translate-y-1 transition-transform cursor-pointer">
-        <div class="flex items-center">
-          <div [class]="'w-10 h-10 rounded-lg flex items-center justify-center text-lg mr-3' + ' ' + stat.iconBg">
-            <i [class]="'fas fa-' + stat.icon + ' ' + stat.iconColor"></i>
-          </div>
-          <div>
-            <div class="text-2xl font-bold">{{ stat.count }}</div>
-            <div class="text-xs text-gray-500">{{ stat.label }}</div>
-          </div>
+<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+  <div class="max-w-2xl w-full">
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-lg p-12 text-center border border-gray-100">
+      <!-- Icon -->
+      <div class="mb-6">
+        <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full shadow-lg">
+          <i class="fas fa-chart-line text-white text-4xl"></i>
         </div>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-3xl font-bold text-gray-800 mb-3">Dashboard</h1>
+      
+      <!-- Description -->
+      <p class="text-gray-500 text-lg mb-6">
+        Your comprehensive overview will be available here soon
+      </p>
+
+      <!-- Coming Soon Badge -->
+      <div class="inline-flex items-center gap-2 px-6 py-3 bg-blue-50 rounded-full border border-blue-200">
+        <i class="fas fa-clock text-blue-600"></i>
+        <span class="text-blue-700 font-semibold text-sm">Coming Soon</span>
+      </div>
+
+      <!-- Additional Info -->
+      <div class="mt-10 pt-8 border-t border-gray-200">
+        <p class="text-gray-400 text-sm">
+          We're working on bringing you powerful analytics and insights
+        </p>
       </div>
     </div>
 
-    <!-- Work Queue and Actions Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- Work Queue Table -->
-      <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border-0">
-        <div class="border-b bg-white px-4 py-3 font-bold flex justify-between items-center">
-          <div><i class="fas fa-list me-2"></i> Online Work Queue</div>
-          <select class="text-sm px-2 py-1 border border-gray-300 rounded">
-            <option>All Statuses</option>
-            <option>Pending MO</option>
-            <option>Approved</option>
-            <option>Sent MQ</option>
-            <option>Decline</option>
-          </select>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Patient Name</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ref ID</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Hospital</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Time</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of cashlessCases; trackBy: trackByCaseId" class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer">
-                <td class="px-4 py-3 text-sm">{{ item.patientName }}</td>
-                <td class="px-4 py-3 text-sm text-blue-600 font-mono">{{ item.refId }}</td>
-                <td class="px-4 py-3 text-sm text-gray-600">{{ item.hospital }}</td>
-                <td class="px-4 py-3 text-xs text-gray-500">{{ item.time }}</td>
-                <td class="px-4 py-3">
-                  <span [class]="'px-2 py-1 text-[0.7rem] font-semibold rounded ' + getStatusClass(item.status)">
-                    {{ item.status }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <!-- Feature Preview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div class="bg-white rounded-lg p-4 text-center border border-gray-100 shadow-sm">
+        <i class="fas fa-chart-bar text-blue-500 text-2xl mb-2"></i>
+        <p class="text-gray-600 text-sm font-medium">Analytics</p>
       </div>
-
-      <!-- Actions Card -->
-      <div class="space-y-4">
-        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm p-5">
-          <h5 class="font-bold mb-3 text-lg">Actions</h5>
-          <button class="w-full bg-white text-blue-600 font-bold py-2.5 rounded shadow-sm hover:shadow-md transition-shadow">
-            <i class="fas fa-plus-circle me-2"></i> Register New Admission
-          </button>
-        </div>
-        <div class="bg-white rounded-lg shadow-sm border-0">
-          <div class="px-4 py-3 border-b font-bold text-sm">Notifications</div>
-          <div class="px-3 py-2 text-sm border-b-0">
-            <i class="fas fa-bell text-yellow-500 me-2"></i> GL #9921 Pending > 2 hrs
-          </div>
-        </div>
+      <div class="bg-white rounded-lg p-4 text-center border border-gray-100 shadow-sm">
+        <i class="fas fa-bell text-blue-500 text-2xl mb-2"></i>
+        <p class="text-gray-600 text-sm font-medium">Notifications</p>
       </div>
-    </div>
-  </div>
-
-  <!-- REIMBURSEMENT TAB CONTENT -->
-  <div *ngIf="activeTab === 'reimb'" class="animate-fadeIn">
-    <!-- Stats Cards Row -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <div *ngFor="let stat of reimbStats; trackBy: trackByStatLabel" [class]="'bg-white rounded-lg shadow-sm p-4 border-l-4 ' + stat.borderColor">
-        <div class="flex justify-between">
-          <span class="font-bold text-sm" [class.text-blue-600]="stat.color === 'info'" [class.text-yellow-600]="stat.color === 'warning'" [class.text-green-600]="stat.color === 'success'">
-            {{ stat.label }}
-          </span>
-          <span class="text-2xl font-bold">{{ stat.count }}</span>
-        </div>
-        <small class="text-gray-500 text-xs">{{ stat.desc }}</small>
+      <div class="bg-white rounded-lg p-4 text-center border border-gray-100 shadow-sm">
+        <i class="fas fa-tachometer-alt text-blue-500 text-2xl mb-2"></i>
+        <p class="text-gray-600 text-sm font-medium">Quick Actions</p>
       </div>
-    </div>
-
-    <!-- Work Queue Table -->
-    <div class="grid grid-cols-1 gap-4">
-      <div class="bg-white rounded-lg shadow-sm border-0">
-        <div class="border-b bg-white px-4 py-3 font-bold flex justify-between items-center">
-          <div><i class="fas fa-file-invoice me-2"></i> Reimbursement Queue</div>
-          <select class="text-sm px-2 py-1 border border-gray-300 rounded">
-            <option>All Statuses</option>
-            <option>PENDING REGISTRATION</option>
-            <option>REGISTERED</option>
-            <option>FIRST REMINDER</option>
-            <option>CLOSED</option>
-          </select>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Claimant</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Policy No</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Amount</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of reimbCases; trackBy: trackByCaseId" class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer">
-                <td class="px-4 py-3 text-sm">{{ item.claimant }}</td>
-                <td class="px-4 py-3 text-sm text-blue-600 font-mono">{{ item.policy }}</td>
-                <td class="px-4 py-3 text-sm font-semibold text-green-600">{{ item.amount }}</td>
-                <td class="px-4 py-3 text-xs text-gray-500">{{ item.date }}</td>
-                <td class="px-4 py-3">
-                  <span [class]="'px-2 py-1 text-[0.7rem] font-semibold rounded ' + getStatusClass(item.status)">
-                    {{ item.status }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MEMBERS TAB CONTENT -->
-  <div *ngIf="activeTab === 'members'" class="animate-fadeIn">
-    <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-      <i class="fas fa-users text-gray-300 text-6xl mb-4"></i>
-      <h3 class="text-xl font-bold text-gray-700 mb-2">Members Management</h3>
-      <p class="text-gray-500 text-sm">Members directory and management features coming soon.</p>
     </div>
   </div>
 </div>
-

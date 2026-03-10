@@ -204,37 +204,37 @@ export interface UpdateRoleDto {
 }
 
 export interface CreateModuleDto {
-  moduleName: string;
-  moduleCode: string;
+  module_name: string;
+  module_code: string;
   description?: string;
-  categoryId?: number;
+  category_id?: number;
   icon?: string;
   route?: string;
-  displayOrder?: number;
+  display_order?: number;
 }
 
 export interface UpdateModuleDto {
-  moduleName?: string;
-  moduleCode?: string;
+  module_name?: string;
+  module_code?: string;
   description?: string;
-  categoryId?: number;
+  category_id?: number;
   icon?: string;
   route?: string;
-  displayOrder?: number;
-  isActive?: boolean;
+  display_order?: number;
+  is_active?: boolean;
 }
 
 export interface CreateActionDto {
-  actionName: string;
-  actionCode: string;
+  action_name: string;
+  action_code: string;
   description?: string;
 }
 
 export interface UpdateActionDto {
-  actionName?: string;
-  actionCode?: string;
+  action_name?: string;
+  action_code?: string;
   description?: string;
-  isActive?: boolean;
+  is_active?: boolean;
 }
 
 export interface GrantPermissionDto {
@@ -248,14 +248,14 @@ export interface RevokePermissionDto {
 }
 
 export interface CreateModuleActionDto {
-  moduleId: number;
-  actionId: number;
-  actionLabel?: string;
+  module_id: number;
+  action_id: number;
+  action_label?: string;
 }
 
 export interface UpdateModuleActionDto {
-  actionLabel?: string | null;
-  isActive?: boolean;
+  action_label?: string | null;
+  is_active?: boolean;
 }
 
 export interface CreateCategoryDto {
