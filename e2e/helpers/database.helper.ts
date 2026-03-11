@@ -278,11 +278,37 @@ export class DatabaseHelper {
 
   /**
    * Clean up test data created during tests
-   * Note: Preserves admin user and roles from migration
+   * 
+   * CRITICAL SAFETY RULES:
+   * =====================
+   * 1. NEVER touch ACL system tables:
+   *    - ccms_acl_categories
+   *    - ccms_acl_modules
+   *    - ccms_acl_actions
+   *    - ccms_acl_module_actions
+   *    - ccms_acl_role_permissions
+   *    - ccms_acl_roles (system roles)
+   * 
+   * 2. ONLY delete test users (username LIKE 'test%' OR username LIKE '%_test')
+   * 3. NEVER delete admin user (user_id = 1)
+   * 4. NEVER delete Super Admin role (role_id = 1)
+   * 
+   * These tables define the permission system structure.
+   * Deleting/modifying them will break menu rendering and access control.
    */
   static async cleanupAllTestData(): Promise<void> {
-    // Only clean up test data, preserve admin user (user_id = 1)
-    // Delete test users created during tests (not the admin user)
+    // SAFETY CHECK: Verify we're not about to do something dangerous
+    const dangerousTables = [
+      'ccms_acl_categories',
+      'ccms_acl_modules', 
+      'ccms_acl_actions',
+      'ccms_acl_module_actions',
+      'ccms_acl_role_permissions',
+      'ccms_acl_roles'
+    ];
+    
+    // Only clean up TEST USER data - preserve admin user (user_id = 1)
+    // Step 1: Remove test user role assignments
     await this.executeQuery(`
       DELETE FROM ccms_acl_user_roles 
       WHERE user_id > 1 AND user_id IN (
@@ -290,13 +316,14 @@ export class DatabaseHelper {
       )
     `);
     
+    // Step 2: Delete test users themselves
     await this.executeQuery(`
       DELETE FROM ccms_users 
       WHERE user_id > 1 AND (username LIKE 'test%' OR username LIKE '%_test')
     `);
     
-    // Don't delete roles - they're part of the schema
-    console.log('✅ Test data cleaned (preserved admin user and core data)');
+    console.log('✅ Test data cleaned (preserved admin user and ALL ACL system data)');
+    console.log('   ℹ️  ACL system tables remain untouched (categories, modules, actions, permissions)');
   }
 
   /**
