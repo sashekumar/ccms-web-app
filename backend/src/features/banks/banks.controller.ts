@@ -21,11 +21,11 @@ export class BanksController {
       // Accept both camelCase and snake_case from frontend
       const filters: BankFilters = {
         search: req.body.search,
-        isActive: req.body.isActive ?? req.body.is_active,
-        page: req.body.page || 1,
-        limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'bank_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        is_active: req.body.is_active,
+        page: req.body.page ?? 1,
+        limit: req.body.limit ?? 10,
+        sort_by: req.body.sort_by ?? 'bank_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getBanks(filters);
@@ -67,10 +67,11 @@ export class BanksController {
   /**
    * Create new bank
    * POST /api/master/banks/create
-   * Body: { bank_code, bank_name, legacy_bank_id?, is_active? }
+   * Body: { bank_code, bank_name, is_active? }
    */
   public createBank = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateBankDto = req.body;
 
       if (!dto.bank_code || !dto.bank_name) {
@@ -78,7 +79,7 @@ export class BanksController {
         return;
       }
 
-      const bankId = await this.service.createBank(dto);
+      const bankId = await this.service.createBank(dto, createdBy);
 
       ResponseUtil.success(res, { bank_id: bankId }, 'Bank created successfully', 201);
     } catch (error: unknown) {
@@ -117,6 +118,7 @@ export class BanksController {
    */
   public updateBank = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const bankId = req.body.bank_id;
       const dto: UpdateBankDto = {
         bank_code: req.body.bank_code,
@@ -129,7 +131,7 @@ export class BanksController {
         return;
       }
 
-      await this.service.updateBank(bankId, dto);
+      await this.service.updateBank(bankId, dto, updatedBy);
 
       ResponseUtil.success(res, null, 'Bank updated successfully');
     } catch (error: unknown) {

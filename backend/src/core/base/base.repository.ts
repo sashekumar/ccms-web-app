@@ -7,8 +7,8 @@ import { connectionManager } from '../database/connection-manager';
 export interface QueryOptions {
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
   filters?: Record<string, unknown>;
 }
 
@@ -61,8 +61,8 @@ export abstract class BaseRepository<T> {
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Sorting
-    const sortBy = options?.sortBy || this.primaryKey;
-    const sortOrder = options?.sortOrder || 'DESC';
+    const sortBy = options?.sort_by || this.primaryKey;
+    const sortOrder = options?.sort_order || 'DESC';
     const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
 
     // Pagination

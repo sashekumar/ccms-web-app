@@ -40,12 +40,12 @@ export interface UpdateUserDto {
 
 export interface UserFilters {
   search?: string;
-  isActive?: boolean;
-  roleId?: number;
+  is_active?: boolean;
+  role_id?: number;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedUsers {

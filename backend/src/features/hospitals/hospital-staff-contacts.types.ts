@@ -16,7 +16,6 @@ export interface CreateHospitalStaffContactDto {
   contact_type: string;
   contact_value?: string;
   is_primary?: boolean;
-  legacy_hospital_contact_id?: string;
 }
 
 export interface UpdateHospitalStaffContactDto {

@@ -28,12 +28,12 @@ export class UsersRepository extends BaseRepository<User> {
       request.input('search', sql.NVarChar(200), `%${filters.search}%`);
     }
 
-    if (filters.isActive !== undefined) {
+    if (filters.is_active !== undefined) {
       whereClauses.push('u.is_active = @isActive');
-      request.input('isActive', sql.Bit, filters.isActive);
+      request.input('isActive', sql.Bit, filters.is_active);
     }
 
-    if (filters.roleId) {
+    if (filters.role_id) {
       whereClauses.push(`EXISTS (
         SELECT 1 FROM ${DB_TABLES.USER_ROLES} ur 
         WHERE ur.user_id = u.user_id 
@@ -41,14 +41,14 @@ export class UsersRepository extends BaseRepository<User> {
           AND ur.is_active = 1
           AND (ur.expires_at IS NULL OR ur.expires_at > GETDATE())
       )`);
-      request.input('roleId', sql.BigInt, filters.roleId);
+      request.input('roleId', sql.BigInt, filters.role_id);
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Sorting
-    const sortBy = filters.sortBy || 'user_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'user_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY u.${sortBy} ${sortOrder}`;
 
     // Get total count

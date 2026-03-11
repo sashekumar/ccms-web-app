@@ -168,8 +168,7 @@ export class ProductViewComponent implements OnInit, OnDestroy {
       this.limitFormData = {
         limit_type: limit.limit_type || '',
         limit_amount: limit.limit_amount || 0,
-        is_active: limit.is_active,
-        legacy_product_limit_id: limit.legacy_product_limit_id || undefined
+        is_active: limit.is_active
       };
     } else {
       this.editingLimit = null;
@@ -304,8 +303,7 @@ export class ProductViewComponent implements OnInit, OnDestroy {
         copay_type: copay.copay_type || '',
         copay_value: copay.copay_value || 0,
         applies_to: copay.applies_to || '',
-        is_active: copay.is_active,
-        legacy_product_copay_id: copay.legacy_product_copay_id || undefined
+        is_active: copay.is_active
       };
     } else {
       this.editingCopay = null;

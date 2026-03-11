@@ -18,7 +18,6 @@ export interface CreateHospitalStaffDto {
   staff_type?: string;
   specialty?: string;
   is_active?: boolean;
-  legacy_hospital_staff_id?: string;
 }
 
 export interface UpdateHospitalStaffDto {

@@ -253,4 +253,673 @@ describe('MemberFormComponent', () => {
       expect(component['destroy$'].complete).toHaveBeenCalled();
     });
   });
+
+  describe('Loading States', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+it('should reset loading state after loading member', () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      mockMemberService.getMemberById.mockReturnValue(of(mockMember));
+
+      component.ngOnInit();
+
+      expect(component.loading).toBe(false);
+    });
+
+    it('should reset submitting state after create', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test User',
+        enrollment_date: '2024-01-01'
+      });
+
+      mockMemberService.createMember.mockReturnValue(of('123'));
+
+      component.onSubmit();
+
+      expect(component.submitting).toBe(false);
+    });
+
+    it('should reset submitting state after update', () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      component.ngOnInit();
+
+      component.memberForm.patchValue({
+        full_name: 'Updated Name'
+      });
+
+      mockMemberService.updateMember.mockReturnValue(of(void 0));
+
+      component.onSubmit();
+
+      expect(component.submitting).toBe(false);
+    });
+
+    it('should clear submitting on create error', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test User',
+        enrollment_date: '2024-01-01'
+      });
+
+      mockMemberService.createMember.mockReturnValue(
+        throwError(() => new Error('Create failed'))
+      );
+
+      component.onSubmit();
+
+      expect(component.submitting).toBe(false);
+    });
+
+    it('should clear submitting on update error', () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      component.ngOnInit();
+
+      mockMemberService.updateMember.mockReturnValue(
+        throwError(() => new Error('Update failed'))
+      );
+
+      component.onSubmit();
+
+      expect(component.submitting).toBe(false);
+    });
+
+    it('should show IC check pending state', async () => {
+      component.memberForm.patchValue({
+        ic_no: '900101011234'
+      });
+
+      // Immediately after typing, should be pending
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Wait for IC check to complete
+      await new Promise(resolve => setTimeout(resolve, 600));
+      expect(component.icCheckPending).toBe(false);
+    });
+  });
+
+  describe('Form Validation Edge Cases', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should handle empty IC number', async () => {
+      component.memberForm.patchValue({
+        ic_no: ''
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      expect(mockMemberService.checkIC).not.toHaveBeenCalled();
+      expect(component.icExists).toBe(false);
+    });
+
+    it('should handle IC number with only whitespace', async () => {
+      component.memberForm.patchValue({
+        ic_no: '   '
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      expect(mockMemberService.checkIC).not.toHaveBeenCalled();
+      expect(component.icExists).toBe(false);
+    });
+
+    it('should validate bank account number max length', () => {
+      const longBankAccNo = 'a'.repeat(51);
+      
+      component.memberForm.patchValue({
+        bank_acc_no: longBankAccNo
+      });
+
+      expect(component.memberForm.get('bank_acc_no')?.hasError('maxlength')).toBe(true);
+    });
+
+    it('should validate IC number max length', () => {
+      const longICNo = 'a'.repeat(51);
+      
+      component.memberForm.patchValue({
+        ic_no: longICNo
+      });
+
+      expect(component.memberForm.get('ic_no')?.hasError('maxlength')).toBe(true);
+    });
+
+    it('should allow valid enrollment date (today)', () => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      component.memberForm.patchValue({
+        enrollment_date: today
+      });
+
+      component.validateEnrollmentDate();
+
+      expect(component.memberForm.get('enrollment_date')?.hasError('futureDate')).toBeFalsy();
+    });
+
+    it('should allow termination date same as enrollment date', () => {
+      component.memberForm.patchValue({
+        enrollment_date: '2024-01-01',
+        termination_date: '2024-01-01'
+      });
+
+      component.validateTerminationDate();
+
+      expect(component.memberForm.get('termination_date')?.hasError('beforeEnrollment')).toBeFalsy();
+    });
+
+    it('should validate termination date is after enrollment date', () => {
+      component.memberForm.patchValue({
+        enrollment_date: '2024-02-01',
+        termination_date: '2024-01-15'
+      });
+
+      component.validateTerminationDate();
+      expect(component.memberForm.get('termination_date')?.hasError('beforeEnrollment')).toBe(true);
+    });
+
+    it('should validate termination date error message', () => {
+      component.memberForm.get('termination_date')?.setErrors({ beforeEnrollment: true });
+
+      expect(component.getTerminationDateError()).toBe('Termination date must be after enrollment date');
+    });
+
+    it('should validate enrollment date error messages', () => {
+      component.memberForm.get('enrollment_date')?.setErrors({ required: true });
+      expect(component.getEnrollmentDateError()).toBe('Enrollment date is required');
+
+      component.memberForm.get('enrollment_date')?.setErrors({ futureDate: true });
+      expect(component.getEnrollmentDateError()).toBe('Enrollment date cannot be in the future');
+    });
+
+    it('should return empty string for valid fields', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test User',
+        enrollment_date: '2024-01-01'
+      });
+      component.memberForm.markAllAsTouched();
+      
+      expect(component.getFieldError('full_name')).toBe('');
+      expect(component.getTerminationDateError()).toBe('');
+      expect(component.getEnrollmentDateError()).toBe('');
+    });
+
+    it('should return "Invalid value" for unknown error', () => {
+      component.memberForm.get('full_name')?.setErrors({ customError: true });
+
+      expect(component.getFieldError('full_name')).toBe('Invalid value');
+    });
+  });
+
+  describe('Error Handling Scenarios', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should handle create error with custom message', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test User',
+        enrollment_date: '2024-01-01'
+      });
+
+      const error = { error: { message: 'Custom error message' } };
+      mockMemberService.createMember.mockReturnValue(throwError(() => error));
+
+      component.onSubmit();
+
+      expect(mockToast.error).toHaveBeenCalledWith('Custom error message');
+    });
+
+    it('should handle update error with custom message', () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      component.ngOnInit();
+
+      const error = { error: { message: 'Custom update error' } };
+      mockMemberService.updateMember.mockReturnValue(throwError(() => error));
+
+      component.onSubmit();
+
+      expect(mockToast.error).toHaveBeenCalledWith('Custom update error');
+    });
+
+    it('should handle IC check network error', async () => {
+      mockMemberService.checkIC.mockReturnValue(
+        throwError(() => new Error('Network error'))
+      );
+
+      component.memberForm.patchValue({
+        ic_no: '900101011234'
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Error checking IC:', expect.any(Error));
+      expect(component.icCheckPending).toBe(false);
+    });
+
+    it('should handle generic create error', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test User',
+        enrollment_date: '2024-01-01'
+      });
+
+      mockMemberService.createMember.mockReturnValue(
+        throwError(() => new Error('Unknown error'))
+      );
+
+      component.onSubmit();
+
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to create member');
+    });
+
+    it('should handle generic update error', () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      component.ngOnInit();
+
+      mockMemberService.updateMember.mockReturnValue(
+        throwError(() => new Error('Unknown error'))
+      );
+
+      component.onSubmit();
+
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to update member');
+    });
+  });
+
+  describe('Submit Button States', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should not submit with invalid form', () => {
+      component.memberForm.patchValue({
+        full_name: ''
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).not.toHaveBeenCalled();
+      expect(mockToast.error).toHaveBeenCalledWith('Please fix form errors before submitting');
+    });
+
+    it('should mark all fields as touched on invalid submit', () => {
+      component.memberForm.patchValue({
+        full_name: ''
+      });
+
+      component.onSubmit();
+
+      expect(component.memberForm.get('full_name')?.touched).toBe(true);
+      expect(component.memberForm.get('enrollment_date')?.touched).toBe(true);
+    });
+
+    it('should not submit when IC exists', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test User',
+        enrollment_date: '2024-01-01'
+      });
+
+      component.icExists = true;
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).not.toHaveBeenCalled();
+      expect(mockToast.error).toHaveBeenCalledWith('IC number already exists');
+    });
+
+    it('should handle multiple submits (component does not prevent)', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test User',
+        enrollment_date: '2024-01-01'
+      });
+
+      mockMemberService.createMember.mockReturnValue(of('123'));
+
+      component.onSubmit();
+      
+      // Component allows multiple submits as there's no guard in onSubmit
+      expect(mockMemberService.createMember).toHaveBeenCalled();
+    });
+  });
+
+  describe('Field Interactions', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should handle gender selection changes', () => {
+      component.memberForm.patchValue({ gender: 'Male' });
+      expect(component.memberForm.value.gender).toBe('Male');
+
+      component.memberForm.patchValue({ gender: 'Female' });
+      expect(component.memberForm.value.gender).toBe('Female');
+
+      component.memberForm.patchValue({ gender: 'Unspecified' });
+      expect(component.memberForm.value.gender).toBe('Unspecified');
+    });
+
+    it('should handle member type changes', () => {
+      component.memberForm.patchValue({ member_type: 'Dependent' });
+      expect(component.memberForm.value.member_type).toBe('Dependent');
+
+      component.memberForm.patchValue({ member_type: 'Other' });
+      expect(component.memberForm.value.member_type).toBe('Other');
+    });
+
+    it('should handle bank ID field with numeric strings', () => {
+      component.memberForm.patchValue({ bank_id: '123' });
+      expect(component.memberForm.value.bank_id).toBe('123');
+    });
+
+    it('should handle clearing optional fields', () => {
+      component.memberForm.patchValue({
+        ic_no: '900101011234',
+        dob: '1990-01-01',
+        termination_date: '2024-12-31',
+        bank_acc_no: '1234567890'
+      });
+
+      component.memberForm.patchValue({
+        ic_no: '',
+        dob: '',
+        termination_date: '',
+        bank_acc_no: ''
+      });
+
+      expect(component.memberForm.value.ic_no).toBe('');
+      expect(component.memberForm.value.dob).toBe('');
+      expect(component.memberForm.value.termination_date).toBe('');
+      expect(component.memberForm.value.bank_acc_no).toBe('');
+    });
+
+    it('should get today date in correct format', () => {
+      const today = component.todayDate;
+      const expectedFormat = /^\d{4}-\d{2}-\d{2}$/;
+      
+      expect(today).toMatch(expectedFormat);
+    });
+  });
+
+  describe('Form DTO Preparation', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should prepare create DTO with all fields', () => {
+      component.memberForm.patchValue({
+        full_name: 'John Doe',
+        ic_no: '900101011234',
+        member_type: 'Principal',
+        dob: '1990-01-01',
+        gender: 'Male',
+        enrollment_date: '2024-01-01',
+        termination_date: '2024-12-31',
+        bank_id: '5',
+        bank_acc_no: '1234567890'
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).toHaveBeenCalledWith({
+        full_name: 'John Doe',
+        ic_no: '900101011234',
+        member_type: 'Principal',
+        dob: '1990-01-01',
+        gender: true,
+        enrollment_date: '2024-01-01',
+        termination_date: '2024-12-31',
+        bank_id: 5,
+        bank_acc_no: '1234567890'
+      });
+    });
+
+    it('should prepare create DTO with minimal fields', () => {
+      component.memberForm.patchValue({
+        full_name: 'Jane Doe',
+        member_type: 'Principal',
+        gender: 'Unspecified',
+        enrollment_date: '2024-01-01'
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).toHaveBeenCalledWith({
+        full_name: 'Jane Doe',
+        ic_no: undefined,
+        member_type: 'Principal',
+        dob: undefined,
+        gender: undefined,
+        enrollment_date: '2024-01-01',
+        termination_date: undefined,
+        bank_id: undefined,
+        bank_acc_no: undefined
+      });
+    });
+
+    it('should prepare update DTO with all fields', () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      component.ngOnInit();
+
+      component.memberForm.patchValue({
+        full_name: 'John Updated',
+        ic_no: '900101011234',
+        gender: 'Female'
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.updateMember).toHaveBeenCalledWith('1', expect.objectContaining({
+        full_name: 'John Updated',
+        ic_no: '900101011234',
+        gender: false
+      }));
+    });
+
+    it('should convert Male gender to true', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test',
+        gender: 'Male',
+        enrollment_date: '2024-01-01'
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).toHaveBeenCalledWith(
+        expect.objectContaining({ gender: true })
+      );
+    });
+
+    it('should convert Female gender to false', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test',
+        gender: 'Female',
+        enrollment_date: '2024-01-01'
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).toHaveBeenCalledWith(
+        expect.objectContaining({ gender: false })
+      );
+    });
+
+    it('should convert Unspecified gender to undefined', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test',
+        gender: 'Unspecified',
+        enrollment_date: '2024-01-01'
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).toHaveBeenCalledWith(
+        expect.objectContaining({ gender: undefined })
+      );
+    });
+
+    it('should parse bank_id as integer', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test',
+        enrollment_date: '2024-01-01',
+        bank_id: '42'
+      });
+
+      component.onSubmit();
+
+      expect(mockMemberService.createMember).toHaveBeenCalledWith(
+        expect.objectContaining({ bank_id: 42 })
+      );
+    });
+  });
+
+  describe('Navigation Edge Cases', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should navigate without prompt if form is pristine', () => {
+      component.onCancel();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+    });
+
+    it('should not navigate if user cancels confirmation', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(false);
+      
+      component.memberForm.markAsDirty();
+      component.onCancel();
+
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+    });
+
+    it('should navigate to list on cancel in create mode', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      
+      component.isEditMode = false;
+      component.memberForm.markAsDirty();
+      component.onCancel();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+    });
+
+    it('should navigate to detail after successful create', () => {
+      component.memberForm.patchValue({
+        full_name: 'Test',
+        enrollment_date: '2024-01-01'
+      });
+
+      mockMemberService.createMember.mockReturnValue(of('new-id-123'));
+
+      component.onSubmit();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', 'new-id-123']);
+    });
+
+    it('should navigate to detail after successful update', () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      component.ngOnInit();
+
+      component.onSubmit();
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', '1']);
+    });
+  });
+
+  describe('IC Validation Advanced', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should not check IC in edit mode with pristine form', async () => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      
+      component.ngOnInit();
+      
+      // Wait for any pending checks
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // Reset the call count after initial load
+      mockMemberService.checkIC.mockClear();
+
+      // IC is loaded but form is pristine, should not check again
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      expect(mockMemberService.checkIC).not.toHaveBeenCalled();
+    });
+
+    it('should clear IC errors when IC is removed', async () => {
+      component.memberForm.patchValue({
+        ic_no: '900101011234'
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // Now clear the IC
+      component.memberForm.patchValue({
+        ic_no: ''
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      expect(component.icExists).toBe(false);
+    });
+
+    it('should handle rapid IC typing with debounce', async () => {
+      // Type rapidly
+      component.memberForm.patchValue({ ic_no: '9' });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      component.memberForm.patchValue({ ic_no: '90' });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      component.memberForm.patchValue({ ic_no: '900' });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      component.memberForm.patchValue({ ic_no: '900101011234' });
+      
+      // Should not have checked yet
+      expect(mockMemberService.checkIC).not.toHaveBeenCalled();
+
+      // Wait for debounce
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // Should only check once with the final value
+      expect(mockMemberService.checkIC).toHaveBeenCalledTimes(1);
+      expect(mockMemberService.checkIC).toHaveBeenCalledWith('900101011234', undefined);
+    });
+  });
+
+  describe('Gender Conversion in Patching', () => {
+    beforeEach(() => {
+      mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+      fixture.detectChanges();
+    });
+
+    it('should convert true to Male when patching form', () => {
+      const memberWithMaleGender = { ...mockMember, gender: true };
+      mockMemberService.getMemberById.mockReturnValue(of(memberWithMaleGender));
+
+      component.ngOnInit();
+
+      expect(component.memberForm.value.gender).toBe('Male');
+    });
+
+    it('should convert false to Female when patching form', () => {
+      const memberWithFemaleGender = { ...mockMember, gender: false };
+      mockMemberService.getMemberById.mockReturnValue(of(memberWithFemaleGender));
+
+      component.ngOnInit();
+
+      expect(component.memberForm.value.gender).toBe('Female');
+    });
+
+    it('should convert undefined/null to Unspecified when patching form', () => {
+      const memberWithNoGender = { ...mockMember, gender: undefined };
+      mockMemberService.getMemberById.mockReturnValue(of(memberWithNoGender));
+
+      component.ngOnInit();
+
+      expect(component.memberForm.value.gender).toBe('Unspecified');
+    });
+  });
 });

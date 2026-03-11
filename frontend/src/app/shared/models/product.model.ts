@@ -40,7 +40,7 @@ export interface UpdateProductDto {
 
 export interface ProductFilters {
   search?: string;           // Search in plan_code or plan_name
-  insurerName?: string;      // Filter by insurer
+  insurer_name?: string;      // Filter by insurer
   is_active?: boolean;       // Filter by active status
   page?: number;
   limit?: number;

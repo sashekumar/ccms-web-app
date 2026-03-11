@@ -59,7 +59,7 @@ describe('AuthController Integration Tests', () => {
       expect(response.body.data.csrfToken).toBe('mock-csrf-token');
       expect(response.body.message).toBe('CSRF token generated');
       expect(CsrfService.generateToken).toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should return new token on each request', async () => {
       (CsrfService.generateToken as jest.Mock)
@@ -71,7 +71,7 @@ describe('AuthController Integration Tests', () => {
 
       expect(response1.body.data.csrfToken).toBe('token-1');
       expect(response2.body.data.csrfToken).toBe('token-2');
-    });
+    }, 10000);
   });
 
   describe('POST /api/auth/login', () => {

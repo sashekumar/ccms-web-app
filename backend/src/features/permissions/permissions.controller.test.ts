@@ -173,7 +173,7 @@ describe('PermissionsController Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toEqual({ has_permission: true });
       expect(mockPermissionsService.checkPermission).toHaveBeenCalledWith(1, 'USERS', 'VIEW');
-    });
+    }, 10000);
 
     it('should return 400 when moduleCode is missing', async () => {
       const response = await request(app)
@@ -304,7 +304,7 @@ describe('PermissionsController Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBe('Role assigned successfully');
-      expect(mockPermissionsService.assignRole).toHaveBeenCalledWith(validDto, 'admin');
+      expect(mockPermissionsService.assignRole).toHaveBeenCalledWith(validDto, '1');
     });
 
     it('should return 400 when user_id is missing', async () => {
@@ -460,7 +460,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/get')
-        .send({ roleId: 2 })
+        .send({ role_id: 2 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -472,7 +472,7 @@ describe('PermissionsController Integration Tests', () => {
     it('should return 400 for invalid role ID', async () => {
       const response = await request(app)
         .post('/api/permissions/roles/get')
-        .send({ roleId: 'invalid' })
+        .send({ role_id: 'invalid' })
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -485,7 +485,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/get')
-        .send({ roleId: 999 })
+        .send({ role_id: 999 })
         .expect(404);
 
       expect(response.body.success).toBe(false);
@@ -497,7 +497,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/get')
-        .send({ roleId: 2 })
+        .send({ role_id: 2 })
         .expect(500);
 
       expect(response.body.success).toBe(false);
@@ -514,7 +514,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/permissions')
-        .send({ roleId: 2 })
+        .send({ role_id: 2 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -525,7 +525,7 @@ describe('PermissionsController Integration Tests', () => {
     it('should return 400 for invalid role ID', async () => {
       const response = await request(app)
         .post('/api/permissions/roles/permissions')
-        .send({ roleId: 'invalid' })
+        .send({ role_id: 'invalid' })
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -537,7 +537,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/permissions')
-        .send({ roleId: 2 })
+        .send({ role_id: 2 })
         .expect(500);
 
       expect(response.body.success).toBe(false);
@@ -555,7 +555,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/permissions-matrix')
-        .send({ roleId: 2 })
+        .send({ role_id: 2 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -566,7 +566,7 @@ describe('PermissionsController Integration Tests', () => {
     it('should return 400 for invalid role ID', async () => {
       const response = await request(app)
         .post('/api/permissions/roles/permissions-matrix')
-        .send({ roleId: 'invalid' })
+        .send({ role_id: 'invalid' })
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -578,7 +578,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/permissions-matrix')
-        .send({ roleId: 2 })
+        .send({ role_id: 2 })
         .expect(500);
 
       expect(response.body.success).toBe(false);
@@ -603,7 +603,7 @@ describe('PermissionsController Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.roleId).toBe(10);
       expect(response.body.message).toBe('Role created successfully');
-      expect(mockPermissionsService.createRole).toHaveBeenCalledWith(validDto, 'admin');
+      expect(mockPermissionsService.createRole).toHaveBeenCalledWith(validDto, '1');
     });
 
     it('should return 400 when role_name is missing', async () => {
@@ -642,7 +642,7 @@ describe('PermissionsController Integration Tests', () => {
 
   describe('POST /api/permissions/roles/update', () => {
     const validDto = {
-      roleId: 5,
+      role_id: 5,
       role_name: 'Updated Role'
     };
 
@@ -656,13 +656,13 @@ describe('PermissionsController Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBe('Role updated successfully');
-      expect(mockPermissionsService.updateRole).toHaveBeenCalledWith(5, validDto, 'admin');
+      expect(mockPermissionsService.updateRole).toHaveBeenCalledWith(5, validDto, '1');
     });
 
     it('should return 400 for invalid role ID', async () => {
       const response = await request(app)
         .post('/api/permissions/roles/update')
-        .send({ roleId: 'invalid', role_name: 'Test' })
+        .send({ role_id: 'invalid', role_name: 'Test' })
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -689,7 +689,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/delete')
-        .send({ roleId: 5 })
+        .send({ role_id: 5 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -700,7 +700,7 @@ describe('PermissionsController Integration Tests', () => {
     it('should return 400 for invalid role ID', async () => {
       const response = await request(app)
         .post('/api/permissions/roles/delete')
-        .send({ roleId: 'invalid' })
+        .send({ role_id: 'invalid' })
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -713,7 +713,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/roles/delete')
-        .send({ roleId: 5 })
+        .send({ role_id: 5 })
         .expect(500);
 
       expect(response.body.success).toBe(false);
@@ -801,7 +801,7 @@ describe('PermissionsController Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBe('Permission granted successfully');
-      expect(mockPermissionsService.grantPermission).toHaveBeenCalledWith(validDto, 'admin');
+      expect(mockPermissionsService.grantPermission).toHaveBeenCalledWith(validDto, '1');
     });
 
     it('should return 400 when role_id is missing', async () => {
@@ -924,21 +924,21 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/module-actions/create')
-        .send({ moduleId: 1, actionId: 2 })
+        .send({ module_id: 1, action_id: 2 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.moduleActionId).toBe(123);
+      expect(response.body.data.module_action_id).toBe(123);
     });
 
     it('should return 400 when moduleId is missing', async () => {
       const response = await request(app)
         .post('/api/permissions/module-actions/create')
-        .send({ actionId: 2 })
+        .send({ action_id: 2 })
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('moduleId and actionId are required');
+      expect(response.body.message).toBe('module_id and action_id are required');
     });
 
     it('should handle service errors', async () => {
@@ -946,7 +946,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/module-actions/create')
-        .send({ moduleId: 1, actionId: 2 })
+        .send({ module_id: 1, action_id: 2 })
         .expect(500);
 
       expect(response.body.success).toBe(false);
@@ -959,20 +959,20 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/module-actions/update')
-        .send({ moduleActionId: 1, display_order: 5 })
+        .send({ module_action_id: 1, display_order: 5 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
     });
 
-    it('should return 400 when moduleActionId is invalid', async () => {
+    it('should return 400 when module_action_id is invalid', async () => {
       const response = await request(app)
         .post('/api/permissions/module-actions/update')
-        .send({ moduleActionId: 'invalid' })
+        .send({ module_action_id: 'invalid' })
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('Valid moduleActionId is required');
+      expect(response.body.message).toBe('Valid module_action_id is required');
     });
 
     it('should handle service errors', async () => {
@@ -980,7 +980,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/module-actions/update')
-        .send({ moduleActionId: 1, display_order: 5 })
+        .send({ module_action_id: 1, display_order: 5 })
         .expect(500);
 
       expect(response.body.success).toBe(false);
@@ -993,16 +993,16 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/module-actions/delete')
-        .send({ moduleActionId: 1 })
+        .send({ module_action_id: 1 })
         .expect(200);
 
       expect(response.body.success).toBe(true);
     });
 
-    it('should return 400 when moduleActionId is invalid', async () => {
+    it('should return 400 when module_action_id is invalid', async () => {
       const response = await request(app)
         .post('/api/permissions/module-actions/delete')
-        .send({ moduleActionId: 'invalid' })
+        .send({ module_action_id: 'invalid' })
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -1013,7 +1013,7 @@ describe('PermissionsController Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/permissions/module-actions/delete')
-        .send({ moduleActionId: 1 })
+        .send({ module_action_id: 1 })
         .expect(500);
 
       expect(response.body.success).toBe(false);

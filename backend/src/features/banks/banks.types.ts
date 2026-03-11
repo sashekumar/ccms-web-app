@@ -21,24 +21,22 @@ export interface BankListItem {
 export interface CreateBankDto {
   bank_code: string;
   bank_name: string;
-  legacy_bank_id?: string;
   is_active?: boolean;
 }
 
 export interface UpdateBankDto {
   bank_code?: string;
   bank_name?: string;
-  legacy_bank_id?: string;
   is_active?: boolean;
 }
 
 export interface BankFilters {
   search?: string;
-  isActive?: boolean;
+  is_active?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedBanks {

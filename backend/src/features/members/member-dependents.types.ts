@@ -23,7 +23,6 @@ export interface MemberDependent {
  * Create Member Dependent DTO
  */
 export interface CreateMemberDependentDto {
-  legacy_dependent_id?: string;
   principal_member_id: string;
   full_name: string;
   ic_no?: string;
@@ -37,7 +36,6 @@ export interface CreateMemberDependentDto {
  */
 export interface UpdateMemberDependentDto {
   dependent_id: string;
-  legacy_dependent_id?: string;
   full_name?: string;
   ic_no?: string;
   relationship_id?: number;

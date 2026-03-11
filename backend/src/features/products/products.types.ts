@@ -27,7 +27,6 @@ export interface CreateProductDto {
   plan_name?: string;
   insurer_name?: string;
   is_active?: boolean;
-  legacy_product_id?: string;
 }
 
 export interface UpdateProductDto {
@@ -35,17 +34,16 @@ export interface UpdateProductDto {
   plan_name?: string;
   insurer_name?: string;
   is_active?: boolean;
-  legacy_product_id?: string;
 }
 
 export interface ProductFilters {
   search?: string;           // Search in plan_code or plan_name
-  insurerName?: string;      // Filter by insurer
-  isActive?: boolean;        // Filter by active status
+  insurer_name?: string;     // Filter by insurer
+  is_active?: boolean;       // Filter by active status
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedProducts {

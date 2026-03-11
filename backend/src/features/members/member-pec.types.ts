@@ -23,7 +23,6 @@ export interface MemberPEC {
  * Create Member PEC DTO
  */
 export interface CreateMemberPECDto {
-  legacy_pec_id?: string;
   dependent_id: string;
   condition_code?: string;
   condition_name?: string;
@@ -37,7 +36,6 @@ export interface CreateMemberPECDto {
  */
 export interface UpdateMemberPECDto {
   pec_id: string;
-  legacy_pec_id?: string;
   condition_code?: string;
   condition_name?: string;
   diagnosis_date?: Date | string;

@@ -8,6 +8,7 @@ import { MemberService } from '../../../core/services/member.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { MemberListItem } from '../../../shared/models/member.model';
+import { PERMISSIONS } from '../../../core/constants/permissions.constants';
 
 describe('MemberListComponent', () => {
   let component: MemberListComponent;
@@ -374,6 +375,562 @@ describe('MemberListComponent', () => {
 
       expect(component['destroy$'].next).toHaveBeenCalled();
       expect(component['destroy$'].complete).toHaveBeenCalled();
+    });
+  });
+
+  describe('Pagination Edge Cases', () => {
+    beforeEach(() => {
+      mockMemberService.getMembers.mockReturnValue(of(mockPaginatedResponse));
+    });
+
+    it('should handle single page scenario', () => {
+      component.pagination = {
+        page: 1,
+        limit: 25,
+        total: 10,
+        totalPages: 1
+      };
+
+      const pages = component.getPageNumbers();
+
+      expect(pages).toEqual([1]);
+      expect(component.pagination.page).toBe(1);
+    });
+
+    it('should handle empty results pagination', () => {
+      const emptyResponse = {
+        ...mockPaginatedResponse,
+        members: [],
+        total: 0,
+        totalPages: 0
+      };
+      mockMemberService.getMembers.mockReturnValue(of(emptyResponse));
+
+      component.loadMembers();
+
+      expect(component.pagination.totalPages).toBe(0);
+      expect(component.members.length).toBe(0);
+    });
+
+    it('should handle last page with partial results', () => {
+      component.pagination = {
+        page: 4,
+        limit: 25,
+        total: 85,
+        totalPages: 4
+      };
+
+      expect(component.getEndIndex()).toBe(85);
+      expect(component.getStartIndex()).toBe(76);
+    });
+
+    it('should generate page numbers for less than 5 pages', () => {
+      component.pagination = {
+        page: 2,
+        limit: 25,
+        total: 75,
+        totalPages: 3
+      };
+
+      const pages = component.getPageNumbers();
+
+      expect(pages).toEqual([1, 2, 3]);
+    });
+
+    it('should generate page numbers at start boundary', () => {
+      component.pagination = {
+        page: 1,
+        limit: 25,
+        total: 200,
+        totalPages: 8
+      };
+
+      const pages = component.getPageNumbers();
+
+      expect(pages).toEqual([1, 2, 3, 4, 5]);
+      expect(pages[0]).toBe(1);
+    });
+
+    it('should generate page numbers at end boundary', () => {
+      component.pagination = {
+        page: 8,
+        limit: 25,
+        total: 200,
+        totalPages: 8
+      };
+
+      const pages = component.getPageNumbers();
+
+      expect(pages).toEqual([4, 5, 6, 7, 8]);
+      expect(pages[pages.length - 1]).toBe(8);
+    });
+
+    it('should center page numbers around current page', () => {
+      component.pagination = {
+        page: 5,
+        limit: 25,
+        total: 250,
+        totalPages: 10
+      };
+
+      const pages = component.getPageNumbers();
+
+      expect(pages).toEqual([3, 4, 5, 6, 7]);
+      expect(pages[2]).toBe(component.pagination.page);
+    });
+  });
+
+  describe('Filter Combinations', () => {
+    beforeEach(() => {
+      mockMemberService.getMembers.mockReturnValue(of(mockPaginatedResponse));
+    });
+
+    it('should filter by search and member type', () => {
+      component.filters.search = 'John';
+      component.filters.member_type = 'Principal';
+
+      component.onFilterChange();
+
+      expect(mockMemberService.getMembers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: 'John',
+          member_type: 'Principal',
+          page: 1
+        })
+      );
+    });
+
+    it('should filter by search and status', () => {
+      component.filters.search = 'Doe';
+      component.filters.is_deleted = false;
+
+      component.onFilterChange();
+
+      expect(mockMemberService.getMembers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: 'Doe',
+          is_deleted: false,
+          page: 1
+        })
+      );
+    });
+
+    it('should filter by member type and status', () => {
+      component.filters.member_type = 'Dependent';
+      component.filters.is_deleted = true;
+
+      component.onFilterChange();
+
+      expect(mockMemberService.getMembers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          member_type: 'Dependent',
+          is_deleted: true,
+          page: 1
+        })
+      );
+    });
+
+    it('should apply all filters together', () => {
+      component.filters = {
+        search: 'Test',
+        member_type: 'Principal',
+        is_deleted: false,
+        page: 1,
+        limit: 50
+      };
+
+      component.onFilterChange();
+
+      expect(mockMemberService.getMembers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: 'Test',
+          member_type: 'Principal',
+          is_deleted: false,
+          limit: 50
+        })
+      );
+    });
+
+    it('should clear member type filter', () => {
+      component.filters.member_type = 'Principal';
+      component.onFilterChange();
+
+      component.filters.member_type = undefined;
+      component.onFilterChange();
+
+      expect(mockMemberService.getMembers).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          member_type: undefined
+        })
+      );
+    });
+
+    it('should reset page when changing limit', () => {
+      component.filters.page = 3;
+      component.filters.limit = 50;
+
+      component.onFilterChange();
+
+      expect(component.filters.page).toBe(1);
+    });
+  });
+
+  describe('Error Scenarios', () => {
+    it('should handle network timeout gracefully', () => {
+      const timeoutError = { name: 'TimeoutError', message: 'Request timeout' };
+      mockMemberService.getMembers.mockReturnValue(throwError(() => timeoutError));
+
+      component.loadMembers();
+
+      expect(component.loading).toBe(false);
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to load members');
+    });
+
+    it('should handle rapid filter changes', async () => {
+      mockMemberService.getMembers.mockReturnValue(of(mockPaginatedResponse));
+
+      component.filters.member_type = 'Principal';
+      component.onFilterChange();
+
+      component.filters.member_type = 'Dependent';
+      component.onFilterChange();
+
+      component.filters.member_type = 'Other';
+      component.onFilterChange();
+
+      // Should have called getMembers for each change
+      expect(mockMemberService.getMembers).toHaveBeenCalledTimes(3);
+    });
+
+    it('should handle error during delete operation', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      const error = { error: { message: 'Cannot delete member' } };
+      mockMemberService.deleteMember.mockReturnValue(throwError(() => error));
+
+      component.deleteMember(mockMembers[0]);
+
+      expect(component.loading).toBe(false);
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to delete member');
+    });
+
+    it('should handle error during restore operation', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      const error = { error: { message: 'Cannot restore member' } };
+      mockMemberService.restoreMember.mockReturnValue(throwError(() => error));
+
+      component.restoreMember(mockMembers[0]);
+
+      expect(component.loading).toBe(false);
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to restore member');
+    });
+
+    it('should continue working after load error', () => {
+      // First call fails
+      mockMemberService.getMembers.mockReturnValueOnce(
+        throwError(() => new Error('Network error'))
+      );
+
+      component.loadMembers();
+
+      expect(component.loading).toBe(false);
+
+      // Second call succeeds
+      mockMemberService.getMembers.mockReturnValue(of(mockPaginatedResponse));
+
+      component.loadMembers();
+
+      expect(component.members.length).toBe(2);
+      expect(component.loading).toBe(false);
+    });
+  });
+
+  describe('Empty State Handling', () => {
+    it('should handle empty results with active filters', () => {
+      const emptyResponse = {
+        ...mockPaginatedResponse,
+        members: [],
+        total: 0,
+        totalPages: 0
+      };
+      mockMemberService.getMembers.mockReturnValue(of(emptyResponse));
+
+      component.filters.search = 'NonexistentName';
+      component.loadMembers();
+
+      expect(component.members.length).toBe(0);
+      expect(component.stats.total).toBe(0);
+    });
+
+    it('should handle empty results without filters', () => {
+      const emptyResponse = {
+        members: [],
+        page: 1,
+        limit: 25,
+        total: 0,
+        totalPages: 0,
+        total_members: 0,
+        active_members: 0,
+        deleted_members: 0
+      };
+      mockMemberService.getMembers.mockReturnValue(of(emptyResponse));
+
+      component.filters = {
+        search: '',
+        page: 1,
+        limit: 25
+      };
+      component.loadMembers();
+
+      expect(component.members.length).toBe(0);
+      expect(component.stats.total).toBe(0);
+      expect(component.stats.active).toBe(0);
+      expect(component.stats.deleted).toBe(0);
+    });
+
+    it('should calculate stats for empty member list', () => {
+      const emptyResponse = {
+        members: [],
+        page: 1,
+        limit: 25,
+        total: 0,
+        totalPages: 0
+      };
+      mockMemberService.getMembers.mockReturnValue(of(emptyResponse));
+
+      component.loadMembers();
+
+      expect(component.stats.total).toBe(0);
+      expect(component.stats.active).toBe(0);
+      expect(component.stats.deleted).toBe(0);
+    });
+  });
+
+  describe('Stats Calculation', () => {
+    it('should use stats from API response when provided', () => {
+      const responseWithStats = {
+        ...mockPaginatedResponse,
+        stats: {
+          total_members: 150,
+          active_members: 120,
+          deleted_members: 30
+        }
+      };
+      mockMemberService.getMembers.mockReturnValue(of(responseWithStats));
+
+      component.loadMembers();
+
+      expect(component.stats.total).toBe(150);
+      expect(component.stats.active).toBe(120);
+      expect(component.stats.deleted).toBe(30);
+    });
+
+    it('should calculate stats with only deleted members', () => {
+      const deletedMembers = [
+        { ...mockMembers[0], is_deleted: true },
+        { ...mockMembers[1], is_deleted: true }
+      ];
+      const responseWithDeleted = {
+        ...mockPaginatedResponse,
+        members: deletedMembers
+      };
+      mockMemberService.getMembers.mockReturnValue(of(responseWithDeleted));
+
+      component.loadMembers();
+
+      expect(component.stats.active).toBe(0);
+      expect(component.stats.deleted).toBe(2);
+    });
+
+    it('should calculate stats with mixed active and deleted members', () => {
+      const mixedMembers = [
+        { ...mockMembers[0], is_deleted: false },
+        { ...mockMembers[1], is_deleted: true }
+      ];
+      const responseWithMixed = {
+        ...mockPaginatedResponse,
+        members: mixedMembers
+      };
+      mockMemberService.getMembers.mockReturnValue(of(responseWithMixed));
+
+      component.loadMembers();
+
+      expect(component.stats.active).toBe(1);
+      expect(component.stats.deleted).toBe(1);
+    });
+
+    it('should fall back to total when stats are not provided', () => {
+      const responseWithoutStats = {
+        members: mockMembers,
+        page: 1,
+        limit: 25,
+        total: 50,
+        totalPages: 2
+      };
+      mockMemberService.getMembers.mockReturnValue(of(responseWithoutStats));
+
+      component.loadMembers();
+
+      expect(component.stats.total).toBe(50);
+    });
+  });
+
+  describe('Search Functionality', () => {
+    beforeEach(() => {
+      mockMemberService.getMembers.mockReturnValue(of(mockPaginatedResponse));
+      component.ngOnInit();
+    });
+
+    it('should handle search with special characters', async () => {
+      component.onSearchChange('John\'s-Name');
+
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      expect(component.filters.search).toBe('John\'s-Name');
+      expect(mockMemberService.getMembers).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'John\'s-Name' })
+      );
+    });
+
+    it('should handle search clear', async () => {
+      component.onSearchChange('John');
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      component.onSearchChange('');
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      expect(component.filters.search).toBe('');
+    });
+
+    it('should debounce rapid search typing', async () => {
+      const initialCallCount = mockMemberService.getMembers.mock.calls.length;
+      mockMemberService.getMembers.mockClear();
+
+      component.onSearchChange('J');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      component.onSearchChange('Jo');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      component.onSearchChange('Joh');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      component.onSearchChange('John');
+
+      // Wait for debounce
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      // Should call only once with final value after debounce
+      expect(mockMemberService.getMembers).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'John' })
+      );
+    });
+
+    it('should reset page to 1 when searching', async () => {
+      component.filters.page = 5;
+
+      component.onSearchChange('Test');
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      expect(component.filters.page).toBe(1);
+    });
+
+    it('should handle search with numbers', async () => {
+      component.onSearchChange('900101011234');
+
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      expect(component.filters.search).toBe('900101011234');
+    });
+  });
+
+  describe('getInitials Edge Cases', () => {
+    it('should handle names with multiple spaces', () => {
+      expect(component.getInitials('John    Paul    Smith')).toBe('JP');
+    });
+
+    it('should handle names with leading/trailing spaces', () => {
+      expect(component.getInitials('  John Doe  ')).toBe('JD');
+    });
+
+    it('should handle very long names', () => {
+      expect(component.getInitials('Alexander Benjamin Christopher David')).toBe('AB');
+    });
+
+    it('should handle single character names', () => {
+      expect(component.getInitials('A B')).toBe('AB');
+    });
+
+    it('should handle lowercase names', () => {
+      expect(component.getInitials('john doe')).toBe('JD');
+    });
+
+    it('should handle names with special characters', () => {
+      expect(component.getInitials('O\'Brien McDonald')).toBe('OM');
+    });
+  });
+
+  describe('Component State Management', () => {
+    beforeEach(() => {
+      mockMemberService.getMembers.mockReturnValue(of(mockPaginatedResponse));
+    });
+
+    it('should maintain loading state during operations', () => {
+      component.loading = false;
+
+      component.loadMembers();
+
+      expect(component.loading).toBe(false);
+    });
+
+    it('should allow multiple concurrent filter changes', () => {
+      component.filters.member_type = 'Principal';
+      component.onFilterChange();
+
+      component.filters.is_deleted = false;
+      component.onFilterChange();
+
+      expect(mockMemberService.getMembers).toHaveBeenCalledTimes(2);
+    });
+
+    it('should preserve filters after successful operation', () => {
+      component.filters = {
+        search: 'John',
+        member_type: 'Principal',
+        is_deleted: false,
+        page: 2,
+        limit: 50
+      };
+
+      component.loadMembers();
+
+      expect(component.filters.search).toBe('John');
+      expect(component.filters.member_type).toBe('Principal');
+      expect(component.filters.limit).toBe(50);
+    });
+
+    it('should update pagination after load', () => {
+      const customResponse = {
+        ...mockPaginatedResponse,
+        page: 3,
+        limit: 50,
+        total: 200,
+        totalPages: 4
+      };
+      mockMemberService.getMembers.mockReturnValue(of(customResponse));
+
+      component.loadMembers();
+
+      expect(component.pagination.page).toBe(3);
+      expect(component.pagination.limit).toBe(50);
+      expect(component.pagination.total).toBe(200);
+      expect(component.pagination.totalPages).toBe(4);
+    });
+  });
+
+  describe('Permission Constants', () => {
+    it('should expose PERMISSIONS constant', () => {
+      expect(component.PERMISSIONS).toBeDefined();
+      expect(component.PERMISSIONS).toBe(PERMISSIONS.POLICY_HOLDERS);
     });
   });
 });

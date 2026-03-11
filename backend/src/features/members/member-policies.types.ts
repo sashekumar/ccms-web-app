@@ -24,7 +24,6 @@ export interface MemberPolicy {
  * Create Member Policy DTO
  */
 export interface CreateMemberPolicyDto {
-  legacy_policy_id?: string;
   member_id: string;
   product_id: string;
   policy_no: string;
@@ -38,7 +37,6 @@ export interface CreateMemberPolicyDto {
  */
 export interface UpdateMemberPolicyDto {
   policy_record_id: string;
-  legacy_policy_id?: string;
   product_id?: string;
   policy_no?: string;
   effective_date?: Date | string;

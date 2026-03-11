@@ -225,7 +225,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
         <div class="flex-1 overflow-y-auto px-6 py-4">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">Clause Code *</label>
+              <label class="block text-sm font-medium text-gray-700">Clause Code <span class="text-red-500">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="formData.clause_code"
@@ -236,27 +236,13 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700">Clause Text *</label>
+              <label class="block text-sm font-medium text-gray-700">Clause Text <span class="text-red-500">*</span></label>
               <textarea
                 [(ngModel)]="formData.clause_text"
                 rows="3"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
                 placeholder="Enter clause text"
               ></textarea>
-            </div>
-
-            <!-- Legacy Config ID -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Legacy Config ID</label>
-              <input
-                type="text"
-                [(ngModel)]="formData.legacy_config_id"
-                pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                placeholder="e.g., 12345678-1234-1234-1234-123456789012"
-                title="Must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012) or leave empty"
-              />
-              <p class="mt-1 text-xs text-gray-500">Optional: Valid GUID format (12345678-1234-1234-1234-123456789012) or leave empty</p>
             </div>
 
             <div class="flex items-center">
@@ -323,7 +309,6 @@ export class ClauseListComponent implements OnInit, OnDestroy {
   formData: CreateClauseDto | UpdateClauseDto = {
     clause_code: '',
     clause_text: '',
-    legacy_config_id: '',
     is_active: true
   };
 
@@ -445,7 +430,6 @@ export class ClauseListComponent implements OnInit, OnDestroy {
     this.formData = {
       clause_code: '',
       clause_text: '',
-      legacy_config_id: '',
       is_active: true
     };
     this.showModal = true;
@@ -456,7 +440,6 @@ export class ClauseListComponent implements OnInit, OnDestroy {
     this.formData = {
       clause_code: clause.clause_code,
       clause_text: clause.clause_text,
-      legacy_config_id: clause.legacy_config_id || '',
       is_active: clause.is_active
     };
     this.showModal = true;
@@ -484,17 +467,6 @@ export class ClauseListComponent implements OnInit, OnDestroy {
     if (!this.formData.clause_code || !this.formData.clause_text) {
       this.toast.error('Please fill in all required fields');
       return;
-    }
-
-    // Validate legacy_config_id if provided
-    if (this.formData.legacy_config_id && this.formData.legacy_config_id.trim() !== '') {
-      if (!this.isValidGuid(this.formData.legacy_config_id)) {
-        this.toast.error('Legacy Config ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-        return;
-      }
-    } else {
-      // Convert empty string to undefined
-      this.formData.legacy_config_id = undefined;
     }
 
     this.saving = true;

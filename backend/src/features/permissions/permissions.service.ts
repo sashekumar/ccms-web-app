@@ -183,8 +183,8 @@ export class PermissionsService {
     }
 
     const modules = await this.modulesRepo.findAll({
-      sortBy: 'display_order',
-      sortOrder: 'ASC'
+      sort_by: 'display_order',
+      sort_order: 'ASC'
     });
     this.permissionCache.set(cacheKey, modules, 600); // 10-minute cache
 
@@ -203,8 +203,8 @@ export class PermissionsService {
     }
 
     const actions = await this.actionsRepo.findAll({
-      sortBy: 'action_name',
-      sortOrder: 'ASC'
+      sort_by: 'action_name',
+      sort_order: 'ASC'
     });
     this.permissionCache.set(cacheKey, actions, 600); // 10-minute cache
 
@@ -507,8 +507,8 @@ export class PermissionsService {
     }
 
     const categories = await this.categoriesRepo.findAll({
-      sortBy: 'display_order',
-      sortOrder: 'ASC'
+      sort_by: 'display_order',
+      sort_order: 'ASC'
     });
     this.permissionCache.set(CACHE_KEYS.ALL_CATEGORIES, categories);
     return categories;

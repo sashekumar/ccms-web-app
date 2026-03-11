@@ -19,14 +19,14 @@ export class FeeSchedulesRepository extends BaseRepository<FeeSchedule> {
     const whereClauses: string[] = ['hospital_id = @hospitalId'];
     request.input('hospitalId', sql.BigInt, hospitalId);
 
-    if (filters?.feeType) {
+    if (filters?.fee_type) {
       whereClauses.push('fee_type = @feeType');
-      request.input('feeType', sql.VarChar(50), filters.feeType);
+      request.input('feeType', sql.VarChar(50), filters.fee_type);
     }
 
-    if (filters?.isActive !== undefined) {
+    if (filters?.is_active !== undefined) {
       whereClauses.push('is_active = @isActive');
-      request.input('isActive', sql.Bit, filters.isActive);
+      request.input('isActive', sql.Bit, filters.is_active);
     }
 
     const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
@@ -72,14 +72,15 @@ export class FeeSchedulesRepository extends BaseRepository<FeeSchedule> {
     effectiveDate: Date | undefined,
     expiryDate: Date | undefined,
     isActive: boolean,
-    legacyFeeId: string | undefined
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
-      .input('isActive', sql.Bit, isActive);
+      .input('isActive', sql.Bit, isActive)
+      .input('createdBy', sql.VarChar(50), createdBy);
 
-    const fields: string[] = ['is_active'];
-    const values: string[] = ['@isActive'];
+    const fields: string[] = ['is_active', 'created_by'];
+    const values: string[] = ['@isActive', '@createdBy'];
 
     if (hospitalId) {
       fields.push('hospital_id');
@@ -123,12 +124,6 @@ export class FeeSchedulesRepository extends BaseRepository<FeeSchedule> {
       request.input('expiryDate', sql.Date, expiryDate);
     }
 
-    if (legacyFeeId) {
-      fields.push('legacy_fee_schedule_id');
-      values.push('@legacyFeeId');
-      request.input('legacyFeeId', sql.UniqueIdentifier, legacyFeeId);
-    }
-
     const query = `
       INSERT INTO ${DB_TABLES.FEE_SCHEDULES} (${fields.join(', ')})
       OUTPUT INSERTED.fee_id
@@ -150,7 +145,8 @@ export class FeeSchedulesRepository extends BaseRepository<FeeSchedule> {
     amount: number | undefined,
     effectiveDate: Date | undefined,
     expiryDate: Date | undefined,
-    isActive: boolean | undefined
+    isActive: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -192,6 +188,10 @@ export class FeeSchedulesRepository extends BaseRepository<FeeSchedule> {
     }
 
     if (updates.length === 0) return;
+
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('feeId', sql.BigInt, feeId);
 

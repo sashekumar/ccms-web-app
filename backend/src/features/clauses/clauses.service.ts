@@ -36,7 +36,7 @@ export class ClausesService extends BaseService<Clause> {
   /**
    * Create new clause
    */
-  public async createClause(dto: CreateClauseDto): Promise<number> {
+  public async createClause(dto: CreateClauseDto, createdBy: string): Promise<number> {
     // Validate clause code
     if (!dto.clause_code || dto.clause_code.length < 2 || dto.clause_code.length > 20) {
       throw new Error('Clause code must be between 2 and 20 characters');
@@ -45,13 +45,6 @@ export class ClausesService extends BaseService<Clause> {
     // Validate clause text
     if (!dto.clause_text) {
       throw new Error('Clause text is required');
-    }
-
-    // Validate legacy_config_id if provided
-    if (dto.legacy_config_id && dto.legacy_config_id.trim() !== '') {
-      if (!this.isValidGuid(dto.legacy_config_id)) {
-        throw new Error('Legacy Config ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-      }
     }
 
     // Check if clause code exists
@@ -65,7 +58,7 @@ export class ClausesService extends BaseService<Clause> {
       dto.clause_code,
       dto.clause_text,
       dto.is_active !== undefined ? dto.is_active : true,
-      dto.legacy_config_id,
+      createdBy,
       dto.clause_category
     );
 
@@ -75,7 +68,7 @@ export class ClausesService extends BaseService<Clause> {
   /**
    * Update clause
    */
-  public async updateClause(clauseId: number, dto: UpdateClauseDto): Promise<void> {
+  public async updateClause(clauseId: number, dto: UpdateClauseDto, updatedBy: string): Promise<void> {
     // Check if clause exists
     const clause = await this.repository.getClauseById(clauseId);
     if (!clause) {
@@ -95,19 +88,12 @@ export class ClausesService extends BaseService<Clause> {
       }
     }
 
-    // Validate legacy_config_id if being updated
-    if (dto.legacy_config_id !== undefined && dto.legacy_config_id.trim() !== '') {
-      if (!this.isValidGuid(dto.legacy_config_id)) {
-        throw new Error('Legacy Config ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-      }
-    }
-
     await this.repository.updateClause(
       clauseId,
       dto.clause_code,
       dto.clause_text,
-      dto.legacy_config_id,
-      dto.is_active
+      dto.is_active,
+      updatedBy
     );
   }
 

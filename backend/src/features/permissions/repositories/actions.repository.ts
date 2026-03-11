@@ -39,8 +39,8 @@ export class ActionsRepository extends BaseRepository<Action> {
   async findAllActive(): Promise<Action[]> {
     return this.findAll({
       filters: { is_active: true },
-      sortBy: 'action_name',
-      sortOrder: 'ASC'
+      sort_by: 'action_name',
+      sort_order: 'ASC'
     });
   }
 

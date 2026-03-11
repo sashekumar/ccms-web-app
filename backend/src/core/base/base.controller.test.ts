@@ -66,8 +66,8 @@ describe('BaseController', () => {
       expect(mockService.getAll).toHaveBeenCalledWith({
         page: undefined,
         limit: undefined,
-        sortBy: undefined,
-        sortOrder: 'DESC',
+        sort_by: undefined,
+        sort_order: 'DESC',
         filters: {},
       });
       expect(ResponseUtil.success).toHaveBeenCalledWith(mockResponse, mockRecords);
@@ -82,14 +82,14 @@ describe('BaseController', () => {
       expect(mockService.getAll).toHaveBeenCalledWith({
         page: 2,
         limit: 10,
-        sortBy: undefined,
-        sortOrder: 'DESC',
+        sort_by: undefined,
+        sort_order: 'DESC',
         filters: {},
       });
     });
 
     it('should handle sorting options from body', async () => {
-      mockRequest.body = { sortBy: 'name', sortOrder: 'ASC' };
+      mockRequest.body = { sort_by: 'name', sort_order: 'ASC' };
       mockService.getAll.mockResolvedValue([]);
 
       await controller.getAll(mockRequest as Request, mockResponse as Response, mockNext);
@@ -97,8 +97,8 @@ describe('BaseController', () => {
       expect(mockService.getAll).toHaveBeenCalledWith({
         page: undefined,
         limit: undefined,
-        sortBy: 'name',
-        sortOrder: 'ASC',
+        sort_by: 'name',
+        sort_order: 'ASC',
         filters: {},
       });
     });
@@ -112,8 +112,8 @@ describe('BaseController', () => {
       expect(mockService.getAll).toHaveBeenCalledWith({
         page: 1,
         limit: undefined,
-        sortBy: undefined,
-        sortOrder: 'DESC',
+        sort_by: undefined,
+        sort_order: 'DESC',
         filters: { name: 'Test', status: 'active' },
       });
     });

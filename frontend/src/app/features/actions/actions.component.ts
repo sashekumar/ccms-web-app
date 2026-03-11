@@ -195,13 +195,13 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
           <form (ngSubmit)="saveAction()" #actionForm="ngForm" class="flex-1 overflow-y-auto px-6 py-4">
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">Action Name *</label>
+                <label class="block text-sm font-medium text-gray-700">Action Name <span class="text-red-500">*</span></label>
                 <input type="text" [(ngModel)]="formData.actionName" name="name" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700">Action Code *</label>
+                <label class="block text-sm font-medium text-gray-700">Action Code <span class="text-red-500">*</span></label>
                 <input type="text" [(ngModel)]="formData.actionCode" name="code" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
               </div>

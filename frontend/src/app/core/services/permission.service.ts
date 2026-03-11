@@ -302,7 +302,7 @@ export class PermissionService {
   getRoleById(roleId: number): Observable<Role> {
     return this.api.post<ApiResponse<Role>>(
       API_ENDPOINTS.PERMISSIONS.ROLES.GET,
-      { roleId }
+      { role_id: roleId }
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -318,7 +318,7 @@ export class PermissionService {
   getRolePermissions(roleId: number): Observable<RolePermissionSummary[]> {
     return this.api.post<ApiResponse<RolePermissionSummary[]>>(
       API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS,
-      { roleId }
+      { role_id: roleId }
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -334,7 +334,7 @@ export class PermissionService {
   getRolePermissionsMatrix(roleId: number): Observable<PermissionMatrixItem[]> {
     return this.api.post<ApiResponse<PermissionMatrixItem[]>>(
       API_ENDPOINTS.PERMISSIONS.ROLES.PERMISSIONS_MATRIX,
-      { roleId }
+      { role_id: roleId }
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -348,11 +348,11 @@ export class PermissionService {
    * Create new role
    */
   createRole(dto: CreateRoleDto): Observable<number> {
-    return this.api.post<ApiResponse<{ roleId: number }>>(
+    return this.api.post<ApiResponse<{ role_id: number }>>(
       API_ENDPOINTS.PERMISSIONS.ROLES.CREATE,
       dto
     ).pipe(
-      map(response => response.data.roleId),
+      map(response => response.data.role_id),
       catchError(error => {
         this.logger.error('Error creating role:', error);
         throw error;
@@ -366,7 +366,7 @@ export class PermissionService {
   updateRole(roleId: number, dto: UpdateRoleDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE,
-      { roleId, ...dto }
+      { role_id: roleId, ...dto }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -382,7 +382,7 @@ export class PermissionService {
   deleteRole(roleId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.ROLES.DELETE,
-      { roleId }
+      { role_id: roleId }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -462,11 +462,11 @@ export class PermissionService {
    * Create module
    */
   createModule(data: CreateModuleDto): Observable<number> {
-    return this.api.post<ApiResponse<{ moduleId: number }>>(
+    return this.api.post<ApiResponse<{ module_id: number }>>(
       API_ENDPOINTS.PERMISSIONS.MODULES.CREATE,
       data
     ).pipe(
-      map(response => response.data.moduleId),
+      map(response => response.data.module_id),
       catchError(error => {
         this.logger.error('Error creating module:', error);
         throw error;
@@ -480,7 +480,7 @@ export class PermissionService {
   updateModule(moduleId: number, data: UpdateModuleDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE,
-      { moduleId, ...data }
+      { module_id: moduleId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -496,7 +496,7 @@ export class PermissionService {
   deleteModule(moduleId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.MODULES.DELETE,
-      { moduleId }
+      { module_id: moduleId }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -510,11 +510,11 @@ export class PermissionService {
    * Create action
    */
   createAction(data: CreateActionDto): Observable<number> {
-    return this.api.post<ApiResponse<{ actionId: number }>>(
+    return this.api.post<ApiResponse<{ action_id: number }>>(
       API_ENDPOINTS.PERMISSIONS.ACTIONS.CREATE,
       data
     ).pipe(
-      map(response => response.data.actionId),
+      map(response => response.data.action_id),
       catchError(error => {
         this.logger.error('Error creating action:', error);
         throw error;
@@ -528,7 +528,7 @@ export class PermissionService {
   updateAction(actionId: number, data: UpdateActionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE,
-      { actionId, ...data }
+      { action_id: actionId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -544,7 +544,7 @@ export class PermissionService {
   deleteAction(actionId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.ACTIONS.DELETE,
-      { actionId }
+      { action_id: actionId }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -574,11 +574,11 @@ export class PermissionService {
    * Create module-action
    */
   createModuleAction(data: CreateModuleActionDto): Observable<number> {
-    return this.api.post<ApiResponse<{ moduleActionId: number }>>(
+    return this.api.post<ApiResponse<{ module_action_id: number }>>(
       API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.CREATE,
       data
     ).pipe(
-      map(response => response.data.moduleActionId),
+      map(response => response.data.module_action_id),
       catchError(error => {
         this.logger.error('Error creating module-action:', error);
         throw error;
@@ -592,7 +592,7 @@ export class PermissionService {
   updateModuleAction(moduleActionId: number, data: UpdateModuleActionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.UPDATE,
-      { moduleActionId, ...data }
+      { module_action_id: moduleActionId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -608,7 +608,7 @@ export class PermissionService {
   deleteModuleAction(moduleActionId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.MODULE_ACTIONS.DELETE,
-      { moduleActionId }
+      { module_action_id: moduleActionId }
     ).pipe(
       map(() => undefined),
       catchError(error => {

@@ -24,7 +24,6 @@ export interface CreateFeeScheduleDto {
   effective_date?: Date;
   expiry_date?: Date;
   is_active?: boolean;
-  legacy_fee_schedule_id?: string;
 }
 
 export interface UpdateFeeScheduleDto {
@@ -38,11 +37,11 @@ export interface UpdateFeeScheduleDto {
 }
 
 export interface FeeScheduleFilters {
-  hospitalId?: number;
-  feeType?: string;
-  isActive?: boolean;
+  hospital_id?: number;
+  fee_type?: string;
+  is_active?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }

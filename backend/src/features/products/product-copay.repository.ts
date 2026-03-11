@@ -59,7 +59,7 @@ export class ProductCopayRepository extends BaseRepository<ProductCopay> {
   /**
    * Create new product copay rule
    */
-  public async createCopay(dto: CreateProductCopayDto): Promise<number> {
+  public async createCopay(dto: CreateProductCopayDto, createdBy: string): Promise<number> {
     const pool = await connectionManager.getPool();
     const result = await pool.request()
       .input('product_id', sql.BigInt, dto.product_id)
@@ -67,7 +67,7 @@ export class ProductCopayRepository extends BaseRepository<ProductCopay> {
       .input('copay_value', sql.Decimal(10, 2), dto.copay_value || null)
       .input('applies_to', sql.NVarChar(255), dto.applies_to || null)
       .input('is_active', sql.Bit, dto.is_active !== undefined ? dto.is_active : true)
-      .input('legacy_product_copay_id', sql.UniqueIdentifier, dto.legacy_product_copay_id || null)
+      .input('createdBy', sql.VarChar(50), createdBy)
       .query(`
         INSERT INTO ${DB_TABLES.PRODUCT_COPAY} (
           product_id,
@@ -75,7 +75,7 @@ export class ProductCopayRepository extends BaseRepository<ProductCopay> {
           copay_value,
           applies_to,
           is_active,
-          legacy_product_copay_id
+          created_by
         )
         VALUES (
           @product_id,
@@ -83,7 +83,7 @@ export class ProductCopayRepository extends BaseRepository<ProductCopay> {
           @copay_value,
           @applies_to,
           @is_active,
-          @legacy_product_copay_id
+          @createdBy
         );
         SELECT SCOPE_IDENTITY() AS copay_id;
       `);
@@ -94,7 +94,7 @@ export class ProductCopayRepository extends BaseRepository<ProductCopay> {
   /**
    * Update product copay rule
    */
-  public async updateCopay(copayId: number, dto: UpdateProductCopayDto): Promise<boolean> {
+  public async updateCopay(copayId: number, dto: UpdateProductCopayDto, updatedBy: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('copay_id', sql.BigInt, copayId);
 
@@ -123,6 +123,11 @@ export class ProductCopayRepository extends BaseRepository<ProductCopay> {
     if (setClauses.length === 0) {
       return false;
     }
+
+    // Add audit fields
+    setClauses.push('updated_by = @updatedBy');
+    setClauses.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     const result = await request.query(`
       UPDATE ${DB_TABLES.PRODUCT_COPAY}

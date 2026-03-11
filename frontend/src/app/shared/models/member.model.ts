@@ -84,8 +84,8 @@ export interface MemberFilters {
   is_deleted?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedMembers {

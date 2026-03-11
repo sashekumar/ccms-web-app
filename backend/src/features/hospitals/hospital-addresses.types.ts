@@ -20,7 +20,6 @@ export interface HospitalAddress {
 
 export interface CreateHospitalAddressDto {
   hospital_id: number;
-  legacy_hospital_address_id: string;
   address_type?: string;
   street_line1?: string;
   street_line2?: string;

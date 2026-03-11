@@ -36,7 +36,7 @@ export class BanksService extends BaseService<Bank> {
   /**
    * Create new bank
    */
-  public async createBank(dto: CreateBankDto): Promise<number> {
+  public async createBank(dto: CreateBankDto, createdBy: string): Promise<number> {
     // Validate bank code
     if (!dto.bank_code || dto.bank_code.length < 2 || dto.bank_code.length > 50) {
       throw new Error('Bank code must be between 2 and 50 characters');
@@ -45,13 +45,6 @@ export class BanksService extends BaseService<Bank> {
     // Validate bank name
     if (!dto.bank_name || dto.bank_name.length < 2 || dto.bank_name.length > 255) {
       throw new Error('Bank name must be between 2 and 255 characters');
-    }
-
-    // Validate legacy_bank_id if provided
-    if (dto.legacy_bank_id && dto.legacy_bank_id.trim() !== '') {
-      if (!this.isValidGuid(dto.legacy_bank_id)) {
-        throw new Error('Legacy Bank ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-      }
     }
 
     // Check if bank code exists
@@ -64,8 +57,8 @@ export class BanksService extends BaseService<Bank> {
     const bankId = await this.repository.createBank(
       dto.bank_code,
       dto.bank_name,
-      dto.legacy_bank_id,
-      dto.is_active !== undefined ? dto.is_active : true
+      dto.is_active !== undefined ? dto.is_active : true,
+      createdBy
     );
 
     return bankId;
@@ -74,7 +67,7 @@ export class BanksService extends BaseService<Bank> {
   /**
    * Update bank
    */
-  public async updateBank(bankId: number, dto: UpdateBankDto): Promise<void> {
+  public async updateBank(bankId: number, dto: UpdateBankDto, updatedBy: string): Promise<void> {
     // Check if bank exists
     const bank = await this.repository.getBankById(bankId);
     if (!bank) {
@@ -99,19 +92,12 @@ export class BanksService extends BaseService<Bank> {
       throw new Error('Bank name must be between 2 and 255 characters');
     }
 
-    // Validate legacy_bank_id if being updated
-    if (dto.legacy_bank_id !== undefined && dto.legacy_bank_id.trim() !== '') {
-      if (!this.isValidGuid(dto.legacy_bank_id)) {
-        throw new Error('Legacy Bank ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-      }
-    }
-
     await this.repository.updateBank(
       bankId,
       dto.bank_code,
       dto.bank_name,
-      dto.legacy_bank_id,
-      dto.is_active
+      dto.is_active,
+      updatedBy
     );
   }
 

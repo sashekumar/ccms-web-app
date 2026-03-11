@@ -227,19 +227,6 @@
                   </label>
                 </div>
 
-                <!-- Legacy Address ID -->
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Legacy Address ID <span class="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="legacy_hospital_address_id"
-                    [(ngModel)]="addressFormData.legacy_hospital_address_id"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                    placeholder="Enter legacy address ID for data migration"
-                  />
-                </div>
-
                 <!-- Street Line 1 -->
                 <div class="md:col-span-2">
                   <label class="block text-sm font-medium text-gray-700">Street Line 1 <span class="text-red-500">*</span></label>
@@ -458,18 +445,6 @@
                     placeholder="Enter code value"
                   />
                 </div>
-
-                <!-- Legacy Code ID -->
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Legacy Code ID</label>
-                  <input
-                    type="text"
-                    name="legacy_hospital_code_id"
-                    [(ngModel)]="codeFormData.legacy_hospital_code_id"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                    placeholder="Enter legacy code ID for data migration (optional)"
-                  />
-                </div>
               </div>
 
               <!-- Form Actions -->
@@ -622,18 +597,6 @@
                     placeholder="Enter specialty (e.g., Cardiology, Orthopedics)"
                   />
                 </div>
-
-                <!-- Legacy Staff ID -->
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Legacy Staff ID</label>
-                  <input
-                    type="text"
-                    name="legacy_hospital_staff_id"
-                    [(ngModel)]="staffFormData.legacy_hospital_staff_id"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                    placeholder="Enter legacy staff ID for data migration (optional)"
-                  />
-                </div>
               </div>
 
               <!-- Form Actions -->
@@ -757,16 +720,6 @@
                           required
                           class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
                           placeholder="Enter contact value"
-                        />
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700">Legacy Contact ID</label>
-                        <input
-                          type="text"
-                          name="legacy_hospital_contact_id"
-                          [(ngModel)]="contactFormData[staffMember.staff_id].legacy_hospital_contact_id"
-                          class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
-                          placeholder="Optional legacy ID"
                         />
                       </div>
                       <div>
@@ -971,18 +924,6 @@
                     name="expiry_date"
                     [(ngModel)]="feeFormData.expiry_date"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
-                </div>
-
-                <!-- Legacy Fee Schedule ID -->
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Legacy Fee Schedule ID</label>
-                  <input
-                    type="text"
-                    name="legacy_fee_schedule_id"
-                    [(ngModel)]="feeFormData.legacy_fee_schedule_id"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                    placeholder="Enter legacy fee schedule ID for data migration (optional)"
                   />
                 </div>
               </div>

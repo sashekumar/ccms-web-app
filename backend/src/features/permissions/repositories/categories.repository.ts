@@ -40,8 +40,8 @@ export class CategoriesRepository extends BaseRepository<Category> {
   async findAllActive(): Promise<Category[]> {
     return this.findAll({
       filters: { is_active: true },
-      sortBy: 'display_order',
-      sortOrder: 'ASC'
+      sort_by: 'display_order',
+      sort_order: 'ASC'
     });
   }
 

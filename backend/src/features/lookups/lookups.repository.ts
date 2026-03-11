@@ -39,15 +39,15 @@ export class LookupsRepository {
       request.input('search', sql.NVarChar(500), `%${filters.search}%`);
     }
 
-    if (filters.isActive !== undefined) {
+    if (filters.is_active !== undefined) {
       whereClauses.push('lc.is_active = @isActive');
-      request.input('isActive', sql.Bit, filters.isActive);
+      request.input('isActive', sql.Bit, filters.is_active);
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    const sortBy = filters.sortBy || 'category_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'category_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY lc.${sortBy} ${sortOrder}`;
 
     const countQuery = `
@@ -157,26 +157,23 @@ export class LookupsRepository {
   public async createLookupCategory(
     categoryName: string,
     description: string | undefined,
-    legacyCategoryId: string | undefined,
-    isActive: boolean
+    isActive: boolean,
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
       .input('categoryName', sql.NVarChar(100), categoryName)
       .input('description', sql.NVarChar(255), description || null)
-      .input('isActive', sql.Bit, isActive);
-
-    if (legacyCategoryId) {
-      request.input('legacyCategoryId', sql.UniqueIdentifier, legacyCategoryId);
-    }
+      .input('isActive', sql.Bit, isActive)
+      .input('createdBy', sql.VarChar(50), createdBy);
 
     const result = await request.query(`
         INSERT INTO ${DB_TABLES.LOOKUP_CATEGORIES} (
-          category_name, description, legacy_category_id, is_active
+          category_name, description, is_active, created_by
         )
         OUTPUT INSERTED.category_id
         VALUES (
-          @categoryName, @description, ${legacyCategoryId ? '@legacyCategoryId' : 'NULL'}, @isActive
+          @categoryName, @description, @isActive, @createdBy
         )
       `);
 
@@ -190,8 +187,8 @@ export class LookupsRepository {
     categoryId: number,
     categoryName: string | undefined,
     description: string |undefined,
-    legacyCategoryId: string | undefined,
-    isActive: boolean | undefined
+    isActive: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -207,21 +204,17 @@ export class LookupsRepository {
       request.input('description', sql.NVarChar(255), description || null);
     }
 
-    if (legacyCategoryId !== undefined) {
-      if (legacyCategoryId) {
-        updates.push('legacy_category_id = @legacyCategoryId');
-        request.input('legacyCategoryId', sql.UniqueIdentifier, legacyCategoryId);
-      } else {
-        updates.push('legacy_category_id = NULL');
-      }
-    }
-
     if (isActive !== undefined) {
       updates.push('is_active = @isActive');
       request.input('isActive', sql.Bit, isActive);
     }
 
     if (updates.length === 0) return;
+
+    // Add audit fields
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('categoryId', sql.Int, categoryId);
 
@@ -268,20 +261,20 @@ export class LookupsRepository {
       request.input('search', sql.NVarChar(500), `%${filters.search}%`);
     }
 
-    if (filters.categoryId) {
+    if (filters.category_id) {
       whereClauses.push('l.category_id = @categoryId');
-      request.input('categoryId', sql.BigInt, filters.categoryId);
+      request.input('categoryId', sql.BigInt, filters.category_id);
     }
 
-    if (filters.isActive !== undefined) {
+    if (filters.is_active !== undefined) {
       whereClauses.push('l.is_active = @isActive');
-      request.input('isActive', sql.Bit, filters.isActive);
+      request.input('isActive', sql.Bit, filters.is_active);
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    const sortBy = filters.sortBy || 'sort_order';
-    const sortOrder = filters.sortOrder || 'ASC';
+    const sortBy = filters.sort_by || 'sort_order';
+    const sortOrder = filters.sort_order || 'ASC';
     const orderBy = `ORDER BY l.${sortBy} ${sortOrder}`;
 
     const countQuery = `
@@ -411,8 +404,8 @@ export class LookupsRepository {
     lookupCode: string,
     lookupValue: string,
     sortOrder: number,
-    legacyLookupId: string | undefined,
-    isActive: boolean
+    isActive: boolean,
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
@@ -420,19 +413,16 @@ export class LookupsRepository {
       .input('lookupCode', sql.VarChar(20), lookupCode)
       .input('lookupValue', sql.NVarChar(255), lookupValue)
       .input('sortOrder', sql.Int, sortOrder)
-      .input('isActive', sql.Bit, isActive);
-
-    if (legacyLookupId) {
-      request.input('legacyLookupId', sql.UniqueIdentifier, legacyLookupId);
-    }
+      .input('isActive', sql.Bit, isActive)
+      .input('createdBy', sql.VarChar(50), createdBy);
 
     const result = await request.query(`
         INSERT INTO ${DB_TABLES.LOOKUPS} (
-          category_id, lookup_code, lookup_value, sort_order, legacy_lookup_id, is_active, created_at
+          category_id, lookup_code, lookup_value, sort_order, is_active, created_by
         )
         OUTPUT INSERTED.lookup_id
         VALUES (
-          @categoryId, @lookupCode, @lookupValue, @sortOrder, ${legacyLookupId ? '@legacyLookupId' : 'NULL'}, @isActive, GETDATE()
+          @categoryId, @lookupCode, @lookupValue, @sortOrder, @isActive, @createdBy
         )
       `);
 
@@ -448,8 +438,8 @@ export class LookupsRepository {
     lookupCode: string | undefined,
     lookupValue: string | undefined,
     sortOrder: number | undefined,
-    legacyLookupId: string | undefined,
-    isActive: boolean | undefined
+    isActive: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -475,21 +465,17 @@ export class LookupsRepository {
       request.input('sortOrder', sql.Int, sortOrder);
     }
 
-    if (legacyLookupId !== undefined) {
-      if (legacyLookupId) {
-        updates.push('legacy_lookup_id = @legacyLookupId');
-        request.input('legacyLookupId', sql.UniqueIdentifier, legacyLookupId);
-      } else {
-        updates.push('legacy_lookup_id = NULL');
-      }
-    }
-
     if (isActive !== undefined) {
       updates.push('is_active = @isActive');
       request.input('isActive', sql.Bit, isActive);
     }
 
     if (updates.length === 0) return;
+
+    // Add audit fields
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('lookupId', sql.Int, lookupId);
 
@@ -536,15 +522,15 @@ export class LookupsRepository {
       request.input('search', sql.NVarChar(500), `%${filters.search}%`);
     }
 
-    if (filters.lookupId) {
+    if (filters.lookup_id) {
       whereClauses.push('lm.lookup_id = @lookupId');
-      request.input('lookupId', sql.BigInt, filters.lookupId);
+      request.input('lookupId', sql.BigInt, filters.lookup_id);
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    const sortBy = filters.sortBy || 'metadata_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'metadata_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY lm.${sortBy} ${sortOrder}`;
 
     const countQuery = `
@@ -643,20 +629,22 @@ export class LookupsRepository {
   public async createLookupMetadata(
     lookupId: number,
     metadataKey: string,
-    metadataValue: string
+    metadataValue: string,
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const result = await pool.request()
       .input('lookupId', sql.Int, lookupId)
       .input('metadataKey', sql.NVarChar(100), metadataKey)
       .input('metadataValue', sql.NVarChar(500), metadataValue)
+      .input('createdBy', sql.VarChar(50), createdBy)
       .query(`
         INSERT INTO ${DB_TABLES.LOOKUP_METADATA} (
-          lookup_id, metadata_key, metadata_value
+          lookup_id, metadata_key, metadata_value, created_by
         )
         OUTPUT INSERTED.metadata_id
         VALUES (
-          @lookupId, @metadataKey, @metadataValue
+          @lookupId, @metadataKey, @metadataValue, @createdBy
         )
       `);
 
@@ -669,7 +657,8 @@ export class LookupsRepository {
   public async updateLookupMetadata(
     metadataId: number,
     metadataKey: string | undefined,
-    metadataValue: string | undefined
+    metadataValue: string | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -686,6 +675,11 @@ export class LookupsRepository {
     }
 
     if (updates.length === 0) return;
+
+    // Add audit fields
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('metadataId', sql.Int, metadataId);
 

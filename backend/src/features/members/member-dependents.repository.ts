@@ -61,26 +61,29 @@ export class MemberDependentsRepository extends BaseRepository<MemberDependent> 
   /**
    * Create new member dependent
    */
-  public async createDependent(dto: CreateMemberDependentDto): Promise<string> {
+  public async createDependent(dto: CreateMemberDependentDto, createdBy?: string): Promise<string> {
     const pool = await connectionManager.getPool();
     
-    const result = await pool.request()
+    const request = pool.request()
       .input('principal_member_id', sql.BigInt, dto.principal_member_id)
       .input('full_name', sql.NVarChar(255), dto.full_name)
       .input('ic_no', sql.VarChar(20), dto.ic_no || null)
       .input('relationship_id', sql.Int, dto.relationship_id || null)
       .input('dob', sql.Date, dto.dob || null)
-      .input('is_active', sql.Bit, dto.is_active !== undefined ? dto.is_active : true)
-      .input('legacy_dependent_id', sql.UniqueIdentifier, dto.legacy_dependent_id || null)
-      .query(`
+      .input('is_active', sql.Bit, dto.is_active !== undefined ? dto.is_active : true);
+    
+    if (createdBy) {
+      request.input('createdBy', sql.VarChar(50), createdBy);
+    }
+    
+    const result = await request.query(`
         INSERT INTO ${DB_TABLES.MEMBER_DEPENDENTS} (
           principal_member_id,
           full_name,
           ic_no,
           relationship_id,
           dob,
-          is_active,
-          legacy_dependent_id
+          is_active${createdBy ? ',\n          created_by' : ''}
         )
         VALUES (
           @principal_member_id,
@@ -88,8 +91,7 @@ export class MemberDependentsRepository extends BaseRepository<MemberDependent> 
           @ic_no,
           @relationship_id,
           @dob,
-          @is_active,
-          @legacy_dependent_id
+          @is_active${createdBy ? ',\n          @createdBy' : ''}
         );
         SELECT CAST(SCOPE_IDENTITY() AS VARCHAR) AS dependent_id;
       `);
@@ -100,7 +102,7 @@ export class MemberDependentsRepository extends BaseRepository<MemberDependent> 
   /**
    * Update member dependent
    */
-  public async updateDependent(dependentId: string, dto: UpdateMemberDependentDto): Promise<boolean> {
+  public async updateDependent(dependentId: string, dto: UpdateMemberDependentDto, updatedBy?: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('dependent_id', sql.BigInt, dependentId);
 
@@ -131,12 +133,14 @@ export class MemberDependentsRepository extends BaseRepository<MemberDependent> 
       request.input('is_active', sql.Bit, dto.is_active);
     }
 
-    if (dto.legacy_dependent_id !== undefined) {
-      setClauses.push('legacy_dependent_id = @legacy_dependent_id');
-      request.input('legacy_dependent_id', sql.UniqueIdentifier, dto.legacy_dependent_id);
+    if (updatedBy) {
+      setClauses.push('updated_by = @updatedBy');
+      request.input('updatedBy', sql.VarChar(50), updatedBy);
     }
 
-    if (setClauses.length === 0) {
+    setClauses.push('updated_at = GETDATE()');
+
+    if (setClauses.length === 1) { // Only updated_at
       return false;
     }
 

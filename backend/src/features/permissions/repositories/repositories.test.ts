@@ -53,8 +53,8 @@ describe('Permissions Repositories', () => {
         expect(result).toEqual(mockActions);
         expect(repository['findAll']).toHaveBeenCalledWith({
           filters: { is_active: true },
-          sortBy: 'action_name',
-          sortOrder: 'ASC'
+          sort_by: 'action_name',
+          sort_order: 'ASC'
         });
       });
     });
@@ -140,8 +140,8 @@ describe('Permissions Repositories', () => {
         expect(result).toEqual(mockModules);
         expect(repository['findAll']).toHaveBeenCalledWith({
           filters: { is_active: true },
-          sortBy: 'display_order',
-          sortOrder: 'ASC'
+          sort_by: 'display_order',
+          sort_order: 'ASC'
         });
       });
     });
@@ -158,8 +158,8 @@ describe('Permissions Repositories', () => {
         expect(result).toEqual(mockModules);
         expect(repository['findAll']).toHaveBeenCalledWith({
           filters: { category_id: 5, is_active: true },
-          sortBy: 'display_order',
-          sortOrder: 'ASC'
+          sort_by: 'display_order',
+          sort_order: 'ASC'
         });
       });
 
@@ -253,8 +253,8 @@ describe('Permissions Repositories', () => {
         expect(result).toEqual(mockCategories);
         expect(repository['findAll']).toHaveBeenCalledWith({
           filters: { is_active: true },
-          sortBy: 'display_order',
-          sortOrder: 'ASC'
+          sort_by: 'display_order',
+          sort_order: 'ASC'
         });
       });
     });

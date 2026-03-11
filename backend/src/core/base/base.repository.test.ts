@@ -118,7 +118,7 @@ describe('BaseRepository', () => {
     it('should apply custom sorting', async () => {
       mockRequest.query.mockResolvedValue({ recordset: [] });
 
-      await repository.findAll({ sortBy: 'name', sortOrder: 'ASC' });
+      await repository.findAll({ sort_by: 'name', sort_order: 'ASC' });
 
       const queryCall = mockRequest.query.mock.calls[0][0];
       expect(queryCall).toContain('ORDER BY name ASC');
@@ -159,8 +159,8 @@ describe('BaseRepository', () => {
 
       await repository.findAll({
         filters: { is_active: true },
-        sortBy: 'name',
-        sortOrder: 'ASC',
+        sort_by: 'name',
+        sort_order: 'ASC',
         page: 3,
         limit: 20
       });

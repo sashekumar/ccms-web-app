@@ -75,27 +75,22 @@ export class HospitalCodesRepository extends BaseRepository<HospitalCode> {
     codeType: string,
     codeValue: string | undefined,
     isActive: boolean,
-    legacyCodeId: string | undefined
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
       .input('hospitalId', sql.BigInt, hospitalId)
       .input('codeType', sql.VarChar(50), codeType)
-      .input('isActive', sql.Bit, isActive);
+      .input('isActive', sql.Bit, isActive)
+      .input('createdBy', sql.VarChar(50), createdBy);
 
-    const fields: string[] = ['hospital_id', 'code_type', 'is_active'];
-    const values: string[] = ['@hospitalId', '@codeType', '@isActive'];
+    const fields: string[] = ['hospital_id', 'code_type', 'is_active', 'created_by'];
+    const values: string[] = ['@hospitalId', '@codeType', '@isActive', '@createdBy'];
 
     if (codeValue) {
       fields.push('code_value');
       values.push('@codeValue');
       request.input('codeValue', sql.VarChar(100), codeValue);
-    }
-
-    if (legacyCodeId) {
-      fields.push('legacy_hospital_code_id');
-      values.push('@legacyCodeId');
-      request.input('legacyCodeId', sql.UniqueIdentifier, legacyCodeId);
     }
 
     const query = `
@@ -115,7 +110,8 @@ export class HospitalCodesRepository extends BaseRepository<HospitalCode> {
     codeId: number,
     codeType: string | undefined,
     codeValue: string | undefined,
-    isActive: boolean | undefined
+    isActive: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -137,6 +133,10 @@ export class HospitalCodesRepository extends BaseRepository<HospitalCode> {
     }
 
     if (updates.length === 0) return;
+
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('codeId', sql.BigInt, codeId);
 

@@ -463,7 +463,6 @@ describe('HospitalViewComponent', () => {
 
       expect(component.addressFormData).toEqual({
         address_type: 'PRIMARY',
-        legacy_hospital_address_id: '',
         street_line1: '',
         street_line2: '',
         postal_code: '',
@@ -481,8 +480,7 @@ describe('HospitalViewComponent', () => {
       expect(component.codeFormData).toEqual({
         code_type: '',
         code_value: '',
-        is_active: true,
-        legacy_hospital_code_id: ''
+        is_active: true
       });
     });
 
@@ -494,8 +492,7 @@ describe('HospitalViewComponent', () => {
         staff_name: '',
         staff_type: '',
         specialty: '',
-        is_active: true,
-        legacy_hospital_staff_id: ''
+        is_active: true
       });
     });
 
@@ -510,8 +507,7 @@ describe('HospitalViewComponent', () => {
         amount: 0,
         effective_date: undefined,
         expiry_date: undefined,
-        is_active: true,
-        legacy_fee_schedule_id: ''
+        is_active: true
       });
     });
   });
@@ -1186,6 +1182,1152 @@ describe('HospitalViewComponent', () => {
       expect(component.fees).toEqual(mockFees);
       expect(component.loadingFees).toBe(false);
     });
+  });
+
+  describe('Loading States', () => {
+    it('should reset loading state after hospital loads', () => {
+      hospitalService.getHospitalById.mockReturnValue(of(mockHospital));
+      component.loadHospital('1');
+      
+      expect(component.loading).toBe(false);
+    });
+
+    it('should reset loadingAddresses after addresses load', () => {
+      component.hospital = mockHospital;
+      hospitalService.getHospitalAddresses.mockReturnValue(of([]));
+      component.loadAddresses();
+      
+      expect(component.loadingAddresses).toBe(false);
+    });
+
+    it('should reset loadingCodes after codes load', () => {
+      component.hospital = mockHospital;
+      hospitalService.getHospitalCodes.mockReturnValue(of([]));
+      component.loadCodes();
+      
+      expect(component.loadingCodes).toBe(false);
+    });
+
+    it('should reset loadingStaff after staff loads', () => {
+      component.hospital = mockHospital;
+      hospitalService.getHospitalStaff.mockReturnValue(of([]));
+      component.loadStaff();
+      
+      expect(component.loadingStaff).toBe(false);
+    });
+
+    it('should reset loadingFees after fees load', () => {
+      component.hospital = mockHospital;
+      hospitalService.getHospitalFees.mockReturnValue(of([]));
+      component.loadFees();
+      
+      expect(component.loadingFees).toBe(false);
+    });
+
+    it('should reset loadingContacts after contacts load', () => {
+      component.hospital = mockHospital;
+      hospitalService.getStaffContacts.mockReturnValue(of([]));
+      component.loadStaffContacts('1');
+      
+      expect(component.loadingContacts['1']).toBe(false);
+    });
+
+    it('should reset loading state on hospital load error', () => {
+      const error = new Error('Load failed');
+      hospitalService.getHospitalById.mockReturnValue(throwError(() => error));
+      
+      component.loadHospital('1');
+      
+      expect(component.loading).toBe(false);
+    });
+
+    it('should reset loadingAddresses on error', () => {
+      const error = new Error('Load failed');
+      hospitalService.getHospitalAddresses.mockReturnValue(throwError(() => error));
+      component.hospital = mockHospital;
+      
+      component.loadAddresses();
+      
+      expect(component.loadingAddresses).toBe(false);
+    });
+
+    it('should reset loadingCodes on error', () => {
+      const error = new Error('Load failed');
+      hospitalService.getHospitalCodes.mockReturnValue(throwError(() => error));
+      component.hospital = mockHospital;
+      
+      component.loadCodes();
+      
+      expect(component.loadingCodes).toBe(false);
+    });
+
+    it('should reset loadingStaff on error', () => {
+      const error = new Error('Load failed');
+      hospitalService.getHospitalStaff.mockReturnValue(throwError(() => error));
+      component.hospital = mockHospital;
+      
+      component.loadStaff();
+      
+      expect(component.loadingStaff).toBe(false);
+    });
+
+    it('should reset loadingFees on error', () => {
+      const error = new Error('Load failed');
+      hospitalService.getHospitalFees.mockReturnValue(throwError(() => error));
+      component.hospital = mockHospital;
+      
+      component.loadFees();
+      
+      expect(component.loadingFees).toBe(false);
+    });
+
+    it('should reset loadingContacts on error', () => {
+      const error = new Error('Load failed');
+      hospitalService.getStaffContacts.mockReturnValue(throwError(() => error));
+      component.hospital = mockHospital;
+      
+      component.loadStaffContacts('1');
+      
+      expect(component.loadingContacts['1']).toBe(false);
+    });
+  });
+
+  describe('Success Toast Messages', () => {
+    it('should show success toast when address is created', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.addressFormData = { street_line1: 'Test' };
+
+      component.saveAddress(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Address created successfully');
+    });
+
+    it('should show success toast when address is updated', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingAddress = mockAddresses[0] as HospitalAddress;
+      component.addressFormData = { street_line1: 'Updated' };
+
+      component.saveAddress(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Address updated successfully');
+    });
+
+    it('should show success toast when address is deleted', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+
+      component.deleteAddress('1');
+
+      expect(toastService.success).toHaveBeenCalledWith('Address deleted successfully');
+    });
+
+    it('should show success toast when code is created', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.codeFormData = { code_type: 'TEST', code_value: 'VAL' };
+
+      component.saveCode(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Code created successfully');
+    });
+
+    it('should show success toast when code is updated', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingCode = mockCodes[0];
+      component.codeFormData = { code_value: 'Updated' };
+
+      component.saveCode(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Code updated successfully');
+    });
+
+    it('should show success toast when code is deleted', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+
+      component.deleteCode('1');
+
+      expect(toastService.success).toHaveBeenCalledWith('Code deleted successfully');
+    });
+
+    it('should show success toast when staff is created', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.staffFormData = { staff_name: 'Dr. Test' };
+
+      component.saveStaff(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Staff created successfully');
+    });
+
+    it('should show success toast when staff is updated', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingStaff = mockStaff[0];
+      component.staffFormData = { staff_name: 'Dr. Updated' };
+
+      component.saveStaff(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Staff updated successfully');
+    });
+
+    it('should show success toast when staff is deleted', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+
+      component.deleteStaff('1');
+
+      expect(toastService.success).toHaveBeenCalledWith('Staff deleted successfully');
+    });
+
+    it('should show success toast when contact is created', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.contactFormData[staffId] = { contact_type: 'EMAIL', contact_value: 'test@test.com' };
+
+      component.saveContact(staffId, mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Contact created successfully');
+    });
+
+    it('should show success toast when contact is updated', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.editingContact[staffId] = mockContacts[0];
+      component.contactFormData[staffId] = { contact_type: 'PHONE', contact_value: '123' };
+
+      component.saveContact(staffId, mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Contact updated successfully');
+    });
+
+    it('should show success toast when contact is deleted', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+
+      component.deleteContact('1', '1');
+
+      expect(toastService.success).toHaveBeenCalledWith('Contact deleted successfully');
+    });
+
+    it('should show success toast when fee is created', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.feeFormData = { fee_type: 'TPA', amount: 100 };
+
+      component.saveFee(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Fee schedule created successfully');
+    });
+
+    it('should show success toast when fee is updated', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingFee = mockFees[0];
+      component.feeFormData = { fee_type: 'TPA', amount: 150 };
+
+      component.saveFee(mockForm);
+
+      expect(toastService.success).toHaveBeenCalledWith('Fee schedule updated successfully');
+    });
+
+    it('should show success toast when fee is deleted', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+
+      component.deleteFee('1');
+
+      expect(toastService.success).toHaveBeenCalledWith('Fee schedule deleted successfully');
+    });
+  });
+
+  describe('Form State After Operations', () => {
+    it('should hide address form after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.showAddressForm = true;
+      component.addressFormData = { street_line1: 'Test' };
+
+      component.saveAddress(mockForm);
+
+      expect(component.showAddressForm).toBe(false);
+    });
+
+    it('should clear editingAddress after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingAddress = mockAddresses[0] as HospitalAddress;
+      component.addressFormData = { street_line1: 'Test' };
+
+      component.saveAddress(mockForm);
+
+      expect(component.editingAddress).toBeNull();
+    });
+
+    it('should hide code form after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.showCodeForm = true;
+      component.codeFormData = { code_type: 'TEST', code_value: 'VAL' };
+
+      component.saveCode(mockForm);
+
+      expect(component.showCodeForm).toBe(false);
+    });
+
+    it('should clear editingCode after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingCode = mockCodes[0];
+      component.codeFormData = { code_value: 'TEST' };
+
+      component.saveCode(mockForm);
+
+      expect(component.editingCode).toBeNull();
+    });
+
+    it('should hide staff form after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.showStaffForm = true;
+      component.staffFormData = { staff_name: 'Test' };
+
+      component.saveStaff(mockForm);
+
+      expect(component.showStaffForm).toBe(false);
+    });
+
+    it('should clear editingStaff after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingStaff = mockStaff[0];
+      component.staffFormData = { staff_name: 'Test' };
+
+      component.saveStaff(mockForm);
+
+      expect(component.editingStaff).toBeNull();
+    });
+
+    it('should hide contact form after successful save', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.showContactForm[staffId] = true;
+      component.contactFormData[staffId] = { contact_type: 'EMAIL', contact_value: 'test@test.com' };
+
+      component.saveContact(staffId, mockForm);
+
+      expect(component.showContactForm[staffId]).toBe(false);
+    });
+
+    it('should clear editingContact after successful save', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.editingContact[staffId] = mockContacts[0];
+      component.contactFormData[staffId] = { contact_type: 'EMAIL', contact_value: 'test@test.com' };
+
+      component.saveContact(staffId, mockForm);
+
+      expect(component.editingContact[staffId]).toBeNull();
+    });
+
+    it('should hide fee form after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.showFeeForm = true;
+      component.feeFormData = { fee_type: 'TPA', amount: 100 };
+
+      component.saveFee(mockForm);
+
+      expect(component.showFeeForm).toBe(false);
+    });
+
+    it('should clear editingFee after successful save', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingFee = mockFees[0];
+      component.feeFormData = { fee_type: 'TPA', amount: 100 };
+
+      component.saveFee(mockForm);
+
+      expect(component.editingFee).toBeNull();
+    });
+  });
+
+  describe('Data Reload After Operations', () => {
+    it('should reload addresses after successful create', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.addressFormData = { street_line1: 'Test' };
+      hospitalService.getHospitalAddresses.mockClear();
+
+      component.saveAddress(mockForm);
+
+      expect(hospitalService.getHospitalAddresses).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload addresses after successful update', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingAddress = mockAddresses[0] as HospitalAddress;
+      component.addressFormData = { street_line1: 'Updated' };
+      hospitalService.getHospitalAddresses.mockClear();
+
+      component.saveAddress(mockForm);
+
+      expect(hospitalService.getHospitalAddresses).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload addresses after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getHospitalAddresses.mockClear();
+
+      component.deleteAddress('1');
+
+      expect(hospitalService.getHospitalAddresses).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload codes after successful create', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.codeFormData = { code_type: 'TEST', code_value: 'VAL' };
+      hospitalService.getHospitalCodes.mockClear();
+
+      component.saveCode(mockForm);
+
+      expect(hospitalService.getHospitalCodes).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload codes after successful update', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingCode = mockCodes[0];
+      component.codeFormData = { code_value: 'Updated' };
+      hospitalService.getHospitalCodes.mockClear();
+
+      component.saveCode(mockForm);
+
+      expect(hospitalService.getHospitalCodes).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload codes after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getHospitalCodes.mockClear();
+
+      component.deleteCode('1');
+
+      expect(hospitalService.getHospitalCodes).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload staff after successful create', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.staffFormData = { staff_name: 'Dr. Test' };
+      hospitalService.getHospitalStaff.mockClear();
+
+      component.saveStaff(mockForm);
+
+      expect(hospitalService.getHospitalStaff).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload staff after successful update', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingStaff = mockStaff[0];
+      component.staffFormData = { staff_name: 'Dr. Updated' };
+      hospitalService.getHospitalStaff.mockClear();
+
+      component.saveStaff(mockForm);
+
+      expect(hospitalService.getHospitalStaff).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload staff after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getHospitalStaff.mockClear();
+
+      component.deleteStaff('1');
+
+      expect(hospitalService.getHospitalStaff).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload contacts after successful create', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.contactFormData[staffId] = { contact_type: 'EMAIL', contact_value: 'test@test.com' };
+      hospitalService.getStaffContacts.mockClear();
+
+      component.saveContact(staffId, mockForm);
+
+      expect(hospitalService.getStaffContacts).toHaveBeenCalledWith('1', staffId);
+    });
+
+    it('should reload contacts after successful update', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.editingContact[staffId] = mockContacts[0];
+      component.contactFormData[staffId] = { contact_type: 'PHONE', contact_value: '123' };
+      hospitalService.getStaffContacts.mockClear();
+
+      component.saveContact(staffId, mockForm);
+
+      expect(hospitalService.getStaffContacts).toHaveBeenCalledWith('1', staffId);
+    });
+
+    it('should reload contacts after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getStaffContacts.mockClear();
+
+      component.deleteContact('1', '1');
+
+      expect(hospitalService.getStaffContacts).toHaveBeenCalledWith('1', '1');
+    });
+
+    it('should reload fees after successful create', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.feeFormData = { fee_type: 'TPA', amount: 100 };
+      hospitalService.getHospitalFees.mockClear();
+
+      component.saveFee(mockForm);
+
+      expect(hospitalService.getHospitalFees).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload fees after successful update', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingFee = mockFees[0];
+      component.feeFormData = { fee_type: 'TPA', amount: 150 };
+      hospitalService.getHospitalFees.mockClear();
+
+      component.saveFee(mockForm);
+
+      expect(hospitalService.getHospitalFees).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload fees after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getHospitalFees.mockClear();
+
+      component.deleteFee('1');
+
+      expect(hospitalService.getHospitalFees).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('Fee Date Handling', () => {
+    it('should handle fees with null effective_date', () => {
+      const feeWithNullDate: FeeSchedule = {
+        ...mockFees[0],
+        effective_date: null as any,
+        expiry_date: null as any
+      };
+
+      component.editFee(feeWithNullDate);
+
+      expect(component.feeFormData.effective_date).toBeUndefined();
+      expect(component.feeFormData.expiry_date).toBeUndefined();
+    });
+
+    it('should handle fees with undefined dates', () => {
+      const feeWithUndefinedDates: FeeSchedule = {
+        ...mockFees[0],
+        effective_date: undefined as any,
+        expiry_date: undefined as any
+      };
+
+      component.editFee(feeWithUndefinedDates);
+
+      expect(component.feeFormData.effective_date).toBeUndefined();
+      expect(component.feeFormData.expiry_date).toBeUndefined();
+    });
+
+    it('should convert effective_date to ISO string when editing fee', () => {
+      const feeWithDate: FeeSchedule = {
+        ...mockFees[0],
+        effective_date: '2024-01-01T00:00:00Z' as any
+      };
+
+      component.editFee(feeWithDate);
+
+      expect(component.feeFormData.effective_date).toBe('2024-01-01');
+    });
+
+    it('should convert expiry_date to ISO string when editing fee', () => {
+      const feeWithDate: FeeSchedule = {
+        ...mockFees[0],
+        expiry_date: '2024-12-31T00:00:00Z' as any
+      };
+
+      component.editFee(feeWithDate);
+
+      expect(component.feeFormData.expiry_date).toBe('2024-12-31');
+    });
+  });
+
+  describe('Edit Operations - Null/Undefined Field Handling', () => {
+    it('should handle address with null fields when editing', () => {
+      const addressWithNulls: HospitalAddress = {
+        ...mockAddresses[0] as HospitalAddress,
+        street_line2: null as any,
+        postal_code: null as any,
+        state: null as any
+      };
+
+      component.editAddress(addressWithNulls);
+
+      expect(component.addressFormData.street_line2).toBe('');
+      expect(component.addressFormData.postal_code).toBe('');
+      expect(component.addressFormData.state).toBe('');
+    });
+
+    it('should handle address with undefined is_primary flag', () => {
+      const address: HospitalAddress = {
+        ...mockAddresses[0] as HospitalAddress,
+        is_primary: undefined as any
+      };
+
+      component.editAddress(address);
+
+      expect(component.addressFormData.is_primary).toBe(false);
+    });
+
+    it('should handle code with null code_type when editing', () => {
+      const codeWithNull: HospitalCode = {
+        ...mockCodes[0],
+        code_type: null as any,
+        code_value: null as any
+      };
+
+      component.editCode(codeWithNull);
+
+      expect(component.codeFormData.code_type).toBe('');
+      expect(component.codeFormData.code_value).toBe('');
+    });
+
+    it('should handle code with undefined is_active flag', () => {
+      const code: HospitalCode = {
+        ...mockCodes[0],
+        is_active: undefined as any
+      };
+
+      component.editCode(code);
+
+      expect(component.codeFormData.is_active).toBe(true);
+    });
+
+    it('should handle staff with null fields when editing', () => {
+      const staffWithNulls: HospitalStaff = {
+        ...mockStaff[0],
+        staff_type: null as any,
+        specialty: null as any
+      };
+
+      component.editStaff(staffWithNulls);
+
+      expect(component.staffFormData.staff_type).toBe('');
+      expect(component.staffFormData.specialty).toBe('');
+    });
+
+    it('should handle staff with undefined is_active flag', () => {
+      const staff: HospitalStaff = {
+        ...mockStaff[0],
+        is_active: undefined as any
+      };
+
+      component.editStaff(staff);
+
+      expect(component.staffFormData.is_active).toBe(true);
+    });
+
+    it('should handle contact with null fields when editing', () => {
+      const staffId = '1';
+      const contactWithNulls: HospitalStaffContact = {
+        ...mockContacts[0],
+        contact_type: null as any,
+        contact_value: null as any
+      };
+
+      component.editContact(staffId, contactWithNulls);
+
+      expect(component.contactFormData[staffId].contact_type).toBe('');
+      expect(component.contactFormData[staffId].contact_value).toBe('');
+    });
+
+    it('should handle contact with undefined is_primary flag', () => {
+      const staffId = '1';
+      const contact: HospitalStaffContact = {
+        ...mockContacts[0],
+        is_primary: undefined as any
+      };
+
+      component.editContact(staffId, contact);
+
+      expect(component.contactFormData[staffId].is_primary).toBe(false);
+    });
+
+    it('should handle fee with null fields when editing', () => {
+      const feeWithNulls: FeeSchedule = {
+        ...mockFees[0],
+        fee_type: null as any,
+        item_code: null as any,
+        description: null as any,
+        amount: null as any
+      };
+
+      component.editFee(feeWithNulls);
+
+      expect(component.feeFormData.fee_type).toBe('');
+      expect(component.feeFormData.item_code).toBe('');
+      expect(component.feeFormData.description).toBe('');
+      expect(component.feeFormData.amount).toBe(0);
+    });
+
+    it('should handle fee with undefined is_active flag', () => {
+      const fee: FeeSchedule = {
+        ...mockFees[0],
+        is_active: undefined as any
+      };
+
+      component.editFee(fee);
+
+      expect(component.feeFormData.is_active).toBe(true);
+    });
+  });
+
+  describe('Data Copying in Save Operations', () => {
+    it('should create a copy of addressFormData when saving', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      const originalData = { street_line1: 'Test Address', city: 'Test City' };
+      component.addressFormData = originalData;
+
+      component.saveAddress(mockForm);
+
+      const callArg = hospitalService.createHospitalAddress.mock.calls[0][1];
+      expect(callArg).not.toBe(originalData);
+      expect(callArg).toEqual(originalData);
+    });
+
+    it('should create a copy of codeFormData when saving', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      const originalData = { code_type: 'TEST', code_value: 'VAL' };
+      component.codeFormData = originalData;
+
+      component.saveCode(mockForm);
+
+      const callArg = hospitalService.createHospitalCode.mock.calls[0][1];
+      expect(callArg).not.toBe(originalData);
+      expect(callArg).toEqual(originalData);
+    });
+
+    it('should create a copy of staffFormData when saving', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      const originalData = { staff_name: 'Dr. Test', staff_type: 'DOCTOR' };
+      component.staffFormData = originalData;
+
+      component.saveStaff(mockForm);
+
+      const callArg = hospitalService.createHospitalStaff.mock.calls[0][1];
+      expect(callArg).not.toBe(originalData);
+      expect(callArg).toEqual(originalData);
+    });
+
+    it('should create a copy of contactFormData when saving', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      const originalData = { contact_type: 'EMAIL', contact_value: 'test@test.com' };
+      component.contactFormData[staffId] = originalData;
+
+      component.saveContact(staffId, mockForm);
+
+      const callArg = hospitalService.createStaffContact.mock.calls[0][2];
+      expect(callArg).not.toBe(originalData);
+      expect(callArg).toEqual(originalData);
+    });
+
+    it('should create a copy of feeFormData when saving', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      const originalData = { fee_type: 'TPA', amount: 100 };
+      component.feeFormData = originalData;
+
+      component.saveFee(mockForm);
+
+      const callArg = hospitalService.createHospitalFee.mock.calls[0][1];
+      expect(callArg).not.toBe(originalData);
+      expect(callArg).toEqual(originalData);
+    });
+  });
+
+  describe('Logger Messages', () => {
+    it('should log success message when hospital loads', () => {
+      component.loadHospital('1');
+
+      expect(loggerService.info).toHaveBeenCalledWith('Hospital loaded successfully');
+    });
+
+    it('should log success message when addresses load', () => {
+      component.hospital = mockHospital;
+      component.loadAddresses();
+
+      expect(loggerService.info).toHaveBeenCalledWith('Addresses loaded successfully');
+    });
+
+    it('should log success message when codes load', () => {
+      component.hospital = mockHospital;
+      component.loadCodes();
+
+      expect(loggerService.info).toHaveBeenCalledWith('Codes loaded successfully');
+    });
+
+    it('should log success message when staff loads', () => {
+      component.hospital = mockHospital;
+      component.loadStaff();
+
+      expect(loggerService.info).toHaveBeenCalledWith('Staff loaded successfully');
+    });
+
+    it('should log success message when fees load', () => {
+      component.hospital = mockHospital;
+      component.loadFees();
+
+      expect(loggerService.info).toHaveBeenCalledWith('Fee schedules loaded successfully');
+    });
+
+    it('should log success message when contacts load', () => {
+      component.hospital = mockHospital;
+      component.loadStaffContacts('1');
+
+      expect(loggerService.info).toHaveBeenCalledWith('Contacts loaded for staff 1');
+    });
+  });
+
+  describe('Prevent  Loading When Hospital is Null', () => {
+    it('should not load addresses when hospital is null', () => {
+      component.hospital = null;
+      component.loadAddresses();
+
+      expect(hospitalService.getHospitalAddresses).not.toHaveBeenCalled();
+    });
+
+    it('should not load codes when hospital is null', () => {
+      component.hospital = null;
+      component.loadCodes();
+
+      expect(hospitalService.getHospitalCodes).not.toHaveBeenCalled();
+    });
+
+    it('should not load staff when hospital is null', () => {
+      component.hospital = null;
+      component.loadStaff();
+
+      expect(hospitalService.getHospitalStaff).not.toHaveBeenCalled();
+    });
+
+    it('should not load fees when hospital is null', () => {
+      component.hospital = null;
+      component.loadFees();
+
+      expect(hospitalService.getHospitalFees).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Data Reload After Operations', () => {
+    it('should reload staff after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getHospitalStaff.mockClear();
+
+      component.deleteStaff('1');
+
+      expect(hospitalService.getHospitalStaff).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload contacts after successful create', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.contactFormData[staffId] = { contact_type: 'EMAIL', contact_value: 'test@test.com' };
+      hospitalService.getStaffContacts.mockClear();
+
+      component.saveContact(staffId, mockForm);
+
+      expect(hospitalService.getStaffContacts).toHaveBeenCalledWith('1', staffId);
+    });
+
+    it('should reload contacts after successful update', () => {
+      const mockForm = createMockForm();
+      const staffId = '1';
+      component.hospital = mockHospital;
+      component.editingContact[staffId] = mockContacts[0];
+      component.contactFormData[staffId] = { contact_type: 'PHONE', contact_value: '123' };
+      hospitalService.getStaffContacts.mockClear();
+
+      component.saveContact(staffId, mockForm);
+
+      expect(hospitalService.getStaffContacts).toHaveBeenCalledWith('1', staffId);
+    });
+
+    it('should reload contacts after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getStaffContacts.mockClear();
+
+      component.deleteContact('1', '1');
+
+      expect(hospitalService.getStaffContacts).toHaveBeenCalledWith('1', '1');
+    });
+
+    it('should reload fees after successful create', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.feeFormData = { fee_type: 'TPA', amount: 100 };
+      hospitalService.getHospitalFees.mockClear();
+
+      component.saveFee(mockForm);
+
+      expect(hospitalService.getHospitalFees).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload fees after successful update', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      component.editingFee = mockFees[0];
+      component.feeFormData = { fee_type: 'TPA', amount: 150 };
+      hospitalService.getHospitalFees.mockClear();
+
+      component.saveFee(mockForm);
+
+      expect(hospitalService.getHospitalFees).toHaveBeenCalledWith('1');
+    });
+
+    it('should reload fees after successful delete', () => {
+      stubConfirm(vi, true);
+      component.hospital = mockHospital;
+      hospitalService.getHospitalFees.mockClear();
+
+      component.deleteFee('1');
+
+      expect(hospitalService.getHospitalFees).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('Fee Date Handling', () => {
+    it('should handle fees with null effective_date', () => {
+      const feeWithNullDate: FeeSchedule = {
+        ...mockFees[0],
+        effective_date: null as any,
+        expiry_date: null as any
+      };
+
+      component.editFee(feeWithNullDate);
+
+      expect(component.feeFormData.effective_date).toBeUndefined();
+      expect(component.feeFormData.expiry_date).toBeUndefined();
+    });
+
+    it('should handle fees with undefined dates', () => {
+      const feeWithUndefinedDates: FeeSchedule = {
+        ...mockFees[0],
+        effective_date: undefined as any,
+        expiry_date: undefined as any
+      };
+
+      component.editFee(feeWithUndefinedDates);
+
+      expect(component.feeFormData.effective_date).toBeUndefined();
+      expect(component.feeFormData.expiry_date).toBeUndefined();
+    });
+
+    it('should convert effective_date to ISO string when editing fee', () => {
+      const feeWithDate: FeeSchedule = {
+        ...mockFees[0],
+        effective_date: '2024-01-01T00:00:00Z' as any
+      };
+
+      component.editFee(feeWithDate);
+
+      expect(component.feeFormData.effective_date).toBe('2024-01-01');
+    });
+
+    it('should convert expiry_date to ISO string when editing fee', () => {
+      const feeWithDate: FeeSchedule = {
+        ...mockFees[0],
+        expiry_date: '2024-12-31T00:00:00Z' as any
+      };
+
+      component.editFee(feeWithDate);
+
+      expect(component.feeFormData.expiry_date).toBe('2024-12-31');
+    });
+  });
+
+  describe('Edit Operations - Null/Undefined Field Handling', () => {
+    it('should handle address with null fields when editing', () => {
+      const addressWithNulls: HospitalAddress = {
+        ...mockAddresses[0] as HospitalAddress,
+        street_line2: null as any,
+        postal_code: null as any,
+        state: null as any
+      };
+
+      component.editAddress(addressWithNulls);
+
+      expect(component.addressFormData.street_line2).toBe('');
+      expect(component.addressFormData.postal_code).toBe('');
+      expect(component.addressFormData.state).toBe('');
+    });
+
+    it('should handle address with undefined is_primary flag', () => {
+      const address: HospitalAddress = {
+        ...mockAddresses[0] as HospitalAddress,
+        is_primary: undefined as any
+      };
+
+      component.editAddress(address);
+
+      expect(component.addressFormData.is_primary).toBe(false);
+    });
+
+    it('should handle code with null code_type when editing', () => {
+      const codeWithNull: HospitalCode = {
+        ...mockCodes[0],
+        code_type: null as any,
+        code_value: null as any
+      };
+
+      component.editCode(codeWithNull);
+
+      expect(component.codeFormData.code_type).toBe('');
+      expect(component.codeFormData.code_value).toBe('');
+    });
+
+    it('should handle code with undefined is_active flag', () => {
+      const code: HospitalCode = {
+        ...mockCodes[0],
+        is_active: undefined as any
+      };
+
+      component.editCode(code);
+
+      expect(component.codeFormData.is_active).toBe(true);
+    });
+
+    it('should handle staff with null fields when editing', () => {
+      const staffWithNulls: HospitalStaff = {
+        ...mockStaff[0],
+        staff_type: null as any,
+        specialty: null as any
+      };
+
+      component.editStaff(staffWithNulls);
+
+      expect(component.staffFormData.staff_type).toBe('');
+      expect(component.staffFormData.specialty).toBe('');
+    });
+
+    it('should handle staff with undefined is_active flag', () => {
+      const staff: HospitalStaff = {
+        ...mockStaff[0],
+        is_active: undefined as any
+      };
+
+      component.editStaff(staff);
+
+      expect(component.staffFormData.is_active).toBe(true);
+    });
+
+    it('should handle contact with null fields when editing', () => {
+      const staffId = '1';
+      const contactWithNulls: HospitalStaffContact = {
+        ...mockContacts[0],
+        contact_type: null as any,
+        contact_value: null as any
+      };
+
+      component.editContact(staffId, contactWithNulls);
+
+      expect(component.contactFormData[staffId].contact_type).toBe('');
+      expect(component.contactFormData[staffId].contact_value).toBe('');
+    });
+
+    it('should handle contact with undefined is_primary flag', () => {
+      const staffId = '1';
+      const contact: HospitalStaffContact = {
+        ...mockContacts[0],
+        is_primary: undefined as any
+      };
+
+      component.editContact(staffId, contact);
+
+      expect(component.contactFormData[staffId].is_primary).toBe(false);
+    });
+
+    it('should handle fee with null fields when editing', () => {
+      const feeWithNulls: FeeSchedule = {
+        ...mockFees[0],
+        fee_type: null as any,
+        item_code: null as any,
+        description: null as any,
+        amount: null as any
+      };
+
+      component.editFee(feeWithNulls);
+
+      expect(component.feeFormData.fee_type).toBe('');
+      expect(component.feeFormData.item_code).toBe('');
+      expect(component.feeFormData.description).toBe('');
+      expect(component.feeFormData.amount).toBe(0);
+    });
+
+    it('should handle fee with undefined is_active flag', () => {
+      const fee: FeeSchedule = {
+        ...mockFees[0],
+        is_active: undefined as any
+      };
+
+      component.editFee(fee);
+
+      expect(component.feeFormData.is_active).toBe(true);
+    });
+  });
+
+  describe('Data Copying in Save Operations', () => {
+    it('should call service with address data when saving', () => {
+      const mockForm = createMockForm();
+      component.hospital = mockHospital;
+      const originalData = { street_line1: 'Test Address', city: 'Test City' };
+      component.addressFormData = originalData;
+      hospitalService.createHospitalAddress.mockReturnValue(of('addr1'));
+
+      component.saveAddress(mockForm);
+
+      expect(hospitalService.createHospitalAddress).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          street_line1: 'Test Address',
+          city: 'Test City'
+        })
+      );
+    });
 
     it('should set staff contacts after successful load', () => {
       component.hospital = mockHospital;
@@ -1431,7 +2573,6 @@ describe('HospitalViewComponent', () => {
 
       expect(component.addressFormData.street_line1).toBe('123 Main St');
       expect(component.addressFormData.street_line2).toBe('Suite 100');
-      expect(component.addressFormData.legacy_hospital_address_id).toBe('legacy-123');
     });
 
     it('should set code form data when editing code', () => {
@@ -1451,7 +2592,6 @@ describe('HospitalViewComponent', () => {
       expect(component.codeFormData.code_type).toBe('ZURICH_CODE');
       expect(component.codeFormData.code_value).toBe('ZUR123');
       expect(component.codeFormData.is_active).toBe(false);
-      expect(component.codeFormData.legacy_hospital_code_id).toBe('legacy-code');
     });
 
     it('should set staff form data when editing staff', () => {
@@ -1473,7 +2613,6 @@ describe('HospitalViewComponent', () => {
       expect(component.staffFormData.staff_type).toBe('Doctor');
       expect(component.staffFormData.specialty).toBe('Cardiology');
       expect(component.staffFormData.is_active).toBe(false);
-      expect(component.staffFormData.legacy_hospital_staff_id).toBe('legacy-staff');
     });
 
     it('should set fee form data when editing fee', () => {
@@ -1499,7 +2638,6 @@ describe('HospitalViewComponent', () => {
       expect(component.feeFormData.description).toBe('Test Fee');
       expect(component.feeFormData.amount).toBe(100);
       expect(component.feeFormData.is_active).toBe(false);
-      expect(component.feeFormData.legacy_fee_schedule_id).toBe('legacy-fee');
     });
 
     it('should set contact form data when editing contact', () => {
@@ -1520,7 +2658,6 @@ describe('HospitalViewComponent', () => {
       expect(component.contactFormData[staffId].contact_type).toBe('EMAIL');
       expect(component.contactFormData[staffId].contact_value).toBe('test@test.com');
       expect(component.contactFormData[staffId].is_primary).toBe(true);
-      expect(component.contactFormData[staffId].legacy_hospital_contact_id).toBe('legacy-contact');
     });
   });
 

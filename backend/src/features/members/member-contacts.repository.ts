@@ -64,9 +64,9 @@ export class MemberContactsRepository extends BaseRepository<MemberContact> {
   }
 
   /**
-   * Create new membercontact
+   * Create new member contact
    */
-  public async createContact(dto: CreateMemberContactDto): Promise<string> {
+  public async createContact(dto: CreateMemberContactDto, createdBy?: string): Promise<string> {
     const pool = await connectionManager.getPool();
     
     // If this is the primary contact for this type, unset others first
@@ -74,26 +74,28 @@ export class MemberContactsRepository extends BaseRepository<MemberContact> {
       await this.unsetPrimaryForMemberAndType(dto.member_id, dto.contact_type);
     }
     
-    const result = await pool.request()
+    const request = pool.request()
       .input('member_id', sql.BigInt, dto.member_id)
       .input('contact_type', sql.VarChar(50), dto.contact_type || null)
       .input('contact_value', sql.VarChar(100), dto.contact_value || null)
-      .input('is_primary', sql.Bit, dto.is_primary || false)
-      .input('legacy_member_contact_id', sql.UniqueIdentifier, dto.legacy_member_contact_id || null)
-      .query(`
+      .input('is_primary', sql.Bit, dto.is_primary || false);
+    
+    if (createdBy) {
+      request.input('createdBy', sql.VarChar(50), createdBy);
+    }
+    
+    const result = await request.query(`
         INSERT INTO ${DB_TABLES.MEMBER_CONTACTS} (
           member_id,
           contact_type,
           contact_value,
-          is_primary,
-          legacy_member_contact_id
+          is_primary${createdBy ? ',\n          created_by' : ''}
         )
         VALUES (
           @member_id,
           @contact_type,
           @contact_value,
-          @is_primary,
-          @legacy_member_contact_id
+          @is_primary${createdBy ? ',\n          @createdBy' : ''}
         );
         SELECT CAST(SCOPE_IDENTITY() AS VARCHAR) AS contact_id;
       `);
@@ -104,7 +106,7 @@ export class MemberContactsRepository extends BaseRepository<MemberContact> {
   /**
    * Update member contact
    */
-  public async updateContact(contactId: string, dto: UpdateMemberContactDto): Promise<boolean> {
+  public async updateContact(contactId: string, dto: UpdateMemberContactDto, updatedBy?: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('contact_id', sql.BigInt, contactId);
 
@@ -134,12 +136,14 @@ export class MemberContactsRepository extends BaseRepository<MemberContact> {
       request.input('is_primary', sql.Bit, dto.is_primary);
     }
 
-    if (dto.legacy_member_contact_id !== undefined) {
-      setClauses.push('legacy_member_contact_id = @legacy_member_contact_id');
-      request.input('legacy_member_contact_id', sql.UniqueIdentifier, dto.legacy_member_contact_id);
+    if (updatedBy) {
+      setClauses.push('updated_by = @updatedBy');
+      request.input('updatedBy', sql.VarChar(50), updatedBy);
     }
 
-    if (setClauses.length === 0) {
+    setClauses.push('updated_at = GETDATE()');
+
+    if (setClauses.length === 1) { // Only updated_at
       return false;
     }
 

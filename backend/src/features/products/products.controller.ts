@@ -34,12 +34,12 @@ export class ProductsController {
     try {
       const filters: ProductFilters = {
         search: req.body.search,
-        insurerName: req.body.insurerName ?? req.body.insurer_name,
-        isActive: req.body.isActive ?? req.body.is_active,
-        page: req.body.page || 1,
-        limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'product_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        insurer_name: req.body.insurer_name,
+        is_active: req.body.is_active,
+        page: req.body.page ?? 1,
+        limit: req.body.limit ?? 10,
+        sort_by: req.body.sort_by ?? 'product_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getProducts(filters);
@@ -112,6 +112,7 @@ export class ProductsController {
    */
   public createProduct = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateProductDto = req.body;
 
       // Validate required fields
@@ -127,7 +128,7 @@ export class ProductsController {
         return;
       }
 
-      const productId = await this.service.createProduct(dto);
+      const productId = await this.service.createProduct(dto, createdBy);
 
       ResponseUtil.success(res, { product_id: productId }, 'Product created successfully', 201);
     } catch (error: unknown) {
@@ -142,6 +143,7 @@ export class ProductsController {
    */
   public updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const { product_id, ...dto }: UpdateProductDto & { product_id: number } = req.body;
 
       if (!product_id || isNaN(product_id)) {
@@ -165,7 +167,7 @@ export class ProductsController {
         }
       }
 
-      const success = await this.service.updateProduct(product_id, dto);
+      const success = await this.service.updateProduct(product_id, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { product_id }, 'Product updated successfully');
@@ -317,6 +319,7 @@ export class ProductsController {
    */
   public createLimit = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const productId = parseInt(req.params.productId);
 
       if (isNaN(productId)) {
@@ -329,7 +332,7 @@ export class ProductsController {
         product_id: productId
       };
 
-      const limitId = await this.service.createLimit(dto);
+      const limitId = await this.service.createLimit(dto, createdBy);
 
       ResponseUtil.success(res, { limit_id: limitId }, 'Product limit created successfully', 201);
     } catch (error: unknown) {
@@ -345,6 +348,7 @@ export class ProductsController {
    */
   public updateLimit = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const limitId = parseInt(req.params.limitId);
 
       if (isNaN(limitId)) {
@@ -354,7 +358,7 @@ export class ProductsController {
 
       const dto: UpdateProductLimitDto = req.body;
 
-      const success = await this.service.updateLimit(limitId, dto);
+      const success = await this.service.updateLimit(limitId, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { limit_id: limitId }, 'Product limit updated successfully');
@@ -454,6 +458,7 @@ export class ProductsController {
    */
   public createCopay = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const productId = parseInt(req.params.productId);
 
       if (isNaN(productId)) {
@@ -466,7 +471,7 @@ export class ProductsController {
         product_id: productId
       };
 
-      const copayId = await this.service.createCopay(dto);
+      const copayId = await this.service.createCopay(dto, createdBy);
 
       ResponseUtil.success(res, { copay_id: copayId }, 'Product copay rule created successfully', 201);
     } catch (error: unknown) {
@@ -482,6 +487,7 @@ export class ProductsController {
    */
   public updateCopay = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const copayId = parseInt(req.params.copayId);
 
       if (isNaN(copayId)) {
@@ -491,7 +497,7 @@ export class ProductsController {
 
       const dto: UpdateProductCopayDto = req.body;
 
-      const success = await this.service.updateCopay(copayId, dto);
+      const success = await this.service.updateCopay(copayId, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { copay_id: copayId }, 'Product copay rule updated successfully');

@@ -28,16 +28,16 @@ export class ClausesRepository extends BaseRepository<Clause> {
       request.input('search', sql.NVarChar(sql.MAX), `%${filters.search}%`);
     }
 
-    if (filters.isActive !== undefined) {
+    if (filters.is_active !== undefined) {
       whereClauses.push('is_active = @isActive');
-      request.input('isActive', sql.Bit, filters.isActive);
+      request.input('isActive', sql.Bit, filters.is_active);
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Sorting
-    const sortBy = filters.sortBy || 'clause_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'clause_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
 
     // Get total count
@@ -124,54 +124,38 @@ export class ClausesRepository extends BaseRepository<Clause> {
     clauseCode: string,
     clauseText: string,
     isActive: boolean,
-    legacyConfigId?: string,
+    createdBy: string,
     clauseCategory?: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
       .input('clauseCode', sql.VarChar(20), clauseCode)
       .input('clauseText', sql.NVarChar(sql.MAX), clauseText)
-      .input('isActive', sql.Bit, isActive);
+      .input('isActive', sql.Bit, isActive)
+      .input('createdBy', sql.VarChar(50), createdBy);
     
     let query: string;
     
-    if (legacyConfigId || clauseCategory) {
-      if (legacyConfigId) {
-        request.input('legacyConfigId', sql.UniqueIdentifier, legacyConfigId);
-      }
-      if (clauseCategory) {
-        request.input('clauseCategory', sql.VarChar(50), clauseCategory);
-      }
-      
-      const columns = ['clause_code', 'clause_text', 'is_active'];
-      const values = ['@clauseCode', '@clauseText', '@isActive'];
-      
-      if (legacyConfigId) {
-        columns.push('legacy_config_id');
-        values.push('@legacyConfigId');
-      }
-      if (clauseCategory) {
-        columns.push('clause_category');
-        values.push('@clauseCategory');
-      }
+    if (clauseCategory) {
+      request.input('clauseCategory', sql.VarChar(50), clauseCategory);
       
       query = `
         INSERT INTO ${DB_TABLES.CLAUSES} (
-          ${columns.join(', ')}
+          clause_code, clause_text, is_active, created_by, clause_category
         )
         OUTPUT INSERTED.clause_id
         VALUES (
-          ${values.join(', ')}
+          @clauseCode, @clauseText, @isActive, @createdBy, @clauseCategory
         )
       `;
     } else {
       query = `
         INSERT INTO ${DB_TABLES.CLAUSES} (
-          clause_code, clause_text, is_active
+          clause_code, clause_text, is_active, created_by
         )
         OUTPUT INSERTED.clause_id
         VALUES (
-          @clauseCode, @clauseText, @isActive
+          @clauseCode, @clauseText, @isActive, @createdBy
         )
       `;
     }
@@ -187,8 +171,8 @@ export class ClausesRepository extends BaseRepository<Clause> {
     clauseId: number,
     clauseCode: string | undefined,
     clauseText: string | undefined,
-    legacyConfigId: string | undefined,
-    isActive: boolean | undefined
+    isActive: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -204,15 +188,6 @@ export class ClausesRepository extends BaseRepository<Clause> {
       request.input('clauseText', sql.NVarChar(sql.MAX), clauseText);
     }
 
-    if (legacyConfigId !== undefined) {
-      if (legacyConfigId) {
-        updates.push('legacy_config_id = @legacyConfigId');
-        request.input('legacyConfigId', sql.UniqueIdentifier, legacyConfigId);
-      } else {
-        updates.push('legacy_config_id = NULL');
-      }
-    }
-
     if (isActive !== undefined) {
       updates.push('is_active = @isActive');
       request.input('isActive', sql.Bit, isActive);
@@ -221,6 +196,11 @@ export class ClausesRepository extends BaseRepository<Clause> {
     if (updates.length === 0) {
       return; // Nothing to update
     }
+
+    // Add audit fields
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('clauseId', sql.BigInt, clauseId);
 

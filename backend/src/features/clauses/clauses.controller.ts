@@ -21,11 +21,11 @@ export class ClausesController {
       // Accept both camelCase and snake_case from frontend
       const filters: ClauseFilters = {
         search: req.body.search,
-        isActive: req.body.isActive ?? req.body.is_active,
-        page: req.body.page || 1,
-        limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'clause_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        is_active: req.body.is_active,
+        page: req.body.page ?? 1,
+        limit: req.body.limit ?? 10,
+        sort_by: req.body.sort_by ?? 'clause_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getClauses(filters);
@@ -67,10 +67,11 @@ export class ClausesController {
   /**
    * Create new clause
    * POST /api/master/clauses/create
-   * Body: { clause_code, clause_text, is_active?, legacy_config_id?, clause_category? }
+   * Body: { clause_code, clause_text, is_active?, clause_category? }
    */
   public createClause = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateClauseDto = req.body;
 
       if (!dto.clause_code || !dto.clause_text) {
@@ -78,7 +79,7 @@ export class ClausesController {
         return;
       }
 
-      const clauseId = await this.service.createClause(dto);
+      const clauseId = await this.service.createClause(dto, createdBy);
 
       ResponseUtil.success(res, { clause_id: clauseId }, 'Clause created successfully', 201);
     } catch (error: unknown) {
@@ -115,6 +116,7 @@ export class ClausesController {
    */
   public updateClause = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const clauseId = req.body.clause_id;
       const dto: UpdateClauseDto = {
         clause_code: req.body.clause_code,
@@ -127,7 +129,7 @@ export class ClausesController {
         return;
       }
 
-      await this.service.updateClause(clauseId, dto);
+      await this.service.updateClause(clauseId, dto, updatedBy);
 
       ResponseUtil.success(res, null, 'Clause updated successfully');
     } catch (error: unknown) {

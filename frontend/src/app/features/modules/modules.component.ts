@@ -197,13 +197,13 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
             <form id="moduleForm" #moduleFormRef="ngForm" (ngSubmit)="saveModule()">
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Module Name *</label>
+                  <label class="block text-sm font-medium text-gray-700">Module Name <span class="text-red-500">*</span></label>
                   <input type="text" [(ngModel)]="formData.moduleName" name="name" required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Module Code *</label>
+                  <label class="block text-sm font-medium text-gray-700">Module Code <span class="text-red-500">*</span></label>
                   <input type="text" [(ngModel)]="formData.moduleCode" name="code" required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
                 </div>

@@ -57,28 +57,28 @@ export class ProductLimitsRepository extends BaseRepository<ProductLimit> {
   /**
    * Create new product limit
    */
-  public async createLimit(dto: CreateProductLimitDto): Promise<number> {
+  public async createLimit(dto: CreateProductLimitDto, createdBy: string): Promise<number> {
     const pool = await connectionManager.getPool();
     const result = await pool.request()
       .input('product_id', sql.BigInt, dto.product_id)
       .input('limit_type', sql.VarChar(50), dto.limit_type || null)
       .input('limit_amount', sql.Money, dto.limit_amount || null)
       .input('is_active', sql.Bit, dto.is_active !== undefined ? dto.is_active : true)
-      .input('legacy_product_limit_id', sql.UniqueIdentifier, dto.legacy_product_limit_id || null)
+      .input('createdBy', sql.VarChar(50), createdBy)
       .query(`
         INSERT INTO ${DB_TABLES.PRODUCT_LIMITS} (
           product_id,
           limit_type,
           limit_amount,
           is_active,
-          legacy_product_limit_id
+          created_by
         )
         VALUES (
           @product_id,
           @limit_type,
           @limit_amount,
           @is_active,
-          @legacy_product_limit_id
+          @createdBy
         );
         SELECT SCOPE_IDENTITY() AS limit_id;
       `);
@@ -89,7 +89,7 @@ export class ProductLimitsRepository extends BaseRepository<ProductLimit> {
   /**
    * Update product limit
    */
-  public async updateLimit(limitId: number, dto: UpdateProductLimitDto): Promise<boolean> {
+  public async updateLimit(limitId: number, dto: UpdateProductLimitDto, updatedBy: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('limit_id', sql.BigInt, limitId);
 
@@ -113,6 +113,11 @@ export class ProductLimitsRepository extends BaseRepository<ProductLimit> {
     if (setClauses.length === 0) {
       return false;
     }
+
+    // Add audit fields
+    setClauses.push('updated_by = @updatedBy');
+    setClauses.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     const result = await request.query(`
       UPDATE ${DB_TABLES.PRODUCT_LIMITS}

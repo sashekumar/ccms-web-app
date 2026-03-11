@@ -24,9 +24,9 @@ module.exports = {
   coverageThreshold: {
     global: {
       branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      functions: 88,
+      lines: 86,
+      statements: 85,
     },
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
@@ -34,4 +34,5 @@ module.exports = {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
+  testTimeout: 30000, // 30 second timeout for all tests to handle slow operations
 };

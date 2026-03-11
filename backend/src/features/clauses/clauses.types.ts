@@ -21,7 +21,6 @@ export interface ClauseListItem {
 }
 
 export interface CreateClauseDto {
-  legacy_config_id?: string;
   clause_category?: string;
   clause_code: string;
   clause_text: string;
@@ -31,17 +30,16 @@ export interface CreateClauseDto {
 export interface UpdateClauseDto {
   clause_code?: string;
   clause_text?: string;
-  legacy_config_id?: string;
   is_active?: boolean;
 }
 
 export interface ClauseFilters {
   search?: string;
-  isActive?: boolean;
+  is_active?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedClauses {

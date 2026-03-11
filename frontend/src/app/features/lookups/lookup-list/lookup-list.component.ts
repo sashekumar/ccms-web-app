@@ -164,7 +164,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
           <div class="space-y-4">
             <!-- Category Selection (only for create) -->
             <div *ngIf="!editingLookup">
-              <label class="block text-sm font-medium text-gray-700">Category *</label>
+              <label class="block text-sm font-medium text-gray-700">Category <span class="text-red-500">*</span></label>
               <select
                 [(ngModel)]="selectedCategoryMode"
                 (ngModelChange)="onCategoryModeChange()"
@@ -179,7 +179,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
             <!-- New Category Fields -->
             <div *ngIf="!editingLookup && selectedCategoryMode === 'new'" class="space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700">New Category Name *</label>
+                <label class="block text-sm font-medium text-gray-700">New Category Name <span class="text-red-500">*</span></label>
                 <input
                   type="text"
                   [(ngModel)]="formData.new_category_name"
@@ -212,7 +212,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
 
             <!-- Lookup Code -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Lookup Code *</label>
+              <label class="block text-sm font-medium text-gray-700">Lookup Code <span class="text-red-500">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="formData.lookup_code"
@@ -225,7 +225,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
 
             <!-- Lookup Value -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Lookup Value *</label>
+              <label class="block text-sm font-medium text-gray-700">Lookup Value <span class="text-red-500">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="formData.lookup_value"
@@ -246,20 +246,6 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72] disabled:bg-gray-100"
                 [class.bg-gray-100]="!editingLookup"
               />
-            </div>
-
-            <!-- Legacy Lookup ID -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Legacy Lookup ID</label>
-              <input
-                type="text"
-                [(ngModel)]="formData.legacy_lookup_id"
-                pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                placeholder="e.g., 12345678-1234-1234-1234-123456789012"
-                title="Must be a valid GUID format or leave empty"
-              />
-              <p class="mt-1 text-xs text-gray-500">Optional: Valid GUID format (e.g., 12345678-1234-1234-1234-123456789012) or leave empty</p>
             </div>
 
             <!-- Active Status -->
@@ -321,7 +307,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
             <h4 class="mb-3 text-sm font-medium text-gray-700">Add New Metadata</h4>
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-gray-700">Key *</label>
+                <label class="block text-sm font-medium text-gray-700">Key <span class="text-red-500">*</span></label>
                 <input
                   type="text"
                   [(ngModel)]="metadataFormData.metadata_key"
@@ -330,7 +316,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Value *</label>
+                <label class="block text-sm font-medium text-gray-700">Value <span class="text-red-500">*</span></label>
                 <input
                   type="text"
                   [(ngModel)]="metadataFormData.metadata_value"
@@ -410,7 +396,6 @@ export class LookupListComponent implements OnInit, OnDestroy {
     lookup_code: '', 
     lookup_value: '', 
     sort_order: null as any, 
-    legacy_lookup_id: '', 
     is_active: true 
   };
 
@@ -547,7 +532,6 @@ export class LookupListComponent implements OnInit, OnDestroy {
       lookup_code: '',
       lookup_value: '',
       sort_order: null as any, // Will be auto-calculated by backend
-      legacy_lookup_id: '',
       is_active: true
     };
     this.showModal = true;
@@ -561,7 +545,6 @@ export class LookupListComponent implements OnInit, OnDestroy {
       lookup_code: lookup.lookup_code,
       lookup_value: lookup.lookup_value,
       sort_order: lookup.sort_order,
-      legacy_lookup_id: lookup.legacy_lookup_id || '',
       is_active: lookup.is_active
     };
     this.showModal = true;
@@ -632,17 +615,6 @@ export class LookupListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate Legacy Lookup ID if provided
-    if (this.formData.legacy_lookup_id && this.formData.legacy_lookup_id.trim() !== '') {
-      if (!this.isValidGuid(this.formData.legacy_lookup_id)) {
-        this.toast.error('Legacy Lookup ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-        return;
-      }
-    } else {
-      // Convert empty string to undefined for API call
-      this.formData.legacy_lookup_id = undefined;
-    }
-
     // Validate Legacy Category ID if provided (for inline category creation)
     if (this.selectedCategoryMode === 'new' && this.formData.new_category_legacy_id && this.formData.new_category_legacy_id.trim() !== '') {
       if (!this.isValidGuid(this.formData.new_category_legacy_id)) {
@@ -663,7 +635,6 @@ export class LookupListComponent implements OnInit, OnDestroy {
         lookup_code: this.formData.lookup_code,
         lookup_value: this.formData.lookup_value,
         sort_order: this.formData.sort_order,
-        legacy_lookup_id: this.formData.legacy_lookup_id,
         is_active: this.formData.is_active
       };
 
@@ -687,7 +658,6 @@ export class LookupListComponent implements OnInit, OnDestroy {
       const createData: CreateLookupDto = {
         lookup_code: this.formData.lookup_code,
         lookup_value: this.formData.lookup_value,
-        legacy_lookup_id: this.formData.legacy_lookup_id,
         is_active: this.formData.is_active
       };
 

@@ -61,11 +61,11 @@ export class MembersController {
     try {
       const filters: MemberFilters = {
         search: req.body.search,
-        isDeleted: req.body.isDeleted ?? req.body.is_deleted,
+        is_deleted: req.body.is_deleted,
         page: req.body.page || 1,
         limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'member_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        sort_by: req.body.sort_by ?? 'member_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getMembers(filters);
@@ -160,7 +160,8 @@ export class MembersController {
         return;
       }
 
-      const memberId = await this.service.createMember(dto);
+      const createdBy = (req as any).user?.userId?.toString();
+      const memberId = await this.service.createMember(dto, createdBy);
 
       ResponseUtil.success(res, { member_id: memberId }, 'Member created successfully', 201);
     } catch (error: unknown) {
@@ -200,7 +201,8 @@ export class MembersController {
         }
       }
 
-      const success = await this.service.updateMember(member_id, dto);
+      const updatedBy = (req as any).user?.userId?.toString();
+      const success = await this.service.updateMember(member_id, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { member_id }, 'Member updated successfully');
@@ -340,7 +342,8 @@ export class MembersController {
         return;
       }
 
-      const addressId = await this.service.createAddress(dto);
+      const createdBy = (req as any).user?.userId?.toString();
+      const addressId = await this.service.createAddress(dto, createdBy);
 
       ResponseUtil.success(res, { address_id: addressId }, 'Address created successfully', 201);
     } catch (error: unknown) {
@@ -365,7 +368,8 @@ export class MembersController {
 
       const dto: UpdateMemberAddressDto = req.body;
 
-      const success = await this.service.updateAddress(addressId, dto);
+      const updatedBy = (req as any).user?.userId?.toString();
+      const success = await this.service.updateAddress(addressId, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { address_id: addressId }, 'Address updated successfully');
@@ -516,7 +520,8 @@ export class MembersController {
         return;
       }
 
-      const contactId = await this.service.createContact(dto);
+      const createdBy = (req as any).user?.userId?.toString();
+      const contactId = await this.service.createContact(dto, createdBy);
 
       ResponseUtil.success(res, { contact_id: contactId }, 'Contact created successfully', 201);
     } catch (error: unknown) {
@@ -541,7 +546,8 @@ export class MembersController {
 
       const dto: UpdateMemberContactDto = req.body;
 
-      const success = await this.service.updateContact(contactId, dto);
+      const updatedBy = (req as any).user?.userId?.toString();
+      const success = await this.service.updateContact(contactId, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { contact_id: contactId }, 'Contact updated successfully');
@@ -733,7 +739,8 @@ export class MembersController {
         }
       }
 
-      const policyId = await this.service.createPolicy(dto);
+      const createdBy = (req as any).user?.userId?.toString();
+      const policyId = await this.service.createPolicy(dto, createdBy);
 
       ResponseUtil.success(res, { policy_id: policyId }, 'Policy created successfully', 201);
     } catch (error: unknown) {
@@ -767,7 +774,8 @@ export class MembersController {
         }
       }
 
-      const success = await this.service.updatePolicy(policyId, dto);
+      const updatedBy = (req as any).user?.userId?.toString();
+      const success = await this.service.updatePolicy(policyId, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { policy_id: policyId }, 'Policy updated successfully');
@@ -886,7 +894,8 @@ export class MembersController {
         return;
       }
 
-      const dependentId = await this.service.createDependent(dto);
+      const createdBy = (req as any).user?.userId?.toString();
+      const dependentId = await this.service.createDependent(dto, createdBy);
 
       ResponseUtil.success(res, { dependent_id: dependentId }, 'Dependent created successfully', 201);
     } catch (error: unknown) {
@@ -911,7 +920,8 @@ export class MembersController {
 
       const dto: UpdateMemberDependentDto = req.body;
 
-      const success = await this.service.updateDependent(dependentId, dto);
+      const updatedBy = (req as any).user?.userId?.toString();
+      const success = await this.service.updateDependent(dependentId, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { dependent_id: dependentId }, 'Dependent updated successfully');
@@ -1060,7 +1070,8 @@ export class MembersController {
         return;
       }
 
-      const pecId = await this.service.createPEC(dto);
+      const createdBy = (req as any).user?.userId?.toString();
+      const pecId = await this.service.createPEC(dto, createdBy);
 
       ResponseUtil.success(res, { pec_id: pecId }, 'PEC condition created successfully', 201);
     } catch (error: unknown) {
@@ -1085,7 +1096,8 @@ export class MembersController {
 
       const dto: UpdateMemberPECDto = req.body;
 
-      const success = await this.service.updatePEC(pecId, dto);
+      const updatedBy = (req as any).user?.userId?.toString();
+      const success = await this.service.updatePEC(pecId, dto, updatedBy);
 
       if (success) {
         ResponseUtil.success(res, { pec_id: pecId }, 'PEC condition updated successfully');

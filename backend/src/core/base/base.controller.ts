@@ -27,13 +27,13 @@ export abstract class BaseController<T> {
    */
   public getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { page, limit, sortBy, sortOrder, ...filters } = req.body || req.query;
+      const { page, limit, sort_by, sort_order, ...filters } = req.body || req.query;
 
       const options: QueryOptions = {
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
-        sortBy: sortBy as string,
-        sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
+        sort_by: sort_by as string,
+        sort_order: (sort_order as 'ASC' | 'DESC') || 'DESC',
         filters
       };
 

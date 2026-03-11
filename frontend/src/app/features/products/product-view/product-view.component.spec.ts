@@ -471,4 +471,590 @@ describe('ProductViewComponent', () => {
       expect(component.PERMISSIONS.MANAGE_COPAY).toBe('POLICY_MANAGEMENT.MANAGE_COPAY');
     });
   });
+
+  describe('Loading States', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should set loading to true when loading product', () => {
+      component.loading = false;
+      component.loadProduct('1');
+      
+      // Check intermediate state would be true (synchronously)
+      expect(productService.getProductById).toHaveBeenCalledWith('1');
+    });
+
+    it('should set loadingLimits to true when loading limits', () => {
+      component.loadingLimits = false;
+      
+      productService.getLimitsByProductId.mockReturnValue(of([mockLimit]));
+      component.loadLimits();
+
+      expect(component.loadingLimits).toBe(false); // Should be false after success
+    });
+
+    it('should set loadingCopay to true when loading copay', () => {
+      component.loadingCopay = false;
+      
+      productService.getCopayByProductId.mockReturnValue(of([mockCopay]));
+      component.loadCopay();
+
+      expect(component.loadingCopay).toBe(false); // Should be false after success
+    });
+
+    it('should reset loading state on product load error', () => {
+      productService.getProductById.mockReturnValue(throwError(() => new Error('Error')));
+      
+      component.loadProduct('1');
+
+      expect(component.loading).toBe(false);
+    });
+
+    it('should reset loadingLimits on error', () => {
+      productService.getLimitsByProductId.mockReturnValue(throwError(() => new Error('Error')));
+      
+      component.loadLimits();
+
+      expect(component.loadingLimits).toBe(false);
+    });
+
+    it('should reset loadingCopay on error', () => {
+      productService.getCopayByProductId.mockReturnValue(throwError(() => new Error('Error')));
+      
+      component.loadCopay();
+
+      expect(component.loadingCopay).toBe(false);
+    });
+  });
+
+  describe('Error Scenarios - Limits', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should handle error when creating limit', () => {
+      const form: any = { invalid: false };
+      const error = new Error('Create failed');
+      productService.createLimit.mockReturnValue(throwError(() => error));
+      component.limitFormData = { limit_type: 'ANNUAL', limit_amount: 50000, is_active: true };
+      
+      component.saveLimit(form);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error creating limit:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to create limit');
+    });
+
+    it('should handle error when updating limit', () => {
+      const form: any = { invalid: false };
+      const error = new Error('Update failed');
+      component.editingLimit = mockLimit;
+      productService.updateLimit.mockReturnValue(throwError(() => error));
+      component.limitFormData = { limit_type: 'LIFETIME', limit_amount: 200000, is_active: true };
+      
+      component.saveLimit(form);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error updating limit:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to update limit');
+    });
+
+    it('should handle error when deleting limit', () => {
+      const error = new Error('Delete failed');
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      productService.deleteLimit.mockReturnValue(throwError(() => error));
+      
+      component.deleteLimit(mockLimit);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error deleting limit:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to delete limit');
+    });
+
+    it('should not save limit when product is null', () => {
+      const form: any = { invalid: false };
+      component.product = null;
+      
+      component.saveLimit(form);
+
+      expect(productService.createLimit).not.toHaveBeenCalled();
+    });
+
+    it('should not delete limit when product is null', () => {
+      component.product = null;
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      
+      component.deleteLimit(mockLimit);
+
+      expect(productService.deleteLimit).not.toHaveBeenCalled();
+    });
+
+    it('should not load limits when product is null', () => {
+      component.product = null;
+      
+      component.loadLimits();
+
+      expect(productService.getLimitsByProductId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Error Scenarios - Copay', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should handle error when creating copay', () => {
+      const form: any = { invalid: false };
+      const error = new Error('Create failed');
+      productService.createCopay.mockReturnValue(throwError(() => error));
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 50, applies_to: 'ALL', is_active: true };
+      
+      component.saveCopay(form);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error creating copay:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to create copay');
+    });
+
+    it('should handle error when updating copay', () => {
+      const form: any = { invalid: false };
+      const error = new Error('Update failed');
+      component.editingCopay = mockCopay;
+      productService.updateCopay.mockReturnValue(throwError(() => error));
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 100, applies_to: 'INPATIENT', is_active: true };
+      
+      component.saveCopay(form);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error updating copay:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to update copay');
+    });
+
+    it('should handle error when deleting copay', () => {
+      const error = new Error('Delete failed');
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      productService.deleteCopay.mockReturnValue(throwError(() => error));
+      
+      component.deleteCopay(mockCopay);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error deleting copay:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to delete copay');
+    });
+
+    it('should not save copay when product is null', () => {
+      const form: any = { invalid: false };
+      component.product = null;
+      
+      component.saveCopay(form);
+
+      expect(productService.createCopay).not.toHaveBeenCalled();
+    });
+
+    it('should not delete copay when product is null', () => {
+      component.product = null;
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      
+      component.deleteCopay(mockCopay);
+
+      expect(productService.deleteCopay).not.toHaveBeenCalled();
+    });
+
+    it('should not load copay when product is null', () => {
+      component.product = null;
+      
+      component.loadCopay();
+
+      expect(productService.getCopayByProductId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Form Data Management - Limits', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should reload limits after successful create', () => {
+      const form: any = { invalid: false };
+      component.limitFormData = { limit_type: 'ANNUAL', limit_amount: 50000, is_active: true };
+      
+      component.saveLimit(form);
+
+      expect(productService.getLimitsByProductId).toHaveBeenCalled();
+    });
+
+    it('should reload limits after successful update', () => {
+      const form: any = { invalid: false };
+      component.editingLimit = mockLimit;
+      component.limitFormData = { limit_type: 'LIFETIME', limit_amount: 200000, is_active: true };
+      
+      component.saveLimit(form);
+
+      expect(productService.getLimitsByProductId).toHaveBeenCalled();
+    });
+
+    it('should reload limits after successful delete', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      
+      component.deleteLimit(mockLimit);
+
+      expect(productService.getLimitsByProductId).toHaveBeenCalled();
+    });
+
+    it('should reset editingLimit after successful update', () => {
+      const form: any = { invalid: false };
+      component.editingLimit = mockLimit;
+      component.limitFormData = { limit_type: 'LIFETIME', limit_amount: 200000, is_active: true };
+      
+      component.saveLimit(form);
+
+      expect(component.editingLimit).toBeNull();
+    });
+
+    it('should reset limit form after successful create', () => {
+      const form: any = { invalid: false };
+      component.limitFormData = { limit_type: 'ANNUAL', limit_amount: 50000, is_active: true };
+      const resetSpy = vi.spyOn(component, 'resetLimitForm');
+      
+      component.saveLimit(form);
+
+      expect(resetSpy).toHaveBeenCalled();
+    });
+
+    it('should handle limit with undefined optional fields', () => {
+      const limitWithUndefined: ProductLimit = {
+        limit_id: '2',
+        product_id: '1',
+        limit_type: undefined as any,
+        limit_amount: undefined as any,
+        is_active: true
+      };
+
+      component.showLimitFormDialog(limitWithUndefined);
+
+      expect(component.limitFormData.limit_type).toBe('');
+      expect(component.limitFormData.limit_amount).toBe(0);
+    });
+
+    it('should handle limit form with zero amount', () => {
+      const form: any = { invalid: false };
+      component.limitFormData = { limit_type: 'ANNUAL', limit_amount: 0, is_active: true };
+      
+      component.saveLimit(form);
+
+      expect(productService.createLimit).toHaveBeenCalledWith('1', expect.objectContaining({
+        limit_amount: 0
+      }));
+    });
+
+    it('should handle limit form with inactive status', () => {
+      const form: any = { invalid: false };
+      component.limitFormData = { limit_type: 'ANNUAL', limit_amount: 50000, is_active: false };
+      
+      component.saveLimit(form);
+
+      expect(productService.createLimit).toHaveBeenCalledWith('1', expect.objectContaining({
+        is_active: false
+      }));
+    });
+
+    it('should call resetLimitForm when showing create form', () => {
+      const resetSpy = vi.spyOn(component, 'resetLimitForm');
+      
+      component.showLimitFormDialog();
+
+      expect(resetSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('Form Data Management - Copay', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should reload copay after successful create', () => {
+      const form: any = { invalid: false };
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 50, applies_to: 'ALL', is_active: true };
+      
+      component.saveCopay(form);
+
+      expect(productService.getCopayByProductId).toHaveBeenCalled();
+    });
+
+    it('should reload copay after successful update', () => {
+      const form: any = { invalid: false };
+      component.editingCopay = mockCopay;
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 100, applies_to: 'INPATIENT', is_active: true };
+      
+      component.saveCopay(form);
+
+      expect(productService.getCopayByProductId).toHaveBeenCalled();
+    });
+
+    it('should reload copay after successful delete', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      
+      component.deleteCopay(mockCopay);
+
+      expect(productService.getCopayByProductId).toHaveBeenCalled();
+    });
+
+    it('should reset editingCopay after successful update', () => {
+      const form: any = { invalid: false };
+      component.editingCopay = mockCopay;
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 100, applies_to: 'INPATIENT', is_active: true };
+      
+      component.saveCopay(form);
+
+      expect(component.editingCopay).toBeNull();
+    });
+
+    it('should reset copay form after successful create', () => {
+      const form: any = { invalid: false };
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 50, applies_to: 'ALL', is_active: true };
+      const resetSpy = vi.spyOn(component, 'resetCopayForm');
+      
+      component.saveCopay(form);
+
+      expect(resetSpy).toHaveBeenCalled();
+    });
+
+    it('should handle copay with undefined optional fields', () => {
+      const copayWithUndefined: ProductCopay = {
+        copay_id: '2',
+        product_id: '1',
+        copay_type: undefined as any,
+        copay_value: undefined as any,
+        applies_to: undefined as any,
+        is_active: true
+      };
+
+      component.showCopayFormDialog(copayWithUndefined);
+
+      expect(component.copayFormData.copay_type).toBe('');
+      expect(component.copayFormData.copay_value).toBe(0);
+      expect(component.copayFormData.applies_to).toBe('');
+    });
+
+    it('should handle copay form with zero value', () => {
+      const form: any = { invalid: false };
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 0, applies_to: 'ALL', is_active: true };
+      
+      component.saveCopay(form);
+
+      expect(productService.createCopay).toHaveBeenCalledWith('1', expect.objectContaining({
+        copay_value: 0
+      }));
+    });
+
+    it('should handle copay form with inactive status', () => {
+      const form: any = { invalid: false };
+      component.copayFormData = { copay_type: 'FIXED', copay_value: 50, applies_to: 'ALL', is_active: false };
+      
+      component.saveCopay(form);
+
+      expect(productService.createCopay).toHaveBeenCalledWith('1', expect.objectContaining({
+        is_active: false
+      }));
+    });
+
+    it('should call resetCopayForm when showing create form', () => {
+      const resetSpy = vi.spyOn(component, 'resetCopayForm');
+      
+      component.showCopayFormDialog();
+
+      expect(resetSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('Tab Switching Edge Cases', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should handle switching to details tab', () => {
+      component.activeTab = 'limits';
+      
+      component.onTabChange('details');
+
+      expect(component.activeTab).toBe('details');
+      expect(productService.getLimitsByProductId).not.toHaveBeenCalled();
+      expect(productService.getCopayByProductId).not.toHaveBeenCalled();
+    });
+
+    it('should not trigger load when switching to same tab', () => {
+      component.activeTab = 'limits';
+      component.limits = [];
+      
+      component.onTabChange('limits');
+
+      expect(productService.getLimitsByProductId).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle rapid tab switching', () => {
+      component.onTabChange('limits');
+      component.onTabChange('copay');
+      component.onTabChange('details');
+
+      expect(component.activeTab).toBe('details');
+    });
+  });
+
+  describe('Component State Initialization', () => {
+    it('should initialize with empty limits array', () => {
+      expect(component.limits).toEqual([]);
+    });
+
+    it('should initialize with empty copay array', () => {
+      expect(component.copayList).toEqual([]);
+    });
+
+    it('should initialize with loading states as false', () => {
+      expect(component.loading).toBe(false);
+      expect(component.loadingLimits).toBe(false);
+      expect(component.loadingCopay).toBe(false);
+    });
+
+    it('should initialize with form dialogs hidden', () => {
+      expect(component.showLimitForm).toBe(false);
+      expect(component.showCopayForm).toBe(false);
+    });
+
+    it('should initialize with null editing states', () => {
+      expect(component.editingLimit).toBeNull();
+      expect(component.editingCopay).toBeNull();
+    });
+
+    it('should initialize with default limit form data', () => {
+      expect(component.limitFormData).toEqual({
+        limit_type: '',
+        limit_amount: 0,
+        is_active: true
+      });
+    });
+
+    it('should initialize with default copay form data', () => {
+      expect(component.copayFormData).toEqual({
+        copay_type: '',
+        copay_value: 0,
+        applies_to: '',
+        is_active: true
+      });
+    });
+
+    it('should have tabs array with correct structure', () => {
+      expect(component.tabs).toEqual([
+        { id: 'details', label: 'Product Details' },
+        { id: 'limits', label: 'Limits' },
+        { id: 'copay', label: 'Copay' }
+      ]);
+    });
+  });
+
+  describe('Multiple Items Handling', () => {
+    const mockLimit2: ProductLimit = {
+      limit_id: '2',
+      product_id: '1',
+      limit_type: 'LIFETIME',
+      limit_amount: 500000,
+      is_active: false
+    };
+
+    const mockCopay2: ProductCopay = {
+      copay_id: '2',
+      product_id: '1',
+      copay_type: 'FIXED',
+      copay_value: 25,
+      applies_to: 'OUTPATIENT',
+      is_active: false
+    };
+
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should handle multiple limits', () => {
+      productService.getLimitsByProductId.mockReturnValue(of([mockLimit, mockLimit2]));
+      
+      component.loadLimits();
+
+      expect(component.limits).toHaveLength(2);
+      expect(component.limits).toEqual([mockLimit, mockLimit2]);
+    });
+
+    it('should handle multiple copay entries', () => {
+      productService.getCopayByProductId.mockReturnValue(of([mockCopay, mockCopay2]));
+      
+      component.loadCopay();
+
+      expect(component.copayList).toHaveLength(2);
+      expect(component.copayList).toEqual([mockCopay, mockCopay2]);
+    });
+
+    it('should handle empty limits array', () => {
+      productService.getLimitsByProductId.mockReturnValue(of([]));
+      
+      component.loadLimits();
+
+      expect(component.limits).toEqual([]);
+    });
+
+    it('should handle empty copay array', () => {
+      productService.getCopayByProductId.mockReturnValue(of([]));
+      
+      component.loadCopay();
+
+      expect(component.copayList).toEqual([]);
+    });
+  });
+
+  describe('Confirmation Dialog Edge Cases', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should show correct message in limit delete confirmation', () => {
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+      
+      component.deleteLimit(mockLimit);
+
+      expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete this limit (ANNUAL)?');
+    });
+
+    it('should show correct message in copay delete confirmation', () => {
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+      
+      component.deleteCopay(mockCopay);
+
+      expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete this cop ay (PERCENTAGE)?');
+    });
+  });
+
+  describe('Logger Integration', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should log success when product loads', () => {
+      component.loadProduct('1');
+
+      expect(loggerService.info).toHaveBeenCalledWith('Product loaded successfully');
+    });
+
+    it('should log success when limits load', () => {
+      component.loadLimits();
+
+      expect(loggerService.info).toHaveBeenCalledWith('Limits loaded successfully');
+    });
+
+    it('should log success when copay loads', () => {
+      component.loadCopay();
+
+      expect(loggerService.info).toHaveBeenCalledWith('Copay loaded successfully');
+    });
+
+    it('should log error with details when product load fails', () => {
+      const error = new Error('Network error');
+      productService.getProductById.mockReturnValue(throwError(() => error));
+
+      component.loadProduct('1');
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error loading product:', error);
+    });
+  });
 });

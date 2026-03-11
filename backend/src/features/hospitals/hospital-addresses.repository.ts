@@ -64,17 +64,17 @@ export class HospitalAddressesRepository extends BaseRepository<HospitalAddress>
     latitude: number | undefined,
     longitude: number | undefined,
     isPrimary: boolean,
-    legacyAddressId: string
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
       .input('hospitalId', sql.BigInt, hospitalId)
       .input('addressType', sql.VarChar(50), addressType)
       .input('isPrimary', sql.Bit, isPrimary)
-      .input('legacyAddressId', sql.UniqueIdentifier, legacyAddressId);
+      .input('createdBy', sql.VarChar(50), createdBy);
 
-    const fields: string[] = ['hospital_id', 'address_type', 'is_primary', 'legacy_hospital_address_id'];
-    const values: string[] = ['@hospitalId', '@addressType', '@isPrimary', '@legacyAddressId'];
+    const fields: string[] = ['hospital_id', 'address_type', 'is_primary', 'created_by'];
+    const values: string[] = ['@hospitalId', '@addressType', '@isPrimary', '@createdBy'];
 
     if (streetLine1) {
       fields.push('street_line1');
@@ -148,7 +148,8 @@ export class HospitalAddressesRepository extends BaseRepository<HospitalAddress>
     country: string | undefined,
     latitude: number | undefined,
     longitude: number | undefined,
-    isPrimary: boolean | undefined
+    isPrimary: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -205,6 +206,10 @@ export class HospitalAddressesRepository extends BaseRepository<HospitalAddress>
     }
 
     if (updates.length === 0) return;
+
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('addressId', sql.BigInt, addressId);
 

@@ -177,7 +177,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
         <div class="flex-1 overflow-y-auto px-6 py-4">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">Category Name *</label>
+              <label class="block text-sm font-medium text-gray-700">Category Name <span class="text-red-500">*</span></label>
               <input 
                 type="text" 
                 [(ngModel)]="formData.category_name" 
@@ -193,18 +193,6 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]" 
                 placeholder="Enter description"
               ></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Legacy Category ID</label>
-              <input 
-                type="text" 
-                [(ngModel)]="formData.legacy_category_id" 
-                pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" 
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]" 
-                placeholder="e.g., 12345678-1234-1234-1234-123456789012" 
-                title="Must be a valid GUID format or leave empty"
-              />
-              <p class="mt-1 text-xs text-gray-500">Optional: Valid GUID format or leave empty</p>
             </div>
             <div class="flex items-center">
               <input 
@@ -253,7 +241,7 @@ export class LookupCategoryListComponent implements OnInit, OnDestroy {
 
   filters: LookupCategoryFilters = { page: 1, limit: 10, sort_by: 'category_id', sort_order: 'DESC' };
   pagination = { total: 0, page: 1, limit: 10, totalPages: 0 };
-  formData: CreateLookupCategoryDto | UpdateLookupCategoryDto = { category_name: '', legacy_category_id: '', is_active: true };
+  formData: CreateLookupCategoryDto | UpdateLookupCategoryDto = { category_name: '', is_active: true };
 
   constructor(private lookupService: LookupService, private logger: LoggerService, private toast: ToastService) {
     this.searchSubject$.pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged()).subscribe(() => {
@@ -298,9 +286,9 @@ export class LookupCategoryListComponent implements OnInit, OnDestroy {
   getStartItem(): number { return (this.pagination.page - 1) * this.pagination.limit + 1; }
   getEndItem(): number { return Math.min(this.pagination.page * this.pagination.limit, this.pagination.total); }
 
-  openCreateModal(): void { this.editingCategory = null; this.formData = { category_name: '', legacy_category_id: '', is_active: true }; this.showModal = true; }
-  editCategory(category: LookupCategory): void { this.editingCategory = category; this.formData = { category_name: category.category_name, description: category.description, legacy_category_id: category.legacy_category_id || '', is_active: category.is_active }; this.showModal = true; }
-  closeModal(): void { if (!this.saving) { this.showModal = false; this.editingCategory = null; this.formData = { category_name: '', legacy_category_id: '', is_active: true }; } }
+  openCreateModal(): void { this.editingCategory = null; this.formData = { category_name: '', is_active: true }; this.showModal = true; }
+  editCategory(category: LookupCategory): void { this.editingCategory = category; this.formData = { category_name: category.category_name, description: category.description, is_active: category.is_active }; this.showModal = true; }
+  closeModal(): void { if (!this.saving) { this.showModal = false; this.editingCategory = null; this.formData = { category_name: '', is_active: true }; } }
 
   private isValidGuid(guid: string): boolean {
     const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -309,17 +297,6 @@ export class LookupCategoryListComponent implements OnInit, OnDestroy {
 
   save(): void {
     if (!this.formData.category_name) { this.toast.error('Please fill in all required fields'); return; }
-    
-    // Validate Legacy Category ID if provided
-    if (this.formData.legacy_category_id && this.formData.legacy_category_id.trim() !== '') {
-      if (!this.isValidGuid(this.formData.legacy_category_id)) {
-        this.toast.error('Legacy Category ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-        return;
-      }
-    } else {
-      // Convert empty string to undefined for API call
-      this.formData.legacy_category_id = undefined;
-    }
     
     this.saving = true;
     if (this.editingCategory) {

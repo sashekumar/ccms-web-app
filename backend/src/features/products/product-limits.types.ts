@@ -17,14 +17,12 @@ export interface CreateProductLimitDto {
   limit_type?: string;
   limit_amount?: number;
   is_active?: boolean;
-  legacy_product_limit_id?: string;
 }
 
 export interface UpdateProductLimitDto {
   limit_type?: string;
   limit_amount?: number;
   is_active?: boolean;
-  legacy_product_limit_id?: string;
 }
 
 export interface GetProductLimitRequest {

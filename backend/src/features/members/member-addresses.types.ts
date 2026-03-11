@@ -26,7 +26,6 @@ export interface MemberAddress {
  * Create Member Address DTO
  */
 export interface CreateMemberAddressDto {
-  legacy_member_address_id?: string;
   member_id: string;
   address_type?: string;
   street_line1?: string;
@@ -43,7 +42,6 @@ export interface CreateMemberAddressDto {
  */
 export interface UpdateMemberAddressDto {
   address_id: string;
-  legacy_member_address_id?: string;
   address_type?: string;
   street_line1?: string;
   street_line2?: string;

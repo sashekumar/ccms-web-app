@@ -79,6 +79,13 @@ pids
 /coverage
 /.nyc_output
 *.lcov
+test-results/
+
+# Test output files
+*-test-output.txt
+*-coverage*.txt
+*-fail.txt
+test-*.txt
 
 # Production
 /build

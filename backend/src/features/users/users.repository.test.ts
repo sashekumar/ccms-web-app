@@ -96,7 +96,7 @@ describe('UsersRepository', () => {
         .mockResolvedValueOnce({ recordset: [{ total: 10 }] })
         .mockResolvedValueOnce({ recordset: [] });
 
-      const filters: UserFilters = { isActive: true };
+      const filters: UserFilters = { is_active: true };
       await repository.getUsers(filters);
 
       expect(mockRequest.input).toHaveBeenCalledWith('isActive', sql.Bit, true);
@@ -107,7 +107,7 @@ describe('UsersRepository', () => {
         .mockResolvedValueOnce({ recordset: [{ total: 3 }] })
         .mockResolvedValueOnce({ recordset: [] });
 
-      const filters: UserFilters = { roleId: 2 };
+      const filters: UserFilters = { role_id: 2 };
       await repository.getUsers(filters);
 
       expect(mockRequest.input).toHaveBeenCalledWith('roleId', sql.BigInt, 2);
@@ -130,7 +130,7 @@ describe('UsersRepository', () => {
         .mockResolvedValueOnce({ recordset: [{ total: 10 }] })
         .mockResolvedValueOnce({ recordset: [] });
 
-      const filters: UserFilters = { sortBy: 'username', sortOrder: 'ASC' };
+      const filters: UserFilters = { sort_by: 'username', sort_order: 'ASC' };
       const result = await repository.getUsers(filters);
 
       // Verify query contains ORDER BY clause

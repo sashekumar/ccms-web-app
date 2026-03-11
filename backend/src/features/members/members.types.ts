@@ -51,7 +51,6 @@ export interface MemberListItem {
  * Create Member DTO
  */
 export interface CreateMemberDto {
-  legacy_member_id?: string;
   full_name: string;
   ic_no: string;
   fwd_member_no?: string;
@@ -65,14 +64,12 @@ export interface CreateMemberDto {
   bank_acc_no?: string;
   enrollment_date?: Date | string;
   termination_date?: Date | string;
-  created_by?: string;
 }
 
 /**
  * Update Member DTO
  */
 export interface UpdateMemberDto {
-  legacy_member_id?: string;
   full_name?: string;
   ic_no?: string;
   fwd_member_no?: string;
@@ -86,7 +83,6 @@ export interface UpdateMemberDto {
   bank_acc_no?: string;
   enrollment_date?: Date | string;
   termination_date?: Date | string;
-  updated_by?: string;
 }
 
 /**
@@ -99,11 +95,10 @@ export interface MemberFilters {
   enrollment_date_from?: Date | string;
   enrollment_date_to?: Date | string;
   is_deleted?: boolean;
-  isDeleted?: boolean;          // Alias for is_deleted (support camelCase)
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 /**

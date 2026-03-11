@@ -64,8 +64,8 @@ export class MembersRepository extends BaseRepository<Member> {
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Sorting
-    const sortBy = filters.sortBy || 'member_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'member_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
 
     // Count query
@@ -206,12 +206,6 @@ export class MembersRepository extends BaseRepository<Member> {
     request.input('fullName', sql.NVarChar(255), data.full_name);
     request.input('icNo', sql.VarChar(20), data.ic_no);
 
-    if (data.legacy_member_id) {
-      fields.push('legacy_member_id');
-      values.push('@legacyMemberId');
-      request.input('legacyMemberId', sql.UniqueIdentifier, data.legacy_member_id);
-    }
-
     if (data.fwd_member_no) {
       fields.push('fwd_member_no');
       values.push('@fwdMemberNo');
@@ -304,11 +298,6 @@ export class MembersRepository extends BaseRepository<Member> {
     const setClauses: string[] = [];
 
     request.input('memberId', sql.BigInt, memberId);
-
-    if (data.legacy_member_id) {
-      setClauses.push('legacy_member_id = @legacyMemberId');
-      request.input('legacyMemberId', sql.UniqueIdentifier, data.legacy_member_id);
-    }
 
     if (data.full_name) {
       setClauses.push('full_name = @fullName');

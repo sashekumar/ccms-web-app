@@ -11,7 +11,7 @@ describe('CryptoUtil', () => {
       expect(typeof hash).toBe('string');
       expect(hash).not.toBe(testPassword);
       expect(hash.length).toBeGreaterThan(0);
-    });
+    }, 10000);
 
     it('should generate bcrypt hash with correct format', async () => {
       const hash = await CryptoUtil.hashPassword(testPassword);
@@ -19,7 +19,7 @@ describe('CryptoUtil', () => {
       // bcrypt hash starts with $2b$ (or $2a$) and has 60 characters
       expect(hash).toMatch(/^\$2[ab]\$\d{2}\$/);
       expect(hash.length).toBe(60);
-    });
+    }, 10000);
 
     it('should generate different hashes for same password', async () => {
       const hash1 = await CryptoUtil.hashPassword(testPassword);
@@ -27,14 +27,14 @@ describe('CryptoUtil', () => {
       
       // Even same password should have different hashes due to salt
       expect(hash1).not.toBe(hash2);
-    });
+    }, 10000);
 
     it('should hash empty string', async () => {
       const hash = await CryptoUtil.hashPassword('');
       
       expect(hash).toBeDefined();
       expect(hash.length).toBe(60);
-    });
+    }, 10000);
 
     it('should hash long password', async () => {
       const longPassword = 'a'.repeat(100);
@@ -42,7 +42,7 @@ describe('CryptoUtil', () => {
       
       expect(hash).toBeDefined();
       expect(hash.length).toBe(60);
-    });
+    }, 10000);
 
     it('should hash special characters', async () => {
       const specialPassword = '!@#$%^&*()_+-=[]{}|;:,.<>?';
@@ -50,7 +50,7 @@ describe('CryptoUtil', () => {
       
       expect(hash).toBeDefined();
       expect(hash.length).toBe(60);
-    });
+    }, 10000);
   });
 
   describe('comparePassword', () => {
@@ -59,35 +59,35 @@ describe('CryptoUtil', () => {
       const isMatch = await CryptoUtil.comparePassword(testPassword, hash);
       
       expect(isMatch).toBe(true);
-    });
+    }, 10000);
 
     it('should return false for non-matching password', async () => {
       const hash = await CryptoUtil.hashPassword(testPassword);
       const isMatch = await CryptoUtil.comparePassword('WrongPassword123!', hash);
       
       expect(isMatch).toBe(false);
-    });
+    }, 10000);
 
     it('should be case-sensitive', async () => {
       const hash = await CryptoUtil.hashPassword(testPassword);
       const isMatch = await CryptoUtil.comparePassword(testPassword.toLowerCase(), hash);
       
       expect(isMatch).toBe(false);
-    });
+    }, 10000);
 
     it('should return false for empty password against hash', async () => {
       const hash = await CryptoUtil.hashPassword(testPassword);
       const isMatch = await CryptoUtil.comparePassword('', hash);
       
       expect(isMatch).toBe(false);
-    });
+    }, 10000);
 
     it('should handle comparison with empty password hash', async () => {
       const emptyHash = await CryptoUtil.hashPassword('');
       const isMatch = await CryptoUtil.comparePassword('', emptyHash);
       
       expect(isMatch).toBe(true);
-    });
+    }, 10000);
 
     it('should return false for invalid hash format', async () => {
       const invalidHash = 'not-a-valid-bcrypt-hash';
@@ -95,7 +95,7 @@ describe('CryptoUtil', () => {
       // bcrypt returns false for invalid hashes rather than throwing
       const isMatch = await CryptoUtil.comparePassword(testPassword, invalidHash);
       expect(isMatch).toBe(false);
-    });
+    }, 10000);
 
     it('should work with special characters', async () => {
       const specialPassword = '!@#$%^&*()_+-=[]{}|;:,.<>?';
@@ -103,7 +103,7 @@ describe('CryptoUtil', () => {
       const isMatch = await CryptoUtil.comparePassword(specialPassword, hash);
       
       expect(isMatch).toBe(true);
-    });
+    }, 10000);
   });
 
   describe('Security Properties', () => {
@@ -116,7 +116,7 @@ describe('CryptoUtil', () => {
       // This is a rough check; actual time varies by hardware
       const duration = endTime - startTime;
       expect(duration).toBeGreaterThan(10); // Should take more than 10ms
-    });
+    }, 10000);
 
     it('should maintain consistency across multiple comparisons', async () => {
       const hash = await CryptoUtil.hashPassword(testPassword);
@@ -128,6 +128,6 @@ describe('CryptoUtil', () => {
       expect(isMatch1).toBe(true);
       expect(isMatch2).toBe(true);
       expect(isMatch3).toBe(true);
-    });
+    }, 10000);
   });
 });

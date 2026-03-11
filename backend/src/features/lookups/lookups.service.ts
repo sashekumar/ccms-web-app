@@ -36,7 +36,7 @@ export class LookupsService {
     return await this.repository.getLookupCategoryById(categoryId);
   }
 
-  public async createLookupCategory(dto: CreateLookupCategoryDto): Promise<number> {
+  public async createLookupCategory(dto: CreateLookupCategoryDto, createdBy: string): Promise<number> {
     if (!dto.category_name || dto.category_name.length < 2 || dto.category_name.length > 100) {
       throw new Error('Category name must be between 2 and 100 characters');
     }
@@ -49,14 +49,14 @@ export class LookupsService {
     const categoryId = await this.repository.createLookupCategory(
       dto.category_name,
       dto.description,
-      dto.legacy_category_id,
-      dto.is_active !== undefined ? dto.is_active : true
+      dto.is_active !== undefined ? dto.is_active : true,
+      createdBy
     );
 
     return categoryId;
   }
 
-  public async updateLookupCategory(categoryId: number, dto: UpdateLookupCategoryDto): Promise<void> {
+  public async updateLookupCategory(categoryId: number, dto: UpdateLookupCategoryDto, updatedBy: string): Promise<void> {
     const category = await this.repository.getLookupCategoryById(categoryId);
     if (!category) {
       throw new Error('Category not found');
@@ -77,8 +77,8 @@ export class LookupsService {
       categoryId,
       dto.category_name,
       dto.description,
-      dto.legacy_category_id,
-      dto.is_active
+      dto.is_active,
+      updatedBy
     );
   }
 
@@ -112,7 +112,7 @@ export class LookupsService {
     return await this.repository.getLookupsByCategory(categoryId, isActive);
   }
 
-  public async createLookup(dto: CreateLookupDto): Promise<number> {
+  public async createLookup(dto: CreateLookupDto, createdBy: string): Promise<number> {
     let categoryId = dto.category_id;
 
     // If new category is provided, create it first
@@ -120,10 +120,9 @@ export class LookupsService {
       const categoryDto: CreateLookupCategoryDto = {
         category_name: dto.new_category_name,
         description: dto.new_category_description,
-        legacy_category_id: dto.new_category_legacy_id,
         is_active: true
       };
-      categoryId = await this.createLookupCategory(categoryDto);
+      categoryId = await this.createLookupCategory(categoryDto, createdBy);
     }
 
     if (!categoryId) {
@@ -159,14 +158,14 @@ export class LookupsService {
       dto.lookup_code,
       dto.lookup_value,
       sortOrder,
-      dto.legacy_lookup_id,
-      dto.is_active !== undefined ? dto.is_active : true
+      dto.is_active !== undefined ? dto.is_active : true,
+      createdBy
     );
 
     return lookupId;
   }
 
-  public async updateLookup(lookupId: number, dto: UpdateLookupDto): Promise<void> {
+  public async updateLookup(lookupId: number, dto: UpdateLookupDto, updatedBy: string): Promise<void> {
     const lookup = await this.repository.getLookupById(lookupId);
     if (!lookup) {
       throw new Error('Lookup not found');
@@ -201,8 +200,8 @@ export class LookupsService {
       dto.lookup_code,
       dto.lookup_value,
       dto.sort_order,
-      dto.legacy_lookup_id,
-      dto.is_active
+      dto.is_active,
+      updatedBy
     );
   }
 
@@ -232,7 +231,7 @@ export class LookupsService {
     return await this.repository.getLookupMetadataById(metadataId);
   }
 
-  public async createLookupMetadata(dto: CreateLookupMetadataDto): Promise<number> {
+  public async createLookupMetadata(dto: CreateLookupMetadataDto, createdBy: string): Promise<number> {
     if (!dto.lookup_id) {
       throw new Error('Lookup ID is required');
     }
@@ -258,13 +257,14 @@ export class LookupsService {
     const metadataId = await this.repository.createLookupMetadata(
       dto.lookup_id,
       dto.metadata_key,
-      dto.metadata_value
+      dto.metadata_value,
+      createdBy
     );
 
     return metadataId;
   }
 
-  public async updateLookupMetadata(metadataId: number, dto: UpdateLookupMetadataDto): Promise<void> {
+  public async updateLookupMetadata(metadataId: number, dto: UpdateLookupMetadataDto, updatedBy: string): Promise<void> {
     const metadata = await this.repository.getLookupMetadataById(metadataId);
     if (!metadata) {
       throw new Error('Metadata not found');
@@ -288,7 +288,8 @@ export class LookupsService {
     await this.repository.updateLookupMetadata(
       metadataId,
       dto.metadata_key,
-      dto.metadata_value
+      dto.metadata_value,
+      updatedBy
     );
   }
 

@@ -52,16 +52,17 @@ export class HospitalStaffRepository extends BaseRepository<HospitalStaff> {
     staffType: string | undefined,
     specialty: string | undefined,
     isActive: boolean,
-    legacyStaffId: string | undefined
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
       .input('hospitalId', sql.BigInt, hospitalId)
       .input('staffName', sql.NVarChar(255), staffName)
-      .input('isActive', sql.Bit, isActive);
+      .input('isActive', sql.Bit, isActive)
+      .input('createdBy', sql.VarChar(50), createdBy);
 
-    const fields: string[] = ['hospital_id', 'staff_name', 'is_active'];
-    const values: string[] = ['@hospitalId', '@staffName', '@isActive'];
+    const fields: string[] = ['hospital_id', 'staff_name', 'is_active', 'created_by'];
+    const values: string[] = ['@hospitalId', '@staffName', '@isActive', '@createdBy'];
 
     if (staffType) {
       fields.push('staff_type');
@@ -73,12 +74,6 @@ export class HospitalStaffRepository extends BaseRepository<HospitalStaff> {
       fields.push('specialty');
       values.push('@specialty');
       request.input('specialty', sql.NVarChar(255), specialty);
-    }
-
-    if (legacyStaffId) {
-      fields.push('legacy_hospital_staff_id');
-      values.push('@legacyStaffId');
-      request.input('legacyStaffId', sql.UniqueIdentifier, legacyStaffId);
     }
 
     const query = `
@@ -99,7 +94,8 @@ export class HospitalStaffRepository extends BaseRepository<HospitalStaff> {
     staffName: string | undefined,
     staffType: string | undefined,
     specialty: string | undefined,
-    isActive: boolean | undefined
+    isActive: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -126,6 +122,10 @@ export class HospitalStaffRepository extends BaseRepository<HospitalStaff> {
     }
 
     if (updates.length === 0) return;
+
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('staffId', sql.BigInt, staffId);
 

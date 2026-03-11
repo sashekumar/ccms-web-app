@@ -104,20 +104,6 @@ import { ToastService } from '../../../core/services/toast.service';
               />
             </div>
 
-            <!-- Legacy Hospital ID -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Legacy Hospital ID</label>
-              <input
-                type="text"
-                name="legacy_hospital_id"
-                [(ngModel)]="formData.legacy_hospital_id"
-                maxlength="36"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                placeholder="GUID format (e.g., 12345678-1234-1234-1234-123456789012)"
-              />
-              <p class="mt-1 text-xs text-gray-500">For data migration reference only</p>
-            </div>
-
             <!-- Is Panel -->
             <div>
               <label class="block text-sm font-medium text-gray-700">Panel Status</label>
@@ -243,7 +229,6 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
 
   formData: CreateHospitalDto | UpdateHospitalDto = {
     hospital_name: '',
-    legacy_hospital_id: '',
     hospital_code: '',
     hospital_type: null,
     reg_no: '',
@@ -316,7 +301,6 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
         next: (hospital: Hospital) => {
           this.formData = {
             hospital_name: hospital.hospital_name,
-            legacy_hospital_id: hospital.legacy_hospital_id || '',
             hospital_code: hospital.hospital_code,
             hospital_type: hospital.hospital_type,
             reg_no: hospital.reg_no,

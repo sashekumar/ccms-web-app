@@ -37,11 +37,11 @@ export class LookupsController {
     try {
       const filters: LookupCategoryFilters = {
         search: req.body.search,
-        isActive: req.body.isActive ?? req.body.is_active,
+        is_active: req.body.is_active,
         page: req.body.page || 1,
         limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'category_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        sort_by: req.body.sort_by ?? 'category_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getLookupCategories(filters);
@@ -85,6 +85,7 @@ export class LookupsController {
    */
   public createCategory = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateLookupCategoryDto = req.body;
 
       if (!dto.category_name) {
@@ -92,7 +93,7 @@ export class LookupsController {
         return;
       }
 
-      const categoryId = await this.service.createLookupCategory(dto);
+      const categoryId = await this.service.createLookupCategory(dto, createdBy);
 
       ResponseUtil.success(res, { category_id: categoryId }, 'Category created successfully', 201);
     } catch (error: unknown) {
@@ -128,6 +129,7 @@ export class LookupsController {
    */
   public updateCategory = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const categoryId = req.body.category_id;
       const dto: UpdateLookupCategoryDto = {
         category_name: req.body.category_name,
@@ -140,7 +142,7 @@ export class LookupsController {
         return;
       }
 
-      await this.service.updateLookupCategory(categoryId, dto);
+      await this.service.updateLookupCategory(categoryId, dto, updatedBy);
 
       ResponseUtil.success(res, null, 'Category updated successfully');
     } catch (error: unknown) {
@@ -231,12 +233,12 @@ export class LookupsController {
     try {
       const filters: LookupFilters = {
         search: req.body.search,
-        categoryId: req.body.categoryId ?? req.body.category_id,
-        isActive: req.body.isActive ?? req.body.is_active,
+        category_id: req.body.category_id,
+        is_active: req.body.is_active,
         page: req.body.page || 1,
         limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'sort_order',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'ASC'
+        sort_by: req.body.sort_by ?? 'sort_order',
+        sort_order: req.body.sort_order ?? 'ASC'
       };
 
       const result = await this.service.getLookups(filters);
@@ -302,6 +304,7 @@ export class LookupsController {
    */
   public createLookup = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateLookupDto = req.body;
 
       if ((!dto.category_id && !dto.new_category_name) || !dto.lookup_code || !dto.lookup_value) {
@@ -309,7 +312,7 @@ export class LookupsController {
         return;
       }
 
-      const lookupId = await this.service.createLookup(dto);
+      const lookupId = await this.service.createLookup(dto, createdBy);
 
       ResponseUtil.success(res, { lookup_id: lookupId }, 'Lookup created successfully', 201);
     } catch (error: unknown) {
@@ -350,6 +353,7 @@ export class LookupsController {
    */
   public updateLookup = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const lookupId = req.body.lookup_id;
       const dto: UpdateLookupDto = {
         category_id: req.body.category_id,
@@ -364,7 +368,7 @@ export class LookupsController {
         return;
       }
 
-      await this.service.updateLookup(lookupId, dto);
+      await this.service.updateLookup(lookupId, dto, updatedBy);
 
       ResponseUtil.success(res, null, 'Lookup updated successfully');
     } catch (error: unknown) {
@@ -460,11 +464,11 @@ export class LookupsController {
     try {
       const filters: LookupMetadataFilters = {
         search: req.body.search,
-        lookupId: req.body.lookupId ?? req.body.lookup_id,
+        lookup_id: req.body.lookup_id,
         page: req.body.page || 1,
         limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'metadata_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        sort_by: req.body.sort_by ?? 'metadata_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getLookupMetadata(filters);
@@ -508,6 +512,7 @@ export class LookupsController {
    */
   public createMetadata = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateLookupMetadataDto = req.body;
 
       if (!dto.lookup_id || !dto.metadata_key || !dto.metadata_value) {
@@ -515,7 +520,7 @@ export class LookupsController {
         return;
       }
 
-      const metadataId = await this.service.createLookupMetadata(dto);
+      const metadataId = await this.service.createLookupMetadata(dto, createdBy);
 
       ResponseUtil.success(res, { metadata_id: metadataId }, 'Metadata created successfully', 201);
     } catch (error: unknown) {
@@ -556,6 +561,7 @@ export class LookupsController {
    */
   public updateMetadata = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const metadataId = req.body.metadata_id;
       const dto: UpdateLookupMetadataDto = {
         metadata_key: req.body.metadata_key,
@@ -567,7 +573,7 @@ export class LookupsController {
         return;
       }
 
-      await this.service.updateLookupMetadata(metadataId, dto);
+      await this.service.updateLookupMetadata(metadataId, dto, updatedBy);
 
       ResponseUtil.success(res, null, 'Metadata updated successfully');
     } catch (error: unknown) {

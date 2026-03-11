@@ -185,7 +185,7 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
             <form id="moduleActionForm" #moduleActionFormRef="ngForm" (ngSubmit)="saveModuleAction()">
               <div class="space-y-4">
                 <div *ngIf="!editingItem">
-                  <label class="block text-sm font-medium text-gray-700">Module *</label>
+                  <label class="block text-sm font-medium text-gray-700">Module <span class="text-red-500">*</span></label>
                   <select [(ngModel)]="formData.moduleId" name="module" required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
                     <option value="">Select Module</option>
@@ -196,7 +196,7 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
                 </div>
 
               <div *ngIf="!editingItem">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Actions * (Select Multiple)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Actions <span class="text-red-500">*</span> (Select Multiple)</label>
                 <div class="max-h-60 overflow-y-auto border rounded-md p-3 space-y-2">
                   <div *ngFor="let action of actions; trackBy: trackByActionId" class="flex items-center">
                     <input 

@@ -21,14 +21,14 @@ export class HospitalsController {
       // Accept both camelCase and snake_case from frontend
       const filters: HospitalFilters = {
         search: req.body.search,
-        hospitalType: req.body.hospitalType ?? req.body.hospital_type,
-        isPanel: req.body.isPanel ?? req.body.is_panel,
-        panelStatus: req.body.panelStatus ?? req.body.panel_status,
-        isDeleted: req.body.isDeleted ?? req.body.is_deleted,
+        hospital_type: req.body.hospital_type,
+        is_panel: req.body.is_panel,
+        panel_status: req.body.panel_status,
+        is_deleted: req.body.is_deleted,
         page: req.body.page || 1,
         limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'hospital_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        sort_by: req.body.sort_by ?? 'hospital_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getHospitals(filters);
@@ -49,7 +49,7 @@ export class HospitalsController {
       const request: GetHospitalRequest = req.body;
       const hospitalId = request.hospital_id;
 
-      if (!hospitalId || isNaN(hospitalId)) {
+      if (!hospitalId || isNaN(hospitalId) || hospitalId <= 0) {
         ResponseUtil.error(res, 'Invalid hospital ID', 400);
         return;
       }
@@ -76,14 +76,15 @@ export class HospitalsController {
    */
   public createHospital = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateHospitalDto = req.body;
 
-      if (!dto.hospital_name) {
+      if (!dto.hospital_name || dto.hospital_name.trim() === '') {
         ResponseUtil.error(res, 'hospital_name is required', 400);
         return;
       }
 
-      const hospitalId = await this.service.createHospital(dto);
+      const hospitalId = await this.service.createHospital(dto, createdBy);
 
       ResponseUtil.success(res, { hospital_id: hospitalId }, 'Hospital created successfully', 201);
     } catch (error: unknown) {
@@ -124,6 +125,7 @@ export class HospitalsController {
    */
   public updateHospital = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const hospitalId = parseInt(req.body.hospital_id, 10);
       const dto: UpdateHospitalDto = {
         hospital_name: req.body.hospital_name,
@@ -132,13 +134,11 @@ export class HospitalsController {
         reg_no: req.body.reg_no,
         bank_id: req.body.bank_id,
         bank_acc_no: req.body.bank_acc_no,
-        legacy_hospital_id: req.body.legacy_hospital_id,
         is_panel: req.body.is_panel,
         panel_status: req.body.panel_status,
         panel_effective_date: req.body.panel_effective_date,
         accreditation_status: req.body.accreditation_status,
-        accreditation_expiry: req.body.accreditation_expiry,
-        updated_by: req.body.updated_by
+        accreditation_expiry: req.body.accreditation_expiry
       };
 
       if (!hospitalId || isNaN(hospitalId)) {
@@ -146,7 +146,7 @@ export class HospitalsController {
         return;
       }
 
-      await this.service.updateHospital(hospitalId, dto);
+      await this.service.updateHospital(hospitalId, dto, updatedBy);
 
       ResponseUtil.success(res, null, 'Hospital updated successfully');
     } catch (error: unknown) {
@@ -250,6 +250,7 @@ export class HospitalsController {
 
   public createAddress = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const hospitalId = parseInt(req.params.hospitalId);
       if (isNaN(hospitalId)) {
         ResponseUtil.error(res, 'Invalid hospital ID', 400);
@@ -257,7 +258,7 @@ export class HospitalsController {
       }
 
       const dto = { ...req.body, hospital_id: hospitalId };
-      const addressId = await this.service.createAddress(dto);
+      const addressId = await this.service.createAddress(dto, createdBy);
 
       ResponseUtil.success(res, { address_id: addressId }, 'Address created successfully', 201);
     } catch (error: unknown) {
@@ -272,13 +273,14 @@ export class HospitalsController {
 
   public updateAddress = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const addressId = parseInt(req.params.addressId);
       if (isNaN(addressId)) {
         ResponseUtil.error(res, 'Invalid address ID', 400);
         return;
       }
 
-      await this.service.updateAddress(addressId, req.body);
+      await this.service.updateAddress(addressId, req.body, updatedBy);
       ResponseUtil.success(res, null, 'Address updated successfully');
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
@@ -331,6 +333,7 @@ export class HospitalsController {
 
   public createCode = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const hospitalId = parseInt(req.params.hospitalId);
       if (isNaN(hospitalId)) {
         ResponseUtil.error(res, 'Invalid hospital ID', 400);
@@ -338,7 +341,7 @@ export class HospitalsController {
       }
 
       const dto = { ...req.body, hospital_id: hospitalId };
-      const codeId = await this.service.createCode(dto);
+      const codeId = await this.service.createCode(dto, createdBy);
 
       ResponseUtil.success(res, { code_id: codeId }, 'Code created successfully', 201);
     } catch (error: unknown) {
@@ -357,13 +360,14 @@ export class HospitalsController {
 
   public updateCode = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const codeId = parseInt(req.params.codeId);
       if (isNaN(codeId)) {
         ResponseUtil.error(res, 'Invalid code ID', 400);
         return;
       }
 
-      await this.service.updateCode(codeId, req.body);
+      await this.service.updateCode(codeId, req.body, updatedBy);
       ResponseUtil.success(res, null, 'Code updated successfully');
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
@@ -428,12 +432,13 @@ export class HospitalsController {
 
       const dto = { ...req.body, hospital_id: hospitalId };
       
-      if (!dto.staff_name) {
+      if (!dto.staff_name || dto.staff_name.trim() === '') {
         ResponseUtil.error(res, 'staff_name is required', 400);
         return;
       }
 
-      const staffId = await this.service.createStaff(dto);
+      const createdBy = (req as any).user?.userId?.toString();
+      const staffId = await this.service.createStaff(dto, createdBy);
 
       ResponseUtil.success(res, { staff_id: staffId }, 'Staff created successfully', 201);
     } catch (error: unknown) {
@@ -452,13 +457,14 @@ export class HospitalsController {
 
   public updateStaff = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const staffId = parseInt(req.params.staffId);
       if (isNaN(staffId)) {
         ResponseUtil.error(res, 'Invalid staff ID', 400);
         return;
       }
 
-      await this.service.updateStaff(staffId, req.body);
+      await this.service.updateStaff(staffId, req.body, updatedBy);
       ResponseUtil.success(res, null, 'Staff updated successfully');
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
@@ -515,6 +521,7 @@ export class HospitalsController {
 
   public createContact = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const staffId = parseInt(req.params.staffId);
       if (isNaN(staffId)) {
         ResponseUtil.error(res, 'Invalid staff ID', 400);
@@ -522,7 +529,7 @@ export class HospitalsController {
       }
 
       const dto = { ...req.body, staff_id: staffId };
-      const contactId = await this.service.createContact(dto);
+      const contactId = await this.service.createContact(dto, createdBy);
 
       ResponseUtil.success(res, { contact_id: contactId }, 'Contact created successfully', 201);
     } catch (error: unknown) {
@@ -537,13 +544,14 @@ export class HospitalsController {
 
   public updateContact = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const contactId = parseInt(req.params.contactId);
       if (isNaN(contactId)) {
         ResponseUtil.error(res, 'Invalid contact ID', 400);
         return;
       }
 
-      await this.service.updateContact(contactId, req.body);
+      await this.service.updateContact(contactId, req.body, updatedBy);
       ResponseUtil.success(res, null, 'Contact updated successfully');
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
@@ -596,6 +604,7 @@ export class HospitalsController {
 
   public createFee = async (req: Request, res: Response): Promise<void> => {
     try {
+      const createdBy = (req as any).user?.userId?.toString();
       const hospitalId = parseInt(req.params.hospitalId);
       if (isNaN(hospitalId)) {
         ResponseUtil.error(res, 'Invalid hospital ID', 400);
@@ -603,7 +612,7 @@ export class HospitalsController {
       }
 
       const dto = { ...req.body, hospital_id: hospitalId };
-      const feeId = await this.service.createFee(dto);
+      const feeId = await this.service.createFee(dto, createdBy);
 
       ResponseUtil.success(res, { fee_id: feeId }, 'Fee created successfully', 201);
     } catch (error: unknown) {
@@ -618,13 +627,14 @@ export class HospitalsController {
 
   public updateFee = async (req: Request, res: Response): Promise<void> => {
     try {
+      const updatedBy = (req as any).user?.userId?.toString();
       const feeId = parseInt(req.params.feeId);
       if (isNaN(feeId)) {
         ResponseUtil.error(res, 'Invalid fee ID', 400);
         return;
       }
 
-      await this.service.updateFee(feeId, req.body);
+      await this.service.updateFee(feeId, req.body, updatedBy);
       ResponseUtil.success(res, null, 'Fee updated successfully');
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);

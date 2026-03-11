@@ -30,7 +30,6 @@ export interface CategoryDropdownItem {
 }
 
 export interface CreateLookupCategoryDto {
-  legacy_category_id?: string;
   category_name: string;
   description?: string;
   is_active?: boolean;
@@ -39,7 +38,6 @@ export interface CreateLookupCategoryDto {
 export interface UpdateLookupCategoryDto {
   category_name?: string;
   description?: string;
-  legacy_category_id?: string;
   is_active?: boolean;
 }
 
@@ -71,11 +69,9 @@ export interface LookupListItem {
 }
 
 export interface CreateLookupDto {
-  legacy_lookup_id?: string;
   category_id?: number;  // Either provide category_id
   new_category_name?: string;  // Or create new category
   new_category_description?: string;
-  new_category_legacy_id?: string;  // Optional legacy ID for new category
   lookup_code: string;
   lookup_value: string;
   sort_order?: number;  // Auto-calculated if not provided
@@ -87,7 +83,6 @@ export interface UpdateLookupDto {
   lookup_code?: string;
   lookup_value?: string;
   sort_order?: number;
-  legacy_lookup_id?: string;
   is_active?: boolean;
 }
 
@@ -121,7 +116,6 @@ export interface CreateLookupMetadataDto {
 export interface UpdateLookupMetadataDto {
   metadata_key?: string;
   metadata_value?: string;
-  legacy_metadata_id?: string;
 }
 
 // ============================================================================
@@ -130,30 +124,30 @@ export interface UpdateLookupMetadataDto {
 
 export interface LookupCategoryFilters {
   search?: string;
-  isActive?: boolean;
+  is_active?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface LookupFilters {
   search?: string;
-  categoryId?: number;
-  isActive?: boolean;
+  category_id?: number;
+  is_active?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface LookupMetadataFilters {
   search?: string;
-  lookupId?: number;
+  lookup_id?: number;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedLookupCategories {

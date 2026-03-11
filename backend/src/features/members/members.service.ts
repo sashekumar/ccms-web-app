@@ -217,8 +217,8 @@ export class MembersService extends BaseService<Member> {
   /**
    * Create member address
    */
-  public async createAddress(dto: CreateMemberAddressDto): Promise<string> {
-    const addressId = await this.addressesRepository.createAddress(dto);
+  public async createAddress(dto: CreateMemberAddressDto, createdBy?: string): Promise<string> {
+    const addressId = await this.addressesRepository.createAddress(dto, createdBy);
     this.memberCache.del(`${CACHE_KEYS.ADDRESSES}:${dto.member_id}`);
     return addressId;
   }
@@ -226,9 +226,9 @@ export class MembersService extends BaseService<Member> {
   /**
    * Update member address
    */
-  public async updateAddress(addressId: string, dto: UpdateMemberAddressDto): Promise<boolean> {
+  public async updateAddress(addressId: string, dto: UpdateMemberAddressDto, updatedBy?: string): Promise<boolean> {
     const address = await this.addressesRepository.getAddressById(addressId);
-    const success = await this.addressesRepository.updateAddress(addressId, dto);
+    const success = await this.addressesRepository.updateAddress(addressId, dto, updatedBy);
     
     if (success && address) {
       this.memberCache.del(`${CACHE_KEYS.ADDRESSES}:${address.member_id}`);
@@ -295,8 +295,8 @@ export class MembersService extends BaseService<Member> {
   /**
    * Create member contact
    */
-  public async createContact(dto: CreateMemberContactDto): Promise<string> {
-    const contactId = await this.contactsRepository.createContact(dto);
+  public async createContact(dto: CreateMemberContactDto, createdBy?: string): Promise<string> {
+    const contactId = await this.contactsRepository.createContact(dto, createdBy);
     this.memberCache.del(`${CACHE_KEYS.CONTACTS}:${dto.member_id}`);
     return contactId;
   }
@@ -304,9 +304,9 @@ export class MembersService extends BaseService<Member> {
   /**
    * Update member contact
    */
-  public async updateContact(contactId: string, dto: UpdateMemberContactDto): Promise<boolean> {
+  public async updateContact(contactId: string, dto: UpdateMemberContactDto, updatedBy?: string): Promise<boolean> {
     const contact = await this.contactsRepository.getContactById(contactId);
-    const success = await this.contactsRepository.updateContact(contactId, dto);
+    const success = await this.contactsRepository.updateContact(contactId, dto, updatedBy);
     
     if (success && contact) {
       this.memberCache.del(`${CACHE_KEYS.CONTACTS}:${contact.member_id}`);
@@ -380,8 +380,8 @@ export class MembersService extends BaseService<Member> {
   /**
    * Create member policy
    */
-  public async createPolicy(dto: CreateMemberPolicyDto): Promise<string> {
-    const policyRecordId = await this.policiesRepository.createPolicy(dto);
+  public async createPolicy(dto: CreateMemberPolicyDto, createdBy?: string): Promise<string> {
+    const policyRecordId = await this.policiesRepository.createPolicy(dto, createdBy);
     this.memberCache.del(`${CACHE_KEYS.POLICIES}:${dto.member_id}`);
     return policyRecordId;
   }
@@ -389,9 +389,9 @@ export class MembersService extends BaseService<Member> {
   /**
    * Update member policy
    */
-  public async updatePolicy(policyRecordId: string, dto: UpdateMemberPolicyDto): Promise<boolean> {
+  public async updatePolicy(policyRecordId: string, dto: UpdateMemberPolicyDto, updatedBy?: string): Promise<boolean> {
     const policy = await this.policiesRepository.getPolicyById(policyRecordId);
-    const success = await this.policiesRepository.updatePolicy(policyRecordId, dto);
+    const success = await this.policiesRepository.updatePolicy(policyRecordId, dto, updatedBy);
     
     if (success && policy) {
       this.memberCache.del(`${CACHE_KEYS.POLICIES}:${policy.member_id}`);
@@ -445,8 +445,8 @@ export class MembersService extends BaseService<Member> {
   /**
    * Create member dependent
    */
-  public async createDependent(dto: CreateMemberDependentDto): Promise<string> {
-    const dependentId = await this.dependentsRepository.createDependent(dto);
+  public async createDependent(dto: CreateMemberDependentDto, createdBy?: string): Promise<string> {
+    const dependentId = await this.dependentsRepository.createDependent(dto, createdBy);
     this.memberCache.del(`${CACHE_KEYS.DEPENDENTS}:${dto.principal_member_id}`);
     return dependentId;
   }
@@ -454,9 +454,9 @@ export class MembersService extends BaseService<Member> {
   /**
    * Update member dependent
    */
-  public async updateDependent(dependentId: string, dto: UpdateMemberDependentDto): Promise<boolean> {
+  public async updateDependent(dependentId: string, dto: UpdateMemberDependentDto, updatedBy?: string): Promise<boolean> {
     const dependent = await this.dependentsRepository.getDependentById(dependentId);
-    const success = await this.dependentsRepository.updateDependent(dependentId, dto);
+    const success = await this.dependentsRepository.updateDependent(dependentId, dto, updatedBy);
     
     if (success && dependent) {
       this.memberCache.del(`${CACHE_KEYS.DEPENDENTS}:${dependent.principal_member_id}`);
@@ -525,8 +525,8 @@ export class MembersService extends BaseService<Member> {
   /**
    * Create PEC condition
    */
-  public async createPEC(dto: CreateMemberPECDto): Promise<string> {
-    const pecId = await this.pecRepository.createPEC(dto);
+  public async createPEC(dto: CreateMemberPECDto, createdBy?: string): Promise<string> {
+    const pecId = await this.pecRepository.createPEC(dto, createdBy);
     this.memberCache.del(`${CACHE_KEYS.PEC}:${dto.dependent_id}`);
     return pecId;
   }
@@ -534,9 +534,9 @@ export class MembersService extends BaseService<Member> {
   /**
    * Update PEC condition
    */
-  public async updatePEC(pecId: string, dto: UpdateMemberPECDto): Promise<boolean> {
+  public async updatePEC(pecId: string, dto: UpdateMemberPECDto, updatedBy?: string): Promise<boolean> {
     const pec = await this.pecRepository.getPECById(pecId);
-    const success = await this.pecRepository.updatePEC(pecId, dto);
+    const success = await this.pecRepository.updatePEC(pecId, dto, updatedBy);
     
     if (success && pec) {
       this.memberCache.del(`${CACHE_KEYS.PEC}:${pec.dependent_id}`);

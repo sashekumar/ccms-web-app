@@ -29,24 +29,24 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
       request.input('search', sql.NVarChar(255), `%${filters.search}%`);
     }
 
-    if (filters.hospitalType) {
+    if (filters.hospital_type) {
       whereClauses.push('hospital_type = @hospitalType');
-      request.input('hospitalType', sql.VarChar(50), filters.hospitalType);
+      request.input('hospitalType', sql.VarChar(50), filters.hospital_type);
     }
 
-    if (filters.isPanel !== undefined) {
+    if (filters.is_panel !== undefined) {
       whereClauses.push('is_panel = @isPanel');
-      request.input('isPanel', sql.Bit, filters.isPanel);
+      request.input('isPanel', sql.Bit, filters.is_panel);
     }
 
-    if (filters.panelStatus) {
+    if (filters.panel_status) {
       whereClauses.push('panel_status = @panelStatus');
-      request.input('panelStatus', sql.VarChar(50), filters.panelStatus);
+      request.input('panelStatus', sql.VarChar(50), filters.panel_status);
     }
 
-    if (filters.isDeleted !== undefined) {
+    if (filters.is_deleted !== undefined) {
       whereClauses.push('is_deleted = @isDeleted');
-      request.input('isDeleted', sql.Bit, filters.isDeleted);
+      request.input('isDeleted', sql.Bit, filters.is_deleted);
     } else {
       // By default, exclude deleted hospitals
       whereClauses.push('is_deleted = 0');
@@ -55,8 +55,8 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Sorting
-    const sortBy = filters.sortBy || 'hospital_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'hospital_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
 
     // Get total count
@@ -132,24 +132,24 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
       request.input('search', sql.NVarChar(255), `%${filters.search}%`);
     }
 
-    if (filters.hospitalType) {
+    if (filters.hospital_type) {
       whereClauses.push('hospital_type = @hospitalType');
-      request.input('hospitalType', sql.VarChar(50), filters.hospitalType);
+      request.input('hospitalType', sql.VarChar(50), filters.hospital_type);
     }
 
-    if (filters.isPanel !== undefined) {
+    if (filters.is_panel !== undefined) {
       whereClauses.push('is_panel = @isPanel');
-      request.input('isPanel', sql.Bit, filters.isPanel);
+      request.input('isPanel', sql.Bit, filters.is_panel);
     }
 
-    if (filters.panelStatus) {
+    if (filters.panel_status) {
       whereClauses.push('panel_status = @panelStatus');
-      request.input('panelStatus', sql.VarChar(50), filters.panelStatus);
+      request.input('panelStatus', sql.VarChar(50), filters.panel_status);
     }
 
-    if (filters.isDeleted !== undefined) {
+    if (filters.is_deleted !== undefined) {
       whereClauses.push('is_deleted = @isDeleted');
-      request.input('isDeleted', sql.Bit, filters.isDeleted);
+      request.input('isDeleted', sql.Bit, filters.is_deleted);
     } else {
       // By default, exclude deleted hospitals
       whereClauses.push('is_deleted = 0');
@@ -222,14 +222,13 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
     regNo: string | undefined,
     bankId: number | undefined,
     bankAccNo: string | undefined,
-    legacyHospitalId: string | undefined,
     isPanel: boolean,
     panelStatus: string | undefined,
     panelEffectiveDate: Date | undefined,
     accreditationStatus: string | undefined,
     accreditationExpiry: Date | undefined,
     isDeleted: boolean,
-    createdBy: string | undefined
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
@@ -271,12 +270,6 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
       request.input('bankAccNo', sql.VarChar(50), bankAccNo);
     }
 
-    if (legacyHospitalId) {
-      fields.push('legacy_hospital_id');
-      values.push('@legacyHospitalId');
-      request.input('legacyHospitalId', sql.UniqueIdentifier, legacyHospitalId);
-    }
-
     if (panelStatus) {
       fields.push('panel_status');
       values.push('@panelStatus');
@@ -301,11 +294,9 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
       request.input('accreditationExpiry', sql.Date, accreditationExpiry);
     }
 
-    if (createdBy) {
-      fields.push('created_by');
-      values.push('@createdBy');
-      request.input('createdBy', sql.VarChar(50), createdBy);
-    }
+    fields.push('created_by');
+    values.push('@createdBy');
+    request.input('createdBy', sql.VarChar(50), createdBy);
 
     const query = `
       INSERT INTO ${DB_TABLES.HOSPITALS} (
@@ -332,14 +323,13 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
     regNo: string | undefined,
     bankId: number | undefined,
     bankAccNo: string | undefined,
-    legacyHospitalId: string | undefined,
     isPanel: boolean | undefined,
     panelStatus: string | undefined,
     panelEffectiveDate: Date | undefined,
     accreditationStatus: string | undefined,
     accreditationExpiry: Date | undefined,
     isDeleted: boolean | undefined,
-    updatedBy: string | undefined
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -395,15 +385,6 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
       }
     }
 
-    if (legacyHospitalId !== undefined) {
-      if (legacyHospitalId) {
-        updates.push('legacy_hospital_id = @legacyHospitalId');
-        request.input('legacyHospitalId', sql.UniqueIdentifier, legacyHospitalId);
-      } else {
-        updates.push('legacy_hospital_id = NULL');
-      }
-    }
-
     if (isPanel !== undefined) {
       updates.push('is_panel = @isPanel');
       request.input('isPanel', sql.Bit, isPanel);
@@ -450,10 +431,8 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
       request.input('isDeleted', sql.Bit, isDeleted);
     }
 
-    if (updatedBy !== undefined) {
-      updates.push('updated_by = @updatedBy');
-      request.input('updatedBy', sql.VarChar(50), updatedBy);
-    }
+    updates.push('updated_by = @updatedBy');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     // Always set updated_at
     updates.push('updated_at = GETDATE()');

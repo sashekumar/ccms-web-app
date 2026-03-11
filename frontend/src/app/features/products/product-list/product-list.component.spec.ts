@@ -207,11 +207,11 @@ describe('ProductListComponent', () => {
 
   describe('Filter Functionality', () => {
     it('should apply insurer filter', () => {
-      component.filters.insurerName = 'Test Insurer';
+      component.filters.insurer_name = 'Test Insurer';
       component.onFilterChange();
 
       expect(productService.getProducts).toHaveBeenCalledWith(
-        expect.objectContaining({ insurerName: 'Test Insurer' })
+        expect.objectContaining({ insurer_name: 'Test Insurer' })
       );
     });
 

@@ -40,8 +40,8 @@ export class ModulesRepository extends BaseRepository<Module> {
   async findAllActive(): Promise<Module[]> {
     return this.findAll({
       filters: { is_active: true },
-      sortBy: 'display_order',
-      sortOrder: 'ASC'
+      sort_by: 'display_order',
+      sort_order: 'ASC'
     });
   }
 
@@ -51,8 +51,8 @@ export class ModulesRepository extends BaseRepository<Module> {
   async findByCategory(categoryId: number): Promise<Module[]> {
     return this.findAll({
       filters: { category_id: categoryId, is_active: true },
-      sortBy: 'display_order',
-      sortOrder: 'ASC'
+      sort_by: 'display_order',
+      sort_order: 'ASC'
     });
   }
 

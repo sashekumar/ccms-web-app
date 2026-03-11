@@ -33,7 +33,6 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   editingAddress: HospitalAddress | null = null;
   addressFormData: Partial<HospitalAddress> = {
     address_type: 'PRIMARY',
-    legacy_hospital_address_id: '',
     street_line1: '',
     street_line2: '',
     postal_code: '',
@@ -51,8 +50,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   codeFormData: Partial<HospitalCode> = {
     code_type: '',
     code_value: '',
-    is_active: true,
-    legacy_hospital_code_id: ''
+    is_active: true
   };
 
   // Predefined code types
@@ -72,8 +70,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     staff_name: '',
     staff_type: '',
     specialty: '',
-    is_active: true,
-    legacy_hospital_staff_id: ''
+    is_active: true
   };
 
   // Predefined staff types
@@ -113,8 +110,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     amount: 0,
     effective_date: undefined,
     expiry_date: undefined,
-    is_active: true,
-    legacy_fee_schedule_id: ''
+    is_active: true
   };
 
   // Predefined fee types
@@ -294,7 +290,6 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   resetAddressForm(): void {
     this.addressFormData = {
       address_type: 'PRIMARY',
-      legacy_hospital_address_id: '',
       street_line1: '',
       street_line2: '',
       postal_code: '',
@@ -321,7 +316,6 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     this.editingAddress = address;
     this.addressFormData = {
       address_type: address.address_type,
-      legacy_hospital_address_id: address.legacy_hospital_address_id || '',
       street_line1: address.street_line1 || '',
       street_line2: address.street_line2 || '',
       postal_code: address.postal_code || '',
@@ -447,8 +441,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     this.codeFormData = {
       code_type: '',
       code_value: '',
-      is_active: true,
-      legacy_hospital_code_id: ''
+      is_active: true
     };
   }
 
@@ -469,8 +462,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     this.codeFormData = {
       code_type: code.code_type || '',
       code_value: code.code_value || '',
-      is_active: code.is_active !== undefined ? code.is_active : true,
-      legacy_hospital_code_id: code.legacy_hospital_code_id || ''
+      is_active: code.is_active !== undefined ? code.is_active : true
     };
     this.showCodeForm = true;
   }
@@ -590,8 +582,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
       staff_name: '',
       staff_type: '',
       specialty: '',
-      is_active: true,
-      legacy_hospital_staff_id: ''
+      is_active: true
     };
   }
 
@@ -613,8 +604,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
       staff_name: staff.staff_name || '',
       staff_type: staff.staff_type || '',
       specialty: staff.specialty || '',
-      is_active: staff.is_active !== undefined ? staff.is_active : true,
-      legacy_hospital_staff_id: staff.legacy_hospital_staff_id || ''
+      is_active: staff.is_active !== undefined ? staff.is_active : true
     };
     this.showStaffForm = true;
   }
@@ -730,7 +720,6 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     this.contactFormData[staffId] = {
       contact_type: contact.contact_type || '',
       contact_value: contact.contact_value || '',
-      legacy_hospital_contact_id: contact.legacy_hospital_contact_id || '',
       is_primary: contact.is_primary !== undefined ? contact.is_primary : false
     };
     this.showContactForm[staffId] = true;
@@ -892,8 +881,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
       amount: 0,
       effective_date: undefined,
       expiry_date: undefined,
-      is_active: true,
-      legacy_fee_schedule_id: ''
+      is_active: true
     };
   }
 
@@ -918,8 +906,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
       amount: fee.amount || 0,
       effective_date: fee.effective_date ? new Date(fee.effective_date).toISOString().split('T')[0] : undefined,
       expiry_date: fee.expiry_date ? new Date(fee.expiry_date).toISOString().split('T')[0] : undefined,
-      is_active: fee.is_active !== undefined ? fee.is_active : true,
-      legacy_fee_schedule_id: fee.legacy_fee_schedule_id || ''
+      is_active: fee.is_active !== undefined ? fee.is_active : true
     };
     this.showFeeForm = true;
   }

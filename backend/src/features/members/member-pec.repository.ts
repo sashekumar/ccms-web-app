@@ -61,26 +61,29 @@ export class MemberPECRepository extends BaseRepository<MemberPEC> {
   /**
    * Create new PEC condition
    */
-  public async createPEC(dto: CreateMemberPECDto): Promise<string> {
+  public async createPEC(dto: CreateMemberPECDto, createdBy?: string): Promise<string> {
     const pool = await connectionManager.getPool();
     
-    const result = await pool.request()
+    const request = pool.request()
       .input('dependent_id', sql.BigInt, dto.dependent_id)
       .input('condition_code', sql.VarChar(50), dto.condition_code || null)
       .input('condition_name', sql.NVarChar(255), dto.condition_name || null)
       .input('diagnosis_date', sql.Date, dto.diagnosis_date || null)
       .input('is_excluded', sql.Bit, dto.is_excluded !== undefined ? dto.is_excluded : true)
-      .input('notes', sql.NVarChar(sql.MAX), dto.notes || null)
-      .input('legacy_pec_id', sql.UniqueIdentifier, dto.legacy_pec_id || null)
-      .query(`
+      .input('notes', sql.NVarChar(sql.MAX), dto.notes || null);
+    
+    if (createdBy) {
+      request.input('createdBy', sql.VarChar(50), createdBy);
+    }
+    
+    const result = await request.query(`
         INSERT INTO ${DB_TABLES.MEMBER_PEC_CONDITIONS} (
           dependent_id,
           condition_code,
           condition_name,
           diagnosis_date,
           is_excluded,
-          notes,
-          legacy_pec_id
+          notes${createdBy ? ',\n          created_by' : ''}
         )
         VALUES (
           @dependent_id,
@@ -88,8 +91,7 @@ export class MemberPECRepository extends BaseRepository<MemberPEC> {
           @condition_name,
           @diagnosis_date,
           @is_excluded,
-          @notes,
-          @legacy_pec_id
+          @notes${createdBy ? ',\n          @createdBy' : ''}
         );
         SELECT CAST(SCOPE_IDENTITY() AS VARCHAR) AS pec_id;
       `);
@@ -100,7 +102,7 @@ export class MemberPECRepository extends BaseRepository<MemberPEC> {
   /**
    * Update PEC condition
    */
-  public async updatePEC(pecId: string, dto: UpdateMemberPECDto): Promise<boolean> {
+  public async updatePEC(pecId: string, dto: UpdateMemberPECDto, updatedBy?: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('pec_id', sql.BigInt, pecId);
 
@@ -131,12 +133,14 @@ export class MemberPECRepository extends BaseRepository<MemberPEC> {
       request.input('notes', sql.NVarChar(sql.MAX), dto.notes);
     }
 
-    if (dto.legacy_pec_id !== undefined) {
-      setClauses.push('legacy_pec_id = @legacy_pec_id');
-      request.input('legacy_pec_id', sql.UniqueIdentifier, dto.legacy_pec_id);
+    if (updatedBy) {
+      setClauses.push('updated_by = @updatedBy');
+      request.input('updatedBy', sql.VarChar(50), updatedBy);
     }
 
-    if (setClauses.length === 0) {
+    setClauses.push('updated_at = GETDATE()');
+
+    if (setClauses.length === 1) { // Only updated_at
       return false;
     }
 

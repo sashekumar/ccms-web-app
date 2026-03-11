@@ -231,7 +231,7 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
           <div class="space-y-4">
             <!-- Bank Code -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Bank Code *</label>
+              <label class="block text-sm font-medium text-gray-700">Bank Code <span class="text-red-500">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="formData.bank_code"
@@ -243,27 +243,13 @@ import { StatusBadgeComponent } from '../../../common/components/status-badge/st
 
             <!-- Bank Name -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Bank Name *</label>
+              <label class="block text-sm font-medium text-gray-700">Bank Name <span class="text-red-500">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="formData.bank_name"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
                 placeholder="e.g., Banco de Oro"
               />
-            </div>
-
-            <!-- Legacy Bank ID -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Legacy Bank ID</label>
-              <input
-                type="text"
-                [(ngModel)]="formData.legacy_bank_id"
-                pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                placeholder="e.g., 12345678-1234-1234-1234-123456789012"
-                title="Must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012) or leave empty"
-              />
-              <p class="mt-1 text-xs text-gray-500">Optional: Valid GUID format (12345678-1234-1234-1234-123456789012) or leave empty</p>
             </div>
 
             <!-- Is Active -->
@@ -331,7 +317,6 @@ export class BankListComponent implements OnInit, OnDestroy {
   formData: CreateBankDto | UpdateBankDto = {
     bank_code: '',
     bank_name: '',
-    legacy_bank_id: '',
     is_active: true
   };
 
@@ -453,7 +438,6 @@ export class BankListComponent implements OnInit, OnDestroy {
     this.formData = {
       bank_code: '',
       bank_name: '',
-      legacy_bank_id: '',
       is_active: true
     };
     this.showModal = true;
@@ -464,7 +448,6 @@ export class BankListComponent implements OnInit, OnDestroy {
     this.formData = {
       bank_code: bank.bank_code,
       bank_name: bank.bank_name,
-      legacy_bank_id: bank.legacy_bank_id || '',
       is_active: bank.is_active
     };
     this.showModal = true;
@@ -492,17 +475,6 @@ export class BankListComponent implements OnInit, OnDestroy {
     if (!this.formData.bank_code || !this.formData.bank_name) {
       this.toast.error('Please fill in all required fields');
       return;
-    }
-
-    // Validate legacy_bank_id if provided
-    if (this.formData.legacy_bank_id && this.formData.legacy_bank_id.trim() !== '') {
-      if (!this.isValidGuid(this.formData.legacy_bank_id)) {
-        this.toast.error('Legacy Bank ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
-        return;
-      }
-    } else {
-      // Convert empty string to undefined
-      this.formData.legacy_bank_id = undefined;
     }
 
     this.saving = true;

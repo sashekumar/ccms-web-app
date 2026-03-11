@@ -305,8 +305,8 @@ export class UserListComponent implements OnInit, OnDestroy {
   filters: UserFilters = {
     page: 1,
     limit: 10,
-    sortBy: 'user_id',
-    sortOrder: 'DESC'
+    sort_by: 'user_id',
+    sort_order: 'DESC'
   };
 
   pagination = {

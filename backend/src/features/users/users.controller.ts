@@ -21,12 +21,12 @@ export class UsersController {
       // Accept both camelCase and snake_case from frontend
       const filters: UserFilters = {
         search: req.body.search,
-        isActive: req.body.isActive ?? req.body.is_active,
-        roleId: req.body.roleId ?? req.body.role_id,
-        page: req.body.page || 1,
-        limit: req.body.limit || 10,
-        sortBy: req.body.sortBy ?? req.body.sort_by ?? 'user_id',
-        sortOrder: req.body.sortOrder ?? req.body.sort_order ?? 'DESC'
+        is_active: req.body.is_active,
+        role_id: req.body.role_id,
+        page: req.body.page ?? 1,
+        limit: req.body.limit ?? 10,
+        sort_by: req.body.sort_by ?? 'user_id',
+        sort_order: req.body.sort_order ?? 'DESC'
       };
 
       const result = await this.service.getUsers(filters);
@@ -70,7 +70,7 @@ export class UsersController {
    */
   public createUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const createdBy = (req as any).user.username;
+      const createdBy = (req as any).user.userId?.toString();
       const dto: CreateUserDto = req.body;
 
       if (!dto.username || !dto.password || !dto.full_name) {
@@ -105,7 +105,7 @@ export class UsersController {
    */
   public updateUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const updatedBy = (req as any).user.username;
+      const updatedBy = (req as any).user.userId?.toString();
       const userId = parseInt(req.params.userId);
       const dto: UpdateUserDto = req.body;
 
@@ -140,7 +140,7 @@ export class UsersController {
    */
   public deleteUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const deletedBy = (req as any).user.username;
+      const deletedBy = (req as any).user?.userId?.toString();
       const currentUserId = (req as any).user.userId;
       const userId = parseInt(req.params.userId);
 

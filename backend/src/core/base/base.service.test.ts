@@ -60,8 +60,8 @@ describe('BaseService', () => {
       const options: QueryOptions = {
         page: 1,
         limit: 10,
-        sortBy: 'name',
-        sortOrder: 'ASC',
+        sort_by: 'name',
+        sort_order: 'ASC',
         filters: { is_active: true }
       };
 

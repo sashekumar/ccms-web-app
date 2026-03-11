@@ -67,7 +67,7 @@ export class MemberAddressesRepository extends BaseRepository<MemberAddress> {
   /**
    * Create new member address
    */
-  public async createAddress(dto: CreateMemberAddressDto): Promise<string> {
+  public async createAddress(dto: CreateMemberAddressDto, createdBy?: string): Promise<string> {
     const pool = await connectionManager.getPool();
     
     // If this is the primary address, unset others first
@@ -75,7 +75,7 @@ export class MemberAddressesRepository extends BaseRepository<MemberAddress> {
       await this.unsetPrimaryForMember(dto.member_id);
     }
     
-    const result = await pool.request()
+    const request = pool.request()
       .input('member_id', sql.BigInt, dto.member_id)
       .input('address_type', sql.VarChar(50), dto.address_type || 'PRIMARY')
       .input('street_line1', sql.NVarChar(255), dto.street_line1 || null)
@@ -84,9 +84,13 @@ export class MemberAddressesRepository extends BaseRepository<MemberAddress> {
       .input('state', sql.VarChar(50), dto.state || null)
       .input('postal_code', sql.VarChar(20), dto.postal_code || null)
       .input('country', sql.VarChar(100), dto.country || null)
-      .input('is_primary', sql.Bit, dto.is_primary || false)
-      .input('legacy_member_address_id', sql.UniqueIdentifier, dto.legacy_member_address_id || null)
-      .query(`
+      .input('is_primary', sql.Bit, dto.is_primary || false);
+    
+    if (createdBy) {
+      request.input('createdBy', sql.VarChar(50), createdBy);
+    }
+    
+    const result = await request.query(`
         INSERT INTO ${DB_TABLES.MEMBER_ADDRESSES} (
           member_id,
           address_type,
@@ -96,8 +100,7 @@ export class MemberAddressesRepository extends BaseRepository<MemberAddress> {
           state,
           postal_code,
           country,
-          is_primary,
-          legacy_member_address_id
+          is_primary${createdBy ? ',\n          created_by' : ''}
         )
         VALUES (
           @member_id,
@@ -108,8 +111,7 @@ export class MemberAddressesRepository extends BaseRepository<MemberAddress> {
           @state,
           @postal_code,
           @country,
-          @is_primary,
-          @legacy_member_address_id
+          @is_primary${createdBy ? ',\n          @createdBy' : ''}
         );
         SELECT CAST(SCOPE_IDENTITY() AS VARCHAR) AS address_id;
       `);
@@ -120,7 +122,7 @@ export class MemberAddressesRepository extends BaseRepository<MemberAddress> {
   /**
    * Update member address
    */
-  public async updateAddress(addressId: string, dto: UpdateMemberAddressDto): Promise<boolean> {
+  public async updateAddress(addressId: string, dto: UpdateMemberAddressDto, updatedBy?: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('address_id', sql.BigInt, addressId);
 
@@ -174,12 +176,14 @@ export class MemberAddressesRepository extends BaseRepository<MemberAddress> {
       request.input('is_primary', sql.Bit, dto.is_primary);
     }
 
-    if (dto.legacy_member_address_id !== undefined) {
-      setClauses.push('legacy_member_address_id = @legacy_member_address_id');
-      request.input('legacy_member_address_id', sql.UniqueIdentifier, dto.legacy_member_address_id);
+    if (updatedBy) {
+      setClauses.push('updated_by = @updatedBy');
+      request.input('updatedBy', sql.VarChar(50), updatedBy);
     }
 
-    if (setClauses.length === 0) {
+    setClauses.push('updated_at = GETDATE()');
+
+    if (setClauses.length === 1) { // Only updated_at
       return false;
     }
 

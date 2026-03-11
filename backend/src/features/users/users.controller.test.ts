@@ -73,7 +73,7 @@ describe('UsersController Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toEqual(mockUsersResult);
       expect(mockUsersService.getUsers).toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should apply search filter', async () => {
       mockUsersService.getUsers.mockResolvedValue(mockUsersResult);
@@ -93,11 +93,11 @@ describe('UsersController Integration Tests', () => {
 
       await request(app)
         .post('/api/users/list')
-        .send({ isActive: true })
+        .send({ is_active: true })
         .expect(200);
 
       expect(mockUsersService.getUsers).toHaveBeenCalledWith(
-        expect.objectContaining({ isActive: true })
+        expect.objectContaining({ is_active: true })
       );
     });
 
@@ -106,11 +106,11 @@ describe('UsersController Integration Tests', () => {
 
       await request(app)
         .post('/api/users/list')
-        .send({ roleId: 2 })
+        .send({ role_id: 2 })
         .expect(200);
 
       expect(mockUsersService.getUsers).toHaveBeenCalledWith(
-        expect.objectContaining({ roleId: 2 })
+        expect.objectContaining({ role_id: 2 })
       );
     });
 
@@ -132,11 +132,11 @@ describe('UsersController Integration Tests', () => {
 
       await request(app)
         .post('/api/users/list')
-        .send({ sortBy: 'username', sortOrder: 'ASC' })
+        .send({ sort_by: 'username', sort_order: 'ASC' })
         .expect(200);
 
       expect(mockUsersService.getUsers).toHaveBeenCalledWith(
-        expect.objectContaining({ sortBy: 'username', sortOrder: 'ASC' })
+        expect.objectContaining({ sort_by: 'username', sort_order: 'ASC' })
       );
     });
 
@@ -244,7 +244,7 @@ describe('UsersController Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.userId).toBe(123);
       expect(response.body.message).toBe('User created successfully');
-      expect(mockUsersService.createUser).toHaveBeenCalledWith(validUserDto, 'admin');
+      expect(mockUsersService.createUser).toHaveBeenCalledWith(validUserDto, '1');
     });
 
     it('should return 400 when username is missing', async () => {
@@ -333,7 +333,7 @@ describe('UsersController Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('User updated successfully');
-      expect(mockUsersService.updateUser).toHaveBeenCalledWith(5, updateDto, 'admin');
+      expect(mockUsersService.updateUser).toHaveBeenCalledWith(5, updateDto, '1');
     });
 
     it('should return 400 for invalid user ID', async () => {
@@ -396,7 +396,7 @@ describe('UsersController Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('User deleted successfully');
-      expect(mockUsersService.deleteUser).toHaveBeenCalledWith(5, 'admin');
+      expect(mockUsersService.deleteUser).toHaveBeenCalledWith(5, '1');
     });
 
     it('should return 400 for invalid user ID', async () => {

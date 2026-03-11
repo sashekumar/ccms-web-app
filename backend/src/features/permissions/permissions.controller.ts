@@ -95,7 +95,7 @@ export class PermissionsController {
    */
   public assignRole = async (req: Request, res: Response): Promise<void> => {
     try {
-      const assignedBy = (req as any).user.username;
+      const assignedBy = (req as any).user?.userId?.toString();
       const dto: AssignRoleDto = req.body;
 
       if (!dto.user_id || !dto.role_id) {
@@ -171,11 +171,11 @@ export class PermissionsController {
   /**
    * Get role by ID
    * POST /api/permissions/roles/get
-   * Body: { roleId }
+   * Body: { role_id }
    */
   public getRoleById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const roleId = parseInt(req.body.roleId);
+      const roleId = parseInt(req.body.role_id);
 
       if (isNaN(roleId)) {
         ResponseUtil.error(res, 'Invalid role ID', 400);
@@ -198,11 +198,11 @@ export class PermissionsController {
   /**
    * Get role permissions
    * POST /api/permissions/roles/permissions
-   * Body: { roleId }
+   * Body: { role_id }
    */
   public getRolePermissions = async (req: Request, res: Response): Promise<void> => {
     try {
-      const roleId = parseInt(req.body.roleId);
+      const roleId = parseInt(req.body.role_id);
 
       if (isNaN(roleId)) {
         ResponseUtil.error(res, 'Invalid role ID', 400);
@@ -220,11 +220,11 @@ export class PermissionsController {
   /**
    * Get role permissions matrix (all module-action combinations with grant status)
    * POST /api/permissions/roles/permissions-matrix
-   * Body: { roleId }
+   * Body: { role_id }
    */
   public getRolePermissionsMatrix = async (req: Request, res: Response): Promise<void> => {
     try {
-      const roleId = parseInt(req.body.roleId);
+      const roleId = parseInt(req.body.role_id);
 
       if (isNaN(roleId)) {
         ResponseUtil.error(res, 'Invalid role ID', 400);
@@ -246,7 +246,7 @@ export class PermissionsController {
    */
   public createRole = async (req: Request, res: Response): Promise<void> => {
     try {
-      const createdBy = (req as any).user.username;
+      const createdBy = (req as any).user?.userId?.toString();
       const dto: CreateRoleDto = req.body;
 
       if (!dto.role_name || !dto.role_code) {
@@ -265,12 +265,12 @@ export class PermissionsController {
   /**
    * Update role
    * POST /api/permissions/roles/update
-   * Body: { roleId, roleName?, roleCode?, description?, isActive? }
+   * Body: { role_id, role_name?, role_code?, description?, is_active? }
    */
   public updateRole = async (req: Request, res: Response): Promise<void> => {
     try {
-      const updatedBy = (req as any).user.username;
-      const roleId = parseInt(req.body.roleId);
+      const updatedBy = (req as any).user?.userId?.toString();
+      const roleId = parseInt(req.body.role_id);
       const dto: UpdateRoleDto = req.body;
 
       if (isNaN(roleId)) {
@@ -296,11 +296,11 @@ export class PermissionsController {
   /**
    * Delete role
    * POST /api/permissions/roles/delete
-   * Body: { roleId }
+   * Body: { role_id }
    */
   public deleteRole = async (req: Request, res: Response): Promise<void> => {
     try {
-      const roleId = parseInt(req.body.roleId);
+      const roleId = parseInt(req.body.role_id);
 
       if (isNaN(roleId)) {
         ResponseUtil.error(res, 'Invalid role ID', 400);
@@ -356,7 +356,7 @@ export class PermissionsController {
    */
   public createModule = async (req: Request, res: Response): Promise<void> => {
     try {
-      const createdBy = (req as any).user.username;
+      const createdBy = (req as any).user?.userId?.toString();
       const data = req.body;
 
       if (!data.module_name || !data.module_code) {
@@ -378,7 +378,7 @@ export class PermissionsController {
    */
   public updateModule = async (req: Request, res: Response): Promise<void> => {
     try {
-      const updatedBy = (req as any).user.username;
+      const updatedBy = (req as any).user?.userId?.toString();
       const { moduleId, ...data } = req.body;
 
       if (!moduleId || isNaN(parseInt(moduleId))) {
@@ -421,7 +421,7 @@ export class PermissionsController {
    */
   public createAction = async (req: Request, res: Response): Promise<void> => {
     try {
-      const createdBy = (req as any).user.username;
+      const createdBy = (req as any).user?.userId?.toString();
       const data = req.body;
 
       if (!data.action_name || !data.action_code) {
@@ -443,7 +443,7 @@ export class PermissionsController {
    */
   public updateAction = async (req: Request, res: Response): Promise<void> => {
     try {
-      const updatedBy = (req as any).user.username;
+      const updatedBy = (req as any).user?.userId?.toString();
       const { actionId, ...data } = req.body;
 
       if (!actionId || isNaN(parseInt(actionId))) {
@@ -500,7 +500,7 @@ export class PermissionsController {
    */
   public createModuleAction = async (req: Request, res: Response): Promise<void> => {
     try {
-      const createdBy = (req as any).user.username;
+      const createdBy = (req as any).user?.userId?.toString();
       const data = req.body;
 
       if (!data.module_id || !data.action_id) {
@@ -508,9 +508,9 @@ export class PermissionsController {
         return;
       }
 
-      const moduleActionId = await this.service.createModuleAction(data, createdBy);
+      const module_action_id = await this.service.createModuleAction(data, createdBy);
 
-      ResponseUtil.success(res, { moduleActionId }, 'Module-Action created successfully');
+      ResponseUtil.success(res, { module_action_id }, 'Module-Action created successfully');
     } catch (error: unknown) {
       ResponseUtil.error(res, 'Error creating module-action', 500, getErrorMessage(error));
     }
@@ -522,15 +522,15 @@ export class PermissionsController {
    */
   public updateModuleAction = async (req: Request, res: Response): Promise<void> => {
     try {
-      const updatedBy = (req as any).user.username;
-      const { moduleActionId, ...data } = req.body;
+      const updatedBy = (req as any).user?.userId?.toString();
+      const { module_action_id, ...data } = req.body;
 
-      if (!moduleActionId || isNaN(parseInt(moduleActionId))) {
-        ResponseUtil.error(res, 'Valid moduleActionId is required', 400);
+      if (!module_action_id || isNaN(parseInt(module_action_id))) {
+        ResponseUtil.error(res, 'Valid module_action_id is required', 400);
         return;
       }
 
-      await this.service.updateModuleAction(parseInt(moduleActionId), data, updatedBy);
+      await this.service.updateModuleAction(parseInt(module_action_id), data, updatedBy);
 
       ResponseUtil.success(res, 'Module-Action updated successfully');
     } catch (error: unknown) {
@@ -544,14 +544,14 @@ export class PermissionsController {
    */
   public deleteModuleAction = async (req: Request, res: Response): Promise<void> => {
     try {
-      const moduleActionId = parseInt(req.body.moduleActionId);
+      const module_action_id = parseInt(req.body.module_action_id);
 
-      if (isNaN(moduleActionId)) {
-        ResponseUtil.error(res, 'Valid moduleActionId is required', 400);
+      if (isNaN(module_action_id)) {
+        ResponseUtil.error(res, 'Valid module_action_id is required', 400);
         return;
       }
 
-      await this.service.deleteModuleAction(moduleActionId);
+      await this.service.deleteModuleAction(module_action_id);
 
       ResponseUtil.success(res, 'Module-Action deleted successfully');
     } catch (error: unknown) {
@@ -562,12 +562,12 @@ export class PermissionsController {
   /**
    * Grant permission to role
    * POST /api/permissions/grant
-   * Body: { roleId, moduleActionId }
+   * Body: { role_id, module_action_id }
    */
   public grantPermission = async (req: Request, res: Response): Promise<void> => {
 
     try {
-      const grantedBy = (req as any).user.username;
+      const grantedBy = (req as any).user?.userId?.toString();
       const dto: GrantPermissionDto = req.body;
 
       if (!dto.role_id || !dto.module_action_id) {
@@ -586,7 +586,7 @@ export class PermissionsController {
   /**
    * Revoke permission from role
    * POST /api/permissions/revoke
-   * Body: { roleId, moduleActionId }
+   * Body: { role_id, module_action_id }
    */
   public revokePermission = async (req: Request, res: Response): Promise<void> => {
     try {

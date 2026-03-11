@@ -42,13 +42,11 @@ export interface CreateHospitalDto {
   reg_no?: string;
   bank_id?: number;
   bank_acc_no?: string;
-  legacy_hospital_id?: string;
   is_panel?: boolean;
   panel_status?: string;
   panel_effective_date?: Date;
   accreditation_status?: string;
   accreditation_expiry?: Date;
-  created_by?: string;
 }
 
 export interface UpdateHospitalDto {
@@ -58,26 +56,24 @@ export interface UpdateHospitalDto {
   reg_no?: string;
   bank_id?: number;
   bank_acc_no?: string;
-  legacy_hospital_id?: string;
   is_panel?: boolean;
   panel_status?: string;
   panel_effective_date?: Date;
   accreditation_status?: string;
   accreditation_expiry?: Date;
   is_deleted?: boolean;
-  updated_by?: string;
 }
 
 export interface HospitalFilters {
   search?: string;
-  hospitalType?: string;
-  isPanel?: boolean;
-  panelStatus?: string;
-  isDeleted?: boolean;
+  hospital_type?: string;
+  is_panel?: boolean;
+  panel_status?: string;
+  is_deleted?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface HospitalStats {

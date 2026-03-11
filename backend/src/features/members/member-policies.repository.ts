@@ -63,18 +63,22 @@ export class MemberPoliciesRepository extends BaseRepository<MemberPolicy> {
   /**
    * Create new member policy
    */
-  public async createPolicy(dto: CreateMemberPolicyDto): Promise<string> {
+  public async createPolicy(dto: CreateMemberPolicyDto, createdBy?: string): Promise<string> {
     const pool = await connectionManager.getPool();
     
-    const result = await pool.request()
+    const request = pool.request()
       .input('member_id', sql.BigInt, dto.member_id)
       .input('product_id', sql.BigInt, dto.product_id)
       .input('policy_no', sql.VarChar(100), dto.policy_no)
       .input('effective_date', sql.Date, dto.effective_date || null)
       .input('expiry_date', sql.Date, dto.expiry_date || null)
-      .input('status', sql.VarChar(50), dto.status || null)
-      .input('legacy_policy_id', sql.UniqueIdentifier, dto.legacy_policy_id || null)
-      .query(`
+      .input('status', sql.VarChar(50), dto.status || null);
+    
+    if (createdBy) {
+      request.input('createdBy', sql.VarChar(50), createdBy);
+    }
+    
+    const result = await request.query(`
         INSERT INTO ${DB_TABLES.MEMBER_POLICIES} (
           member_id,
           product_id,
@@ -82,8 +86,7 @@ export class MemberPoliciesRepository extends BaseRepository<MemberPolicy> {
           effective_date,
           expiry_date,
           status,
-          is_deleted,
-          legacy_policy_id
+          is_deleted${createdBy ? ',\n          created_by' : ''}
         )
         VALUES (
           @member_id,
@@ -92,8 +95,7 @@ export class MemberPoliciesRepository extends BaseRepository<MemberPolicy> {
           @effective_date,
           @expiry_date,
           @status,
-          0,
-          @legacy_policy_id
+          0${createdBy ? ',\n          @createdBy' : ''}
         );
         SELECT CAST(SCOPE_IDENTITY() AS VARCHAR) AS policy_record_id;
       `);
@@ -104,7 +106,7 @@ export class MemberPoliciesRepository extends BaseRepository<MemberPolicy> {
   /**
    * Update member policy
    */
-  public async updatePolicy(policyRecordId: string, dto: UpdateMemberPolicyDto): Promise<boolean> {
+  public async updatePolicy(policyRecordId: string, dto: UpdateMemberPolicyDto, updatedBy?: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('policy_record_id', sql.BigInt, policyRecordId);
 
@@ -135,12 +137,14 @@ export class MemberPoliciesRepository extends BaseRepository<MemberPolicy> {
       request.input('status', sql.VarChar(50), dto.status);
     }
 
-    if (dto.legacy_policy_id !== undefined) {
-      setClauses.push('legacy_policy_id = @legacy_policy_id');
-      request.input('legacy_policy_id', sql.UniqueIdentifier, dto.legacy_policy_id);
+    if (updatedBy) {
+      setClauses.push('updated_by = @updatedBy');
+      request.input('updatedBy', sql.VarChar(50), updatedBy);
     }
 
-    if (setClauses.length === 0) {
+    setClauses.push('updated_at = GETDATE()');
+
+    if (setClauses.length === 1) { // Only updated_at
       return false;
     }
 

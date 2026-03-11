@@ -50,27 +50,22 @@ export class HospitalStaffContactsRepository extends BaseRepository<HospitalStaf
     contactType: string,
     contactValue: string | undefined,
     isPrimary: boolean,
-    legacyContactId: string | undefined
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
       .input('staffId', sql.BigInt, staffId)
       .input('contactType', sql.VarChar(50), contactType)
-      .input('isPrimary', sql.Bit, isPrimary);
+      .input('isPrimary', sql.Bit, isPrimary)
+      .input('createdBy', sql.VarChar(50), createdBy);
 
-    const fields: string[] = ['staff_id', 'contact_type', 'is_primary'];
-    const values: string[] = ['@staffId', '@contactType', '@isPrimary'];
+    const fields: string[] = ['staff_id', 'contact_type', 'is_primary', 'created_by'];
+    const values: string[] = ['@staffId', '@contactType', '@isPrimary', '@createdBy'];
 
     if (contactValue) {
       fields.push('contact_value');
       values.push('@contactValue');
       request.input('contactValue', sql.VarChar(100), contactValue);
-    }
-
-    if (legacyContactId) {
-      fields.push('legacy_hospital_contact_id');
-      values.push('@legacyContactId');
-      request.input('legacyContactId', sql.UniqueIdentifier, legacyContactId);
     }
 
     const query = `
@@ -90,7 +85,8 @@ export class HospitalStaffContactsRepository extends BaseRepository<HospitalStaf
     contactId: number,
     contactType: string | undefined,
     contactValue: string | undefined,
-    isPrimary: boolean | undefined
+    isPrimary: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -112,6 +108,10 @@ export class HospitalStaffContactsRepository extends BaseRepository<HospitalStaf
     }
 
     if (updates.length === 0) return;
+
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('contactId', sql.BigInt, contactId);
 

@@ -38,7 +38,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-s
       <div class="mb-6 rounded-lg bg-white p-4 shadow">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Category *</label>
+            <label class="mb-1 block text-sm font-medium text-gray-700">Category <span class="text-red-500">*</span></label>
             <select
               [(ngModel)]="selectedCategoryId"
               (ngModelChange)="onCategoryChange()"
@@ -49,7 +49,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-s
             </select>
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Lookup *</label>
+            <label class="mb-1 block text-sm font-medium text-gray-700">Lookup <span class="text-red-500">*</span></label>
             <select
               [(ngModel)]="selectedLookupId"
               (ngModelChange)="onLookupChange()"
@@ -142,7 +142,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-s
         <div class="flex-1 overflow-y-auto px-6 py-4">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">Metadata Key *</label>
+              <label class="block text-sm font-medium text-gray-700">Metadata Key <span class="text-red-500">*</span></label>
               <input 
                 type="text" 
                 [(ngModel)]="formData.metadata_key" 
@@ -152,7 +152,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-s
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">Metadata Value *</label>
+              <label class="block text-sm font-medium text-gray-700">Metadata Value <span class="text-red-500">*</span></label>
               <textarea 
                 [(ngModel)]="formData.metadata_value" 
                 rows="3" 

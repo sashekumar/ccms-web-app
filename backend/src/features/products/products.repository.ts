@@ -29,14 +29,14 @@ export class ProductsRepository extends BaseRepository<Product> {
       request.input('search', sql.NVarChar(255), `%${filters.search}%`);
     }
 
-    if (filters.insurerName) {
+    if (filters.insurer_name) {
       whereClauses.push('insurer_name = @insurerName');
-      request.input('insurerName', sql.NVarChar(255), filters.insurerName);
+      request.input('insurerName', sql.NVarChar(255), filters.insurer_name);
     }
 
-    if (filters.isActive !== undefined) {
+    if (filters.is_active !== undefined) {
       whereClauses.push('is_active = @isActive');
-      request.input('isActive', sql.Bit, filters.isActive);
+      request.input('isActive', sql.Bit, filters.is_active);
     } else {
       // By default, show only active products
       whereClauses.push('is_active = 1');
@@ -45,8 +45,8 @@ export class ProductsRepository extends BaseRepository<Product> {
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Sorting
-    const sortBy = filters.sortBy || 'product_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'product_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
 
     // Count query
@@ -143,30 +143,28 @@ export class ProductsRepository extends BaseRepository<Product> {
   /**
    * Create new product
    */
-  public async createProduct(dto: CreateProductDto): Promise<number> {
+  public async createProduct(dto: CreateProductDto, createdBy: string): Promise<number> {
     const pool = await connectionManager.getPool();
     const result = await pool.request()
       .input('plan_code', sql.VarChar(50), dto.plan_code)
       .input('plan_name', sql.NVarChar(255), dto.plan_name || null)
       .input('insurer_name', sql.NVarChar(255), dto.insurer_name || null)
       .input('is_active', sql.Bit, dto.is_active !== undefined ? dto.is_active : true)
-      .input('legacy_product_id', sql.UniqueIdentifier, dto.legacy_product_id || null)
+      .input('createdBy', sql.VarChar(50), createdBy)
       .query(`
         INSERT INTO ${DB_TABLES.PRODUCTS} (
           plan_code,
           plan_name,
           insurer_name,
           is_active,
-          legacy_product_id,
-          created_at
+          created_by
         )
         VALUES (
           @plan_code,
           @plan_name,
           @insurer_name,
           @is_active,
-          @legacy_product_id,
-          GETDATE()
+          @createdBy
         );
         SELECT SCOPE_IDENTITY() AS product_id;
       `);
@@ -177,7 +175,7 @@ export class ProductsRepository extends BaseRepository<Product> {
   /**
    * Update product
    */
-  public async updateProduct(productId: number, dto: UpdateProductDto): Promise<boolean> {
+  public async updateProduct(productId: number, dto: UpdateProductDto, updatedBy: string): Promise<boolean> {
     const pool = await connectionManager.getPool();
     const request = pool.request().input('product_id', sql.BigInt, productId);
 
@@ -203,14 +201,14 @@ export class ProductsRepository extends BaseRepository<Product> {
       request.input('is_active', sql.Bit, dto.is_active);
     }
 
-    if (dto.legacy_product_id !== undefined) {
-      setClauses.push('legacy_product_id = @legacy_product_id');
-      request.input('legacy_product_id', sql.UniqueIdentifier, dto.legacy_product_id);
-    }
-
     if (setClauses.length === 0) {
       return false;
     }
+
+    // Add audit fields
+    setClauses.push('updated_by = @updatedBy');
+    setClauses.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     const result = await request.query(`
       UPDATE ${DB_TABLES.PRODUCTS}

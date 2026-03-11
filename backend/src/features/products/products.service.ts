@@ -109,8 +109,8 @@ export class ProductsService extends BaseService<Product> {
   /**
    * Create new product
    */
-  public async createProduct(dto: CreateProductDto): Promise<number> {
-    const productId = await this.repository.createProduct(dto);
+  public async createProduct(dto: CreateProductDto, createdBy: string): Promise<number> {
+    const productId = await this.repository.createProduct(dto, createdBy);
     
     // Clear plan code cache
     this.productCache.del(`${CACHE_KEYS.PLAN_CODE}:${dto.plan_code}:new`);
@@ -121,8 +121,8 @@ export class ProductsService extends BaseService<Product> {
   /**
    * Update product
    */
-  public async updateProduct(productId: number, dto: UpdateProductDto): Promise<boolean> {
-    const success = await this.repository.updateProduct(productId, dto);
+  public async updateProduct(productId: number, dto: UpdateProductDto, updatedBy: string): Promise<boolean> {
+    const success = await this.repository.updateProduct(productId, dto, updatedBy);
     
     if (success) {
       this.clearProductCache(productId);
@@ -193,8 +193,8 @@ export class ProductsService extends BaseService<Product> {
   /**
    * Create new product limit
    */
-  public async createLimit(dto: CreateProductLimitDto): Promise<number> {
-    const limitId = await this.limitsRepository.createLimit(dto);
+  public async createLimit(dto: CreateProductLimitDto, createdBy: string): Promise<number> {
+    const limitId = await this.limitsRepository.createLimit(dto, createdBy);
     
     // Clear limits cache for this product
     this.productCache.del(`${CACHE_KEYS.LIMITS}:${dto.product_id}`);
@@ -205,10 +205,10 @@ export class ProductsService extends BaseService<Product> {
   /**
    * Update product limit
    */
-  public async updateLimit(limitId: number, dto: UpdateProductLimitDto): Promise<boolean> {
+  public async updateLimit(limitId: number, dto: UpdateProductLimitDto, updatedBy: string): Promise<boolean> {
     // Get the limit first to know which product to clear cache for
     const limit = await this.limitsRepository.getLimitById(limitId);
-    const success = await this.limitsRepository.updateLimit(limitId, dto);
+    const success = await this.limitsRepository.updateLimit(limitId, dto, updatedBy);
     
     if (success && limit) {
       this.productCache.del(`${CACHE_KEYS.LIMITS}:${limit.product_id}`);
@@ -263,8 +263,8 @@ export class ProductsService extends BaseService<Product> {
   /**
    * Create new product copay rule
    */
-  public async createCopay(dto: CreateProductCopayDto): Promise<number> {
-    const copayId = await this.copayRepository.createCopay(dto);
+  public async createCopay(dto: CreateProductCopayDto, createdBy: string): Promise<number> {
+    const copayId = await this.copayRepository.createCopay(dto, createdBy);
     
     // Clear copay cache for this product
     this.productCache.del(`${CACHE_KEYS.COPAY}:${dto.product_id}`);
@@ -275,10 +275,10 @@ export class ProductsService extends BaseService<Product> {
   /**
    * Update product copay rule
    */
-  public async updateCopay(copayId: number, dto: UpdateProductCopayDto): Promise<boolean> {
+  public async updateCopay(copayId: number, dto: UpdateProductCopayDto, updatedBy: string): Promise<boolean> {
     // Get the copay first to know which product to clear cache for
     const copay = await this.copayRepository.getCopayById(copayId);
-    const success = await this.copayRepository.updateCopay(copayId, dto);
+    const success = await this.copayRepository.updateCopay(copayId, dto, updatedBy);
     
     if (success && copay) {
       this.productCache.del(`${CACHE_KEYS.COPAY}:${copay.product_id}`);

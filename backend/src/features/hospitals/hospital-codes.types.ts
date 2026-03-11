@@ -16,7 +16,6 @@ export interface CreateHospitalCodeDto {
   code_type: string;
   code_value?: string;
   is_active?: boolean;
-  legacy_hospital_code_id?: string;
 }
 
 export interface UpdateHospitalCodeDto {

@@ -21,7 +21,6 @@ export interface MemberContact {
  * Create Member Contact DTO
  */
 export interface CreateMemberContactDto {
-  legacy_member_contact_id?: string;
   member_id: string;
   contact_type?: string;
   contact_value?: string;
@@ -33,7 +32,6 @@ export interface CreateMemberContactDto {
  */
 export interface UpdateMemberContactDto {
   contact_id: string;
-  legacy_member_contact_id?: string;
   contact_type?: string;
   contact_value?: string;
   is_primary?: boolean;

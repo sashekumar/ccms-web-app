@@ -96,20 +96,6 @@ import { ToastService } from '../../../core/services/toast.service';
               />
             </div>
 
-            <!-- Legacy Product ID -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Legacy Product ID</label>
-              <input
-                type="text"
-                name="legacy_product_id"
-                [(ngModel)]="formData.legacy_product_id"
-                maxlength="36"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                placeholder="For data migration reference only"
-              />
-              <p class="mt-1 text-xs text-gray-500">Legacy system product identifier</p>
-            </div>
-
             <!-- Is Active -->
             <div class="md:col-span-2 flex items-center">
               <input
@@ -182,8 +168,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     plan_code: '',
     plan_name: '',
     insurer_name: '',
-    is_active: true,
-    legacy_product_id: ''
+    is_active: true
   };
 
   private destroy$ = new Subject<void>();
@@ -235,8 +220,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
             plan_code: product.plan_code,
             plan_name: product.plan_name || '',
             insurer_name: product.insurer_name || '',
-            is_active: product.is_active,
-            legacy_product_id: product.legacy_product_id || ''
+            is_active: product.is_active
           };
           this.loading = false;
         },
@@ -294,8 +278,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       const updateData: UpdateProductDto = {
         plan_name: this.formData.plan_name,
         insurer_name: this.formData.insurer_name,
-        is_active: this.formData.is_active,
-        legacy_product_id: this.formData.legacy_product_id
+        is_active: this.formData.is_active
       };
 
       this.productService.updateProduct(this.productId, updateData)

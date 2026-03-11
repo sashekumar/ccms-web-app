@@ -619,7 +619,7 @@ describe('PermissionsService', () => {
 
   describe('updateModule', () => {
     it('should update module successfully', async () => {
-      const dto: any = { moduleName: 'Updated Module' };
+      const dto: any = { module_name: 'Updated Module' };
       (mockModulesRepo.update as jest.Mock).mockResolvedValue(undefined);
 
       await permissionsService.updateModule(5, dto, 'admin');
@@ -658,7 +658,7 @@ describe('PermissionsService', () => {
 
   describe('updateAction', () => {
     it('should update action successfully', async () => {
-      const dto: any = { actionName: 'Updated Action' };
+      const dto: any = { action_name: 'Updated Action' };
       (mockActionsRepo.update as jest.Mock).mockResolvedValue(undefined);
 
       await permissionsService.updateAction(5, dto, 'admin');
@@ -696,7 +696,7 @@ describe('PermissionsService', () => {
 
   describe('createModuleAction', () => {
     it('should create module action successfully', async () => {
-      const dto: any = { moduleId: 1, actionId: 2, actionLabel: 'View Users' };
+      const dto: any = { module_id: 1, action_id: 2, action_label: 'View Users' };
       mockRepository.createModuleAction.mockResolvedValue(10);
 
       const result = await permissionsService.createModuleAction(dto, 'admin');
@@ -716,7 +716,7 @@ describe('PermissionsService', () => {
 
   describe('updateModuleAction', () => {
     it('should update module action successfully', async () => {
-      const dto: any = { actionLabel: 'Updated Label', isActive: true };
+      const dto: any = { action_label: 'Updated Label', is_active: true };
       mockRepository.updateModuleAction.mockResolvedValue(undefined);
 
       await permissionsService.updateModuleAction(5, dto, 'admin');

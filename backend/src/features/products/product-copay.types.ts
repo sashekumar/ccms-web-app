@@ -19,7 +19,6 @@ export interface CreateProductCopayDto {
   copay_value?: number;
   applies_to?: string;
   is_active?: boolean;
-  legacy_product_copay_id?: string;
 }
 
 export interface UpdateProductCopayDto {
@@ -27,7 +26,6 @@ export interface UpdateProductCopayDto {
   copay_value?: number;
   applies_to?: string;
   is_active?: boolean;
-  legacy_product_copay_id?: string;
 }
 
 export interface GetProductCopayRequest {

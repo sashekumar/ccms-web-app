@@ -69,10 +69,10 @@ describe('UsersService', () => {
 
       const filters: UserFilters = {
         search: 'john',
-        isActive: true,
-        roleId: 2,
-        sortBy: 'username',
-        sortOrder: 'ASC'
+        is_active: true,
+        role_id: 2,
+        sort_by: 'username',
+        sort_order: 'ASC'
       };
 
       await service.getUsers(filters);

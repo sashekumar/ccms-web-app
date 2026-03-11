@@ -29,16 +29,16 @@ export class BanksRepository extends BaseRepository<Bank> {
       request.input('search', sql.NVarChar(200), `%${filters.search}%`);
     }
 
-    if (filters.isActive !== undefined) {
+    if (filters.is_active !== undefined) {
       whereClauses.push('is_active = @isActive');
-      request.input('isActive', sql.Bit, filters.isActive);
+      request.input('isActive', sql.Bit, filters.is_active);
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Sorting
-    const sortBy = filters.sortBy || 'bank_id';
-    const sortOrder = filters.sortOrder || 'DESC';
+    const sortBy = filters.sort_by || 'bank_id';
+    const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
 
     // Get total count
@@ -124,38 +124,25 @@ export class BanksRepository extends BaseRepository<Bank> {
   public async createBank(
     bankCode: string,
     bankName: string,
-    legacyBankId: string | undefined,
-    isActive: boolean
+    isActive: boolean,
+    createdBy: string
   ): Promise<number> {
     const pool = await connectionManager.getPool();
     const request = pool.request()
       .input('bankCode', sql.VarChar(50), bankCode)
       .input('bankName', sql.NVarChar(255), bankName)
-      .input('isActive', sql.Bit, isActive);
+      .input('isActive', sql.Bit, isActive)
+      .input('createdBy', sql.VarChar(50), createdBy);
       
-    let query = '';
-    if (legacyBankId) {
-      request.input('legacyBankId', sql.UniqueIdentifier, legacyBankId);
-      query = `
-        INSERT INTO ${DB_TABLES.BANKS} (
-          bank_code, bank_name, legacy_bank_id, is_active
-        )
-        OUTPUT INSERTED.bank_id
-        VALUES (
-          @bankCode, @bankName, @legacyBankId, @isActive
-        )
-      `;
-    } else {
-      query = `
-        INSERT INTO ${DB_TABLES.BANKS} (
-          bank_code, bank_name, is_active
-        )
-        OUTPUT INSERTED.bank_id
-        VALUES (
-          @bankCode, @bankName, @isActive
-        )
-      `;
-    }
+    const query = `
+      INSERT INTO ${DB_TABLES.BANKS} (
+        bank_code, bank_name, is_active, created_by
+      )
+      OUTPUT INSERTED.bank_id
+      VALUES (
+        @bankCode, @bankName, @isActive, @createdBy
+      )
+    `;
     
     const result = await request.query(query);
     return result.recordset[0].bank_id;
@@ -168,8 +155,8 @@ export class BanksRepository extends BaseRepository<Bank> {
     bankId: number,
     bankCode: string | undefined,
     bankName: string | undefined,
-    legacyBankId: string | undefined,
-    isActive: boolean | undefined
+    isActive: boolean | undefined,
+    updatedBy: string
   ): Promise<void> {
     const updates: string[] = [];
     const pool = await connectionManager.getPool();
@@ -185,15 +172,6 @@ export class BanksRepository extends BaseRepository<Bank> {
       request.input('bankName', sql.NVarChar(255), bankName);
     }
 
-    if (legacyBankId !== undefined) {
-      if (legacyBankId) {
-        updates.push('legacy_bank_id = @legacyBankId');
-        request.input('legacyBankId', sql.UniqueIdentifier, legacyBankId);
-      } else {
-        updates.push('legacy_bank_id = NULL');
-      }
-    }
-
     if (isActive !== undefined) {
       updates.push('is_active = @isActive');
       request.input('isActive', sql.Bit, isActive);
@@ -202,6 +180,11 @@ export class BanksRepository extends BaseRepository<Bank> {
     if (updates.length === 0) {
       return; // Nothing to update
     }
+
+    // Add audit fields
+    updates.push('updated_by = @updatedBy');
+    updates.push('updated_at = GETDATE()');
+    request.input('updatedBy', sql.VarChar(50), updatedBy);
 
     request.input('bankId', sql.BigInt, bankId);
 

@@ -595,7 +595,7 @@ describe('PermissionService', () => {
 
       service.getRoleById(1).subscribe(role => {
         expect(role).toEqual(mockRole);
-        expect(apiServiceMock.post).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.ROLES.GET, { roleId: 1 });
+        expect(apiServiceMock.post).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.ROLES.GET, { role_id: 1 });
       });
     });
 
@@ -675,9 +675,9 @@ describe('PermissionService', () => {
         role_name: 'Manager',
         description: 'Manager role'
       };
-      const mockResponse: ApiResponse<{ roleId: number }> = {
+      const mockResponse: ApiResponse<{ role_id: number }> = {
         success: true,
-        data: { roleId: 5 }
+        data: { role_id: 5 }
       };
 
       apiServiceMock.post.mockReturnValue(of(mockResponse));
@@ -712,7 +712,7 @@ describe('PermissionService', () => {
       apiServiceMock.post.mockReturnValue(of(mockResponse));
 
       service.updateRole(1, dto).subscribe(() => {
-        expect(apiServiceMock.post).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE, { roleId: 1, ...dto });
+        expect(apiServiceMock.post).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.ROLES.UPDATE, { role_id: 1, ...dto });
       });
     });
 
@@ -739,7 +739,7 @@ describe('PermissionService', () => {
       apiServiceMock.post.mockReturnValue(of(mockResponse));
 
       service.deleteRole(1).subscribe(() => {
-        expect(apiServiceMock.post).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.ROLES.DELETE, { roleId: 1 });
+        expect(apiServiceMock.post).toHaveBeenCalledWith(API_ENDPOINTS.PERMISSIONS.ROLES.DELETE, { role_id: 1 });
       });
     });
 
@@ -901,9 +901,9 @@ describe('PermissionService', () => {
   describe('createModule()', () => {
     it('should create new module', () => {
       const dto = { module_code: 'REPORTS', module_name: 'Reports', display_order: 1 };
-      const mockResponse: ApiResponse<{ moduleId: number }> = {
+      const mockResponse: ApiResponse<{ module_id: number }> = {
         success: true,
-        data: { moduleId: 10 }
+        data: { module_id: 10 }
       };
 
       apiServiceMock.post.mockReturnValue(of(mockResponse));
@@ -984,9 +984,9 @@ describe('PermissionService', () => {
   describe('createAction()', () => {
     it('should create new action', () => {
       const dto = { action_code: 'APPROVE', action_name: 'Approve' };
-      const mockResponse: ApiResponse<{ actionId: number }> = {
+      const mockResponse: ApiResponse<{ action_id: number }> = {
         success: true,
-        data: { actionId: 15 }
+        data: { action_id: 15 }
       };
 
       apiServiceMock.post.mockReturnValue(of(mockResponse));
@@ -1095,9 +1095,9 @@ describe('PermissionService', () => {
   describe('createModuleAction()', () => {
     it('should create module-action', () => {
       const dto = { module_id: 1, action_id: 2 };
-      const mockResponse: ApiResponse<{ moduleActionId: number }> = {
+      const mockResponse: ApiResponse<{ module_action_id: number }> = {
         success: true,
-        data: { moduleActionId: 20 }
+        data: { module_action_id: 20 }
       };
 
       apiServiceMock.post.mockReturnValue(of(mockResponse));

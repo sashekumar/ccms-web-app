@@ -56,7 +56,7 @@ export class HospitalsService extends BaseService<Hospital> {
   /**
    * Create new hospital
    */
-  public async createHospital(dto: CreateHospitalDto): Promise<number> {
+  public async createHospital(dto: CreateHospitalDto, createdBy: string): Promise<number> {
     // Validate hospital name (required)
     if (!dto.hospital_name || dto.hospital_name.trim().length === 0) {
       throw new Error('Hospital name is required');
@@ -76,13 +76,6 @@ export class HospitalsService extends BaseService<Hospital> {
       const exists = await this.repository.hospitalCodeExists(dto.hospital_code);
       if (exists) {
         throw new Error('Hospital code already exists');
-      }
-    }
-
-    // Validate legacy_hospital_id if provided
-    if (dto.legacy_hospital_id && dto.legacy_hospital_id.trim() !== '') {
-      if (!this.isValidGuid(dto.legacy_hospital_id)) {
-        throw new Error('Legacy Hospital ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
       }
     }
 
@@ -119,14 +112,13 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.reg_no,
       dto.bank_id,
       dto.bank_acc_no,
-      dto.legacy_hospital_id,
       dto.is_panel !== undefined ? dto.is_panel : false,
       dto.panel_status,
       dto.panel_effective_date,
       dto.accreditation_status,
       dto.accreditation_expiry,
       false, // is_deleted - always false for new hospitals
-      dto.created_by
+      createdBy
     );
 
     return hospitalId;
@@ -135,7 +127,7 @@ export class HospitalsService extends BaseService<Hospital> {
   /**
    * Update hospital
    */
-  public async updateHospital(hospitalId: number, dto: UpdateHospitalDto): Promise<void> {
+  public async updateHospital(hospitalId: number, dto: UpdateHospitalDto, updatedBy: string): Promise<void> {
     // Check if hospital exists
     const hospital = await this.repository.getHospitalById(hospitalId);
     if (!hospital) {
@@ -163,13 +155,6 @@ export class HospitalsService extends BaseService<Hospital> {
       const exists = await this.repository.hospitalCodeExists(dto.hospital_code, hospitalId);
       if (exists) {
         throw new Error('Hospital code already exists');
-      }
-    }
-
-    // Validate legacy_hospital_id if being updated
-    if (dto.legacy_hospital_id !== undefined && dto.legacy_hospital_id && dto.legacy_hospital_id.trim() !== '') {
-      if (!this.isValidGuid(dto.legacy_hospital_id)) {
-        throw new Error('Legacy Hospital ID must be a valid GUID format (e.g., 12345678-1234-1234-1234-123456789012)');
       }
     }
 
@@ -206,14 +191,13 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.reg_no,
       dto.bank_id,
       dto.bank_acc_no,
-      dto.legacy_hospital_id,
       dto.is_panel,
       dto.panel_status,
       dto.panel_effective_date,
       dto.accreditation_status,
       dto.accreditation_expiry,
       dto.is_deleted,
-      dto.updated_by
+      updatedBy
     );
   }
 
@@ -250,7 +234,7 @@ export class HospitalsService extends BaseService<Hospital> {
     return await this.addressesRepository.getAddressById(addressId);
   }
 
-  public async createAddress(dto: CreateHospitalAddressDto): Promise<number> {
+  public async createAddress(dto: CreateHospitalAddressDto, createdBy: string): Promise<number> {
     // Verify hospital exists
     const hospital = await this.repository.getHospitalById(dto.hospital_id);
     if (!hospital) {
@@ -274,11 +258,11 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.latitude,
       dto.longitude,
       dto.is_primary || false,
-      dto.legacy_hospital_address_id
+      createdBy
     );
   }
 
-  public async updateAddress(addressId: number, dto: UpdateHospitalAddressDto): Promise<void> {
+  public async updateAddress(addressId: number, dto: UpdateHospitalAddressDto, updatedBy: string): Promise<void> {
     const address = await this.addressesRepository.getAddressById(addressId);
     if (!address) {
       throw new Error('Address not found');
@@ -300,7 +284,8 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.country,
       dto.latitude,
       dto.longitude,
-      dto.is_primary
+      dto.is_primary,
+      updatedBy
     );
   }
 
@@ -325,7 +310,7 @@ export class HospitalsService extends BaseService<Hospital> {
     return await this.codesRepository.getCodeById(codeId);
   }
 
-  public async createCode(dto: CreateHospitalCodeDto): Promise<number> {
+  public async createCode(dto: CreateHospitalCodeDto, createdBy: string): Promise<number> {
     // Verify hospital exists
     const hospital = await this.repository.getHospitalById(dto.hospital_id);
     if (!hospital) {
@@ -343,11 +328,11 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.code_type,
       dto.code_value,
       dto.is_active !== undefined ? dto.is_active : true,
-      dto.legacy_hospital_code_id
+      createdBy
     );
   }
 
-  public async updateCode(codeId: number, dto: UpdateHospitalCodeDto): Promise<void> {
+  public async updateCode(codeId: number, dto: UpdateHospitalCodeDto, updatedBy: string): Promise<void> {
     const code = await this.codesRepository.getCodeById(codeId);
     if (!code) {
       throw new Error('Code not found');
@@ -365,7 +350,8 @@ export class HospitalsService extends BaseService<Hospital> {
       codeId,
       dto.code_type,
       dto.code_value,
-      dto.is_active
+      dto.is_active,
+      updatedBy
     );
   }
 
@@ -390,7 +376,7 @@ export class HospitalsService extends BaseService<Hospital> {
     return await this.staffRepository.getStaffById(staffId);
   }
 
-  public async createStaff(dto: CreateHospitalStaffDto): Promise<number> {
+  public async createStaff(dto: CreateHospitalStaffDto, createdBy: string): Promise<number> {
     // Verify hospital exists
     const hospital = await this.repository.getHospitalById(dto.hospital_id);
     if (!hospital) {
@@ -408,11 +394,11 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.staff_type,
       dto.specialty,
       dto.is_active !== undefined ? dto.is_active : true,
-      dto.legacy_hospital_staff_id
+      createdBy
     );
   }
 
-  public async updateStaff(staffId: number, dto: UpdateHospitalStaffDto): Promise<void> {
+  public async updateStaff(staffId: number, dto: UpdateHospitalStaffDto, updatedBy: string): Promise<void> {
     const staff = await this.staffRepository.getStaffById(staffId);
     if (!staff) {
       throw new Error('Staff not found');
@@ -428,7 +414,8 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.staff_name ? dto.staff_name.trim() : undefined,
       dto.staff_type,
       dto.specialty,
-      dto.is_active
+      dto.is_active,
+      updatedBy
     );
   }
 
@@ -453,7 +440,7 @@ export class HospitalsService extends BaseService<Hospital> {
     return await this.contactsRepository.getContactById(contactId);
   }
 
-  public async createContact(dto: CreateHospitalStaffContactDto): Promise<number> {
+  public async createContact(dto: CreateHospitalStaffContactDto, createdBy: string): Promise<number> {
     // Verify staff exists
     const staff = await this.staffRepository.getStaffById(dto.staff_id);
     if (!staff) {
@@ -470,11 +457,11 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.contact_type,
       dto.contact_value,
       dto.is_primary || false,
-      dto.legacy_hospital_contact_id
+      createdBy
     );
   }
 
-  public async updateContact(contactId: number, dto: UpdateHospitalStaffContactDto): Promise<void> {
+  public async updateContact(contactId: number, dto: UpdateHospitalStaffContactDto, updatedBy: string): Promise<void> {
     const contact = await this.contactsRepository.getContactById(contactId);
     if (!contact) {
       throw new Error('Contact not found');
@@ -489,7 +476,8 @@ export class HospitalsService extends BaseService<Hospital> {
       contactId,
       dto.contact_type,
       dto.contact_value,
-      dto.is_primary
+      dto.is_primary,
+      updatedBy
     );
   }
 
@@ -514,7 +502,7 @@ export class HospitalsService extends BaseService<Hospital> {
     return await this.feesRepository.getFeeById(feeId);
   }
 
-  public async createFee(dto: CreateFeeScheduleDto): Promise<number> {
+  public async createFee(dto: CreateFeeScheduleDto, createdBy: string): Promise<number> {
     // Verify hospital exists if provided
     if (dto.hospital_id) {
       const hospital = await this.repository.getHospitalById(dto.hospital_id);
@@ -532,11 +520,11 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.effective_date,
       dto.expiry_date,
       dto.is_active !== undefined ? dto.is_active : true,
-      dto.legacy_fee_schedule_id
+      createdBy
     );
   }
 
-  public async updateFee(feeId: number, dto: UpdateFeeScheduleDto): Promise<void> {
+  public async updateFee(feeId: number, dto: UpdateFeeScheduleDto, updatedBy: string): Promise<void> {
     const fee = await this.feesRepository.getFeeById(feeId);
     if (!fee) {
       throw new Error('Fee schedule not found');
@@ -550,7 +538,8 @@ export class HospitalsService extends BaseService<Hospital> {
       dto.amount,
       dto.effective_date,
       dto.expiry_date,
-      dto.is_active
+      dto.is_active,
+      updatedBy
     );
   }
 

@@ -266,8 +266,7 @@ describe('ProductFormComponent', () => {
       expect(productService.updateProduct).toHaveBeenCalledWith('1', {
         plan_name: 'Updated Plan',
         insurer_name: 'Updated Insurer',
-        is_active: false,
-        legacy_product_id: 'LEG001'
+        is_active: false
       });
       expect(toastService.success).toHaveBeenCalledWith('Product updated successfully');
       expect(component.saving).toBe(false);
