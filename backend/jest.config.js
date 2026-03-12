@@ -7,6 +7,24 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
+  reporters: [
+    'default',
+    ['jest-allure2-reporter', {
+      resultsDir: 'allure-results',
+      usePath: true,
+      testCase: {
+        labels: {
+          severity: 'normal',
+          parent: null,
+          suite: null,
+          subSuite: null,
+          epic: null,
+          feature: null,
+          story: null,
+        },
+      },
+    }],
+  ],
   collectCoverageFrom: [
     // Collect coverage from all TypeScript source files
     'src/**/*.ts',

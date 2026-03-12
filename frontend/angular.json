@@ -77,7 +77,8 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverage": true
+            "coverage": true,
+            "reporters": ["default", "allure-vitest/reporter"]
           }
         }
       }

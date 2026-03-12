@@ -1,6 +1,9 @@
 node_modules/
+package-lock.json
 dist/
 .env
 *.log
 .DS_Store
 coverage/
+allure-results/
+allure-report/

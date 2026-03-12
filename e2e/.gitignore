@@ -6,6 +6,8 @@ yarn.lock
 # Test Results
 test-results/
 playwright-report/
+allure-results/
+allure-report/
 playwright/.cache/
 
 # Screenshots and Videos
