@@ -421,7 +421,7 @@ CREATE UNIQUE NONCLUSTERED INDEX UQ_ccms_product_copay_legacy_id ON ccms_product
 CREATE TABLE ccms_members (
     member_id BIGINT IDENTITY(1,1) PRIMARY KEY,
     legacy_member_id UNIQUEIDENTIFIER NULL,      -- Maps to dt_PolicyHolder.ID (for data migration verification)
-    external_guid UNIQUEIDENTIFIER DEFAULT NEWSEQUENTIALID(),
+    external_guid UNIQUEIDENTIFIER NULL,          -- No default - populated only during data migration
     full_name NVARCHAR(255) NOT NULL,
     ic_no VARCHAR(20) NOT NULL UNIQUE,
     fwd_member_no VARCHAR(50),
