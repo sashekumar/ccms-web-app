@@ -299,6 +299,27 @@ export class LookupsController {
   };
 
   /**
+   * Get lookups by category name (For dropdowns - Auth required, no specific permission)
+   * POST /api/master/lookups/by-category-name
+   */
+  public getLookupsByCategoryName = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { category_name } = req.body;
+
+      if (!category_name || typeof category_name !== 'string') {
+        ResponseUtil.error(res, 'category_name is required', 400);
+        return;
+      }
+
+      const lookups = await this.service.getLookupsByCategoryName(category_name.toUpperCase(), true);
+
+      ResponseUtil.success(res, lookups, 'Lookups retrieved successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching lookups by category name', 500, getErrorMessage(error));
+    }
+  };
+
+  /**
    * Create new lookup
    * POST /api/master/lookups/create
    */

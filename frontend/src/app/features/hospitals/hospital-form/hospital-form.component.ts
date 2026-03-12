@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, Observable } from 'rxjs';
 import { HospitalService } from '../../../core/services/hospital.service';
 import { BankService } from '../../../core/services/bank.service';
+import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 import { CreateHospitalDto, UpdateHospitalDto, Hospital } from '../../../shared/models/hospital.model';
 import { Bank } from '../../../shared/models/bank.model';
 import { LoggerService } from '../../../core/services/logger.service';
@@ -85,9 +86,9 @@ import { ToastService } from '../../../core/services/toast.service';
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
               >
                 <option [ngValue]="null">Select Type</option>
-                <option value="Government">Government</option>
-                <option value="Private">Private</option>
-                <option value="University">University</option>
+                <option *ngFor="let type of hospitalTypes$ | async" [value]="type.lookup_code">
+                  {{ type.lookup_value }}
+                </option>
               </select>
             </div>
 
@@ -177,9 +178,9 @@ import { ToastService } from '../../../core/services/toast.service';
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
               >
                 <option [ngValue]="null">Not Specified</option>
-                <option value="JCI Accredited">JCI Accredited</option>
-                <option value="MSQH Accredited">MSQH Accredited</option>
-                <option value="Not Accredited">Not Accredited</option>
+                <option *ngFor="let status of accreditationStatuses$ | async" [value]="status.lookup_code">
+                  {{ status.lookup_value }}
+                </option>
               </select>
             </div>
 
@@ -227,17 +228,21 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
   banks: Bank[] = [];
   loadingBanks = false;
 
+  // Dynamic lookups from database
+  hospitalTypes$: Observable<LookupItem[]>;
+  accreditationStatuses$: Observable<LookupItem[]>;
+
   formData: CreateHospitalDto | UpdateHospitalDto = {
     hospital_name: '',
-    hospital_code: '',
+    hospital_code: null,
     hospital_type: null,
-    reg_no: '',
+    reg_no: null,
     bank_id: null,
-    bank_acc_no: '',
+    bank_acc_no: null,
     is_panel: null,
-    panel_status: '',
+    panel_status: null,
     panel_effective_date: null,
-    accreditation_status: '',
+    accreditation_status: null,
     accreditation_expiry: null
   };
 
@@ -248,9 +253,14 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
     private router: Router,
     private hospitalService: HospitalService,
     private bankService: BankService,
+    private lookupService: LookupService,
     private logger: LoggerService,
     private toast: ToastService
-  ) {}
+  ) {
+    // Initialize dynamic lookups
+    this.hospitalTypes$ = this.lookupService.getHospitalTypes();
+    this.accreditationStatuses$ = this.lookupService.getAccreditationStatuses();
+  }
 
   ngOnInit(): void {
     // Load banks for dropdown

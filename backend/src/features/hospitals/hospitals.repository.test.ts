@@ -118,7 +118,7 @@ describe('HospitalsRepository', () => {
       const result = await repository.getHospitalById(1);
 
       expect(result).toEqual(mockHospital);
-      expect(mockRequest.input).toHaveBeenCalledWith('id', 1);
+      expect(mockRequest.input).toHaveBeenCalledWith('hospitalId', sql.BigInt, 1);
     });
 
     it('should return null when hospital not found', async () => {

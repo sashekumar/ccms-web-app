@@ -2,11 +2,16 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, Observable } from 'rxjs';
 
 import { MemberService } from '../../../core/services/member.service';
+import { ProductService } from '../../../core/services/product.service';
+import { BankService } from '../../../core/services/bank.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
+import { ProductListItem } from '../../../shared/models/product.model';
+import { Bank } from '../../../shared/models/bank.model';
 
 import { 
   Member, 
@@ -90,15 +95,54 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     { id: 'dependents', label: 'Dependents & PEC' }
   ];
 
+  // Dynamic lookups from database
+  addressTypes$: Observable<LookupItem[]>;
+  contactTypes$: Observable<LookupItem[]>;
+  memberStatuses$: Observable<LookupItem[]>;
+  policyStatuses$: Observable<LookupItem[]>;
+  relationships$: Observable<LookupItem[]>;
+  products: ProductListItem[] = [];
+  banks: Bank[] = [];
+
   private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private memberService: MemberService,
+    private productService: ProductService,
+    private bankService: BankService,
     private logger: LoggerService,
-    private toast: ToastService
-  ) {}
+    private toast: ToastService,
+    private lookupService: LookupService
+  ) {
+    // Initialize dynamic lookups
+    this.addressTypes$ = this.lookupService.getAddressTypes();
+    this.contactTypes$ = this.lookupService.getContactTypes();
+    this.memberStatuses$ = this.lookupService.getMemberStatuses();
+    this.policyStatuses$ = this.lookupService.getPolicyStatuses();
+    this.relationships$ = this.lookupService.getRelationships();
+    
+    // Load products for dropdown
+    this.productService.getProducts({ is_active: true, limit: 1000 }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (result) => {
+        this.products = result.products || [];
+      },
+      error: (err) => {
+        console.error('Error loading products:', err);
+      }
+    });
+    
+    // Load banks for display
+    this.bankService.getBanks({ is_active: true, limit: 1000 }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (result) => {
+        this.banks = result.banks || [];
+      },
+      error: (err) => {
+        console.error('Error loading banks:', err);
+      }
+    });
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -149,7 +193,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
    */
   editMember(): void {
     if (this.member) {
-      this.router.navigate(['/members/edit', this.member.member_id]);
+      this.router.navigate(['/members', this.member.member_id, 'edit']);
     }
   }
 
@@ -437,7 +481,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
   resetContactForm(): void {
     this.contactFormData = {
       member_id: this.member?.member_id || '',
-      contact_type: 'Email',
+      contact_type: '',
       contact_value: '',
       is_primary: false
     };
@@ -466,6 +510,8 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       });
   }
 
+  savingPolicy = false;
+
   showPolicyFormDialog(policy?: MemberPolicy): void {
     if (policy) {
       this.editingPolicy = policy;
@@ -473,8 +519,9 @@ export class MemberViewComponent implements OnInit, OnDestroy {
         member_id: policy.member_id,
         product_id: policy.product_id,
         policy_no: policy.policy_no || undefined,
-        effective_date: policy.effective_date || undefined,
-        expiry_date: policy.expiry_date || undefined
+        effective_date: this.formatDate(policy.effective_date),
+        expiry_date: this.formatDate(policy.expiry_date),
+        status: policy.status || ''
       };
     } else {
       this.editingPolicy = null;
@@ -484,7 +531,9 @@ export class MemberViewComponent implements OnInit, OnDestroy {
   }
 
   savePolicy(form: any): void {
-    if (!this.member || form.invalid) return;
+    if (!this.member || form.invalid || this.savingPolicy) return;
+    
+    this.savingPolicy = true;
 
     if (this.editingPolicy) {
       // Update existing policy
@@ -493,12 +542,14 @@ export class MemberViewComponent implements OnInit, OnDestroy {
         .subscribe({
           next: () => {
             this.toast.success('Policy updated successfully');
+            this.savingPolicy = false;
             this.cancelPolicyForm();
             this.loadPolicies();
           },
           error: (error: any) => {
             this.logger.error('Error updating policy:', error);
             this.toast.error('Failed to update policy');
+            this.savingPolicy = false;
           }
         });
     } else {
@@ -512,12 +563,14 @@ export class MemberViewComponent implements OnInit, OnDestroy {
         .subscribe({
           next: () => {
             this.toast.success('Policy created successfully');
+            this.savingPolicy = false;
             this.cancelPolicyForm();
             this.loadPolicies();
           },
           error: (error: any) => {
             this.logger.error('Error creating policy:', error);
             this.toast.error('Failed to create policy');
+            this.savingPolicy = false;
           }
         });
     }
@@ -553,8 +606,19 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       policy_no: '',
       product_id: '',
       effective_date: undefined,
-      expiry_date: undefined
+      expiry_date: undefined,
+      status: ''
     };
+  }
+
+  getProductName(productId: string): string {
+    const product = this.products.find(p => p.product_id === productId);
+    return product?.plan_name || product?.plan_code || productId;
+  }
+
+  getBankName(bankId: number): string {
+    const bank = this.banks.find(b => b.bank_id === bankId);
+    return bank?.bank_name || `Bank ID: ${bankId}`;
   }
 
   // ============================================================================
@@ -588,7 +652,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
         full_name: dependent.full_name,
         ic_no: dependent.ic_no || undefined,
         relationship_id: dependent.relationship_id || undefined,
-        dob: dependent.dob || undefined,
+        dob: this.formatDate(dependent.dob),
         is_active: dependent.is_active
       };
     } else {
@@ -601,9 +665,15 @@ export class MemberViewComponent implements OnInit, OnDestroy {
   saveDependent(form: any): void {
     if (!this.member || form.invalid) return;
 
+    // Clean up the form data - convert null to undefined for optional fields
+    const cleanedFormData = { ...this.dependentFormData };
+    if (cleanedFormData.relationship_id === null) {
+      delete cleanedFormData.relationship_id;
+    }
+
     if (this.editingDependent) {
       // Update existing dependent
-      this.memberService.updateDependent(this.editingDependent.dependent_id, this.dependentFormData as UpdateMemberDependentDto)
+      this.memberService.updateDependent(this.editingDependent.dependent_id, cleanedFormData as UpdateMemberDependentDto)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -619,7 +689,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     } else {
       // Create new dependent
       const dto: CreateMemberDependentDto = {
-        ...this.dependentFormData,
+        ...cleanedFormData,
         principal_member_id: this.member.member_id
       } as CreateMemberDependentDto;
       this.memberService.createDependent(dto)
@@ -692,7 +762,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       principal_member_id: this.member?.member_id || '',
       full_name: '',
       ic_no: '',
-      relationship_id: undefined,
+      relationship_id: null,
       dob: undefined,
       is_active: true
     };
@@ -740,7 +810,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
         dependent_id: pec.dependent_id,
         condition_code: pec.condition_code || '',
         condition_name: pec.condition_name || undefined,
-        diagnosis_date: pec.diagnosis_date || undefined,
+        diagnosis_date: this.formatDate(pec.diagnosis_date),
         is_excluded: pec.is_excluded,
         notes: pec.notes || undefined
       };
@@ -844,5 +914,15 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       is_excluded: false,
       notes: ''
     };
+  }
+
+  /**
+   * Helper to format date for HTML date input (YYYY-MM-DD)
+   */
+  private formatDate(date: Date | string | null | undefined): string | undefined {
+    if (!date) return undefined;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return undefined;
+    return d.toISOString().split('T')[0];
   }
 }

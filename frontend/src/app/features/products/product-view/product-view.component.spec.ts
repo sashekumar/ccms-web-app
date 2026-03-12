@@ -324,7 +324,7 @@ describe('ProductViewComponent', () => {
       component.resetLimitForm();
 
       expect(component.limitFormData.limit_type).toBe('');
-      expect(component.limitFormData.limit_amount).toBe(0);
+      expect(component.limitFormData.limit_amount).toBe(undefined);
       expect(component.limitFormData.is_active).toBe(true);
     });
   });
@@ -445,7 +445,7 @@ describe('ProductViewComponent', () => {
       component.resetCopayForm();
 
       expect(component.copayFormData.copay_type).toBe('');
-      expect(component.copayFormData.copay_value).toBe(0);
+      expect(component.copayFormData.copay_value).toBe(undefined);
       expect(component.copayFormData.applies_to).toBe('');
       expect(component.copayFormData.is_active).toBe(true);
     });
@@ -923,7 +923,7 @@ describe('ProductViewComponent', () => {
     it('should initialize with default limit form data', () => {
       expect(component.limitFormData).toEqual({
         limit_type: '',
-        limit_amount: 0,
+        limit_amount: undefined,
         is_active: true
       });
     });
@@ -931,7 +931,7 @@ describe('ProductViewComponent', () => {
     it('should initialize with default copay form data', () => {
       expect(component.copayFormData).toEqual({
         copay_type: '',
-        copay_value: 0,
+        copay_value: undefined,
         applies_to: '',
         is_active: true
       });

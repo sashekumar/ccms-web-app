@@ -20,7 +20,7 @@ describe('LookupsRoutes', () => {
 
     it('should have correct number of routes registered', () => {
       const routes = router.stack.filter((layer: any) => layer.route);
-      expect(routes.length).toBe(19);
+      expect(routes.length).toBe(20);
     });
   });
 

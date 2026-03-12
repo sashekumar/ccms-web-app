@@ -125,7 +125,7 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-500">Bank</label>
-            <p class="mt-1 text-sm text-gray-900">{{ hospital.bank_id || '-' }}</p>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.bank_name || '-' }}</p>
           </div>
 
           <div>
@@ -154,8 +154,18 @@
           </div>
 
           <div>
+            <label class="block text-sm font-medium text-gray-500">Created By</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.created_by_username || '-' }}</p>
+          </div>
+
+          <div>
             <label class="block text-sm font-medium text-gray-500">Last Updated</label>
             <p class="mt-1 text-sm text-gray-900">{{ hospital.updated_at | date:'medium' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-500">Updated By</label>
+            <p class="mt-1 text-sm text-gray-900">{{ hospital.updated_by_username || '-' }}</p>
           </div>
         </div>
       </div>
@@ -208,9 +218,10 @@
                     required
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   >
-                    <option value="PRIMARY">Primary</option>
-                    <option value="BILLING">Billing</option>
-                    <option value="SHIPPING">Shipping</option>
+                    <option value="">-- Select Address Type --</option>
+                    <option *ngFor="let type of addressTypes$ | async" [value]="type.lookup_code">
+                      {{ type.lookup_value }}
+                    </option>
                   </select>
                 </div>
 
@@ -234,6 +245,7 @@
                     type="text"
                     name="street_line1"
                     [(ngModel)]="addressFormData.street_line1"
+                    placeholder="Enter street address"
                     required
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
@@ -246,6 +258,7 @@
                     type="text"
                     name="street_line2"
                     [(ngModel)]="addressFormData.street_line2"
+                    placeholder="Apartment, suite, unit, building, floor, etc."
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -257,6 +270,7 @@
                     type="text"
                     name="postal_code"
                     [(ngModel)]="addressFormData.postal_code"
+                    placeholder="e.g., 47000"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -268,6 +282,7 @@
                     type="text"
                     name="city"
                     [(ngModel)]="addressFormData.city"
+                    placeholder="e.g., Kuala Lumpur"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -279,6 +294,7 @@
                     type="text"
                     name="state"
                     [(ngModel)]="addressFormData.state"
+                    placeholder="e.g., Selangor"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -290,6 +306,7 @@
                     type="text"
                     name="country"
                     [(ngModel)]="addressFormData.country"
+                    placeholder="e.g., Malaysia"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -416,7 +433,7 @@
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   >
                     <option value="">Select code type</option>
-                    <option *ngFor="let type of codeTypes" [value]="type.value">{{ type.label }}</option>
+                    <option *ngFor="let type of codeTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
                   </select>
                 </div>
 
@@ -569,7 +586,7 @@
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   >
                     <option value="">Select staff type</option>
-                    <option *ngFor="let type of staffTypes" [value]="type.value">{{ type.label }}</option>
+                    <option *ngFor="let type of staffTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
                   </select>
                 </div>
 
@@ -708,7 +725,7 @@
                           class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
                         >
                           <option value="">Select type</option>
-                          <option *ngFor="let type of contactTypes" [value]="type.value">{{ type.label }}</option>
+                          <option *ngFor="let type of contactTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
                         </select>
                       </div>
                       <div>
@@ -848,8 +865,8 @@
                     required
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   >
-                    <option value="">Select fee type</option>
-                    <option *ngFor="let type of feeTypes" [value]="type.value">{{ type.label }}</option>
+                    <option value="">Select Fee Type</option>
+                    <option *ngFor="let type of feeTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
                   </select>
                 </div>
 

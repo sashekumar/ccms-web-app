@@ -73,7 +73,7 @@ describe('MemberDependentsRepository', () => {
       expect(result).toEqual(mockDependents);
       expect(mockRequest.input).toHaveBeenCalledWith('principal_member_id', sql.BigInt, '100');
       expect(mockRequest.query).toHaveBeenCalledWith(expect.stringContaining('SELECT'));
-      expect(mockRequest.query).toHaveBeenCalledWith(expect.stringContaining('WHERE principal_member_id = @principal_member_id'));
+      expect(mockRequest.query).toHaveBeenCalledWith(expect.stringContaining('WHERE d.principal_member_id = @principal_member_id'));
     });
 
     it('should return empty array when no dependents found', async () => {
@@ -89,7 +89,7 @@ describe('MemberDependentsRepository', () => {
 
       await repository.getDependentsByMemberId('100');
 
-      expect(mockRequest.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY is_active DESC, dependent_id ASC'));
+      expect(mockRequest.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY d.is_active DESC, d.dependent_id ASC'));
     });
   });
 

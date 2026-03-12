@@ -15,6 +15,7 @@ export interface MemberDependent {
   full_name: string;
   ic_no?: string;
   relationship_id?: number;
+  relationship_name?: string;
   dob?: Date;
   is_active?: boolean;
 }

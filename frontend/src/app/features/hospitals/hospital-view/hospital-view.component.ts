@@ -2,8 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, Observable } from 'rxjs';
 import { HospitalService } from '../../../core/services/hospital.service';
+import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 import { Hospital, HospitalAddress, HospitalCode, HospitalStaff, HospitalStaffContact, FeeSchedule } from '../../../shared/models/hospital.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
@@ -32,7 +33,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   showAddressForm = false;
   editingAddress: HospitalAddress | null = null;
   addressFormData: Partial<HospitalAddress> = {
-    address_type: 'PRIMARY',
+    address_type: '',
     street_line1: '',
     street_line2: '',
     postal_code: '',
@@ -41,6 +42,9 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     country: '',
     is_primary: false
   };
+
+  // Dynamic lookups from database
+  addressTypes$: Observable<LookupItem[]>;
   
   // Codes
   codes: HospitalCode[] = [];
@@ -53,13 +57,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     is_active: true
   };
 
-  // Predefined code types
-  codeTypes = [
-    { value: 'ZURICH_HOSP_CODE', label: 'Zurich Hospital Code' },
-    { value: 'FWD_HOSP_CODE', label: 'FWD Hospital Code' },
-    { value: 'INSURER_CODE', label: 'Insurer Code' },
-    { value: 'OTHER', label: 'Other' }
-  ];
+  // Dynamic lookups from database
+  codeTypes$: Observable<LookupItem[]>;
   
   // Staff
   staff: HospitalStaff[] = [];
@@ -73,14 +72,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     is_active: true
   };
 
-  // Predefined staff types
-  staffTypes = [
-    { value: 'DOCTOR', label: 'Doctor' },
-    { value: 'NURSE', label: 'Nurse' },
-    { value: 'ADMIN', label: 'Administrative Staff' },
-    { value: 'TECHNICIAN', label: 'Technician' },
-    { value: 'OTHER', label: 'Other' }
-  ];
+  // Dynamic lookups from database
+  staffTypes$: Observable<LookupItem[]>;
 
   // Staff Contacts
   staffContactsMap: { [staffId: string]: HospitalStaffContact[] } = {};
@@ -90,13 +83,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   editingContact: { [staffId: string]: HospitalStaffContact | null } = {};
   contactFormData: { [staffId: string]: Partial<HospitalStaffContact> } = {};
 
-  // Predefined contact types
-  contactTypes = [
-    { value: 'EMAIL', label: 'Email' },
-    { value: 'MOBILE', label: 'Mobile' },
-    { value: 'PHONE', label: 'Phone' },
-    { value: 'EXT', label: 'Extension' }
-  ];
+  // Dynamic lookups from database
+  contactTypes$: Observable<LookupItem[]>;
 
   // Fees
   fees: FeeSchedule[] = [];
@@ -113,15 +101,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     is_active: true
   };
 
-  // Predefined fee types
-  feeTypes = [
-    { value: 'TPA', label: 'TPA Fee' },
-    { value: 'WAKALAH', label: 'Wakalah Fee' },
-    { value: 'MMA', label: 'MMA Fee' },
-    { value: 'CONSULTATION', label: 'Consultation Fee' },
-    { value: 'PROCEDURE', label: 'Procedure Fee' },
-    { value: 'OTHER', label: 'Other' }
-  ];
+  // Dynamic lookups from database
+  feeTypes$: Observable<LookupItem[]>;
 
   tabs = [
     { id: 'overview', label: 'Overview' },
@@ -137,9 +118,17 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private hospitalService: HospitalService,
+    private lookupService: LookupService,
     private logger: LoggerService,
     private toast: ToastService
-  ) {}
+  ) {
+    // Initialize dynamic lookups
+    this.addressTypes$ = this.lookupService.getAddressTypes();
+    this.codeTypes$ = this.lookupService.getHospitalCodeTypes();
+    this.staffTypes$ = this.lookupService.getHospitalStaffTypes();
+    this.contactTypes$ = this.lookupService.getHospitalContactTypes();
+    this.feeTypes$ = this.lookupService.getHospitalFeeTypes();
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -289,7 +278,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    */
   resetAddressForm(): void {
     this.addressFormData = {
-      address_type: 'PRIMARY',
+      address_type: '',
       street_line1: '',
       street_line2: '',
       postal_code: '',

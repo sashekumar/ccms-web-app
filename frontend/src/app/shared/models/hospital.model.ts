@@ -10,6 +10,7 @@ export interface Hospital {
   hospital_type?: string | null;
   reg_no?: string | null;
   bank_id?: number | null;
+  bank_name?: string | null;
   bank_acc_no?: string | null;
   is_panel?: boolean | null;
   panel_status?: string | null;
@@ -18,7 +19,11 @@ export interface Hospital {
   accreditation_expiry?: Date | null;
   is_deleted: boolean;
   created_at: Date;
+  created_by?: string | null;
+  created_by_username?: string | null;
   updated_at: Date;
+  updated_by?: string | null;
+  updated_by_username?: string | null;
 }
 
 export interface HospitalListItem {

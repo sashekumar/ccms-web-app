@@ -90,8 +90,8 @@ describe('MemberFormComponent', () => {
 
     it('should have empty form with default values', () => {
       expect(component.memberForm.value.full_name).toBe('');
-      expect(component.memberForm.value.member_type).toBe('Principal');
-      expect(component.memberForm.value.gender).toBe('Unspecified');
+      expect(component.memberForm.value.member_type).toBe('');
+      expect(component.memberForm.value.gender).toBe('');
     });
 
     it('should validate required fields', () => {
@@ -100,6 +100,7 @@ describe('MemberFormComponent', () => {
 
       form.patchValue({
         full_name: 'Test User',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01'
       });
 
@@ -109,6 +110,7 @@ describe('MemberFormComponent', () => {
     it('should create member on submit', () => {
       component.memberForm.patchValue({
         full_name: 'Test User',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01'
       });
 
@@ -459,6 +461,7 @@ it('should reset loading state after loading member', () => {
     it('should handle create error with custom message', () => {
       component.memberForm.patchValue({
         full_name: 'Test User',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01'
       });
 
@@ -500,6 +503,7 @@ it('should reset loading state after loading member', () => {
     it('should handle generic create error', () => {
       component.memberForm.patchValue({
         full_name: 'Test User',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01'
       });
 
@@ -556,6 +560,7 @@ it('should reset loading state after loading member', () => {
     it('should not submit when IC exists', () => {
       component.memberForm.patchValue({
         full_name: 'Test User',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01'
       });
 
@@ -570,6 +575,7 @@ it('should reset loading state after loading member', () => {
     it('should handle multiple submits (component does not prevent)', () => {
       component.memberForm.patchValue({
         full_name: 'Test User',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01'
       });
 
@@ -718,6 +724,7 @@ it('should reset loading state after loading member', () => {
     it('should convert Male gender to true', () => {
       component.memberForm.patchValue({
         full_name: 'Test',
+        member_type: 'Principal',
         gender: 'Male',
         enrollment_date: '2024-01-01'
       });
@@ -732,6 +739,7 @@ it('should reset loading state after loading member', () => {
     it('should convert Female gender to false', () => {
       component.memberForm.patchValue({
         full_name: 'Test',
+        member_type: 'Principal',
         gender: 'Female',
         enrollment_date: '2024-01-01'
       });
@@ -746,6 +754,7 @@ it('should reset loading state after loading member', () => {
     it('should convert Unspecified gender to undefined', () => {
       component.memberForm.patchValue({
         full_name: 'Test',
+        member_type: 'Principal',
         gender: 'Unspecified',
         enrollment_date: '2024-01-01'
       });
@@ -760,6 +769,7 @@ it('should reset loading state after loading member', () => {
     it('should parse bank_id as integer', () => {
       component.memberForm.patchValue({
         full_name: 'Test',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01',
         bank_id: '42'
       });
@@ -805,6 +815,7 @@ it('should reset loading state after loading member', () => {
     it('should navigate to detail after successful create', () => {
       component.memberForm.patchValue({
         full_name: 'Test',
+        member_type: 'Principal',
         enrollment_date: '2024-01-01'
       });
 
@@ -913,13 +924,13 @@ it('should reset loading state after loading member', () => {
       expect(component.memberForm.value.gender).toBe('Female');
     });
 
-    it('should convert undefined/null to Unspecified when patching form', () => {
+    it('should convert undefined/null to empty string when patching form', () => {
       const memberWithNoGender = { ...mockMember, gender: undefined };
       mockMemberService.getMemberById.mockReturnValue(of(memberWithNoGender));
 
       component.ngOnInit();
 
-      expect(component.memberForm.value.gender).toBe('Unspecified');
+      expect(component.memberForm.value.gender).toBe('');
     });
   });
 });

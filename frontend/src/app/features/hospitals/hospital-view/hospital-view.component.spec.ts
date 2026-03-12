@@ -462,7 +462,7 @@ describe('HospitalViewComponent', () => {
       component.resetAddressForm();
 
       expect(component.addressFormData).toEqual({
-        address_type: 'PRIMARY',
+        address_type: '',
         street_line1: '',
         street_line2: '',
         postal_code: '',
@@ -2800,23 +2800,19 @@ describe('HospitalViewComponent', () => {
     });
 
     it('should have predefined code types', () => {
-      expect(component.codeTypes).toBeDefined();
-      expect(component.codeTypes.length).toBeGreaterThan(0);
+      expect(component.codeTypes$).toBeDefined();
     });
 
     it('should have predefined staff types', () => {
-      expect(component.staffTypes).toBeDefined();
-      expect(component.staffTypes.length).toBeGreaterThan(0);
+      expect(component.staffTypes$).toBeDefined();
     });
 
     it('should have predefined contact types', () => {
-      expect(component.contactTypes).toBeDefined();
-      expect(component.contactTypes.length).toBeGreaterThan(0);
+      expect(component.contactTypes$).toBeDefined();
     });
 
     it('should have predefined fee types', () => {
-      expect(component.feeTypes).toBeDefined();
-      expect(component.feeTypes.length).toBeGreaterThan(0);
+      expect(component.feeTypes$).toBeDefined();
     });
   });
 
@@ -2825,7 +2821,7 @@ describe('HospitalViewComponent', () => {
       component.addressFormData = { address_type: 'BILLING' };
       component.resetAddressForm();
 
-      expect(component.addressFormData.address_type).toBe('PRIMARY');
+      expect(component.addressFormData.address_type).toBe('');
     });
   });
 });

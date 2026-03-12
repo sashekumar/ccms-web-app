@@ -381,6 +381,14 @@ export class MembersService extends BaseService<Member> {
    * Create member policy
    */
   public async createPolicy(dto: CreateMemberPolicyDto, createdBy?: string): Promise<string> {
+    // Check for duplicate policy_no if provided
+    if (dto.policy_no) {
+      const exists = await this.policiesRepository.checkPolicyNoExists(dto.policy_no);
+      if (exists) {
+        throw new Error(`Policy number '${dto.policy_no}' already exists`);
+      }
+    }
+    
     const policyRecordId = await this.policiesRepository.createPolicy(dto, createdBy);
     this.memberCache.del(`${CACHE_KEYS.POLICIES}:${dto.member_id}`);
     return policyRecordId;
@@ -391,6 +399,15 @@ export class MembersService extends BaseService<Member> {
    */
   public async updatePolicy(policyRecordId: string, dto: UpdateMemberPolicyDto, updatedBy?: string): Promise<boolean> {
     const policy = await this.policiesRepository.getPolicyById(policyRecordId);
+    
+    // Check for duplicate policy_no if being updated
+    if (dto.policy_no) {
+      const exists = await this.policiesRepository.checkPolicyNoExists(dto.policy_no, policyRecordId);
+      if (exists) {
+        throw new Error(`Policy number '${dto.policy_no}' already exists`);
+      }
+    }
+    
     const success = await this.policiesRepository.updatePolicy(policyRecordId, dto, updatedBy);
     
     if (success && policy) {

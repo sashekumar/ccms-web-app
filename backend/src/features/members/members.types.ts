@@ -23,12 +23,15 @@ export interface Member {
   member_status?: string;
   bank_id?: number;
   bank_acc_no?: string;
+  bank_name?: string;
   enrollment_date?: Date;
   termination_date?: Date;
   created_at?: Date;
   created_by?: string;
+  created_by_username?: string;
   updated_at?: Date;
   updated_by?: string;
+  updated_by_username?: string;
   is_deleted?: boolean;
 }
 

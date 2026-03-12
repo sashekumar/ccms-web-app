@@ -18,12 +18,15 @@ export interface Member {
   member_status?: string | null;
   bank_id?: number | null;
   bank_acc_no?: string | null;
+  bank_name?: string | null;
   enrollment_date?: Date | string | null;
   termination_date?: Date | string | null;
   created_at?: Date | string;
   created_by?: string | null;
+  created_by_username?: string | null;
   updated_at?: Date | string | null;
   updated_by?: string | null;
+  updated_by_username?: string | null;
   is_deleted?: boolean;
 }
 
@@ -216,6 +219,7 @@ export interface MemberDependent {
   full_name: string;
   ic_no?: string | null;
   relationship_id?: number | null;
+  relationship_name?: string | null;
   dob?: Date | string | null;
   is_active?: boolean;
 }
@@ -225,7 +229,7 @@ export interface CreateMemberDependentDto {
   principal_member_id: string;
   full_name: string;
   ic_no?: string;
-  relationship_id?: number;
+  relationship_id?: number | null;
   dob?: Date | string;
   is_active?: boolean;
 }
@@ -233,7 +237,7 @@ export interface CreateMemberDependentDto {
 export interface UpdateMemberDependentDto {
   full_name?: string;
   ic_no?: string;
-  relationship_id?: number;
+  relationship_id?: number | null;
   dob?: Date | string;
   is_active?: boolean;
 }

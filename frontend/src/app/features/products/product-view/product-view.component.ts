@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, Observable } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { Product, ProductLimit, ProductCopay, CreateProductLimitDto, UpdateProductLimitDto, CreateProductCopayDto, UpdateProductCopayDto } from '../../../shared/models/product.model';
+import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
 import { LoggerService } from '../../../core/services/logger.service';
@@ -33,9 +34,12 @@ export class ProductViewComponent implements OnInit, OnDestroy {
   editingLimit: ProductLimit | null = null;
   limitFormData: Partial<CreateProductLimitDto> = {
     limit_type: '',
-    limit_amount: 0,
+    limit_amount: undefined,
     is_active: true
   };
+
+  // Dynamic lookups from database
+  limitTypes$: Observable<LookupItem[]>;
 
   // Copay
   copayList: ProductCopay[] = [];
@@ -44,10 +48,14 @@ export class ProductViewComponent implements OnInit, OnDestroy {
   editingCopay: ProductCopay | null = null;
   copayFormData: Partial<CreateProductCopayDto> = {
     copay_type: '',
-    copay_value: 0,
+    copay_value: undefined,
     applies_to: '',
     is_active: true
   };
+
+  // Dynamic lookups from database
+  copayTypes$: Observable<LookupItem[]>;
+  copayAppliesTo$: Observable<LookupItem[]>;
 
   tabs = [
     { id: 'details', label: 'Product Details' },
@@ -61,9 +69,15 @@ export class ProductViewComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private productService: ProductService,
+    private lookupService: LookupService,
     private logger: LoggerService,
     private toast: ToastService
-  ) {}
+  ) {
+    // Initialize dynamic lookups
+    this.limitTypes$ = this.lookupService.getLimitTypes();
+    this.copayTypes$ = this.lookupService.getCopayTypes();
+    this.copayAppliesTo$ = this.lookupService.getCopayAppliesTo();
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -261,7 +275,7 @@ export class ProductViewComponent implements OnInit, OnDestroy {
   resetLimitForm(): void {
     this.limitFormData = {
       limit_type: '',
-      limit_amount: 0,
+      limit_amount: undefined,
       is_active: true
     };
   }
@@ -396,7 +410,7 @@ export class ProductViewComponent implements OnInit, OnDestroy {
   resetCopayForm(): void {
     this.copayFormData = {
       copay_type: '',
-      copay_value: 0,
+      copay_value: undefined,
       applies_to: '',
       is_active: true
     };

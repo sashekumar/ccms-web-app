@@ -372,6 +372,32 @@ export class LookupsRepository {
   }
 
   /**
+   * Get lookups by category name (for public dropdown access)
+   */
+  public async getLookupsByCategoryName(categoryName: string, isActive?: boolean): Promise<Lookup[]> {
+    const pool = await connectionManager.getPool();
+    const request = pool.request();
+
+    let query = `
+      SELECT l.* FROM ${DB_TABLES.LOOKUPS} l
+      INNER JOIN ${DB_TABLES.LOOKUP_CATEGORIES} c ON l.category_id = c.category_id
+      WHERE c.category_name = @categoryName
+    `;
+
+    if (isActive !== undefined) {
+      query += ' AND l.is_active = @isActive';
+      request.input('isActive', sql.Bit, isActive);
+    }
+
+    query += ' ORDER BY l.sort_order ASC';
+
+    request.input('categoryName', sql.NVarChar(100), categoryName);
+    const result = await request.query(query);
+
+    return result.recordset;
+  }
+
+  /**
    * Check if lookup code exists within category
    */
   public async lookupCodeExists(categoryId: number, lookupCode: string, excludeLookupId?: number): Promise<boolean> {

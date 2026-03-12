@@ -384,7 +384,7 @@ export class MemberListComponent implements OnInit, OnDestroy {
 
   filters: MemberFilters = {
     search: '',
-    member_type: undefined,
+    member_type: '',
     member_status: undefined,
     is_deleted: undefined,
     page: 1,

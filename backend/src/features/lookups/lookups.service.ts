@@ -112,6 +112,10 @@ export class LookupsService {
     return await this.repository.getLookupsByCategory(categoryId, isActive);
   }
 
+  public async getLookupsByCategoryName(categoryName: string, isActive?: boolean): Promise<Lookup[]> {
+    return await this.repository.getLookupsByCategoryName(categoryName, isActive);
+  }
+
   public async createLookup(dto: CreateLookupDto, createdBy: string): Promise<number> {
     let categoryId = dto.category_id;
 

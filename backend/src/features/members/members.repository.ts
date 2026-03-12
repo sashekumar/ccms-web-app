@@ -141,29 +141,35 @@ export class MembersRepository extends BaseRepository<Member> {
       .input('memberId', sql.BigInt, memberId)
       .query(`
         SELECT 
-          member_id,
-          legacy_member_id,
-          external_guid,
-          full_name,
-          ic_no,
-          fwd_member_no,
-          fwd_client_no,
-          client_id,
-          dob,
-          gender,
-          member_type,
-          member_status,
-          bank_id,
-          bank_acc_no,
-          enrollment_date,
-          termination_date,
-          created_at,
-          created_by,
-          updated_at,
-          updated_by,
-          is_deleted
-        FROM ${DB_TABLES.MEMBERS}
-        WHERE member_id = @memberId
+          m.member_id,
+          m.legacy_member_id,
+          m.external_guid,
+          m.full_name,
+          m.ic_no,
+          m.fwd_member_no,
+          m.fwd_client_no,
+          m.client_id,
+          m.dob,
+          m.gender,
+          m.member_type,
+          m.member_status,
+          m.bank_id,
+          m.bank_acc_no,
+          b.bank_name,
+          m.enrollment_date,
+          m.termination_date,
+          m.created_at,
+          m.created_by,
+          ISNULL(cu.username, m.created_by) as created_by_username,
+          m.updated_at,
+          m.updated_by,
+          ISNULL(uu.username, m.updated_by) as updated_by_username,
+          m.is_deleted
+        FROM ${DB_TABLES.MEMBERS} m
+        LEFT JOIN ${DB_TABLES.BANKS} b ON m.bank_id = b.bank_id
+        LEFT JOIN ${DB_TABLES.USERS} cu ON m.created_by = CAST(cu.user_id AS VARCHAR(50))
+        LEFT JOIN ${DB_TABLES.USERS} uu ON m.updated_by = CAST(uu.user_id AS VARCHAR(50))
+        WHERE m.member_id = @memberId
       `);
 
     return result.recordset[0] || null;

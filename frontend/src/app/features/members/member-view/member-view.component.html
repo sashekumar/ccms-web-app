@@ -131,7 +131,7 @@
           <div>
             <label class="block text-sm font-medium text-gray-500">Bank Account</label>
             <p class="mt-1 text-sm text-gray-900">
-              <span *ngIf="member.bank_id">Bank ID: {{ member.bank_id }}</span>
+              <span *ngIf="member.bank_name || member.bank_id">{{ member.bank_name || getBankName(member.bank_id!) }}</span>
               <span *ngIf="member.bank_acc_no"> - {{ member.bank_acc_no }}</span>
               <span *ngIf="!member.bank_id && !member.bank_acc_no">-</span>
             </p>
@@ -162,9 +162,9 @@
             <p class="mt-1 text-sm text-gray-900">{{ member.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
           </div>
 
-          <div *ngIf="member.created_by">
+          <div *ngIf="member.created_by_username || member.created_by">
             <label class="block text-sm font-medium text-gray-500">Created By</label>
-            <p class="mt-1 text-sm text-gray-900">{{ member.created_by }}</p>
+            <p class="mt-1 text-sm text-gray-900">{{ member.created_by_username || member.created_by }}</p>
           </div>
 
           <div *ngIf="member.updated_at">
@@ -172,9 +172,9 @@
             <p class="mt-1 text-sm text-gray-900">{{ member.updated_at | date:'dd/MM/yyyy HH:mm' }}</p>
           </div>
 
-          <div *ngIf="member.updated_by">
+          <div *ngIf="member.updated_by_username || member.updated_by">
             <label class="block text-sm font-medium text-gray-500">Updated By</label>
-            <p class="mt-1 text-sm text-gray-900">{{ member.updated_by }}</p>
+            <p class="mt-1 text-sm text-gray-900">{{ member.updated_by_username || member.updated_by }}</p>
           </div>
         </div>
       </div>
@@ -214,7 +214,7 @@
         </div>
 
         <!-- Address List (Card Layout) -->
-        <div *ngIf="!loadingAddresses && addresses.length > 0" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div *ngIf="!loadingAddresses && addresses.length > 0 && !showAddressForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div *ngFor="let address of addresses" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex flex-col h-full">
               <div class="flex items-center gap-2 mb-2">
@@ -291,10 +291,8 @@
                   required
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 >
-                  <option value="PRIMARY">Primary</option>
-                  <option value="BILLING">Billing</option>
-                  <option value="SHIPPING">Shipping</option>
-                  <option value="OTHER">Other</option>
+                  <option value="">Select Address Type</option>
+                  <option *ngFor="let type of addressTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
                 </select>
               </div>
 
@@ -319,6 +317,7 @@
                   name="street_line1"
                   [(ngModel)]="addressFormData.street_line1"
                   required
+                  placeholder="e.g., 123 Jalan ABC"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 />
               </div>
@@ -330,6 +329,7 @@
                   type="text"
                   name="street_line2"
                   [(ngModel)]="addressFormData.street_line2"
+                  placeholder="e.g., Taman XYZ"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 />
               </div>
@@ -341,6 +341,7 @@
                   type="text"
                   name="postal_code"
                   [(ngModel)]="addressFormData.postal_code"
+                  placeholder="e.g., 50000"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 />
               </div>
@@ -352,6 +353,7 @@
                   type="text"
                   name="city"
                   [(ngModel)]="addressFormData.city"
+                  placeholder="e.g., Kuala Lumpur"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 />
               </div>
@@ -363,6 +365,7 @@
                   type="text"
                   name="state"
                   [(ngModel)]="addressFormData.state"
+                  placeholder="e.g., Wilayah Persekutuan"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 />
               </div>
@@ -374,6 +377,7 @@
                   type="text"
                   name="country"
                   [(ngModel)]="addressFormData.country"
+                  placeholder="e.g., Malaysia"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 />
               </div>
@@ -505,11 +509,8 @@
                   required
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 >
-                  <option value="EMAIL">Email</option>
-                  <option value="PHONE">Phone</option>
-                  <option value="MOBILE">Mobile</option>
-                  <option value="FAX">Fax</option>
-                  <option value="OTHER">Other</option>
+                  <option value="">Select Contact Type</option>
+                  <option *ngFor="let type of contactTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
                 </select>
               </div>
 
@@ -521,6 +522,7 @@
                   name="contact_value"
                   [(ngModel)]="contactFormData.contact_value"
                   required
+                  placeholder="e.g., email@example.com or 012-3456789"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 />
               </div>
@@ -605,26 +607,29 @@
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <!-- Policy Number -->
               <div>
-                <label class="block text-sm font-medium text-gray-700">Policy Number <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700">Policy Number</label>
                 <input
                   type="text"
                   name="policy_no"
                   [(ngModel)]="policyFormData.policy_no"
-                  required
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                  placeholder="Auto-generated if left empty"
+                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 bg-gray-50"
                 />
+                <p class="mt-1 text-xs text-gray-500">Leave empty to auto-generate</p>
               </div>
 
-              <!-- Product ID -->
+              <!-- Product -->
               <div>
-                <label class="block text-sm font-medium text-gray-700">Product ID <span class="text-red-500">*</span></label>
-                <input
-                  type="text"
+                <label class="block text-sm font-medium text-gray-700">Product <span class="text-red-500">*</span></label>
+                <select
                   name="product_id"
                   [(ngModel)]="policyFormData.product_id"
                   required
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
+                >
+                  <option value="">Select Product</option>
+                  <option *ngFor="let product of products" [value]="product.product_id">{{ product.plan_name || product.plan_code }}</option>
+                </select>
               </div>
 
               <!-- Effective Date -->
@@ -657,11 +662,8 @@
                   [(ngModel)]="policyFormData.status"
                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                 >
-                  <option value="">Select status</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                  <option value="SUSPENDED">Suspended</option>
-                  <option value="CANCELLED">Cancelled</option>
+                  <option value="">Select Policy Status</option>
+                  <option *ngFor="let status of policyStatuses$ | async" [value]="status.lookup_code">{{ status.lookup_value }}</option>
                 </select>
               </div>
             </div>
@@ -692,7 +694,7 @@
             <thead class="bg-gray-50">
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy No.</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effective Date</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -701,8 +703,8 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr *ngFor="let policy of policies" class="transition hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ policy.policy_no }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{{ policy.product_id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ policy.policy_no || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ getProductName(policy.product_id) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ policy.effective_date ? (policy.effective_date | date:'dd/MM/yyyy') : '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ policy.expiry_date ? (policy.expiry_date | date:'dd/MM/yyyy') : '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -722,18 +724,26 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    *hasPermission="PERMISSIONS.MANAGE_POLICIES"
-                    (click)="showPolicyFormDialog(policy)"
-                    class="text-indigo-600 hover:text-indigo-900 mr-3">
-                    Edit
-                  </button>
-                  <button
-                    *hasPermission="PERMISSIONS.MANAGE_POLICIES"
-                    (click)="deletePolicy(policy)"
-                    class="text-red-600 hover:text-red-900">
-                    Delete
-                  </button>
+                  <div class="flex gap-2 justify-end">
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_POLICIES"
+                      (click)="showPolicyFormDialog(policy)"
+                      class="text-indigo-600 hover:text-indigo-900"
+                      title="Edit">
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                    </button>
+                    <button
+                      *hasPermission="PERMISSIONS.MANAGE_POLICIES"
+                      (click)="deletePolicy(policy)"
+                      class="text-red-600 hover:text-red-900"
+                      title="Delete">
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -772,7 +782,7 @@
             <p class="mt-1 text-sm text-gray-500">Get started by adding a new dependent</p>
           </div>
 
-          <div *ngIf="!loadingDependents && dependents.length > 0" class="overflow-x-auto">
+          <div *ngIf="!loadingDependents && dependents.length > 0 && !showDependentForm" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
@@ -788,7 +798,7 @@
                 <tr *ngFor="let dependent of dependents" class="transition hover:bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ dependent.full_name }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.ic_no || '-' }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.relationship_id || '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.relationship_name || '-' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.dob ? (dependent.dob | date:'dd/MM/yyyy') : '-' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <span *ngIf="dependent.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
@@ -859,6 +869,7 @@
                     name="full_name"
                     [(ngModel)]="dependentFormData.full_name"
                     required
+                    placeholder="Enter dependent's full name"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
@@ -871,20 +882,22 @@
                     name="ic_no"
                     [(ngModel)]="dependentFormData.ic_no"
                     required
+                    placeholder="e.g., 900101011234"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
                 </div>
 
-                <!-- Relationship ID -->
+                <!-- Relationship -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Relationship ID</label>
-                  <input
-                    type="number"
+                  <label class="block text-sm font-medium text-gray-700">Relationship</label>
+                  <select
                     name="relationship_id"
                     [(ngModel)]="dependentFormData.relationship_id"
-                    placeholder="e.g., 1 for Spouse, 2 for Child"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                  >
+                    <option [ngValue]="null">Select Relationship</option>
+                    <option *ngFor="let rel of relationships$ | async" [ngValue]="rel.lookup_id">{{ rel.lookup_value }}</option>
+                  </select>
                 </div>
 
                 <!-- Date of Birth -->
@@ -954,16 +967,18 @@
 
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-900">Pre-Existing Conditions</h3>
-            <button
-              *hasPermission="PERMISSIONS.MANAGE_PEC"
-              (click)="showPECFormDialog()"
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
-              Add PEC
-            </button>
+            <ng-container *ngIf="!showPECForm">
+              <button
+                *hasPermission="PERMISSIONS.MANAGE_PEC"
+                (click)="showPECFormDialog()"
+                class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add PEC
+              </button>
+            </ng-container>
           </div>
 
           <!-- Loading -->
@@ -981,7 +996,7 @@
             <p class="mt-1 text-sm text-gray-500">Get started by adding a pre-existing condition</p>
           </div>
 
-          <div *ngIf="!loadingPEC && pecConditions.length > 0" class="overflow-x-auto">
+          <div *ngIf="!loadingPEC && pecConditions.length > 0 && !showPECForm" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
@@ -1080,6 +1095,7 @@
                     name="condition_name"
                     [(ngModel)]="pecFormData.condition_name"
                     rows="2"
+                    placeholder="Enter condition name or description"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   ></textarea>
                 </div>
@@ -1091,6 +1107,7 @@
                     name="notes"
                     [(ngModel)]="pecFormData.notes"
                     rows="3"
+                    placeholder="Additional notes or remarks"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   ></textarea>
                 </div>

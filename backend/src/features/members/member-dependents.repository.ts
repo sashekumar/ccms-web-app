@@ -18,17 +18,19 @@ export class MemberDependentsRepository extends BaseRepository<MemberDependent> 
       .input('principal_member_id', sql.BigInt, memberId)
       .query(`
         SELECT 
-          dependent_id,
-          legacy_dependent_id,
-          principal_member_id,
-          full_name,
-          ic_no,
-          relationship_id,
-          dob,
-          is_active
-        FROM ${DB_TABLES.MEMBER_DEPENDENTS}
-        WHERE principal_member_id = @principal_member_id
-        ORDER BY is_active DESC, dependent_id ASC
+          d.dependent_id,
+          d.legacy_dependent_id,
+          d.principal_member_id,
+          d.full_name,
+          d.ic_no,
+          d.relationship_id,
+          l.lookup_value as relationship_name,
+          d.dob,
+          d.is_active
+        FROM ${DB_TABLES.MEMBER_DEPENDENTS} d
+        LEFT JOIN ${DB_TABLES.LOOKUPS} l ON d.relationship_id = l.lookup_id
+        WHERE d.principal_member_id = @principal_member_id
+        ORDER BY d.is_active DESC, d.dependent_id ASC
       `);
 
     return result.recordset;
@@ -43,16 +45,18 @@ export class MemberDependentsRepository extends BaseRepository<MemberDependent> 
       .input('dependent_id', sql.BigInt, dependentId)
       .query(`
         SELECT 
-          dependent_id,
-          legacy_dependent_id,
-          principal_member_id,
-          full_name,
-          ic_no,
-          relationship_id,
-          dob,
-          is_active
-        FROM ${DB_TABLES.MEMBER_DEPENDENTS}
-        WHERE dependent_id = @dependent_id
+          d.dependent_id,
+          d.legacy_dependent_id,
+          d.principal_member_id,
+          d.full_name,
+          d.ic_no,
+          d.relationship_id,
+          l.lookup_value as relationship_name,
+          d.dob,
+          d.is_active
+        FROM ${DB_TABLES.MEMBER_DEPENDENTS} d
+        LEFT JOIN ${DB_TABLES.LOOKUPS} l ON d.relationship_id = l.lookup_id
+        WHERE d.dependent_id = @dependent_id
       `);
 
     return result.recordset[0] || null;

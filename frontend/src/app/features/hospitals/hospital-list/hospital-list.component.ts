@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, Observable } from 'rxjs';
 import { HospitalService } from '../../../core/services/hospital.service';
 import {
   HospitalListItem,
@@ -14,6 +14,7 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 
 @Component({
   selector: 'app-hospital-list',
@@ -126,9 +127,9 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-s
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
             >
               <option [ngValue]="undefined">All Types</option>
-              <option value="Government">Government</option>
-              <option value="Private">Private</option>
-              <option value="University">University</option>
+              <option *ngFor="let type of hospitalTypes$ | async" [value]="type.lookup_code">
+                {{ type.lookup_value }}
+              </option>
             </select>
           </div>
 
@@ -365,6 +366,9 @@ export class HospitalListComponent implements OnInit, OnDestroy {
     inactive: 0
   };
 
+  // Dynamic lookups from database
+  hospitalTypes$: Observable<LookupItem[]>;
+
   filters: HospitalFilters = {
     search: '',
     page: 1,
@@ -387,8 +391,12 @@ export class HospitalListComponent implements OnInit, OnDestroy {
     private hospitalService: HospitalService,
     private router: Router,
     private logger: LoggerService,
-    private toast: ToastService
-  ) {}
+    private toast: ToastService,
+    private lookupService: LookupService
+  ) {
+    // Initialize dynamic lookups
+    this.hospitalTypes$ = this.lookupService.getHospitalTypes();
+  }
 
   ngOnInit(): void {
     // Setup search debounce

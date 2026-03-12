@@ -141,7 +141,7 @@ describe('MemberViewComponent', () => {
     it('should navigate to edit page', () => {
       component.editMember();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members/edit', '1']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', '1', 'edit']);
     });
   });
 
@@ -569,7 +569,7 @@ describe('MemberViewComponent', () => {
 
       expect(component.showContactForm).toBe(false);
       expect(component.editingContact).toBeNull();
-      expect(component.contactFormData.contact_type).toBe('Email');
+      expect(component.contactFormData.contact_type).toBe('');
       expect(component.contactFormData.contact_value).toBe('');
     });
 
@@ -582,7 +582,7 @@ describe('MemberViewComponent', () => {
 
       component.resetContactForm();
 
-      expect(component.contactFormData.contact_type).toBe('Email');
+      expect(component.contactFormData.contact_type).toBe('');
       expect(component.contactFormData.contact_value).toBe('');
       expect(component.contactFormData.is_primary).toBe(false);
     });

@@ -1,13 +1,16 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, switchMap, of, forkJoin } from 'rxjs';
 
 import { MemberService } from '../../../core/services/member.service';
+import { BankService } from '../../../core/services/bank.service';
+import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CreateMemberDto, UpdateMemberDto, Member } from '../../../shared/models/member.model';
+import { Bank } from '../../../shared/models/bank.model';
 
 @Component({
   selector: 'app-member-form',
@@ -28,32 +31,31 @@ export class MemberFormComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private icCheckSubject$ = new Subject<string>();
 
-  // Member type options
-  memberTypes = [
-    { value: 'Principal', label: 'Principal' },
-    { value: 'Dependent', label: 'Dependent' },
-    { value: 'Other', label: 'Other' }
-  ];
-
-  // Gender options
-  genders = [
-    { value: 'Male', label: 'Male' },
-    { value: 'Female', label: 'Female' },
-    { value: 'Unspecified', label: 'Unspecified' }
-  ];
+  // Lookup data (loaded from database)
+  memberTypes: LookupItem[] = [];
+  genders: LookupItem[] = [];
+  banks: Bank[] = [];
+  loadingBanks = false;
 
   constructor(
     private fb: FormBuilder,
     private memberService: MemberService,
+    private bankService: BankService,
+    private lookupService: LookupService,
     private router: Router,
     private route: ActivatedRoute,
     private logger: LoggerService,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
+    // Load lookups for dropdowns
+    this.loadLookups();
+    this.loadBanks();
+    
     // Check if we're in edit mode
     this.memberId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.memberId;
@@ -66,6 +68,50 @@ export class MemberFormComponent implements OnInit, OnDestroy {
     this.setupICValidation();
   }
 
+  /**
+   * Load lookup data for dropdowns
+   */
+  private loadLookups(): void {
+    forkJoin({
+      memberTypes: this.lookupService.getLookupByCategory('MEMBER_TYPE'),
+      genders: this.lookupService.getLookupByCategory('GENDER')
+    }).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (results) => {
+          this.memberTypes = results.memberTypes;
+          this.genders = results.genders;
+          // Manually trigger change detection to avoid NG0100 error
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          this.logger.error('Error loading lookups:', error);
+          // Form still works, just with empty dropdowns
+        }
+      });
+  }
+
+  /**
+   * Load banks for dropdown
+   */
+  private loadBanks(): void {
+    this.loadingBanks = true;
+    this.bankService.getBanks({ is_active: true, limit: 1000 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.banks = result.banks;
+          this.loadingBanks = false;
+          // Manually trigger change detection to avoid NG0100 error
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          this.logger.error('Error loading banks:', error);
+          this.loadingBanks = false;
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -75,11 +121,14 @@ export class MemberFormComponent implements OnInit, OnDestroy {
     this.memberForm = this.fb.group({
       full_name: ['', [Validators.required, Validators.maxLength(100)]],
       ic_no: ['', [Validators.maxLength(50)]],
-      member_type: ['Principal', [Validators.required]],
+      member_type: ['', [Validators.required]],
       dob: [''],
-      gender: ['Unspecified'],
+      gender: [''],
       enrollment_date: ['', [Validators.required]],
       termination_date: [''],
+      fwd_member_no: ['', [Validators.maxLength(50)]],
+      fwd_client_no: ['', [Validators.maxLength(50)]],
+      client_id: ['', [Validators.maxLength(50)]],
       bank_id: [''],
       bank_acc_no: ['', [Validators.maxLength(50)]]
     });
@@ -150,17 +199,33 @@ export class MemberFormComponent implements OnInit, OnDestroy {
     this.memberForm.patchValue({
       full_name: member.full_name,
       ic_no: member.ic_no || '',
-      member_type: member.member_type || 'Principal',
-      dob: member.dob || '',
-      gender: member.gender === true ? 'Male' : member.gender === false ? 'Female' : 'Unspecified',
-      enrollment_date: member.enrollment_date || '',
-      termination_date: member.termination_date || '',
+      member_type: member.member_type || '',
+      dob: this.formatDateForInput(member.dob),
+      gender: member.gender === true ? 'Male' : member.gender === false ? 'Female' : '',
+      enrollment_date: this.formatDateForInput(member.enrollment_date),
+      termination_date: this.formatDateForInput(member.termination_date),
+      fwd_member_no: member.fwd_member_no || '',
+      fwd_client_no: member.fwd_client_no || '',
+      client_id: member.client_id || '',
       bank_id: member.bank_id?.toString() || '',
       bank_acc_no: member.bank_acc_no || ''
     });
 
     // Mark form as pristine after patching to avoid triggering IC check
     this.memberForm.markAsPristine();
+  }
+
+  /**
+   * Format a date value from API (ISO string or Date) to YYYY-MM-DD for HTML date input
+   */
+  private formatDateForInput(date: Date | string | null | undefined): string {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   onSubmit(): void {
@@ -235,6 +300,9 @@ export class MemberFormComponent implements OnInit, OnDestroy {
       gender: formValue.gender === 'Male' ? true : formValue.gender === 'Female' ? false : undefined,
       enrollment_date: formValue.enrollment_date,
       termination_date: formValue.termination_date || undefined,
+      fwd_member_no: formValue.fwd_member_no || undefined,
+      fwd_client_no: formValue.fwd_client_no || undefined,
+      client_id: formValue.client_id || undefined,
       bank_id: formValue.bank_id ? parseInt(formValue.bank_id) : undefined,
       bank_acc_no: formValue.bank_acc_no || undefined
     };
@@ -251,6 +319,9 @@ export class MemberFormComponent implements OnInit, OnDestroy {
       gender: formValue.gender === 'Male' ? true : formValue.gender === 'Female' ? false : undefined,
       enrollment_date: formValue.enrollment_date,
       termination_date: formValue.termination_date || undefined,
+      fwd_member_no: formValue.fwd_member_no || undefined,
+      fwd_client_no: formValue.fwd_client_no || undefined,
+      client_id: formValue.client_id || undefined,
       bank_id: formValue.bank_id ? parseInt(formValue.bank_id) : undefined,
       bank_acc_no: formValue.bank_acc_no || undefined
     };

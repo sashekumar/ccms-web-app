@@ -27,6 +27,8 @@ router.post('/categories/check-code', controller.checkCategoryCode);
 router.post('/list', requirePermission('LOOKUP_MGMT', 'VIEW'), controller.getLookups);
 router.post('/get', requirePermission('LOOKUP_MGMT', 'VIEW'), controller.getLookupById);
 router.post('/by-category', requirePermission('LOOKUP_MGMT', 'VIEW'), controller.getLookupsByCategory);
+// Dropdown data endpoint - requires auth but no specific permission
+router.post('/by-category-name', controller.getLookupsByCategoryName);
 router.post('/create', requirePermission('LOOKUP_MGMT', 'CREATE'), controller.createLookup);
 router.put('/update', requirePermission('LOOKUP_MGMT', 'UPDATE'), controller.updateLookup);
 router.post('/delete', requirePermission('LOOKUP_MGMT', 'DELETE'), controller.deleteLookup);

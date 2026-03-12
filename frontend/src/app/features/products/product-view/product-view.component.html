@@ -189,24 +189,29 @@
             <form #limitForm="ngForm" (ngSubmit)="saveLimit(limitForm)">
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Limit Type *</label>
-                  <input
-                    type="text"
+                  <label class="block text-sm font-medium text-gray-700">Limit Type <span class="text-red-500">*</span></label>
+                  <select
                     [(ngModel)]="limitFormData.limit_type"
                     name="limit_type"
                     required
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  />
+                  >
+                    <option value="">-- Select Limit Type --</option>
+                    <option *ngFor="let type of limitTypes$ | async" [value]="type.lookup_code">
+                      {{ type.lookup_value }}
+                    </option>
+                  </select>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Limit Amount *</label>
+                  <label class="block text-sm font-medium text-gray-700">Limit Amount <span class="text-red-500">*</span></label>
                   <input
                     type="number"
                     [(ngModel)]="limitFormData.limit_amount"
                     name="limit_amount"
                     required
                     step="0.01"
+                    placeholder="0"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
                   />
                 </div>
@@ -327,37 +332,45 @@
             <form #copayForm="ngForm" (ngSubmit)="saveCopay(copayForm)">
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Copay Type *</label>
-                  <input
-                    type="text"
+                  <label class="block text-sm font-medium text-gray-700">Copay Type <span class="text-red-500">*</span></label>
+                  <select
                     [(ngModel)]="copayFormData.copay_type"
                     name="copay_type"
                     required
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  />
+                  >
+                    <option value="">-- Select Copay Type --</option>
+                    <option *ngFor="let type of copayTypes$ | async" [value]="type.lookup_code">
+                      {{ type.lookup_value }}
+                    </option>
+                  </select>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Copay Value *</label>
+                  <label class="block text-sm font-medium text-gray-700">Copay Value <span class="text-red-500">*</span></label>
                   <input
                     type="number"
                     [(ngModel)]="copayFormData.copay_value"
                     name="copay_value"
                     required
                     step="0.01"
+                    placeholder="0"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
                   />
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Applies To</label>
-                  <input
-                    type="text"
+                  <select
                     [(ngModel)]="copayFormData.applies_to"
                     name="applies_to"
                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                    placeholder="e.g., ALL, OUTPATIENT, INPATIENT"
-                  />
+                  >
+                    <option value="">-- Select Applies To --</option>
+                    <option *ngFor="let item of copayAppliesTo$ | async" [value]="item.lookup_code">
+                      {{ item.lookup_value }}
+                    </option>
+                  </select>
                 </div>
 
                 <div class="flex items-center">

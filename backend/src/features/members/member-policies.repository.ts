@@ -61,15 +61,65 @@ export class MemberPoliciesRepository extends BaseRepository<MemberPolicy> {
   }
 
   /**
+   * Generate unique policy number
+   */
+  private async generatePolicyNo(memberId: string): Promise<string> {
+    const pool = await connectionManager.getPool();
+    
+    // Get the max sequence for this member to ensure uniqueness
+    const result = await pool.request()
+      .input('member_id', sql.BigInt, memberId)
+      .query(`
+        SELECT COUNT(*) + 1 as seq
+        FROM ${DB_TABLES.MEMBER_POLICIES}
+        WHERE member_id = @member_id
+      `);
+    
+    const seq = result.recordset[0].seq;
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    
+    // Format: POL-{MemberID}-{YYYYMM}-{Sequence}
+    return `POL-${memberId}-${year}${month}-${String(seq).padStart(3, '0')}`;
+  }
+
+  /**
+   * Check if policy number already exists
+   */
+  public async checkPolicyNoExists(policyNo: string, excludePolicyRecordId?: string): Promise<boolean> {
+    const pool = await connectionManager.getPool();
+    const request = pool.request()
+      .input('policy_no', sql.VarChar(100), policyNo);
+    
+    let query = `
+      SELECT COUNT(*) as count
+      FROM ${DB_TABLES.MEMBER_POLICIES}
+      WHERE policy_no = @policy_no AND is_deleted = 0
+    `;
+    
+    if (excludePolicyRecordId) {
+      query += ' AND policy_record_id != @exclude_id';
+      request.input('exclude_id', sql.BigInt, excludePolicyRecordId);
+    }
+    
+    const result = await request.query(query);
+    return result.recordset[0].count > 0;
+  }
+
+  /**
    * Create new member policy
    */
   public async createPolicy(dto: CreateMemberPolicyDto, createdBy?: string): Promise<string> {
     const pool = await connectionManager.getPool();
     
+    // Auto-generate policy_no if not provided
+    const policyNo = dto.policy_no || await this.generatePolicyNo(dto.member_id);
+    
     const request = pool.request()
       .input('member_id', sql.BigInt, dto.member_id)
       .input('product_id', sql.BigInt, dto.product_id)
-      .input('policy_no', sql.VarChar(100), dto.policy_no)
+      .input('policy_no', sql.VarChar(100), policyNo)
       .input('effective_date', sql.Date, dto.effective_date || null)
       .input('expiry_date', sql.Date, dto.expiry_date || null)
       .input('status', sql.VarChar(50), dto.status || null);
@@ -171,28 +221,5 @@ export class MemberPoliciesRepository extends BaseRepository<MemberPolicy> {
       `);
 
     return result.rowsAffected[0] > 0;
-  }
-
-  /**
-   * Check if policy number exists (for uniqueness validation)
-   */
-  public async checkPolicyNoExists(policyNo: string, excludePolicyRecordId?: string): Promise<boolean> {
-    const pool = await connectionManager.getPool();
-    const request = pool.request()
-      .input('policy_no', sql.VarChar(100), policyNo);
-
-    let query = `
-      SELECT COUNT(*) as count
-      FROM ${DB_TABLES.MEMBER_POLICIES}
-      WHERE policy_no = @policy_no AND is_deleted = 0
-    `;
-
-    if (excludePolicyRecordId) {
-      query += ' AND policy_record_id != @exclude_id';
-      request.input('exclude_id', sql.BigInt, excludePolicyRecordId);
-    }
-
-    const result = await request.query(query);
-    return result.recordset[0].count > 0;
   }
 }

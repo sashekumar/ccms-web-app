@@ -182,10 +182,33 @@ export class HospitalsRepository extends BaseRepository<Hospital> {
   }
 
   /**
-   * Get hospital by ID
+   * Get hospital by ID with bank name and usernames
    */
   public async getHospitalById(hospitalId: number): Promise<Hospital | null> {
-    return await this.findById(hospitalId);
+    const pool = await connectionManager.getPool();
+    const request = pool.request();
+
+    const query = `
+      SELECT 
+        h.*,
+        b.bank_name,
+        ISNULL(cu.username, h.created_by) as created_by_username,
+        ISNULL(uu.username, h.updated_by) as updated_by_username
+      FROM ${DB_TABLES.HOSPITALS} h
+      LEFT JOIN ${DB_TABLES.BANKS} b ON h.bank_id = b.bank_id
+      LEFT JOIN ${DB_TABLES.USERS} cu ON h.created_by = CAST(cu.user_id AS VARCHAR(50))
+      LEFT JOIN ${DB_TABLES.USERS} uu ON h.updated_by = CAST(uu.user_id AS VARCHAR(50))
+      WHERE h.hospital_id = @hospitalId
+    `;
+
+    request.input('hospitalId', sql.BigInt, hospitalId);
+    const result = await request.query(query);
+
+    if (result.recordset.length === 0) {
+      return null;
+    }
+
+    return result.recordset[0] as Hospital;
   }
 
   /**
