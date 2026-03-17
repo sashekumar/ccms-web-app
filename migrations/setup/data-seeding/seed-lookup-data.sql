@@ -54,9 +54,13 @@ VALUES
     ('HOSPITAL_FEE_TYPE', 'Hospital fee types', 1),
     ('PRODUCT_LIMIT_TYPE', 'Product/Policy limit types', 1),
     ('COPAY_TYPE', 'Copayment types', 1),
-    ('COPAY_APPLIES_TO', 'Copayment application scope', 1);
+    ('COPAY_APPLIES_TO', 'Copayment application scope', 1),
+    ('ROOM_TYPE', 'Types of hospital room accommodation', 1),
+    ('EHM_STATUS', 'Enhanced Healthcare Management status tracking', 1),
+    ('DEFERMENT_STATUS', 'Deferment processing status', 1),
+    ('ALERT_LEVEL', 'LOS Alert Levels', 1);
 
-PRINT '  ✓ Created 29 lookup categories';
+PRINT '  ✓ Created 33 lookup categories';
 GO
 
 -- ============================================================================
@@ -561,6 +565,224 @@ VALUES
     (@CopayAppliesToCategoryId, 'OTHER', 'Other', 99, 1);
 
 PRINT '  ✓ Created 8 copay applies to types';
+GO
+
+-- ============================================================================
+-- SECTION 25: DIAGNOSIS CATEGORY
+-- ============================================================================
+
+PRINT 'Populating DIAGNOSIS_CATEGORY lookups...';
+
+DECLARE @DiagnosisCategoryId INT;
+SELECT @DiagnosisCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'DIAGNOSIS_CATEGORY';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@DiagnosisCategoryId, 'INFECTIOUS', 'Infectious and Parasitic Diseases', 1, 1),
+    (@DiagnosisCategoryId, 'NEOPLASMS', 'Neoplasms', 2, 1),
+    (@DiagnosisCategoryId, 'BLOOD', 'Diseases of the Blood', 3, 1),
+    (@DiagnosisCategoryId, 'ENDOCRINE', 'Endocrine, Nutritional and Metabolic Diseases', 4, 1),
+    (@DiagnosisCategoryId, 'MENTAL', 'Mental and Behavioural Disorders', 5, 1),
+    (@DiagnosisCategoryId, 'NERVOUS', 'Diseases of the Nervous System', 6, 1),
+    (@DiagnosisCategoryId, 'EYE', 'Diseases of the Eye and Adnexa', 7, 1),
+    (@DiagnosisCategoryId, 'EAR', 'Diseases of the Ear and Mastoid Process', 8, 1),
+    (@DiagnosisCategoryId, 'CIRCULATORY', 'Diseases of the Circulatory System', 9, 1),
+    (@DiagnosisCategoryId, 'RESPIRATORY', 'Diseases of the Respiratory System', 10, 1),
+    (@DiagnosisCategoryId, 'DIGESTIVE', 'Diseases of the Digestive System', 11, 1),
+    (@DiagnosisCategoryId, 'SKIN', 'Diseases of the Skin and Subcutaneous Tissue', 12, 1),
+    (@DiagnosisCategoryId, 'MUSCULOSKELETAL', 'Diseases of the Musculoskeletal System', 13, 1),
+    (@DiagnosisCategoryId, 'GENITOURINARY', 'Diseases of the Genitourinary System', 14, 1),
+    (@DiagnosisCategoryId, 'MATERNITY', 'Pregnancy, Childbirth and the Puerperium', 15, 1),
+    (@DiagnosisCategoryId, 'CONGENITAL', 'Congenital Malformations', 16, 1),
+    (@DiagnosisCategoryId, 'SYMPTOMS', 'Symptoms, Signs and Abnormal Findings', 17, 1),
+    (@DiagnosisCategoryId, 'INJURY', 'Injury, Poisoning and Certain Other Consequences', 18, 1),
+    (@DiagnosisCategoryId, 'EXTERNAL', 'External Causes of Morbidity and Mortality', 19, 1),
+    (@DiagnosisCategoryId, 'HEALTH_STATUS', 'Factors Influencing Health Status', 20, 1);
+
+PRINT '  ✓ Created 20 diagnosis categories';
+GO
+
+-- ============================================================================
+-- SECTION 26: ROOM TYPE
+-- ============================================================================
+
+PRINT 'Populating ROOM_TYPE lookups...';
+
+DECLARE @RoomTypeCategoryId INT;
+SELECT @RoomTypeCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'ROOM_TYPE';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@RoomTypeCategoryId, 'STANDARD_WARD', 'Standard Ward (4+ beds)', 1, 1),
+    (@RoomTypeCategoryId, 'TWIN_SHARING', 'Twin Sharing (2 beds)', 2, 1),
+    (@RoomTypeCategoryId, 'SINGLE_ROOM', 'Single Room (1 bed)', 3, 1),
+    (@RoomTypeCategoryId, 'DELUXE_ROOM', 'Deluxe Room', 4, 1),
+    (@RoomTypeCategoryId, 'ICU', 'Intensive Care Unit (ICU)', 5, 1),
+    (@RoomTypeCategoryId, 'SUITE', 'Suite', 6, 1);
+
+PRINT '  ✓ Created 6 room types';
+GO
+
+-- ============================================================================
+-- SECTION 27: EHM STATUS
+-- ============================================================================
+
+PRINT 'Populating EHM_STATUS lookups...';
+
+DECLARE @EhmStatusCategoryId INT;
+SELECT @EhmStatusCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'EHM_STATUS';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@EhmStatusCategoryId, 'NOT_APPLICABLE', 'Not Applicable', 1, 1),
+    (@EhmStatusCategoryId, 'PENDING', 'Pending EHM Review', 2, 1),
+    (@EhmStatusCategoryId, 'IN_PROGRESS', 'EHM In Progress', 3, 1),
+    (@EhmStatusCategoryId, 'COMPLETED', 'EHM Completed', 4, 1),
+    (@EhmStatusCategoryId, 'ESCALATED', 'Escalated to Medical Review', 5, 1);
+
+PRINT '  ✓ Created 5 EHM statuses';
+GO
+
+-- ============================================================================
+-- SECTION 28: DEFERMENT STATUS
+-- ============================================================================
+
+PRINT 'Populating DEFERMENT_STATUS lookups...';
+
+DECLARE @DefermentStatusCategoryId INT;
+SELECT @DefermentStatusCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'DEFERMENT_STATUS';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@DefermentStatusCategoryId, 'NOT_DEFERRED', 'Not Deferred', 1, 1),
+    (@DefermentStatusCategoryId, 'PENDING_DEFERMENT', 'Pending Deferment', 2, 1),
+    (@DefermentStatusCategoryId, 'DEFERRED', 'Deferred', 3, 1),
+    (@DefermentStatusCategoryId, 'DEFERMENT_RESOLVED', 'Deferment Resolved', 4, 1),
+    (@DefermentStatusCategoryId, 'DEFERMENT_CANCELLED', 'Deferment Cancelled', 5, 1);
+
+PRINT '  ✓ Created 5 deferment statuses';
+GO
+
+-- ============================================================================
+-- SECTION 29: ALERT LEVEL
+-- ============================================================================
+
+PRINT 'Populating ALERT_LEVEL lookups...';
+
+DECLARE @AlertLevelCategoryId INT;
+SELECT @AlertLevelCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'ALERT_LEVEL';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@AlertLevelCategoryId, '1', 'Level 1 - Warning', 1, 1),
+    (@AlertLevelCategoryId, '2', 'Level 2 - Critical', 2, 1),
+    (@AlertLevelCategoryId, '3', 'Level 3 - Extremely Critical', 3, 1);
+
+PRINT '  ✓ Created 3 alert levels';
+GO
+
+-- ============================================================================
+-- SECTION 30: TREATMENT TYPE
+-- ============================================================================
+
+PRINT 'Populating TREATMENT_TYPE lookups...';
+
+DECLARE @TreatmentTypeCategoryId INT;
+SELECT @TreatmentTypeCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'TREATMENT_TYPE';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@TreatmentTypeCategoryId, 'SURGICAL', 'Surgical', 1, 1),
+    (@TreatmentTypeCategoryId, 'MEDICAL', 'Medical', 2, 1),
+    (@TreatmentTypeCategoryId, 'DENTAL', 'Dental', 3, 1),
+    (@TreatmentTypeCategoryId, 'PHYSIOTHERAPY', 'Physiotherapy', 4, 1),
+    (@TreatmentTypeCategoryId, 'MATERNITY', 'Maternity', 5, 1),
+    (@TreatmentTypeCategoryId, 'CHEMOTHERAPY', 'Chemotherapy', 6, 1),
+    (@TreatmentTypeCategoryId, 'RADIOTHERAPY', 'Radiotherapy', 7, 1);
+
+PRINT '  ✓ Created 7 treatment types';
+GO
+
+-- ============================================================================
+-- SECTION 31: REJECTION REASON
+-- ============================================================================
+
+PRINT 'Populating REJECTION_REASON lookups...';
+
+DECLARE @RejectionReasonCategoryId INT;
+SELECT @RejectionReasonCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'REJECTION_REASON';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@RejectionReasonCategoryId, 'NOT_COVERED', 'Service Not Covered', 1, 1),
+    (@RejectionReasonCategoryId, 'LIMIT_EXCEEDED', 'Benefit Limit Exceeded', 2, 1),
+    (@RejectionReasonCategoryId, 'PRE_EXISTING', 'Pre-existing Condition', 3, 1),
+    (@RejectionReasonCategoryId, 'WAITING_PERIOD', 'Waiting Period Not Served', 4, 1),
+    (@RejectionReasonCategoryId, 'INVALID_DOCS', 'Invalid or Missing Documents', 5, 1),
+    (@RejectionReasonCategoryId, 'LATE_SUBMISSION', 'Late Submission', 6, 1),
+    (@RejectionReasonCategoryId, 'POLICY_INACTIVE', 'Policy Inactive or Cancelled', 7, 1);
+
+PRINT '  ✓ Created 7 rejection reasons';
+GO
+
+-- ============================================================================
+-- SECTION 32: COUNTRY
+-- ============================================================================
+
+PRINT 'Populating COUNTRY lookups...';
+
+DECLARE @CountryCategoryId INT;
+SELECT @CountryCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'COUNTRY';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@CountryCategoryId, 'MY', 'Malaysia', 1, 1),
+    (@CountryCategoryId, 'SG', 'Singapore', 2, 1),
+    (@CountryCategoryId, 'BN', 'Brunei', 3, 1),
+    (@CountryCategoryId, 'ID', 'Indonesia', 4, 1),
+    (@CountryCategoryId, 'TH', 'Thailand', 5, 1);
+
+PRINT '  ✓ Created 5 countries';
+GO
+
+-- ============================================================================
+-- SECTION 33: PRODUCT TYPE
+-- ============================================================================
+
+PRINT 'Populating PRODUCT_TYPE lookups...';
+
+DECLARE @ProductTypeCategoryId INT;
+SELECT @ProductTypeCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'PRODUCT_TYPE';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@ProductTypeCategoryId, 'MEDICAL', 'Medical Insurance', 1, 1),
+    (@ProductTypeCategoryId, 'LIFE', 'Life Insurance', 2, 1),
+    (@ProductTypeCategoryId, 'PA', 'Personal Accident', 3, 1),
+    (@ProductTypeCategoryId, 'TRAVEL', 'Travel Insurance', 4, 1),
+    (@ProductTypeCategoryId, 'CRITICAL_ILLNESS', 'Critical Illness', 5, 1);
+
+PRINT '  ✓ Created 5 product types';
+GO
+
+-- ============================================================================
+-- SECTION 34: BILL TYPE
+-- ============================================================================
+
+PRINT 'Populating BILL_TYPE lookups...';
+
+DECLARE @BillTypeCategoryId INT;
+SELECT @BillTypeCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'BILL_TYPE';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@BillTypeCategoryId, 'FINAL', 'Final Bill', 1, 1),
+    (@BillTypeCategoryId, 'INTERIM', 'Interim Bill', 2, 1),
+    (@BillTypeCategoryId, 'DEPOSIT', 'Deposit Receipt', 3, 1),
+    (@BillTypeCategoryId, 'SUPPLEMENTARY', 'Supplementary Bill', 4, 1),
+    (@BillTypeCategoryId, 'CREDIT_NOTE', 'Credit Note', 5, 1);
+
+PRINT '  ✓ Created 5 bill types';
 GO
 
 -- ============================================================================

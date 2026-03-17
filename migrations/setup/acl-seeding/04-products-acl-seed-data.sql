@@ -4,7 +4,7 @@ CCMS - PRODUCTS (POLICY MANAGEMENT) MODULE - ACL SEED DATA
 Purpose: Add Policy Management module with 10 granular permissions
 Module: Policy Management (Uncategorized - Top Level Menu)
 Route: /products
-Actions: VIEW, VIEW_LIMITS, VIEW_COPAY, CREATE, UPDATE, DELETE, MANAGE_LIMITS, MANAGE_COPAY, ACTIVATE, DEACTIVATE
+Actions: VIEW, VIEW_LIMITS, VIEW_COPAY, VIEW_THRESHOLDS, CREATE, UPDATE, DELETE, MANAGE_LIMITS, MANAGE_COPAY, MANAGE_THRESHOLDS, ACTIVATE, DEACTIVATE
 ==============================================================================
 Dependencies: ccms_new_schema_2026_v7.sql (ACL tables must exist)
 Idempotent: Yes (safe to run multiple times)
@@ -141,6 +141,30 @@ BEGIN
     PRINT '  → Action already exists: DEACTIVATE';
 END
 
+-- Action 7: VIEW_THRESHOLDS
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_actions WHERE action_code = 'VIEW_THRESHOLDS')
+BEGIN
+    INSERT INTO ccms_acl_actions (action_name, action_code, description, is_active, created_at, created_by)
+    VALUES ('View Thresholds', 'VIEW_THRESHOLDS', 'View LOS alert thresholds (read-only)', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Added action: VIEW_THRESHOLDS';
+END
+ELSE
+BEGIN
+    PRINT '  → Action already exists: VIEW_THRESHOLDS';
+END
+
+-- Action 8: MANAGE_THRESHOLDS
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_actions WHERE action_code = 'MANAGE_THRESHOLDS')
+BEGIN
+    INSERT INTO ccms_acl_actions (action_name, action_code, description, is_active, created_at, created_by)
+    VALUES ('Manage Thresholds', 'MANAGE_THRESHOLDS', 'Add/edit/delete LOS alert thresholds', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Added action: MANAGE_THRESHOLDS';
+END
+ELSE
+BEGIN
+    PRINT '  → Action already exists: MANAGE_THRESHOLDS';
+END
+
 PRINT '';
 
 -- ============================================================================
@@ -207,15 +231,18 @@ DECLARE @manageLimitsActionId BIGINT = (SELECT action_id FROM ccms_acl_actions W
 DECLARE @manageCopayActionId BIGINT = (SELECT action_id FROM ccms_acl_actions WHERE action_code = 'MANAGE_COPAY');
 DECLARE @activateActionId BIGINT = (SELECT action_id FROM ccms_acl_actions WHERE action_code = 'ACTIVATE');
 DECLARE @deactivateActionId BIGINT = (SELECT action_id FROM ccms_acl_actions WHERE action_code = 'DEACTIVATE');
+DECLARE @viewThresholdsActionId BIGINT = (SELECT action_id FROM ccms_acl_actions WHERE action_code = 'VIEW_THRESHOLDS');
+DECLARE @manageThresholdsActionId BIGINT = (SELECT action_id FROM ccms_acl_actions WHERE action_code = 'MANAGE_THRESHOLDS');
 
 -- Verify all required actions exist
 IF @viewActionId IS NULL OR @viewLimitsActionId IS NULL OR @viewCopayActionId IS NULL
    OR @createActionId IS NULL OR @updateActionId IS NULL OR @deleteActionId IS NULL
    OR @manageLimitsActionId IS NULL OR @manageCopayActionId IS NULL
    OR @activateActionId IS NULL OR @deactivateActionId IS NULL
+   OR @viewThresholdsActionId IS NULL OR @manageThresholdsActionId IS NULL
 BEGIN
     PRINT '  ✗ ERROR: One or more required actions do not exist';
-    PRINT '  → Required actions: VIEW, VIEW_LIMITS, VIEW_COPAY, CREATE, UPDATE, DELETE, MANAGE_LIMITS, MANAGE_COPAY, ACTIVATE, DEACTIVATE';
+    PRINT '  → Required actions: VIEW, VIEW_LIMITS, VIEW_COPAY, VIEW_THRESHOLDS, CREATE, UPDATE, DELETE, MANAGE_LIMITS, MANAGE_COPAY, MANAGE_THRESHOLDS, ACTIVATE, DEACTIVATE';
     RETURN;
 END
 
@@ -339,6 +366,30 @@ BEGIN
     PRINT '  → Action already linked: DEACTIVATE';
 END
 
+-- Link 11: VIEW_THRESHOLDS
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @policyMgmtModuleId AND action_id = @viewThresholdsActionId)
+BEGIN
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label, is_active, created_at, created_by)
+    VALUES (@policyMgmtModuleId, @viewThresholdsActionId, 'View LOS Thresholds', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Linked action: VIEW_THRESHOLDS → "View LOS Thresholds"';
+END
+ELSE
+BEGIN
+    PRINT '  → Action already linked: VIEW_THRESHOLDS';
+END
+
+-- Link 12: MANAGE_THRESHOLDS
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @policyMgmtModuleId AND action_id = @manageThresholdsActionId)
+BEGIN
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label, is_active, created_at, created_by)
+    VALUES (@policyMgmtModuleId, @manageThresholdsActionId, 'Manage LOS Thresholds', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Linked action: MANAGE_THRESHOLDS → "Manage LOS Thresholds"';
+END
+ELSE
+BEGIN
+    PRINT '  → Action already linked: MANAGE_THRESHOLDS';
+END
+
 PRINT '';
 
 -- ============================================================================
@@ -429,7 +480,7 @@ SELECT
     created_by,
     created_at
 FROM ccms_acl_actions
-WHERE action_code IN ('VIEW_LIMITS', 'VIEW_COPAY', 'MANAGE_LIMITS', 'MANAGE_COPAY', 'ACTIVATE');
+WHERE action_code IN ('VIEW_LIMITS', 'VIEW_COPAY', 'MANAGE_LIMITS', 'MANAGE_COPAY', 'ACTIVATE', 'DEACTIVATE', 'VIEW_THRESHOLDS', 'MANAGE_THRESHOLDS');
 
 PRINT '';
 PRINT '3. Module-Action Links (10 expected):';
@@ -473,15 +524,17 @@ PRINT '';
 PRINT 'Summary:';
 PRINT '  • Module: Policy Management (uncategorized)';
 PRINT '  • Route: /products';
-PRINT '  • Actions: 10 (VIEW, VIEW_LIMITS, VIEW_COPAY, CREATE, UPDATE, DELETE, MANAGE_LIMITS, MANAGE_COPAY, ACTIVATE, DEACTIVATE)';
-PRINT '  • Super Admin: All 10 permissions granted';
+PRINT '  • Actions: 12 (VIEW, VIEW_LIMITS, VIEW_COPAY, VIEW_THRESHOLDS, CREATE, UPDATE, DELETE, MANAGE_LIMITS, MANAGE_COPAY, MANAGE_THRESHOLDS, ACTIVATE, DEACTIVATE)';
+PRINT '  • Super Admin: All 12 permissions granted';
 PRINT '';
 PRINT 'Permission Model:';
 PRINT '  • VIEW = View products only';
 PRINT '  • VIEW_LIMITS = View product limits (read-only)';
 PRINT '  • VIEW_COPAY = View copay rules (read-only)';
+PRINT '  • VIEW_THRESHOLDS = View LOS thresholds (read-only)';
 PRINT '  • MANAGE_LIMITS = Full CRUD on product limits';
 PRINT '  • MANAGE_COPAY = Full CRUD on copay rules';
+PRINT '  • MANAGE_THRESHOLDS = Full CRUD on LOS thresholds';
 PRINT '';
 PRINT 'Next Steps:';
 PRINT '  1. Implement backend types, repositories, services, controller';

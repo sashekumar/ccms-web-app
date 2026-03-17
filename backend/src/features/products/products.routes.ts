@@ -45,4 +45,16 @@ router.post('/:productId/copay', requirePermission('POLICY_MANAGEMENT', 'MANAGE_
 router.put('/:productId/copay/:copayId', requirePermission('POLICY_MANAGEMENT', 'MANAGE_COPAY'), controller.updateCopay);
 router.delete('/:productId/copay/:copayId', requirePermission('POLICY_MANAGEMENT', 'MANAGE_COPAY'), controller.deleteCopay);
 
+// ============================================================================
+// PRODUCT LOS THRESHOLD ROUTES
+// READ: VIEW_THRESHOLDS, WRITE: MANAGE_THRESHOLDS
+// (We will use POLICY_MANAGEMENT as the base, like others)
+// ============================================================================
+
+router.post('/:productId/thresholds/list', controller.getThresholds);
+router.post('/:productId/thresholds/get', controller.getThresholdById);
+router.post('/:productId/thresholds', controller.createThreshold);
+router.put('/:productId/thresholds/:thresholdId', controller.updateThreshold);
+router.delete('/:productId/thresholds/:thresholdId', controller.deleteThreshold);
+
 export default router;

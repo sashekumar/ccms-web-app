@@ -11,6 +11,7 @@ import {
 } from './products.types';
 import { CreateProductLimitDto, UpdateProductLimitDto, GetProductLimitRequest } from './product-limits.types';
 import { CreateProductCopayDto, UpdateProductCopayDto, GetProductCopayRequest } from './product-copay.types';
+import { CreateProductLosThresholdDto, UpdateProductLosThresholdDto, GetProductLosThresholdRequest } from './product-los-thresholds.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
 
@@ -532,6 +533,145 @@ export class ProductsController {
       }
     } catch (error: unknown) {
       ResponseUtil.error(res, 'Error deleting copay rule', 500, getErrorMessage(error));
+    }
+  };
+
+  // ============================================================================
+  // PRODUCT LOS THRESHOLDS
+  // ============================================================================
+
+  /**
+   * Get all LOS thresholds for a product
+   * POST /api/products/:productId/thresholds/list
+   * Params: { productId }
+   */
+  public getThresholds = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const productId = parseInt(req.params.productId);
+
+      if (isNaN(productId)) {
+        ResponseUtil.error(res, 'Invalid product ID', 400);
+        return;
+      }
+
+      const thresholds = await this.service.getThresholdsByProductId(productId);
+
+      ResponseUtil.success(res, thresholds, 'Product LOS thresholds retrieved successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching LOS thresholds', 500, getErrorMessage(error));
+    }
+  };
+
+  /**
+   * Get LOS threshold by ID
+   * POST /api/products/:productId/thresholds/get
+   * Body: { threshold_id }
+   */
+  public getThresholdById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const request: GetProductLosThresholdRequest = req.body;
+      const thresholdId = request.threshold_id;
+
+      if (!thresholdId || isNaN(thresholdId)) {
+        ResponseUtil.error(res, 'Invalid threshold ID', 400);
+        return;
+      }
+
+      const threshold = await this.service.getThresholdById(thresholdId);
+
+      if (!threshold) {
+        ResponseUtil.notFound(res, 'Product LOS threshold not found');
+        return;
+      }
+
+      ResponseUtil.success(res, threshold, 'Product LOS threshold retrieved successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching LOS threshold', 500, getErrorMessage(error));
+    }
+  };
+
+  /**
+   * Create new product LOS threshold
+   * POST /api/products/:productId/thresholds
+   * Params: { productId }
+   * Body: { diagnosis_category?, threshold_days?, alert_level?, is_active? }
+   */
+  public createThreshold = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const createdBy = (req as any).user?.userId?.toString();
+      const productId = parseInt(req.params.productId);
+
+      if (isNaN(productId)) {
+        ResponseUtil.error(res, 'Invalid product ID', 400);
+        return;
+      }
+
+      const dto: CreateProductLosThresholdDto = {
+        ...req.body,
+        product_id: productId
+      };
+
+      const thresholdId = await this.service.createThreshold(dto, createdBy);
+
+      ResponseUtil.success(res, { threshold_id: thresholdId }, 'Product LOS threshold created successfully', 201);
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error creating LOS threshold', 500, getErrorMessage(error));
+    }
+  };
+
+  /**
+   * Update product LOS threshold
+   * PUT /api/products/:productId/thresholds/:thresholdId
+   * Params: { productId, thresholdId }
+   * Body: { diagnosis_category?, threshold_days?, alert_level?, is_active? }
+   */
+  public updateThreshold = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const updatedBy = (req as any).user?.userId?.toString();
+      const thresholdId = parseInt(req.params.thresholdId);
+
+      if (isNaN(thresholdId)) {
+        ResponseUtil.error(res, 'Invalid threshold ID', 400);
+        return;
+      }
+
+      const dto: UpdateProductLosThresholdDto = req.body;
+
+      const success = await this.service.updateThreshold(thresholdId, dto, updatedBy);
+
+      if (success) {
+        ResponseUtil.success(res, { threshold_id: thresholdId }, 'Product LOS threshold updated successfully');
+      } else {
+        ResponseUtil.error(res, 'No changes made or LOS threshold not found', 400);
+      }
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error updating LOS threshold', 500, getErrorMessage(error));
+    }
+  };
+
+  /**
+   * Delete product LOS threshold
+   * DELETE /api/products/:productId/thresholds/:thresholdId
+   * Params: { productId, thresholdId }
+   */
+  public deleteThreshold = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const thresholdId = parseInt(req.params.thresholdId);
+
+      if (isNaN(thresholdId)) {
+        ResponseUtil.error(res, 'Invalid threshold ID', 400);
+        return;
+      }
+
+      const success = await this.service.deleteThreshold(thresholdId);
+
+      if (success) {
+        ResponseUtil.success(res, { threshold_id: thresholdId }, 'Product LOS threshold deleted successfully');
+      } else {
+        ResponseUtil.notFound(res, 'Product LOS threshold not found');
+      }
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error deleting LOS threshold', 500, getErrorMessage(error));
     }
   };
 }

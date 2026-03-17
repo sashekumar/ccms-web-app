@@ -15,7 +15,10 @@ import {
   UpdateProductLimitDto,
   ProductCopay,
   CreateProductCopayDto,
-  UpdateProductCopayDto
+  UpdateProductCopayDto,
+  ProductLosThreshold,
+  CreateProductLosThresholdDto,
+  UpdateProductLosThresholdDto
 } from '../../shared/models/product.model';
 
 export interface ApiResponse<T> {
@@ -335,6 +338,89 @@ export class ProductService {
       map(() => undefined),
       catchError(error => {
         console.error('Error deleting product copay:', error);
+        throw error;
+      })
+    );
+  }
+
+  // ============================================================================
+  // PRODUCT LOS THRESHOLDS
+  // ============================================================================
+
+  /**
+   * Get all LOS thresholds for a product
+   */
+  getThresholdsByProductId(product_id: string): Observable<ProductLosThreshold[]> {
+    return this.api.post<ApiResponse<ProductLosThreshold[]>>(
+      API_ENDPOINTS.PRODUCTS.THRESHOLDS.list(product_id),
+      {}
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error fetching product LOS thresholds:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get LOS threshold by ID
+   */
+  getThresholdById(product_id: string, threshold_id: string): Observable<ProductLosThreshold> {
+    return this.api.post<ApiResponse<ProductLosThreshold>>(
+      API_ENDPOINTS.PRODUCTS.THRESHOLDS.get(product_id),
+      { threshold_id }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error fetching product LOS threshold:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Create new product LOS threshold
+   */
+  createThreshold(product_id: string, dto: Omit<CreateProductLosThresholdDto, 'product_id'>): Observable<string> {
+    return this.api.post<ApiResponse<{ threshold_id: string }>>(
+      API_ENDPOINTS.PRODUCTS.THRESHOLDS.create(product_id),
+      dto
+    ).pipe(
+      map(response => response.data.threshold_id),
+      catchError(error => {
+        console.error('Error creating product LOS threshold:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Update product LOS threshold
+   */
+  updateThreshold(product_id: string, threshold_id: string, dto: UpdateProductLosThresholdDto): Observable<void> {
+    return this.api.put<ApiResponse<void>>(
+      API_ENDPOINTS.PRODUCTS.THRESHOLDS.update(product_id, threshold_id),
+      dto
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error updating product LOS threshold:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Delete product LOS threshold
+   */
+  deleteThreshold(product_id: string, threshold_id: string): Observable<void> {
+    return this.api.delete<ApiResponse<void>>(
+      API_ENDPOINTS.PRODUCTS.THRESHOLDS.delete(product_id, threshold_id)
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error deleting product LOS threshold:', error);
         throw error;
       })
     );

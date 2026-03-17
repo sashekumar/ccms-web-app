@@ -9,6 +9,9 @@ import lookupsRoutes from '../features/lookups/lookups.routes';
 import hospitalsRoutes from '../features/hospitals/hospitals.routes';
 import productsRoutes from '../features/products/products.routes';
 import membersRoutes from '../features/members/members.routes';
+import admissionsRoutes from '../features/admissions/admissions.routes';
+import monitoringRoutes from '../features/monitoring/monitoring.routes';
+import claimsRoutes from '../features/claims/claims.routes';
 
 const router = Router();
 
@@ -30,6 +33,13 @@ router.use('/products', productsRoutes);
 
 // Members / Policy Holders routes
 router.use('/members', membersRoutes);
+
+// Admissions / Claims routes
+router.use('/admissions', admissionsRoutes);
+router.use('/claims', claimsRoutes);
+
+// Monitoring routes (LOS Alerts & 8-Hour Monitoring)
+router.use('/monitoring', monitoringRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

@@ -1,0 +1,275 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Page Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Monitoring Dashboard</h1>
+    <p class="mt-2 text-sm text-gray-600">View LOS alerts and 8-hour monitoring checks</p>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="border-b border-gray-200 mb-6">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <button
+        (click)="switchTab('alerts')"
+        [class.border-blue-500]="activeTab === 'alerts'"
+        [class.text-blue-600]="activeTab === 'alerts'"
+        [class.border-transparent]="activeTab !== 'alerts'"
+        [class.text-gray-500]="activeTab !== 'alerts'"
+        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        LOS Alerts
+        <span *ngIf="alertsTotal > 0" class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium" [class.bg-red-100]="activeTab === 'alerts'" [class.text-red-800]="activeTab === 'alerts'" [class.bg-gray-100]="activeTab !== 'alerts'" [class.text-gray-900]="activeTab !== 'alerts'">
+          {{ alertsTotal }}
+        </span>
+      </button>
+      
+      <button
+        (click)="switchTab('checks')"
+        [class.border-blue-500]="activeTab === 'checks'"
+        [class.text-blue-600]="activeTab === 'checks'"
+        [class.border-transparent]="activeTab !== 'checks'"
+        [class.text-gray-500]="activeTab !== 'checks'"
+        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        8-Hour Monitoring
+        <span *ngIf="checksTotal > 0" class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium" [class.bg-blue-100]="activeTab === 'checks'" [class.text-blue-800]="activeTab === 'checks'" [class.bg-gray-100]="activeTab !== 'checks'" [class.text-gray-900]="activeTab !== 'checks'">
+          {{ checksTotal }}
+        </span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- LOS Alerts Tab -->
+  <div *ngIf="activeTab === 'alerts'">
+    <!-- Loading State -->
+    <div *ngIf="loadingAlerts" class="flex justify-center items-center py-12">
+      <app-loading-spinner></app-loading-spinner>
+    </div>
+
+    <!-- Alerts List -->
+    <div *ngIf="!loadingAlerts && alerts.length > 0" class="space-y-4">
+      <div *ngFor="let alert of alerts" class="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow duration-150">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <div class="flex items-center space-x-3">
+              <span [class]="getAlertLevelClass(alert.alert_level)" class="px-3 py-1 text-xs font-semibold rounded-full">
+                Level {{ alert.alert_level }}
+              </span>
+              <h3 class="text-lg font-medium text-gray-900">{{ alert.claim_ref_no }}</h3>
+            </div>
+            
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-500">Patient</p>
+                <p class="text-sm font-medium text-gray-900">{{ alert.member_name || 'N/A' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Hospital</p>
+                <p class="text-sm font-medium text-gray-900">{{ alert.hospital_name || 'N/A' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Current LOS</p>
+                <p class="text-sm font-medium text-gray-900">{{ alert.current_los }} days</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Threshold</p>
+                <p class="text-sm font-medium text-gray-900">{{ alert.threshold_days }} days</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Triggered At</p>
+                <p class="text-sm font-medium text-gray-900">{{ alert.triggered_at | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Status</p>
+                <p class="text-sm font-medium text-gray-900">{{ alert.admission_status || 'N/A' }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="alert.notes" class="mt-3">
+              <p class="text-sm text-gray-500">Notes</p>
+              <p class="text-sm text-gray-700">{{ alert.notes }}</p>
+            </div>
+          </div>
+
+          <div class="ml-4">
+            <button
+              *ngIf="alert.status === 'ACTIVE'"
+              (click)="acknowledgeAlert(alert.alert_id)"
+              class="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Acknowledge
+            </button>
+            <span *ngIf="alert.status === 'ACKNOWLEDGED'" class="px-3 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-md">
+              ✓ Acknowledged
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loadingAlerts && alerts.length === 0" class="text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No active alerts</h3>
+      <p class="mt-1 text-sm text-gray-500">All LOS alerts have been addressed.</p>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="!loadingAlerts && alerts.length > 0" class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+      <div class="flex-1 flex justify-between sm:hidden">
+        <button
+          (click)="prevAlertsPage()"
+          [disabled]="alertsPage <= 1"
+          class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          Previous
+        </button>
+        <button
+          (click)="nextAlertsPage()"
+          [disabled]="alertsPage >= alertsTotalPages"
+          class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          Next
+        </button>
+      </div>
+      <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm text-gray-700">
+            Showing page <span class="font-medium">{{ alertsPage }}</span> of <span class="font-medium">{{ alertsTotalPages }}</span>
+            ({{ alertsTotal }} total alerts)
+          </p>
+        </div>
+        <div class="flex space-x-2">
+          <button
+            (click)="prevAlertsPage()"
+            [disabled]="alertsPage <= 1"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Previous
+          </button>
+          <button
+            (click)="nextAlertsPage()"
+            [disabled]="alertsPage >= alertsTotalPages"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8-Hour Monitoring Tab -->
+  <div *ngIf="activeTab === 'checks'">
+    <!-- Loading State -->
+    <div *ngIf="loadingChecks" class="flex justify-center items-center py-12">
+      <app-loading-spinner></app-loading-spinner>
+    </div>
+
+    <!--Checks List -->
+    <div *ngIf="!loadingChecks && checks.length > 0" class="space-y-4">
+      <div *ngFor="let check of checks" class="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow duration-150">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <div class="flex items-center space-x-3">
+              <span [class]="getCheckStatusClass(check.status)" class="px-3 py-1 text-xs font-semibold rounded-full">
+                {{ check.status }}
+              </span>
+              <h3 class="text-lg font-medium text-gray-900">{{ check.claim_ref_no }}</h3>
+            </div>
+            
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-500">Patient</p>
+                <p class="text-sm font-medium text-gray-900">{{ check.member_name || 'N/A' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Hospital</p>
+                <p class="text-sm font-medium text-gray-900">{{ check.hospital_name || 'N/A' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Check Time</p>
+                <p class="text-sm font-medium text-gray-900">{{ check.check_time | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Hours Elapsed</p>
+                <p class="text-sm font-medium text-gray-900">{{ check.hours_elapsed }} hours</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Checked By</p>
+                <p class="text-sm font-medium text-gray-900">{{ check.checked_by || 'N/A' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Next Check Due</p>
+                <p class="text-sm font-medium text-gray-900">{{ check.next_check_due ? (check.next_check_due | date:'dd/MM/yyyy HH:mm') : 'N/A' }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="check.notes" class="mt-3">
+              <p class="text-sm text-gray-500">Notes</p>
+              <p class="text-sm text-gray-700">{{ check.notes }}</p>
+            </div>
+          </div>
+
+          <div class="ml-4">
+            <button
+              *ngIf="check.admission_status !== 'DISCHARGED'"
+              (click)="recordCheck(check.admission_id)"
+              class="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+              <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Record Check
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loadingChecks && checks.length === 0" class="text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No monitoring checks</h3>
+      <p class="mt-1 text-sm text-gray-500">No 8-hour monitoring checks have been recorded yet.</p>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="!loadingChecks && checks.length > 0" class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+      <div class="flex-1 flex justify-between sm:hidden">
+        <button
+          (click)="prevChecksPage()"
+          [disabled]="checksPage <= 1"
+          class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          Previous
+        </button>
+        <button
+          (click)="nextChecksPage()"
+          [disabled]="checksPage >= checksTotalPages"
+          class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          Next
+        </button>
+      </div>
+      <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm text-gray-700">
+            Showing page <span class="font-medium">{{ checksPage }}</span> of <span class="font-medium">{{ checksTotalPages }}</span>
+            ({{ checksTotal }} total checks)
+          </p>
+        </div>
+        <div class="flex space-x-2">
+          <button
+            (click)="prevChecksPage()"
+            [disabled]="checksPage <= 1"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Previous
+          </button>
+          <button
+            (click)="nextChecksPage()"
+            [disabled]="checksPage >= checksTotalPages"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -58,7 +58,13 @@ export const DB_TABLES = {
   MEMBER_CONTACTS: 'ccms_member_contacts',
   MEMBER_POLICIES: 'ccms_member_policies',
   MEMBER_DEPENDENTS: 'ccms_member_dependents',
-  MEMBER_PEC_CONDITIONS: 'ccms_member_pec_conditions'
+  MEMBER_PEC_CONDITIONS: 'ccms_member_pec_conditions',
+  
+  // Claims & Admissions
+  CLAIMS: 'ccms_claims',
+  ADMISSIONS: 'ccms_admissions',
+  ADMISSION_ASSESSMENTS: 'ccms_admission_assessments',
+  REMARKS: 'ccms_remarks'
 } as const;
 
 // ============================================================================

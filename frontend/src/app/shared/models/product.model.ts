@@ -114,3 +114,33 @@ export interface UpdateProductCopayDto {
   is_active?: boolean;
   legacy_product_copay_id?: string;
 }
+
+// ============================================================================
+// PRODUCT LOS THRESHOLDS
+// ============================================================================
+
+export interface ProductLosThreshold {
+  threshold_id: string;
+  legacy_los_threshold_id?: string | null;
+  product_id: string;
+  diagnosis_category?: string | null;
+  threshold_days?: number | null;
+  alert_level?: number | null;
+  is_active: boolean;
+  created_at?: Date;
+}
+
+export interface CreateProductLosThresholdDto {
+  product_id: string;
+  diagnosis_category?: string;
+  threshold_days?: number;
+  alert_level?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateProductLosThresholdDto {
+  diagnosis_category?: string;
+  threshold_days?: number;
+  alert_level?: number;
+  is_active?: boolean;
+}

@@ -168,7 +168,11 @@ export const POLICY_MANAGEMENT_PERMISSIONS = {
   
   // Copay Management
   VIEW_COPAY: 'POLICY_MANAGEMENT.VIEW_COPAY',
-  MANAGE_COPAY: 'POLICY_MANAGEMENT.MANAGE_COPAY'
+  MANAGE_COPAY: 'POLICY_MANAGEMENT.MANAGE_COPAY',
+
+  // LOS Threshold Management
+  VIEW_THRESHOLDS: 'POLICY_MANAGEMENT.VIEW_THRESHOLDS',
+  MANAGE_THRESHOLDS: 'POLICY_MANAGEMENT.MANAGE_THRESHOLDS'
 } as const;
 
 export const POLICY_HOLDERS_PERMISSIONS = {
@@ -200,6 +204,21 @@ export const POLICY_HOLDERS_PERMISSIONS = {
   MANAGE_PEC: 'POLICY_HOLDERS.MANAGE_PEC'
 } as const;
 
+export const ADMISSIONS_PERMISSIONS = {
+  // Main Admission Operations
+  VIEW: 'ADMISSIONS.VIEW',
+  CREATE: 'ADMISSIONS.CREATE',
+  UPDATE: 'ADMISSIONS.UPDATE',
+  DELETE: 'ADMISSIONS.DELETE',
+  APPROVE: 'ADMISSIONS.APPROVE'
+} as const;
+
+export const CLAIMS_PERMISSIONS = {
+  // Main Claims Operations
+  VIEW: 'CLAIMS.VIEW',
+  UPDATE: 'CLAIMS.UPDATE'
+} as const;
+
 // ============================================================================
 // CONSOLIDATED PERMISSIONS
 // ============================================================================
@@ -225,7 +244,9 @@ export const PERMISSIONS = {
   // Business Features
   HOSPITAL_MANAGEMENT: HOSPITAL_MANAGEMENT_PERMISSIONS,
   POLICY_MANAGEMENT: POLICY_MANAGEMENT_PERMISSIONS,
-  POLICY_HOLDERS: POLICY_HOLDERS_PERMISSIONS
+  POLICY_HOLDERS: POLICY_HOLDERS_PERMISSIONS,
+  ADMISSIONS: ADMISSIONS_PERMISSIONS,
+  CLAIMS: CLAIMS_PERMISSIONS
 } as const;
 
 // ============================================================================

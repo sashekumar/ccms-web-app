@@ -405,6 +405,169 @@
           </div>
         </div>
       </div>
+      <!-- Thresholds Tab -->
+      <div *ngIf="activeTab === 'thresholds'">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">LOS Alert Thresholds</h3>
+          <button
+            (click)="showThresholdFormDialog()"
+            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Threshold
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <app-loading-spinner *ngIf="loadingThresholds" message="Loading LOS thresholds..."></app-loading-spinner>
+
+        <!-- Thresholds Table -->
+        <div *ngIf="!loadingThresholds" class="overflow-x-auto">
+          <table *ngIf="thresholds.length > 0" class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Diagnosis Category</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Threshold (Days)</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Alert Level</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <tr *ngFor="let threshold of thresholds" class="transition hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ threshold.diagnosis_category || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ threshold.threshold_days }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                        [ngClass]="{
+                          'bg-yellow-100 text-yellow-800': threshold.alert_level === 1,
+                          'bg-orange-100 text-orange-800': threshold.alert_level === 2,
+                          'bg-red-100 text-red-800': threshold.alert_level === 3
+                        }">
+                    Level {{ threshold.alert_level }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <span *ngIf="threshold.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Active</span>
+                  <span *ngIf="!threshold.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">Inactive</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    (click)="showThresholdFormDialog(threshold)"
+                    class="mr-3 text-indigo-600 hover:text-indigo-900"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="deleteThreshold(threshold)"
+                    class="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Empty State -->
+          <div *ngIf="thresholds.length === 0" class="py-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No LOS thresholds configured</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding an alert threshold.</p>
+          </div>
+        </div>
+
+        <!-- Threshold Form Modal -->
+        <div *ngIf="showThresholdForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div class="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+            <h3 class="mb-4 text-lg font-semibold">{{ editingThreshold ? 'Edit Threshold' : 'Add Threshold' }}</h3>
+            <form #thresholdForm="ngForm" (ngSubmit)="saveThreshold(thresholdForm)">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Diagnosis Category</label>
+                  <select
+                    [(ngModel)]="thresholdFormData.diagnosis_category"
+                    name="diagnosis_category"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                  >
+                    <option value="">-- All Categories (Default) --</option>
+                    <option *ngFor="let item of diagnosisCategories$ | async" [value]="item.lookup_code">
+                      {{ item.lookup_value }}
+                    </option>
+                  </select>
+                  <p class="text-xs text-gray-500 mt-1">Leave as default to apply to all categories.</p>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Threshold (Days) <span class="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    [(ngModel)]="thresholdFormData.threshold_days"
+                    name="threshold_days"
+                    required
+                    min="1"
+                    placeholder="e.g., 5"
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Alert Level <span class="text-red-500">*</span></label>
+                  <select
+                    [(ngModel)]="thresholdFormData.alert_level"
+                    name="alert_level"
+                    required
+                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                  >
+                    <option [ngValue]="null">-- Select Alert Level --</option>
+                    <option *ngFor="let item of alertLevels$ | async" [ngValue]="+item.lookup_code">
+                      {{ item.lookup_value }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="thresholdFormData.is_active"
+                    name="threshold_is_active"
+                    id="threshold_is_active"
+                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72]"
+                  />
+                  <label for="threshold_is_active" class="ml-2 block text-sm text-gray-700">Active</label>
+                </div>
+              </div>
+
+              <div class="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  (click)="cancelThresholdForm()"
+                  class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="thresholdForm.invalid"
+                  class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ editingThreshold ? 'Update' : 'Create' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

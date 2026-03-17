@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, Observable } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
-import { Product, ProductLimit, ProductCopay, CreateProductLimitDto, UpdateProductLimitDto, CreateProductCopayDto, UpdateProductCopayDto } from '../../../shared/models/product.model';
+import { Product, ProductLimit, ProductCopay, CreateProductLimitDto, UpdateProductLimitDto, CreateProductCopayDto, UpdateProductCopayDto, ProductLosThreshold, CreateProductLosThresholdDto, UpdateProductLosThresholdDto } from '../../../shared/models/product.model';
 import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
@@ -57,10 +57,26 @@ export class ProductViewComponent implements OnInit, OnDestroy {
   copayTypes$: Observable<LookupItem[]>;
   copayAppliesTo$: Observable<LookupItem[]>;
 
+  // Thresholds
+  thresholds: ProductLosThreshold[] = [];
+  loadingThresholds = false;
+  showThresholdForm = false;
+  editingThreshold: ProductLosThreshold | null = null;
+  thresholdFormData: Partial<CreateProductLosThresholdDto> = {
+    diagnosis_category: '',
+    threshold_days: undefined,
+    alert_level: null as any,
+    is_active: true
+  };
+
+  diagnosisCategories$: Observable<LookupItem[]>;
+  alertLevels$: Observable<LookupItem[]>;
+
   tabs = [
     { id: 'details', label: 'Product Details' },
     { id: 'limits', label: 'Limits' },
-    { id: 'copay', label: 'Copay' }
+    { id: 'copay', label: 'Copay' },
+    { id: 'thresholds', label: 'LOS Alert Thresholds' }
   ];
 
   private destroy$ = new Subject<void>();
@@ -77,6 +93,8 @@ export class ProductViewComponent implements OnInit, OnDestroy {
     this.limitTypes$ = this.lookupService.getLimitTypes();
     this.copayTypes$ = this.lookupService.getCopayTypes();
     this.copayAppliesTo$ = this.lookupService.getCopayAppliesTo();
+    this.diagnosisCategories$ = this.lookupService.getDiagnosisCategories();
+    this.alertLevels$ = this.lookupService.getAlertLevels();
   }
 
   ngOnInit(): void {
@@ -143,6 +161,8 @@ export class ProductViewComponent implements OnInit, OnDestroy {
       this.loadLimits();
     } else if (tabId === 'copay' && this.copayList.length === 0) {
       this.loadCopay();
+    } else if (tabId === 'thresholds' && this.thresholds.length === 0) {
+      this.loadThresholds();
     }
   }
 
@@ -412,6 +432,122 @@ export class ProductViewComponent implements OnInit, OnDestroy {
       copay_type: '',
       copay_value: undefined,
       applies_to: '',
+      is_active: true
+    };
+  }
+
+  // ============================================================================
+  // LOS THRESHOLDS MANAGEMENT
+  // ============================================================================
+
+  loadThresholds(): void {
+    if (!this.product) return;
+
+    this.loadingThresholds = true;
+    this.productService.getThresholdsByProductId(this.product.product_id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (thresholds) => {
+          this.thresholds = thresholds;
+          this.loadingThresholds = false;
+          this.logger.info('Thresholds loaded successfully');
+        },
+        error: (error) => {
+          this.logger.error('Error loading thresholds:', error);
+          this.toast.error('Failed to load LOS thresholds');
+          this.loadingThresholds = false;
+        }
+      });
+  }
+
+  showThresholdFormDialog(threshold?: ProductLosThreshold): void {
+    if (threshold) {
+      this.editingThreshold = threshold;
+      this.thresholdFormData = {
+        diagnosis_category: threshold.diagnosis_category || '',
+        threshold_days: threshold.threshold_days || null as any,
+        alert_level: threshold.alert_level || null as any,
+        is_active: threshold.is_active
+      };
+    } else {
+      this.editingThreshold = null;
+      this.resetThresholdForm();
+    }
+    this.showThresholdForm = true;
+  }
+
+  saveThreshold(form: any): void {
+    if (!this.product || form.invalid) return;
+
+    const productId = this.product.product_id;
+    const thresholdData = { ...(this.thresholdFormData as CreateProductLosThresholdDto) };
+
+    if (this.editingThreshold) {
+      const updateData: UpdateProductLosThresholdDto = thresholdData;
+      this.productService.updateThreshold(productId, this.editingThreshold.threshold_id, updateData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.toast.success('Threshold updated successfully');
+            this.showThresholdForm = false;
+            this.editingThreshold = null;
+            this.resetThresholdForm();
+            this.loadThresholds();
+          },
+          error: (error) => {
+            this.logger.error('Error updating threshold:', error);
+            this.toast.error('Failed to update threshold');
+          }
+        });
+    } else {
+      this.productService.createThreshold(productId, thresholdData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.toast.success('Threshold created successfully');
+            this.showThresholdForm = false;
+            this.resetThresholdForm();
+            this.loadThresholds();
+          },
+          error: (error) => {
+            this.logger.error('Error creating threshold:', error);
+            this.toast.error('Failed to create threshold');
+          }
+        });
+    }
+  }
+
+  deleteThreshold(threshold: ProductLosThreshold): void {
+    if (!this.product) return;
+    if (!confirm(`Are you sure you want to delete this threshold (${threshold.diagnosis_category})?`)) {
+      return;
+    }
+
+    this.productService.deleteThreshold(this.product.product_id, threshold.threshold_id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Threshold deleted successfully');
+          this.loadThresholds();
+        },
+        error: (error) => {
+          this.logger.error('Error deleting threshold:', error);
+          this.toast.error('Failed to delete threshold');
+        }
+      });
+  }
+
+  cancelThresholdForm(): void {
+    this.showThresholdForm = false;
+    this.editingThreshold = null;
+    this.resetThresholdForm();
+  }
+
+  resetThresholdForm(): void {
+    this.thresholdFormData = {
+      diagnosis_category: '',
+      threshold_days: null as any,
+      alert_level: null as any,
       is_active: true
     };
   }

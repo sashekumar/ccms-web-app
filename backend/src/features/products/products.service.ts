@@ -2,6 +2,7 @@ const NodeCache = require('node-cache');
 import { ProductsRepository } from './products.repository';
 import { ProductLimitsRepository } from './product-limits.repository';
 import { ProductCopayRepository } from './product-copay.repository';
+import { ProductLosThresholdsRepository } from './product-los-thresholds.repository';
 import { 
   Product, 
   ProductFilters, 
@@ -11,6 +12,7 @@ import {
 } from './products.types';
 import { ProductLimit, CreateProductLimitDto, UpdateProductLimitDto } from './product-limits.types';
 import { ProductCopay, CreateProductCopayDto, UpdateProductCopayDto } from './product-copay.types';
+import { ProductLosThreshold, CreateProductLosThresholdDto, UpdateProductLosThresholdDto } from './product-los-thresholds.types';
 import { BaseService } from '../../core/base/base.service';
 
 // 5-minute cache TTL (same as permissions cache)
@@ -22,13 +24,15 @@ const CACHE_KEYS = {
   PRODUCT_LIST: 'product_list',
   PLAN_CODE: 'plan_code',
   LIMITS: 'limits',
-  COPAY: 'copay'
+  COPAY: 'copay',
+  THRESHOLDS: 'thresholds'
 };
 
 export class ProductsService extends BaseService<Product> {
   protected repository: ProductsRepository;
   private limitsRepository: ProductLimitsRepository;
   private copayRepository: ProductCopayRepository;
+  private thresholdsRepository: ProductLosThresholdsRepository;
   private productCache: typeof NodeCache;
 
   constructor() {
@@ -37,6 +41,7 @@ export class ProductsService extends BaseService<Product> {
     this.repository = repository;
     this.limitsRepository = new ProductLimitsRepository();
     this.copayRepository = new ProductCopayRepository();
+    this.thresholdsRepository = new ProductLosThresholdsRepository();
     this.productCache = new NodeCache({ stdTTL: PRODUCT_CACHE_TTL, checkperiod: 60 });
   }
 
@@ -52,6 +57,7 @@ export class ProductsService extends BaseService<Product> {
       this.productCache.del(`${CACHE_KEYS.PRODUCT}:${productId}`);
       this.productCache.del(`${CACHE_KEYS.LIMITS}:${productId}`);
       this.productCache.del(`${CACHE_KEYS.COPAY}:${productId}`);
+      this.productCache.del(`${CACHE_KEYS.THRESHOLDS}:${productId}`);
     } else {
       this.productCache.flushAll();
     }
@@ -297,6 +303,74 @@ export class ProductsService extends BaseService<Product> {
     
     if (success && copay) {
       this.productCache.del(`${CACHE_KEYS.COPAY}:${copay.product_id}`);
+    }
+
+    return success;
+  }
+
+  // ============================================================================
+  // PRODUCT LOS THRESHOLDS
+  // ============================================================================
+
+  /**
+   * Get all LOS thresholds for a product (with caching)
+   */
+  public async getThresholdsByProductId(productId: number): Promise<ProductLosThreshold[]> {
+    const cacheKey = `${CACHE_KEYS.THRESHOLDS}:${productId}`;
+    const cached = this.productCache.get(cacheKey) as ProductLosThreshold[] | undefined;
+
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const thresholds = await this.thresholdsRepository.getThresholdsByProductId(productId);
+    this.productCache.set(cacheKey, thresholds);
+
+    return thresholds;
+  }
+
+  /**
+   * Get LOS threshold by ID
+   */
+  public async getThresholdById(thresholdId: number): Promise<ProductLosThreshold | null> {
+    return await this.thresholdsRepository.getThresholdById(thresholdId);
+  }
+
+  /**
+   * Create new product LOS threshold
+   */
+  public async createThreshold(dto: CreateProductLosThresholdDto, createdBy: string): Promise<number> {
+    const thresholdId = await this.thresholdsRepository.createThreshold(dto, createdBy);
+    
+    // Clear thresholds cache for this product
+    this.productCache.del(`${CACHE_KEYS.THRESHOLDS}:${dto.product_id}`);
+    
+    return thresholdId;
+  }
+
+  /**
+   * Update product LOS threshold
+   */
+  public async updateThreshold(thresholdId: number, dto: UpdateProductLosThresholdDto, updatedBy: string): Promise<boolean> {
+    const threshold = await this.thresholdsRepository.getThresholdById(thresholdId);
+    const success = await this.thresholdsRepository.updateThreshold(thresholdId, dto, updatedBy);
+    
+    if (success && threshold) {
+      this.productCache.del(`${CACHE_KEYS.THRESHOLDS}:${threshold.product_id}`);
+    }
+
+    return success;
+  }
+
+  /**
+   * Delete product LOS threshold
+   */
+  public async deleteThreshold(thresholdId: number): Promise<boolean> {
+    const threshold = await this.thresholdsRepository.getThresholdById(thresholdId);
+    const success = await this.thresholdsRepository.deleteThreshold(thresholdId);
+    
+    if (success && threshold) {
+      this.productCache.del(`${CACHE_KEYS.THRESHOLDS}:${threshold.product_id}`);
     }
 
     return success;

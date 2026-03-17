@@ -14,6 +14,7 @@ PRINT '========================================';
 PRINT '';
 
 -- Clear existing product data (for re-running script)
+DELETE FROM ccms_los_alert_thresholds;
 DELETE FROM ccms_product_copay;
 DELETE FROM ccms_product_limits;
 DELETE FROM ccms_products;
@@ -177,6 +178,61 @@ PRINT '  ✓ Created 22 product co-pay entries';
 GO
 
 -- ============================================================================
+-- SECTION 4: PRODUCT LOS THRESHOLDS
+-- ============================================================================
+
+PRINT 'Creating product LOS thresholds...';
+
+INSERT INTO ccms_los_alert_thresholds (product_id, diagnosis_category, threshold_days, alert_level, is_active, created_by)
+VALUES 
+    -- CUEPACSCARE (GAKUM) - Product 1 (Default is 5 days, Infectious 3 days, Respiratory 4 days)
+    (1, NULL, 5, 1, 1, 'SYSTEM'),
+    (1, 'INFECTIOUS', 3, 2, 1, 'SYSTEM'),
+    (1, 'RESPIRATORY', 4, 1, 1, 'SYSTEM'),
+    
+    -- CUEPACSCARE (MONTHLY) - Product 2 (Default is 4 days)
+    (2, NULL, 4, 1, 1, 'SYSTEM'),
+    (2, 'MATERNITY', 3, 2, 1, 'SYSTEM'),
+    
+    -- EMPLOYEE AND FAMILY - Product 3
+    (3, NULL, 6, 1, 1, 'SYSTEM'),
+    (3, 'NEOPLASMS', 7, 2, 1, 'SYSTEM'),
+    
+    -- Allianz MedicalCare Plus - Product 4
+    (4, NULL, 5, 1, 1, 'SYSTEM'),
+    (4, 'CIRCULATORY', 5, 2, 1, 'SYSTEM'),
+
+    -- Allianz Family Shield - Product 5
+    (5, NULL, 6, 1, 1, 'SYSTEM'),
+    (5, 'MATERNITY', 4, 2, 1, 'SYSTEM'),
+
+    -- AIA Health Guard - Product 6
+    (6, NULL, 5, 1, 1, 'SYSTEM'),
+    (6, 'DIGESTIVE', 3, 2, 1, 'SYSTEM'),
+
+    -- AIA Medical Protector - Product 7
+    (7, NULL, 7, 1, 1, 'SYSTEM'),
+    (7, 'INJURY', 4, 2, 1, 'SYSTEM'),
+    
+    -- Prudential PruHealth Premier - Product 8 (Generous thresholds)
+    (8, NULL, 7, 1, 1, 'SYSTEM'),
+    (8, 'INJURY', 5, 1, 1, 'SYSTEM'),
+
+    -- Prudential Family Care - Product 9
+    (9, NULL, 5, 1, 1, 'SYSTEM'),
+    (9, 'RESPIRATORY', 5, 2, 1, 'SYSTEM'),
+
+    -- Zurich Zi-Care Basic - Product 10
+    (10, NULL, 4, 1, 1, 'SYSTEM'),
+    (10, 'INFECTIOUS', 3, 2, 1, 'SYSTEM'),
+    
+    -- Zurich Zi-Care Platinum - Product 11
+    (11, NULL, 7, 1, 1, 'SYSTEM');
+
+PRINT '  ✓ Created 22 product LOS thresholds';
+GO
+
+-- ============================================================================
 -- VERIFICATION & SUMMARY
 -- ============================================================================
 
@@ -189,7 +245,9 @@ SELECT 'Products' AS Entity, COUNT(*) AS Count FROM ccms_products WHERE is_activ
 UNION ALL
 SELECT 'Product Limits', COUNT(*) FROM ccms_product_limits WHERE is_active = 1
 UNION ALL
-SELECT 'Product Co-pay', COUNT(*) FROM ccms_product_copay WHERE is_active = 1;
+SELECT 'Product Co-pay', COUNT(*) FROM ccms_product_copay WHERE is_active = 1
+UNION ALL
+SELECT 'LOS Thresholds', COUNT(*) FROM ccms_los_alert_thresholds WHERE is_active = 1;
 
 PRINT '';
 PRINT 'Products with Child Data:';
@@ -198,10 +256,12 @@ SELECT
     p.insurer_name,
     p.plan_code,
     COUNT(DISTINCT pl.limit_id) AS LimitCount,
-    COUNT(DISTINCT pc.copay_id) AS CopayCount
+    COUNT(DISTINCT pc.copay_id) AS CopayCount,
+    COUNT(DISTINCT pt.threshold_id) AS ThresholdCount
 FROM ccms_products p
 LEFT JOIN ccms_product_limits pl ON p.product_id = pl.product_id AND pl.is_active = 1
 LEFT JOIN ccms_product_copay pc ON p.product_id = pc.product_id AND pc.is_active = 1
+LEFT JOIN ccms_los_alert_thresholds pt ON p.product_id = pt.product_id AND pt.is_active = 1
 WHERE p.is_active = 1
 GROUP BY p.product_id, p.insurer_name, p.plan_code
 ORDER BY p.product_id;

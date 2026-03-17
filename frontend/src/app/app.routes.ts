@@ -96,6 +96,27 @@ export const routes: Routes = [
         title: 'Policy Holders - CCMS'
       },
       {
+        path: 'admissions',
+        loadChildren: () => import('./features/admissions/admissions.routes').then(m => m.ADMISSIONS_ROUTES),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['ADMISSIONS', 'VIEW'] },
+        title: 'Admissions - CCMS'
+      },
+      {
+        path: 'claims',
+        loadChildren: () => import('./features/claims/claims.module').then(m => m.ClaimsModule),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['CLAIMS', 'VIEW'] },
+        title: 'Claims - CCMS'
+      },
+      {
+        path: 'monitoring',
+        loadComponent: () => import('./features/monitoring/monitoring-dashboard/monitoring-dashboard.component').then(m => m.MonitoringDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['ADMISSIONS', 'VIEW'] },
+        title: 'Monitoring Dashboard - CCMS'
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
         title: 'Profile - CCMS'

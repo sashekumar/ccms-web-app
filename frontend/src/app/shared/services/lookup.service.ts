@@ -186,4 +186,25 @@ export class LookupService {
   getCopayAppliesTo(): Observable<LookupItem[]> {
     return this.getLookupByCategory('COPAY_APPLIES_TO');
   }
+
+  // Admission-related lookups
+  getRoomTypes(): Observable<LookupItem[]> {
+    return this.getLookupByCategory('ROOM_TYPE');
+  }
+
+  getDiagnosisCategories(): Observable<LookupItem[]> {
+    return this.getLookupByCategory('DIAGNOSIS_CATEGORY');
+  }
+
+  getAlertLevels(): Observable<LookupItem[]> {
+    return this.getLookupByCategory('ALERT_LEVEL');
+  }
+
+  getEhmStatuses(): Observable<LookupItem[]> {
+    return this.getLookupByCategory('EHM_STATUS');
+  }
+
+  getDefermentStatuses(): Observable<LookupItem[]> {
+    return this.getLookupByCategory('DEFERMENT_STATUS');
+  }
 }

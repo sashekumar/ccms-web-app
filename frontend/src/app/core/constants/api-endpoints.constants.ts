@@ -206,6 +206,15 @@ export const PRODUCTS_ENDPOINTS = {
     create: (productId: string) => `products/${productId}/copay`,
     update: (productId: string, copayId: string) => `products/${productId}/copay/${copayId}`,
     delete: (productId: string, copayId: string) => `products/${productId}/copay/${copayId}`
+  },
+  
+  // LOS Threshold Management
+  THRESHOLDS: {
+    list: (productId: string) => `products/${productId}/thresholds/list`,
+    get: (productId: string) => `products/${productId}/thresholds/get`,
+    create: (productId: string) => `products/${productId}/thresholds`,
+    update: (productId: string, thresholdId: string) => `products/${productId}/thresholds/${thresholdId}`,
+    delete: (productId: string, thresholdId: string) => `products/${productId}/thresholds/${thresholdId}`
   }
 } as const;
 
@@ -335,6 +344,39 @@ export const MEMBERS_ENDPOINTS = {
   }
 } as const;
 
+// ============================================================================
+// ADMISSIONS ENDPOINTS
+// ============================================================================
+
+export const ADMISSIONS_ENDPOINTS = {
+  // Main Admission Endpoints
+  LIST: `admissions/list`,
+  GET: `admissions/get`,
+  GET_WITH_REMARKS: `admissions/get-with-remarks`,
+  CREATE: `admissions/create`,
+  UPDATE: `admissions/update`,
+  DELETE: `admissions/delete`,
+  
+  // Workflow Endpoints
+  APPROVE: `admissions/approve`,
+  REJECT: `admissions/reject`,
+  SEND_MQ: `admissions/send-mq`,
+  RESPOND_MQ: `admissions/respond-mq`,
+  DEFER: `admissions/defer`,
+  RESOLVE_DEFERMENT: `admissions/resolve-deferment`
+} as const;
+
+// ============================================================================
+// MONITORING ENDPOINTS (LOS Alerts & 8-Hour Monitoring)
+// ============================================================================
+
+export const MONITORING_ENDPOINTS = {
+  LOS_ALERTS: `monitoring/los-alerts`,
+  ACKNOWLEDGE_ALERT: `monitoring/acknowledge-alert`,
+  EIGHT_HM_CHECKS: `monitoring/8hm-checks`,
+  RECORD_CHECK: `monitoring/record-check`
+} as const;
+
 export const API_ENDPOINTS = {
   AUTH: AUTH_ENDPOINTS,
   USERS: USERS_ENDPOINTS,
@@ -344,7 +386,9 @@ export const API_ENDPOINTS = {
   LOOKUPS: LOOKUPS_ENDPOINTS,
   HOSPITALS: HOSPITALS_ENDPOINTS,
   PRODUCTS: PRODUCTS_ENDPOINTS,
-  MEMBERS: MEMBERS_ENDPOINTS
+  MEMBERS: MEMBERS_ENDPOINTS,
+  ADMISSIONS: ADMISSIONS_ENDPOINTS,
+  MONITORING: MONITORING_ENDPOINTS
 } as const;
 
 // ============================================================================
