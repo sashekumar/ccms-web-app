@@ -64,7 +64,11 @@ export const DB_TABLES = {
   CLAIMS: 'ccms_claims',
   ADMISSIONS: 'ccms_admissions',
   ADMISSION_ASSESSMENTS: 'ccms_admission_assessments',
-  REMARKS: 'ccms_remarks'
+  REMARKS: 'ccms_remarks',
+
+  // MQ Templates (Medical Questionnaire)
+  MQ_TEMPLATES: 'ccms_query_templates',
+  MQ_TEMPLATE_QUESTIONS: 'ccms_query_template_questions'
 } as const;
 
 // ============================================================================

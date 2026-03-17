@@ -614,4 +614,42 @@ export class AdmissionsController {
       ResponseUtil.error(res, 'Error resolving deferment', 500, errorMessage);
     }
   };
+
+  /**
+   * Get global medical query history
+   * POST /api/admissions/mq-history
+   * Permission: MQ_OPERATIONS.VIEW
+   * Body: filters
+   */
+  public getMQHistory = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const filters = req.body;
+      const result = await this.service.getMQHistory(filters);
+      ResponseUtil.success(res, result, 'MQ history retrieved successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching MQ history', 500, getErrorMessage(error));
+    }
+  };
+
+  /**
+   * Update MQ status
+   * POST /api/admissions/update-mq-status
+   * Permission: MQ_OPERATIONS.MANAGE
+   */
+  public updateMQStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as any).user?.userId?.toString() || 'system';
+      const { admission_id, status } = req.body;
+
+      if (!admission_id) {
+        ResponseUtil.error(res, 'admission_id is required', 400);
+        return;
+      }
+
+      await this.service.updateMQStatus(admission_id, status, userId);
+      ResponseUtil.success(res, null, 'MQ status updated successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error updating MQ status', 500, getErrorMessage(error));
+    }
+  };
 }

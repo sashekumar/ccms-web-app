@@ -109,4 +109,18 @@ router.post('/defer', requirePermission('ADMISSIONS', 'APPROVE'), controller.def
  */
 router.post('/resolve-deferment', requirePermission('ADMISSIONS', 'APPROVE'), controller.resolveDeferment);
 
+/**
+ * Get global medical query history
+ * POST /api/admissions/mq-history
+ * Permission: MQ_OPERATIONS.VIEW
+ */
+router.post('/mq-history', requirePermission('MQ_OPERATIONS', 'VIEW'), controller.getMQHistory);
+
+/**
+ * Update MQ status
+ * POST /api/admissions/update-mq-status
+ * Permission: MQ_OPERATIONS.MANAGE
+ */
+router.post('/update-mq-status', requirePermission('MQ_OPERATIONS', 'MANAGE'), controller.updateMQStatus);
+
 export default router;

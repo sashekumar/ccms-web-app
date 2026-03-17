@@ -453,4 +453,15 @@ export class AdmissionsService extends BaseService<Admission> {
       resolvedBy
     );
   }
+
+  /**
+   * Get global medical query history
+   */
+  public async getMQHistory(filters: any = {}): Promise<any[]> {
+    return await this.repository.getGlobalMQHistory(filters);
+  }
+
+  public async updateMQStatus(admissionId: number, status: string, updatedBy: string): Promise<void> {
+    return await this.repository.updateMQStatus(admissionId, status, updatedBy);
+  }
 }

@@ -252,4 +252,36 @@ export class AdmissionService {
       })
     );
   }
+
+  /**
+   * Get global medical query history (across all admissions)
+   */
+  getGlobalMQHistory(filters: any = {}): Observable<any[]> {
+    return this.api.post<ApiResponse<any[]>>(
+      API_ENDPOINTS.ADMISSIONS.GET_MQ_HISTORY,
+      filters
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error fetching global MQ history:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Update MQ status manually
+   */
+  updateMQStatus(admission_id: number, status: string): Observable<void> {
+    return this.api.post<ApiResponse<void>>(
+      API_ENDPOINTS.ADMISSIONS.UPDATE_MQ_STATUS,
+      { admission_id, status }
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error updating MQ status:', error);
+        throw error;
+      })
+    );
+  }
 }

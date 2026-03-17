@@ -363,7 +363,9 @@ export const ADMISSIONS_ENDPOINTS = {
   SEND_MQ: `admissions/send-mq`,
   RESPOND_MQ: `admissions/respond-mq`,
   DEFER: `admissions/defer`,
-  RESOLVE_DEFERMENT: `admissions/resolve-deferment`
+  RESOLVE_DEFERMENT: `admissions/resolve-deferment`,
+  GET_MQ_HISTORY: `admissions/mq-history`,
+  UPDATE_MQ_STATUS: `admissions/update-mq-status`
 } as const;
 
 // ============================================================================
@@ -377,6 +379,22 @@ export const MONITORING_ENDPOINTS = {
   RECORD_CHECK: `monitoring/record-check`
 } as const;
 
+export const MQ_TEMPLATES_ENDPOINTS = {
+  LIST: `master/mq-templates/list`,
+  GET: `master/mq-templates/get`,
+  GET_WITH_QUESTIONS: `master/mq-templates/get-with-questions`,
+  BUILDER: `master/mq-templates/builder`,
+  CREATE: `master/mq-templates/create`,
+  UPDATE: `master/mq-templates/update`,
+  DELETE: `master/mq-templates/delete`,
+  QUESTIONS: {
+    LIST: `master/mq-templates/questions/list`,
+    CREATE: `master/mq-templates/questions/create`,
+    UPDATE: `master/mq-templates/questions/update`,
+    DELETE: `master/mq-templates/questions/delete`
+  }
+} as const;
+
 export const API_ENDPOINTS = {
   AUTH: AUTH_ENDPOINTS,
   USERS: USERS_ENDPOINTS,
@@ -384,6 +402,7 @@ export const API_ENDPOINTS = {
   BANKS: BANKS_ENDPOINTS,
   CLAUSES: CLAUSES_ENDPOINTS,
   LOOKUPS: LOOKUPS_ENDPOINTS,
+  MQ_TEMPLATES: MQ_TEMPLATES_ENDPOINTS,
   HOSPITALS: HOSPITALS_ENDPOINTS,
   PRODUCTS: PRODUCTS_ENDPOINTS,
   MEMBERS: MEMBERS_ENDPOINTS,

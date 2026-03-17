@@ -13,6 +13,7 @@ import { LookupItem } from '../../../shared/services/lookup.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-modal/mq-builder-modal.component';
 
 @Component({
   selector: 'app-admission-detail',
@@ -20,7 +21,8 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
   imports: [
     CommonModule,
     LoadingSpinnerComponent,
-    HasPermissionDirective
+    HasPermissionDirective,
+    MqBuilderModalComponent
   ],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
@@ -82,7 +84,7 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
             </ng-container>
 
             <!-- Send MQ Button -->
-            <ng-container *hasPermission="PERMISSIONS.APPROVE">
+            <ng-container *hasPermission="PERMISSIONS_MQ.MANAGE">
               <button
                 *ngIf="admission && !admission.is_deleted && canSendMQ(admission.admission_status)"
                 (click)="sendMedicalQuery()"
@@ -93,17 +95,17 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
               Send MQ
               </button>
             </ng-container>
-
-            <!-- Respond to MQ Button -->
-            <ng-container *hasPermission="PERMISSIONS.UPDATE">
+ 
+            <!-- Send MQ Button -->
+            <ng-container *hasPermission="PERMISSIONS_MQ.MANAGE">
               <button
-                *ngIf="admission && !admission.is_deleted && canRespondToMQ(admission.admission_status)"
-                (click)="respondToMQ()"
-              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                *ngIf="admission && !admission.is_deleted && canSendMQ(admission.admission_status)"
+                (click)="sendMedicalQuery()"
+              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Respond to MQ
+              Send MQ
               </button>
             </ng-container>
 
@@ -392,9 +394,76 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
                       <h4 class="text-sm font-medium text-gray-900">{{ formatAction(remark.action_for) }}</h4>
                       <span class="text-xs text-gray-500">{{ remark.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
                     </div>
-                    <p class="mt-1 text-sm text-gray-700">{{ remark.remark_text }}</p>
+                    <p class="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{{ remark.remark_text }}</p>
                     <p class="mt-1 text-xs text-gray-500">by {{ remark.created_by_username || remark.created_by || 'System' }}</p>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Medical Queries Tab (Management) -->
+          <div *ngIf="activeTab === 'queries'">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="text-lg font-bold text-gray-900">Generated Medical Questionnaires</h3>
+                <p class="text-xs text-gray-500 mt-1">Manage and track manual status of sent MQs</p>
+              </div>
+              <button 
+                (click)="sendMedicalQuery()"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-all"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                New Query
+              </button>
+            </div>
+
+            <div *ngIf="getFilteredMQRemarks().length === 0" class="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+              <div class="p-6 bg-white rounded-full inline-block mb-4 shadow-sm">
+                <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              </div>
+              <h3 class="text-lg font-bold text-gray-900">No MQs generated yet</h3>
+              <p class="text-sm text-gray-500 mt-1">Start by adding a new medical questionnaire</p>
+            </div>
+
+            <div *ngIf="getFilteredMQRemarks().length > 0" class="space-y-6">
+              <div *ngFor="let mq of getFilteredMQRemarks(); let i = index" class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
+                  <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-blue-600/10 text-blue-600 rounded-xl flex items-center justify-center font-bold">
+                      MQ {{ i + 1 }}
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-gray-900">Medical Questionnaire</h4>
+                      <p class="text-xs text-gray-500">{{ mq.created_at | date:'dd MMM yyyy, HH:mm' }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center space-x-3">
+                    <!-- Manual Status Management -->
+                    <select 
+                      (change)="updateMQStatus(mq, $any($event.target).value)" 
+                      class="text-xs font-bold px-3 py-1.5 rounded-lg border-gray-200 focus:ring-blue-500 bg-white"
+                      [ngClass]="{
+                        'text-yellow-600 bg-yellow-50': !mq.action_for?.includes('RESPONSE'),
+                        'text-green-600 bg-green-50': mq.action_for?.includes('RESPONSE')
+                      }"
+                    >
+                      <option value="SENT" [selected]="mq.action_for === 'MQ_SENT'">SENT</option>
+                      <option value="FOLLOW_UP">FOLLOW UP</option>
+                      <option value="RECEIVED">RECEIVED</option>
+                      <option value="CLOSED">CLOSED</option>
+                    </select>
+
+                    <button class="p-2 text-gray-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-gray-100">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="p-5">
+                  <p class="text-sm text-gray-600 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap font-medium">
+                    {{ mq.remark_text }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -418,10 +487,22 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
         </div>
       </div>
     </div>
+
+    <!-- MQ Builder Modal -->
+    <app-mq-builder-modal
+      [show]="showMqBuilder"
+      [recipientType]="mqRecipientType"
+      [refNo]="admission?.claim_ref_no || ''"
+      [admissionId]="admission?.admission_id"
+      (close)="showMqBuilder = false"
+      (generate)="onMqGenerate($event)"
+      (email)="onMqEmail($event)"
+    ></app-mq-builder-modal>
   `
 })
 export class AdmissionDetailComponent implements OnInit, OnDestroy {
   readonly PERMISSIONS = PERMISSIONS.ADMISSIONS;
+  readonly PERMISSIONS_MQ = PERMISSIONS.MQ_OPERATIONS;
 
   admission: Admission | null = null;
   remarks: AdmissionRemark[] = [];
@@ -432,11 +513,16 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   
   loading = false;
   loadingRemarks = false;
-  activeTab: 'info' | 'history' = 'info';
+  activeTab: 'info' | 'history' | 'queries' = 'info';
 
-  tabs: Array<{ id: 'info' | 'history', label: string }> = [
+  // MQ Builder
+  showMqBuilder = false;
+  mqRecipientType: 'HOSP' | 'PH' = 'HOSP';
+
+  tabs: Array<{ id: 'info' | 'history' | 'queries', label: string }> = [
     { id: 'info', label: 'Admission Information' },
-    { id: 'history', label: 'Workflow History' }
+    { id: 'history', label: 'Workflow History' },
+    { id: 'queries', label: 'Medical Queries' }
   ];
 
   private destroy$ = new Subject<void>();
@@ -527,11 +613,11 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   /**
    * Switch tabs and load data as needed
    */
-  switchTab(tabId: 'info' | 'history'): void {
+  switchTab(tabId: 'info' | 'history' | 'queries'): void {
     this.activeTab = tabId;
     
-    // Load remarks when switching to history tab
-    if (tabId === 'history' && this.remarks.length === 0 && !this.loadingRemarks) {
+    // Load remarks when switching tabs as needed
+    if ((tabId === 'history' || tabId === 'queries') && this.remarks.length === 0 && !this.loadingRemarks) {
       this.loadRemarks();
     }
   }
@@ -661,61 +747,69 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
    * Send Medical Query to hospital
    */
   sendMedicalQuery(): void {
+    if (!this.admission) return;
+    this.mqRecipientType = 'HOSP';
+    this.showMqBuilder = true;
+  }
+
+  /**
+   * Handle MQ Generation
+   */
+  onMqGenerate(questions: any[]): void {
     if (!this.admissionId) return;
-
-    const queryText = prompt('Enter medical query for hospital:');
-    if (!queryText || queryText.trim() === '') {
-      this.toast.error('Query text is required');
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to send this medical query?`)) {
-      return;
-    }
-
+    this.showMqBuilder = false;
+    
+    // Concatenate questions for history record
+    const queryText = '[GENERATED MQ]\n' + questions.map((q, i) => `${i + 1}. ${q.text}`).join('\n');
+    
     this.loading = true;
+    // We reuse sendMedicalQuery but prefix it to show it was locally generated/downloaded
     this.admissionService.sendMedicalQuery(this.admissionId, { queryText })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.toast.success('Medical query sent successfully');
-          this.loadAdmission(); // Reload to show updated status
+          this.toast.success('Medical questionnaire generated and saved to history');
+          this.loadAdmission();
+          this.loadRemarks(); // Refresh history tab if needed
         },
         error: (error) => {
           this.loading = false;
-          this.logger.error('Error sending medical query:', error);
-          this.toast.error(error.error?.message || 'Failed to send medical query');
+          this.logger.error('Error generating MQ:', error);
+          this.toast.error(error.error?.message || 'Failed to generate MQ');
         }
       });
   }
 
   /**
-   * Respond to Medical Query (Hospital)
+   * Handle MQ Email
    */
-  respondToMQ(): void {
+  onMqEmail(questions: any[]): void {
     if (!this.admissionId) return;
-
-    const responseText = prompt('Enter response to medical query:');
-    if (!responseText || responseText.trim() === '') {
-      this.toast.error('Response text is required');
-      return;
-    }
-
+    this.showMqBuilder = false;
+    
+    // Concatenate questions for the existing sendMedicalQuery API
+    const queryText = questions.map((q, i) => `${i + 1}. ${q.text}`).join('\n');
+    
     this.loading = true;
-    this.admissionService.respondToMQ(this.admissionId, { responseText })
+    this.admissionService.sendMedicalQuery(this.admissionId, { queryText })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.toast.success('Medical query response recorded successfully');
-          this.loadAdmission(); // Reload to show updated status
+          this.toast.success('Medical questionnaire sent successfully');
+          this.loadAdmission();
         },
         error: (error) => {
           this.loading = false;
-          this.logger.error('Error responding to medical query:', error);
-          this.toast.error(error.error?.message || 'Failed to respond to medical query');
+          this.logger.error('Error sending MQ:', error);
+          this.toast.error(error.error?.message || 'Failed to send MQ');
         }
       });
   }
+
+  /**
+   * Respond to Medical Query (REMOVED - Manual process)
+   */
+  // respondToMQ(): void { ... }
 
   /**
    * Defer admission for later review
@@ -845,6 +939,37 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   /**
    * Format status for display
    */
+  /**
+   * Filter remarks to find only MQ related entries
+   */
+  getFilteredMQRemarks(): AdmissionRemark[] {
+    return this.remarks.filter(r => 
+      r.action_for === 'MQ_SENT' || 
+      r.action_for === 'MQ_GENERATED' || 
+      (r.remark_text && r.remark_text.includes('[GENERATED MQ]'))
+    );
+  }
+
+  /**
+   * Update the manual status of a generated MQ
+   */
+  updateMQStatus(mq: AdmissionRemark, status: string): void {
+    if (!this.admissionId) return;
+
+    this.admissionService.updateMQStatus(this.admissionId, status)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success(`MQ status updated to: ${status}`);
+          this.loadRemarks(); // Refresh list to show latest status
+        },
+        error: (err) => {
+          this.toast.error('Failed to update MQ status');
+          this.logger.error('Update MQ Status error', err);
+        }
+      });
+  }
+
   formatStatus(status: string | null | undefined): string {
     if (!status) return 'Unknown';
     return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());

@@ -81,6 +81,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/lookups/lookups.routes').then(m => m.lookupsRoutes)
       },
       {
+        path: 'master/mq-templates',
+        loadChildren: () => import('./features/mq-templates/mq-templates.routes').then(m => m.mqTemplatesRoutes),
+        title: 'MQ Templates - CCMS'
+      },
+      {
         path: 'hospitals',
         loadChildren: () => import('./features/hospitals/hospitals.routes').then(m => m.hospitalsRoutes)
       },
@@ -108,6 +113,13 @@ export const routes: Routes = [
         canActivate: [authGuard, permissionGuard],
         data: { permission: ['CLAIMS', 'VIEW'] },
         title: 'Claims - CCMS'
+      },
+      {
+        path: 'mq-operations',
+        loadComponent: () => import('./features/mq-operations/mq-operations.component').then(m => m.MqOperationsComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['MQ_OPERATIONS', 'VIEW'] },
+        title: 'MQ Operations - CCMS'
       },
       {
         path: 'monitoring',

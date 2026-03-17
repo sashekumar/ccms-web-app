@@ -839,7 +839,71 @@ UPDATE ${DB_TABLES.ADMISSIONS}
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();
-      throw error;
     }
+  }
+
+  public async getGlobalMQHistory(filters: any = {}): Promise<any[]> {
+    const pool = await connectionManager.getPool();
+    const request = pool.request();
+    
+    // We want the LATEST MQ-related remark for each admission to determine its current status
+    const query = `
+      WITH LatestMQ AS (
+        SELECT 
+          r.remark_id,
+          r.ref_id as admission_id,
+          r.action_for,
+          r.remark_text,
+          r.created_at,
+          r.created_by,
+          ROW_NUMBER() OVER(PARTITION BY r.ref_id ORDER BY r.created_at DESC) as rn
+        FROM ${DB_TABLES.REMARKS} r
+        WHERE r.ref_type = 'ADMISSION' 
+          AND (r.action_for IN ('MQ_SENT', 'MQ_GENERATED', 'MQ_CLOSED', 'MQ_RESPONSE') 
+               OR r.remark_text LIKE '%[GENERATED MQ]%')
+      )
+      SELECT 
+        lmq.remark_id,
+        lmq.admission_id,
+        lmq.action_for,
+        lmq.remark_text,
+        lmq.created_at,
+        lmq.created_by,
+        u.username as created_by_username,
+        c.claim_ref_no,
+        m.full_name as patient_name,
+        h.hospital_name
+      FROM LatestMQ lmq
+      INNER JOIN ${DB_TABLES.ADMISSIONS} a ON lmq.admission_id = a.admission_id
+      INNER JOIN ${DB_TABLES.CLAIMS} c ON a.claim_id = c.claim_id
+      INNER JOIN ${DB_TABLES.MEMBERS} m ON c.member_id = m.member_id
+      INNER JOIN ${DB_TABLES.HOSPITALS} h ON c.hospital_id = h.hospital_id
+      LEFT JOIN ${DB_TABLES.USERS} u ON lmq.created_by = CAST(u.user_id AS VARCHAR(50))
+      WHERE lmq.rn = 1
+      ORDER BY lmq.created_at DESC
+    `;
+
+    const result = await request.query(query);
+    return result.recordset;
+  }
+
+  public async updateMQStatus(admissionId: number, status: string, updatedBy: string): Promise<void> {
+    const pool = await connectionManager.getPool();
+    const actionFor = status === 'CLOSED' ? 'MQ_CLOSED' : 'MQ_SENT';
+    const remarkText = `MQ Status manually updated to: ${status} by ${updatedBy}`;
+
+    await pool.request()
+      .input('refType', sql.VarChar(50), 'ADMISSION')
+      .input('refId', sql.BigInt, admissionId)
+      .input('refDesc', sql.VarChar(100), `MQ Status Update`)
+      .input('actionFor', sql.VarChar(50), actionFor)
+      .input('remarkText', sql.NVarChar(sql.MAX), remarkText)
+      .input('createdBy', sql.VarChar(50), updatedBy)
+      .query(`
+        INSERT INTO ${DB_TABLES.REMARKS} (
+          ref_type, ref_id, ref_desc, action_for, remark_text, created_by
+        )
+        VALUES (@refType, @refId, @refDesc, @actionFor, @remarkText, @createdBy)
+      `);
   }
 }

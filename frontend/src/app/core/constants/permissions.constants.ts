@@ -219,6 +219,13 @@ export const CLAIMS_PERMISSIONS = {
   UPDATE: 'CLAIMS.UPDATE'
 } as const;
 
+export const MQ_OPERATIONS_PERMISSIONS = {
+  VIEW: 'MQ_OPERATIONS.VIEW',
+  MANAGE: 'MQ_OPERATIONS.CREATE',
+  GENERATE: 'MQ_OPERATIONS.GENERATE',
+  SEND_EMAIL: 'MQ_OPERATIONS.SEND_EMAIL'
+} as const;
+
 // ============================================================================
 // CONSOLIDATED PERMISSIONS
 // ============================================================================
@@ -246,7 +253,8 @@ export const PERMISSIONS = {
   POLICY_MANAGEMENT: POLICY_MANAGEMENT_PERMISSIONS,
   POLICY_HOLDERS: POLICY_HOLDERS_PERMISSIONS,
   ADMISSIONS: ADMISSIONS_PERMISSIONS,
-  CLAIMS: CLAIMS_PERMISSIONS
+  CLAIMS: CLAIMS_PERMISSIONS,
+  MQ_OPERATIONS: MQ_OPERATIONS_PERMISSIONS
 } as const;
 
 // ============================================================================
@@ -262,7 +270,8 @@ export const MODULE_CODES = {
   ACTION_MANAGEMENT: 'ACTION_MANAGEMENT',
   MODULE_ACTION_MANAGEMENT: 'MODULE_ACTION_MANAGEMENT',
   ROLE_PERMISSION_MANAGEMENT: 'ROLE_PERMISSION_MANAGEMENT',
-  USER_ROLE_ASSIGNMENT: 'USER_ROLE_ASSIGNMENT'
+  USER_ROLE_ASSIGNMENT: 'USER_ROLE_ASSIGNMENT',
+  MQ_OPERATIONS: 'MQ_OPERATIONS'
 } as const;
 
 // ============================================================================

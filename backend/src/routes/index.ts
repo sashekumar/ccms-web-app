@@ -6,6 +6,7 @@ import { ResponseUtil } from '../core/utils/response.util';
 import banksRoutes from '../features/banks/banks.routes';
 import clausesRoutes from '../features/clauses/clauses.routes';
 import lookupsRoutes from '../features/lookups/lookups.routes';
+import mqTemplatesRoutes from '../features/mq-templates/mq-templates.routes';
 import hospitalsRoutes from '../features/hospitals/hospitals.routes';
 import productsRoutes from '../features/products/products.routes';
 import membersRoutes from '../features/members/members.routes';
@@ -24,6 +25,7 @@ router.use('/users', usersRoutes);
 router.use('/master/banks', banksRoutes);
 router.use('/master/clauses', clausesRoutes);
 router.use('/master/lookups', lookupsRoutes);
+router.use('/master/mq-templates', mqTemplatesRoutes);
 
 // Hospital management routes
 router.use('/hospitals', hospitalsRoutes);
