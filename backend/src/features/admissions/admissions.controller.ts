@@ -149,28 +149,28 @@ export class AdmissionsController {
       const dto: CreateAdmissionDto = req.body;
 
       // Validation
-      if (!dto.memberId) {
-        ResponseUtil.error(res, 'memberId is required', 400);
+      if (!dto.member_id) {
+        ResponseUtil.error(res, 'member_id is required', 400);
         return;
       }
 
-      if (!dto.hospitalId) {
-        ResponseUtil.error(res, 'hospitalId is required', 400);
+      if (!dto.hospital_id) {
+        ResponseUtil.error(res, 'hospital_id is required', 400);
         return;
       }
 
-      if (!dto.admissionDate) {
-        ResponseUtil.error(res, 'admissionDate is required', 400);
+      if (!dto.admission_date) {
+        ResponseUtil.error(res, 'admission_date is required', 400);
         return;
       }
 
-      if (!dto.admissionType) {
-        ResponseUtil.error(res, 'admissionType is required', 400);
+      if (!dto.admission_type) {
+        ResponseUtil.error(res, 'admission_type is required', 400);
         return;
       }
 
-      if (!dto.roomType) {
-        ResponseUtil.error(res, 'roomType is required', 400);
+      if (!dto.room_type) {
+        ResponseUtil.error(res, 'room_type is required', 400);
         return;
       }
 
@@ -221,16 +221,16 @@ export class AdmissionsController {
       }
 
       const dto: UpdateAdmissionDto = {
-        admissionDate: req.body.admissionDate,
-        dischargeDate: req.body.dischargeDate,
-        admissionType: req.body.admissionType,
-        roomType: req.body.roomType,
-        roomRate: req.body.roomRate,
-        icuDays: req.body.icuDays,
-        icuRate: req.body.icuRate,
-        ehmStatus: req.body.ehmStatus,
-        defermentStatus: req.body.defermentStatus,
-        alertFlag: req.body.alertFlag
+        admission_date: req.body.admission_date,
+        discharge_date: req.body.discharge_date,
+        admission_type: req.body.admission_type,
+        room_type: req.body.room_type,
+        room_rate: req.body.room_rate,
+        icu_days: req.body.icu_days,
+        icu_rate: req.body.icu_rate,
+        ehm_status: req.body.ehm_status,
+        deferment_status: req.body.deferment_status,
+        alert_flag: req.body.alert_flag
       };
 
       await this.service.updateAdmission(admissionId, dto, userId);

@@ -194,6 +194,12 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
         SELECT 
           a.*,
           c.claim_ref_no,
+          c.member_id,
+          c.hospital_id,
+          c.policy_record_id,
+          c.total_billed as estimated_amount,
+          c.disability_code as diagnosis,
+          c.disability_category as diagnosis_category,
           m.full_name as member_name,
           h.hospital_name,
           ISNULL(cu.username, a.created_by) as created_by_username,
@@ -239,22 +245,23 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
       // Step 2: Create claim record
       const claimResult = await transaction.request()
         .input('claimRefNo', sql.VarChar(50), claimRefNo)
-        .input('memberId', sql.BigInt, dto.memberId)
-        .input('hospitalId', sql.BigInt, dto.hospitalId)
-        .input('policyRecordId', sql.BigInt, dto.policyRecordId || null)
+        .input('memberId', sql.BigInt, dto.member_id)
+        .input('hospitalId', sql.BigInt, dto.hospital_id)
+        .input('policyRecordId', sql.BigInt, dto.policy_record_id || null)
         .input('claimStatus', sql.VarChar(50), 'PENDING')
         .input('claimMode', sql.VarChar(20), 'CASHLESS')
-        .input('totalBilled', sql.Money, dto.estimatedAmount || 0)
+        .input('totalBilled', sql.Money, dto.estimated_amount || 0)
+        .input('disabilityCategory', sql.VarChar(100), dto.diagnosis_category || null)
         .input('createdBy', sql.VarChar(50), createdBy)
         .query(`
           INSERT INTO ${DB_TABLES.CLAIMS} (
             claim_ref_no, member_id, hospital_id, policy_record_id,
-            claim_status, claim_mode, total_billed, created_by
+            claim_status, claim_mode, total_billed, disability_category, created_by
           )
           OUTPUT INSERTED.claim_id
           VALUES (
             @claimRefNo, @memberId, @hospitalId, @policyRecordId,
-            @claimStatus, @claimMode, @totalBilled, @createdBy
+            @claimStatus, @claimMode, @totalBilled, @disabilityCategory, @createdBy
           )
         `);
 
@@ -263,17 +270,17 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
       // Step 3: Create admission record
       const admissionResult = await transaction.request()
         .input('claimId', sql.BigInt, claimId)
-        .input('admissionDate', sql.DateTime, dto.admissionDate)
-        .input('dischargeDate', sql.DateTime, dto.dischargeDate || null)
+        .input('admissionDate', sql.DateTime, dto.admission_date)
+        .input('dischargeDate', sql.DateTime, dto.discharge_date || null)
         .input('admissionStatus', sql.VarChar(50), 'PENDING_APPROVAL')
-        .input('admissionType', sql.VarChar(50), dto.admissionType)
-        .input('roomType', sql.VarChar(50), dto.roomType)
-        .input('roomRate', sql.Money, dto.roomRate || null)
-        .input('icuDays', sql.Int, dto.icuDays || null)
-        .input('icuRate', sql.Money, dto.icuRate || null)
-        .input('ehmStatus', sql.VarChar(50), dto.ehmStatus || 'NOT_APPLICABLE')
-        .input('defermentStatus', sql.VarChar(50), dto.defermentStatus || 'NOT_DEFERRED')
-        .input('alertFlag', sql.Bit, dto.alertFlag ? 1 : 0)
+        .input('admissionType', sql.VarChar(50), dto.admission_type)
+        .input('roomType', sql.VarChar(50), dto.room_type)
+        .input('roomRate', sql.Money, dto.room_rate || null)
+        .input('icuDays', sql.Int, dto.icu_days || null)
+        .input('icuRate', sql.Money, dto.icu_rate || null)
+        .input('ehmStatus', sql.VarChar(50), dto.ehm_status || 'NOT_APPLICABLE')
+        .input('defermentStatus', sql.VarChar(50), dto.deferment_status || 'NOT_DEFERRED')
+        .input('alertFlag', sql.Bit, dto.alert_flag ? 1 : 0)
         .input('createdBy', sql.VarChar(50), createdBy)
         .query(`
           INSERT INTO ${DB_TABLES.ADMISSIONS} (
@@ -292,7 +299,7 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
       const admissionId = admissionResult.recordset[0].admission_id;
 
       // Step 4: Create initial remark (creation record for workflow history)
-      const createRemarkText = `Admission created by ${createdBy}. Claim Reference: ${claimRefNo}. Status: Pending Approval. Admission Type: ${dto.admissionType}, Room Type: ${dto.roomType}${dto.estimatedAmount ? `, Estimated Amount: RM ${dto.estimatedAmount.toFixed(2)}` : ''}`;
+      const createRemarkText = `Admission created by ${createdBy}. Claim Reference: ${claimRefNo}. Status: Pending Approval. Admission Type: ${dto.admission_type}, Room Type: ${dto.room_type}${dto.estimated_amount ? `, Estimated Amount: RM ${dto.estimated_amount.toFixed(2)}` : ''}`;
       
       await transaction.request()
         .input('refType', sql.VarChar(50), 'ADMISSION')
@@ -332,54 +339,54 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
     const pool = await connectionManager.getPool();
     const request = pool.request();
 
-    if (dto.admissionDate !== undefined) {
+    if (dto.admission_date !== undefined) {
       updates.push('admission_date = @admissionDate');
-      request.input('admissionDate', sql.DateTime, dto.admissionDate);
+      request.input('admissionDate', sql.DateTime, dto.admission_date);
     }
 
-    if (dto.dischargeDate !== undefined) {
+    if (dto.discharge_date !== undefined) {
       updates.push('discharge_date = @dischargeDate');
-      request.input('dischargeDate', sql.DateTime, dto.dischargeDate);
+      request.input('dischargeDate', sql.DateTime, dto.discharge_date);
     }
 
-    if (dto.admissionType !== undefined) {
+    if (dto.admission_type !== undefined) {
       updates.push('admission_type = @admissionType');
-      request.input('admissionType', sql.VarChar(50), dto.admissionType);
+      request.input('admissionType', sql.VarChar(50), dto.admission_type);
     }
 
-    if (dto.roomType !== undefined) {
+    if (dto.room_type !== undefined) {
       updates.push('room_type = @roomType');
-      request.input('roomType', sql.VarChar(50), dto.roomType);
+      request.input('roomType', sql.VarChar(50), dto.room_type);
     }
 
-    if (dto.roomRate !== undefined) {
+    if (dto.room_rate !== undefined) {
       updates.push('room_rate = @roomRate');
-      request.input('roomRate', sql.Money, dto.roomRate);
+      request.input('roomRate', sql.Money, dto.room_rate);
     }
 
-    if (dto.icuDays !== undefined) {
+    if (dto.icu_days !== undefined) {
       updates.push('icu_days = @icuDays');
-      request.input('icuDays', sql.Int, dto.icuDays);
+      request.input('icuDays', sql.Int, dto.icu_days);
     }
 
-    if (dto.icuRate !== undefined) {
+    if (dto.icu_rate !== undefined) {
       updates.push('icu_rate = @icuRate');
-      request.input('icuRate', sql.Money, dto.icuRate);
+      request.input('icuRate', sql.Money, dto.icu_rate);
     }
 
-    if (dto.ehmStatus !== undefined) {
+    if (dto.ehm_status !== undefined) {
       updates.push('ehm_status = @ehmStatus');
-      request.input('ehmStatus', sql.VarChar(50), dto.ehmStatus);
+      request.input('ehmStatus', sql.VarChar(50), dto.ehm_status);
     }
 
-    if (dto.defermentStatus !== undefined) {
+    if (dto.deferment_status !== undefined) {
       updates.push('deferment_status = @defermentStatus');
-      request.input('defermentStatus', sql.VarChar(50), dto.defermentStatus);
+      request.input('defermentStatus', sql.VarChar(50), dto.deferment_status);
     }
 
-    if (dto.alertFlag !== undefined) {
+    if (dto.alert_flag !== undefined) {
       updates.push('alert_flag = @alertFlag');
-      request.input('alertFlag', sql.Bit, dto.alertFlag ? 1 : 0);
+      request.input('alertFlag', sql.Bit, dto.alert_flag ? 1 : 0);
     }
 
     if (updates.length === 0) {

@@ -98,36 +98,36 @@ export class AdmissionsService extends BaseService<Admission> {
     createdBy: string
   ): Promise<{ admissionId: number; claimId: number; claimRefNo: string }> {
     // Validation: Member ID required
-    if (!dto.memberId) {
+    if (!dto.member_id) {
       throw new Error('Member ID is required');
     }
 
     // Validation: Hospital ID required
-    if (!dto.hospitalId) {
+    if (!dto.hospital_id) {
       throw new Error('Hospital ID is required');
     }
 
     // Validation: Admission date required
-    if (!dto.admissionDate) {
+    if (!dto.admission_date) {
       throw new Error('Admission date is required');
     }
 
     // Validation: Admission type required
-    if (!dto.admissionType) {
+    if (!dto.admission_type) {
       throw new Error('Admission type is required');
     }
 
     // Validation: Room type required
-    if (!dto.roomType) {
+    if (!dto.room_type) {
       throw new Error('Room type is required');
     }
 
     // TODO: Optional - Validate member exists and policy is active
-    // const member = await memberRepository.getMemberById(dto.memberId);
+    // const member = await memberRepository.getMemberById(dto.member_id);
     // if (!member) throw new Error('Member not found');
 
     // TODO: Optional - Validate hospital exists and is active
-    // const hospital = await hospitalRepository.getHospitalById(dto.hospitalId);
+    // const hospital = await hospitalRepository.getHospitalById(dto.hospital_id);
     // if (!hospital) throw new Error('Hospital not found');
 
     return await this.repository.createAdmission(dto, createdBy);

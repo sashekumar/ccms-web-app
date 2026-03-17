@@ -257,6 +257,46 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-s
             </div>
           </div>
 
+          <!-- Medical Details Section -->
+          <div class="mb-8">
+            <h3 class="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">Medical Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Initial Diagnosis -->
+              <div>
+                <label for="diagnosis" class="block text-sm font-medium text-gray-700 mb-2">
+                  Initial Diagnosis
+                </label>
+                <input
+                  type="text"
+                  id="diagnosis"
+                  formControlName="diagnosis"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1e3c72] focus:border-[#1e3c72]"
+                  placeholder="e.g. Dengue Fever"
+                />
+              </div>
+
+              <!-- Diagnosis Category (for LOS Threshold) -->
+              <div>
+                <label for="diagnosisCategory" class="block text-sm font-medium text-gray-700 mb-2">
+                  Diagnosis Category (for LOS Threshold)
+                </label>
+                <select
+                  id="diagnosisCategory"
+                  formControlName="diagnosisCategory"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1e3c72] focus:border-[#1e3c72]"
+                >
+                  <option value="">-- No Category (Use Policy Default) --</option>
+                  <option *ngFor="let cat of diagnosisCategories" [value]="cat.lookup_value">
+                    {{ cat.lookup_code }}
+                  </option>
+                </select>
+                <p class="mt-1 text-xs text-gray-500">
+                  Select to apply specific Length of Stay threshold rules.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Status & Flags Section -->
           <div class="mb-8">
             <h3 class="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">Status & Alerts</h3>
@@ -348,6 +388,7 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
   roomTypes: LookupItem[] = [];
   ehmStatuses: LookupItem[] = [];
   defermentStatuses: LookupItem[] = [];
+  diagnosisCategories: LookupItem[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -395,7 +436,7 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
       policy_record_id: [''],
       admission_date: ['', Validators.required],
       discharge_date: [''],
-      los_days: [''],
+      los_days: [{ value: '', disabled: true }], // Auto-calculated by backend, show here for info only (or we will compute locally on form changes if needed)
       admission_type: ['', Validators.required],
       room_type: ['', Validators.required],
       room_rate: [''],
@@ -405,6 +446,7 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
       deferment_status: [''],
       estimated_amount: [''],
       diagnosis: [''],
+      diagnosisCategory: [''],
       alert_flag: [false]
     });
 
@@ -503,6 +545,13 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
         next: (statuses) => this.defermentStatuses = statuses,
         error: (error) => this.logger.error('Error loading deferment statuses:', error)
       });
+
+    this.lookupService.getDiagnosisCategories()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (categories) => this.diagnosisCategories = categories,
+        error: (error) => this.logger.error('Error loading diagnosis categories:', error)
+      });
   }
 
   /**
@@ -534,8 +583,12 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
     // Note: For edit mode, we need to fetch member_id and hospital_id from the linked claim
     // For now, we'll disable these fields in edit mode since they shouldn't change
     this.admissionForm.patchValue({
+      member_id: admission.member_id || '',
+      hospital_id: admission.hospital_id || '',
+      policy_record_id: admission.policy_record_id || '',
       admission_date: admission.admission_date ? this.formatDateForInput(admission.admission_date) : '',
       discharge_date: admission.discharge_date ? this.formatDateForInput(admission.discharge_date) : '',
+      los_days: admission.los_days,
       admission_type: admission.admission_type,
       room_type: admission.room_type,
       room_rate: admission.room_rate,
@@ -543,6 +596,9 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
       icu_rate: admission.icu_rate,
       ehm_status: admission.ehm_status,
       deferment_status: admission.deferment_status,
+      estimated_amount: admission.estimated_amount,
+      diagnosis: admission.diagnosis || '',
+      diagnosisCategory: admission.diagnosis_category || '',
       alert_flag: admission.alert_flag
     });
     
@@ -583,24 +639,25 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
     
     // Clean up form data (remove empty values)
     const data: any = {
-      memberId: formValue.member_id,
-      hospitalId: formValue.hospital_id,
-      admissionDate: formValue.admission_date,
-      admissionType: formValue.admission_type,
-      roomType: formValue.room_type
+      member_id: formValue.member_id,
+      hospital_id: formValue.hospital_id,
+      admission_date: formValue.admission_date,
+      admission_type: formValue.admission_type,
+      room_type: formValue.room_type
     };
 
     // Add optional fields only if they have values
-    if (formValue.policy_record_id) data.policyRecordId = parseInt(formValue.policy_record_id, 10);
-    if (formValue.discharge_date) data.dischargeDate = formValue.discharge_date;
-    if (formValue.room_rate) data.roomRate = parseFloat(formValue.room_rate);
-    if (formValue.icu_days) data.icuDays = parseInt(formValue.icu_days, 10);
-    if (formValue.icu_rate) data.icuRate = parseFloat(formValue.icu_rate);
-    if (formValue.ehm_status) data.ehmStatus = formValue.ehm_status;
-    if (formValue.deferment_status) data.defermentStatus = formValue.deferment_status;
-    if (formValue.estimated_amount) data.estimatedAmount = parseFloat(formValue.estimated_amount);
+    if (formValue.policy_record_id) data.policy_record_id = parseInt(formValue.policy_record_id, 10);
+    if (formValue.discharge_date) data.discharge_date = formValue.discharge_date;
+    if (formValue.room_rate) data.room_rate = parseFloat(formValue.room_rate);
+    if (formValue.icu_days) data.icu_days = parseInt(formValue.icu_days, 10);
+    if (formValue.icu_rate) data.icu_rate = parseFloat(formValue.icu_rate);
+    if (formValue.ehm_status) data.ehm_status = formValue.ehm_status;
+    if (formValue.deferment_status) data.deferment_status = formValue.deferment_status;
+    if (formValue.estimated_amount) data.estimated_amount = parseFloat(formValue.estimated_amount);
     if (formValue.diagnosis) data.diagnosis = formValue.diagnosis;
-    data.alertFlag = !!formValue.alert_flag;
+    if (formValue.diagnosisCategory) data.diagnosis_category = formValue.diagnosisCategory;
+    data.alert_flag = !!formValue.alert_flag;
 
     if (this.isEditMode) {
       this.updateAdmission(data);

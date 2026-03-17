@@ -27,21 +27,22 @@
  * - Dropdowns use LookupService.getLookupByCategory()
  */
 export interface CreateAdmissionDto {
-  memberId: number;               // Required: FK to ccms_members (patient)
-  hospitalId: number;             // Required: FK to ccms_hospitals
-  policyRecordId?: number;        // Optional: Specific policy if member has multiple
-  admissionDate: Date | string;   // Required: When patient admitted
-  dischargeDate?: Date | string;  // Optional: When patient discharged (can be null for ongoing)
-  admissionType: string;          // Required: From ADMISSION_TYPE lookup (EMERGENCY, ELECTIVE)
-  roomType: string;               // Required: From ROOM_TYPE lookup (STANDARD_WARD, ICU, etc.)
-  roomRate?: number;              // Optional: Daily room charge
-  icuDays?: number;               // Optional: Days in ICU (0 if not ICU case)
-  icuRate?: number;               // Optional: ICU daily rate
-  ehmStatus?: string;             // Optional: From EHM_STATUS lookup (default: NOT_APPLICABLE)
-  defermentStatus?: string;       // Optional: From DEFERMENT_STATUS lookup (default: NOT_DEFERRED)
-  estimatedAmount?: number;       // Optional: Hospital's estimated cost
-  diagnosis?: string;             // Optional: Initial diagnosis
-  alertFlag?: boolean;            // Optional: Enable LOS alert monitoring (default: false)
+  member_id: number;               // Required: FK to ccms_members (patient)
+  hospital_id: number;             // Required: FK to ccms_hospitals
+  policy_record_id?: number;       // Optional: Specific policy if member has multiple
+  admission_date: Date | string;   // Required: When patient admitted
+  discharge_date?: Date | string;  // Optional: When patient discharged (can be null for ongoing)
+  admission_type: string;          // Required: From ADMISSION_TYPE lookup (EMERGENCY, ELECTIVE)
+  room_type: string;               // Required: From ROOM_TYPE lookup (STANDARD_WARD, ICU, etc.)
+  room_rate?: number;              // Optional: Daily room charge
+  icu_days?: number;               // Optional: Days in ICU (0 if not ICU case)
+  icu_rate?: number;               // Optional: ICU daily rate
+  ehm_status?: string;             // Optional: From EHM_STATUS lookup (default: NOT_APPLICABLE)
+  deferment_status?: string;       // Optional: From DEFERMENT_STATUS lookup (default: NOT_DEFERRED)
+  estimated_amount?: number;       // Optional: Hospital's estimated cost
+  diagnosis?: string;              // Optional: Initial diagnosis
+  diagnosis_category?: string;     // Optional: Connects to LOS threshold logic (from DIAGNOSIS_CATEGORY)
+  alert_flag?: boolean;            // Optional: Enable LOS alert monitoring (default: false)
 }
 
 /**
@@ -55,16 +56,16 @@ export interface CreateAdmissionDto {
  * - Updating discharge_date auto-recalculates los_days
  */
 export interface UpdateAdmissionDto {
-  admissionDate?: Date | string;
-  dischargeDate?: Date | string;
-  admissionType?: string;
-  roomType?: string;
-  roomRate?: number;
-  icuDays?: number;
-  icuRate?: number;
-  ehmStatus?: string;
-  defermentStatus?: string;
-  alertFlag?: boolean;            // Optional: Toggle LOS alert monitoring
+  admission_date?: Date | string;
+  discharge_date?: Date | string;
+  admission_type?: string;
+  room_type?: string;
+  room_rate?: number;
+  icu_days?: number;
+  icu_rate?: number;
+  ehm_status?: string;
+  deferment_status?: string;
+  alert_flag?: boolean;            // Optional: Toggle LOS alert monitoring
 }
 
 /**

@@ -29,8 +29,14 @@ export interface Admission {
   
   // Joined data (from related tables - available in some queries)
   claim_ref_no?: string;
+  member_id?: number;
+  hospital_id?: number;
   member_name?: string;
   hospital_name?: string;
+  policy_record_id?: number;
+  estimated_amount?: number;
+  diagnosis?: string;
+  diagnosis_category?: string;
   created_by_username?: string;  // Joined from ccms_users table
   updated_by_username?: string;  // Joined from ccms_users table
 }
@@ -84,6 +90,7 @@ export interface CreateAdmissionDto {
   defermentStatus?: string;   // From DEFERMENT_STATUS lookup
   estimatedAmount?: number;   // Hospital's estimated cost
   diagnosis?: string;         // Initial diagnosis
+  diagnosisCategory?: string; // Links to LOS threshold logic (from DIAGNOSIS_CATEGORY lookup)
 }
 
 /**
