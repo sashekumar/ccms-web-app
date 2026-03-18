@@ -620,9 +620,13 @@ UPDATE ${DB_TABLES.ADMISSIONS}
           r.remark_text,
           r.created_by,
           r.created_at,
-          ISNULL(u.username, r.created_by) as created_by_username
+          ISNULL(u.username, r.created_by) as created_by_username,
+          d.file_path as attachment_url,
+          d.file_name as attachment_name,
+          d.file_size_bytes as attachment_size
         FROM ${DB_TABLES.REMARKS} r
         LEFT JOIN ${DB_TABLES.USERS} u ON r.created_by = CAST(u.user_id AS VARCHAR(50))
+        LEFT JOIN ${DB_TABLES.DOCUMENTS} d ON d.ref_type = 'REMARK' AND d.ref_id = r.remark_id
         WHERE r.ref_type = 'ADMISSION' AND r.ref_id = @admissionId
         ORDER BY r.created_at DESC
       `);
@@ -690,7 +694,8 @@ UPDATE ${DB_TABLES.ADMISSIONS}
   public async respondToMQ(
     admissionId: number,
     responseText: string,
-    respondedBy: string
+    respondedBy: string,
+    document?: { fileName: string; filePath: string; fileSize: number; fileExtension: string }
   ): Promise<void> {
     const pool = await connectionManager.getPool();
     const transaction = pool.transaction();
@@ -713,7 +718,7 @@ UPDATE ${DB_TABLES.ADMISSIONS}
       // Step 2: Create MQ_RESPONSE remark
       const remarkText = `Medical Query response received. Response: ${responseText}`;
       
-      await transaction.request()
+      const remarkResult = await transaction.request()
         .input('refType', sql.VarChar(50), 'ADMISSION')
         .input('refId', sql.BigInt, admissionId)
         .input('refDesc', sql.NVarChar(255), `MQ Response for Admission ${admissionId}`)
@@ -723,10 +728,33 @@ UPDATE ${DB_TABLES.ADMISSIONS}
         .query(`
           INSERT INTO ${DB_TABLES.REMARKS} (
             ref_type, ref_id, ref_desc, action_for, remark_text, created_by, created_at
-          ) VALUES (
+          ) OUTPUT INSERTED.remark_id VALUES (
             @refType, @refId, @refDesc, @actionFor, @remarkText, @createdBy, GETDATE()
           )
         `);
+
+      const remarkId = remarkResult.recordset[0].remark_id;
+
+      // Step 3: Insert document if provided
+      if (document) {
+        await transaction.request()
+          .input('refType', sql.VarChar(20), 'REMARK')
+          .input('refId', sql.BigInt, remarkId)
+          .input('fileName', sql.NVarChar(255), document.fileName)
+          .input('filePath', sql.NVarChar(sql.MAX), document.filePath)
+          .input('fileExt', sql.VarChar(10), document.fileExtension)
+          .input('fileSize', sql.BigInt, document.fileSize)
+          .input('uploadedBy', sql.VarChar(50), respondedBy)
+          .query(`
+            INSERT INTO ${DB_TABLES.DOCUMENTS} (
+              ref_type, ref_id, file_name, file_path, file_extension, file_size_bytes, 
+              uploaded_by, uploaded_at, created_by, created_at
+            ) VALUES (
+              @refType, @refId, @fileName, @filePath, @fileExt, @fileSize, 
+              @uploadedBy, GETDATE(), @uploadedBy, GETDATE()
+            )
+          `);
+      }
 
       await transaction.commit();
     } catch (error) {
@@ -842,55 +870,89 @@ UPDATE ${DB_TABLES.ADMISSIONS}
     }
   }
 
-  public async getGlobalMQHistory(filters: any = {}): Promise<any[]> {
+  public async getGlobalMQHistory(filters: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    status?: string 
+  } = {}): Promise<{ data: any[], total: number }> {
     const pool = await connectionManager.getPool();
     const request = pool.request();
     
+    // Default values
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+    const offset = (page - 1) * limit;
+    
+    request.input('offset', sql.Int, offset);
+    request.input('limit', sql.Int, limit);
+    
     // We want the LATEST MQ-related remark for each admission to determine its current status
-    const query = `
-      WITH LatestMQ AS (
+    const result = await request.query(`
+      WITH LatestMQStatus AS (
         SELECT 
-          r.remark_id,
           r.ref_id as admission_id,
           r.action_for,
-          r.remark_text,
-          r.created_at,
           r.created_by,
+          r.created_at,
           ROW_NUMBER() OVER(PARTITION BY r.ref_id ORDER BY r.created_at DESC) as rn
         FROM ${DB_TABLES.REMARKS} r
         WHERE r.ref_type = 'ADMISSION' 
-          AND (r.action_for IN ('MQ_SENT', 'MQ_GENERATED', 'MQ_CLOSED', 'MQ_RESPONSE') 
-               OR r.remark_text LIKE '%[GENERATED MQ]%')
+          AND (r.action_for IN ('MQ_SENT', 'MQ_GENERATED', 'MQ_CLOSED', 'MQ_RESPONSE', 'MQ_FOLLOW_UP'))
+      ),
+      LatestMQText AS (
+        SELECT 
+          r.ref_id as admission_id,
+          r.remark_text,
+          ROW_NUMBER() OVER(PARTITION BY r.ref_id ORDER BY r.created_at DESC) as rn
+        FROM ${DB_TABLES.REMARKS} r
+        WHERE r.ref_type = 'ADMISSION' 
+          AND (r.remark_text LIKE '%[GENERATED MQ]%' OR r.action_for IN ('MQ_SENT', 'MQ_GENERATED'))
+      ),
+      FilteredHistory AS (
+        SELECT 
+          lms.admission_id,
+          lms.action_for,
+          lms.created_at,
+          lms.created_by,
+          ISNULL(lmxt.remark_text, 'No questionnaire content') as remark_text,
+          u.username as created_by_username,
+          c.claim_ref_no,
+          m.full_name as patient_name,
+          h.hospital_name,
+          COUNT(*) OVER() as total_count
+        FROM LatestMQStatus lms
+        LEFT JOIN LatestMQText lmxt ON lms.admission_id = lmxt.admission_id AND lmxt.rn = 1
+        INNER JOIN ${DB_TABLES.ADMISSIONS} a ON lms.admission_id = a.admission_id
+        INNER JOIN ${DB_TABLES.CLAIMS} c ON a.claim_id = c.claim_id
+        INNER JOIN ${DB_TABLES.MEMBERS} m ON c.member_id = m.member_id
+        INNER JOIN ${DB_TABLES.HOSPITALS} h ON c.hospital_id = h.hospital_id
+        LEFT JOIN ${DB_TABLES.USERS} u ON lms.created_by = CAST(u.user_id AS VARCHAR(50))
+        WHERE lms.rn = 1 
+          ${filters.search ? 'AND (c.claim_ref_no LIKE @search OR m.full_name LIKE @search OR h.hospital_name LIKE @search)' : ''}
+          ${filters.status === 'PENDING' ? "AND lms.action_for IN ('MQ_SENT', 'MQ_GENERATED', 'MQ_FOLLOW_UP', 'MQ_RESPONSE')" : ''}
+          ${filters.status === 'CLOSED' ? "AND lms.action_for = 'MQ_CLOSED'" : ''}
       )
-      SELECT 
-        lmq.remark_id,
-        lmq.admission_id,
-        lmq.action_for,
-        lmq.remark_text,
-        lmq.created_at,
-        lmq.created_by,
-        u.username as created_by_username,
-        c.claim_ref_no,
-        m.full_name as patient_name,
-        h.hospital_name
-      FROM LatestMQ lmq
-      INNER JOIN ${DB_TABLES.ADMISSIONS} a ON lmq.admission_id = a.admission_id
-      INNER JOIN ${DB_TABLES.CLAIMS} c ON a.claim_id = c.claim_id
-      INNER JOIN ${DB_TABLES.MEMBERS} m ON c.member_id = m.member_id
-      INNER JOIN ${DB_TABLES.HOSPITALS} h ON c.hospital_id = h.hospital_id
-      LEFT JOIN ${DB_TABLES.USERS} u ON lmq.created_by = CAST(u.user_id AS VARCHAR(50))
-      WHERE lmq.rn = 1
-      ORDER BY lmq.created_at DESC
-    `;
-
-    const result = await request.query(query);
-    return result.recordset;
+      SELECT * FROM FilteredHistory
+      ORDER BY created_at DESC
+      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+    `);
+    
+    const data = result.recordset;
+    const total = data.length > 0 ? data[0].total_count : 0;
+    
+    return { data, total };
   }
 
   public async updateMQStatus(admissionId: number, status: string, updatedBy: string): Promise<void> {
     const pool = await connectionManager.getPool();
-    const actionFor = status === 'CLOSED' ? 'MQ_CLOSED' : 'MQ_SENT';
-    const remarkText = `MQ Status manually updated to: ${status} by ${updatedBy}`;
+    
+    let actionFor = 'MQ_SENT';
+    if (status === 'CLOSED') actionFor = 'MQ_CLOSED';
+    else if (status === 'FOLLOW_UP') actionFor = 'MQ_FOLLOW_UP';
+    else if (status === 'RECEIVED') actionFor = 'MQ_RESPONSE';
+
+    const remarkText = `MQ Status manually updated to: ${status.replace('_', ' ')} by ${updatedBy}`;
 
     await pool.request()
       .input('refType', sql.VarChar(50), 'ADMISSION')

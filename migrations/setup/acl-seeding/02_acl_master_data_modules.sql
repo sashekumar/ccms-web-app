@@ -1,8 +1,8 @@
 -- ============================================================================
 -- Add Master Data Management Modules to ACL System
--- Date: February 27, 2026
+-- Updated: March 2026 (Merged MQ Templates)
 -- ============================================================================
--- PREREQUISITES: ccms_new_schema_2026_v6.sql must be executed first
+-- PREREQUISITES: ccms_new_schema_2026_v7.sql must be executed first
 -- ============================================================================
 
 USE db_ccms;
@@ -18,31 +18,50 @@ PRINT '';
 -- Create Master Data Category
 -- ============================================================================
 
-PRINT 'Creating Master Data category...';
+PRINT 'Checking Master Data category...';
 
-SET IDENTITY_INSERT ccms_acl_categories ON;
-
-INSERT INTO ccms_acl_categories (category_id, category_name, category_code, description, icon, display_order) VALUES
-(2, 'Master Data', 'MASTER_DATA', 'Business master data and lookups', 'database', 50);
-
-SET IDENTITY_INSERT ccms_acl_categories OFF;
-
-PRINT '  ✓ Created Master Data category';
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_categories WHERE category_code = 'MASTER_DATA')
+BEGIN
+    SET IDENTITY_INSERT ccms_acl_categories ON;
+    INSERT INTO ccms_acl_categories (category_id, category_name, category_code, description, icon, display_order) VALUES
+    (2, 'Master Data', 'MASTER_DATA', 'Business master data and lookups', 'database', 50);
+    SET IDENTITY_INSERT ccms_acl_categories OFF;
+    PRINT '  ✓ Created Master Data category';
+END
+ELSE
+BEGIN
+    PRINT '  - Master Data category already exists';
+END
 
 -- ============================================================================
--- Add 3 Master Data Modules (Under Master Data Category)
+-- Add Master Data Modules (Under Master Data Category)
 -- ============================================================================
 
 PRINT 'Adding Master Data modules...';
 
 DECLARE @masterDataCategoryId INT = (SELECT category_id FROM ccms_acl_categories WHERE category_code = 'MASTER_DATA');
 
-INSERT INTO ccms_acl_modules (module_name, module_code, description, category_id, route, icon, display_order) VALUES
-('Bank Management', 'BANK_MGMT', 'Manage banks and financial institutions', @masterDataCategoryId, '/master/banks', 'university', 1),
-('Clause Management', 'CLAUSE_MGMT', 'Manage policy clauses and terms', @masterDataCategoryId, '/master/clauses', 'file-alt', 2),
-('Lookups Management', 'LOOKUP_MGMT', 'Manage lookup categories, values, and metadata', @masterDataCategoryId, '/master/lookups', 'list', 3);
+-- Bank Management
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_modules WHERE module_code = 'BANK_MGMT')
+    INSERT INTO ccms_acl_modules (module_name, module_code, description, category_id, route, icon, display_order) VALUES
+    ('Bank Management', 'BANK_MGMT', 'Manage banks and financial institutions', @masterDataCategoryId, '/master/banks', 'university', 1);
 
-PRINT '  ✓ Added 3 Master Data modules (under Master Data category)';
+-- Clause Management
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_modules WHERE module_code = 'CLAUSE_MGMT')
+    INSERT INTO ccms_acl_modules (module_name, module_code, description, category_id, route, icon, display_order) VALUES
+    ('Clause Management', 'CLAUSE_MGMT', 'Manage policy clauses and terms', @masterDataCategoryId, '/master/clauses', 'file-alt', 2);
+
+-- Lookups Management
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_modules WHERE module_code = 'LOOKUP_MGMT')
+    INSERT INTO ccms_acl_modules (module_name, module_code, description, category_id, route, icon, display_order) VALUES
+    ('Lookups Management', 'LOOKUP_MGMT', 'Manage lookup categories, values, and metadata', @masterDataCategoryId, '/master/lookups', 'list', 3);
+
+-- MQ Templates Management (Merged from 03)
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_modules WHERE module_code = 'MQ_TEMPLATES_MGMT')
+    INSERT INTO ccms_acl_modules (module_name, module_code, description, category_id, route, icon, display_order) VALUES
+    ('MQ Templates', 'MQ_TEMPLATES_MGMT', 'Manage Medical Questionnaire Templates and Questions', @masterDataCategoryId, '/master/mq-templates', 'file-medical-alt', 4);
+
+PRINT '  ✓ Added/Verified Master Data modules';
 
 -- ============================================================================
 -- Add MANAGE_METADATA Action (if not exists)
@@ -67,6 +86,7 @@ END
 DECLARE @bankMgmtModuleId INT = (SELECT module_id FROM ccms_acl_modules WHERE module_code = 'BANK_MGMT');
 DECLARE @clauseMgmtModuleId INT = (SELECT module_id FROM ccms_acl_modules WHERE module_code = 'CLAUSE_MGMT');
 DECLARE @lookupMgmtModuleId INT = (SELECT module_id FROM ccms_acl_modules WHERE module_code = 'LOOKUP_MGMT');
+DECLARE @mqMgmtModuleId INT = (SELECT module_id FROM ccms_acl_modules WHERE module_code = 'MQ_TEMPLATES_MGMT');
 
 DECLARE @viewActionId INT = (SELECT action_id FROM ccms_acl_actions WHERE action_code = 'VIEW');
 DECLARE @createActionId INT = (SELECT action_id FROM ccms_acl_actions WHERE action_code = 'CREATE');
@@ -81,28 +101,48 @@ DECLARE @manageMetadataActionId INT = (SELECT action_id FROM ccms_acl_actions WH
 PRINT 'Creating module-action mappings...';
 
 -- Bank Management actions
-INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES
-(@bankMgmtModuleId, @viewActionId, 'View Banks'),
-(@bankMgmtModuleId, @createActionId, 'Create Bank'),
-(@bankMgmtModuleId, @updateActionId, 'Update Bank'),
-(@bankMgmtModuleId, @deleteActionId, 'Delete Bank');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @bankMgmtModuleId AND action_id = @viewActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@bankMgmtModuleId, @viewActionId, 'View Banks');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @bankMgmtModuleId AND action_id = @createActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@bankMgmtModuleId, @createActionId, 'Create Bank');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @bankMgmtModuleId AND action_id = @updateActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@bankMgmtModuleId, @updateActionId, 'Update Bank');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @bankMgmtModuleId AND action_id = @deleteActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@bankMgmtModuleId, @deleteActionId, 'Delete Bank');
 
 -- Clause Management actions
-INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES
-(@clauseMgmtModuleId, @viewActionId, 'View Clauses'),
-(@clauseMgmtModuleId, @createActionId, 'Create Clause'),
-(@clauseMgmtModuleId, @updateActionId, 'Update Clause'),
-(@clauseMgmtModuleId, @deleteActionId, 'Delete Clause');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @clauseMgmtModuleId AND action_id = @viewActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@clauseMgmtModuleId, @viewActionId, 'View Clauses');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @clauseMgmtModuleId AND action_id = @createActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@clauseMgmtModuleId, @createActionId, 'Create Clause');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @clauseMgmtModuleId AND action_id = @updateActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@clauseMgmtModuleId, @updateActionId, 'Update Clause');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @clauseMgmtModuleId AND action_id = @deleteActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@clauseMgmtModuleId, @deleteActionId, 'Delete Clause');
 
--- Lookups Management actions (includes categories and metadata)
-INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES
-(@lookupMgmtModuleId, @viewActionId, 'View Lookups'),
-(@lookupMgmtModuleId, @createActionId, 'Create Lookup'),
-(@lookupMgmtModuleId, @updateActionId, 'Update Lookup'),
-(@lookupMgmtModuleId, @deleteActionId, 'Delete Lookup'),
-(@lookupMgmtModuleId, @manageMetadataActionId, 'Manage Metadata');
+-- Lookups Management actions
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @lookupMgmtModuleId AND action_id = @viewActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@lookupMgmtModuleId, @viewActionId, 'View Lookups');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @lookupMgmtModuleId AND action_id = @createActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@lookupMgmtModuleId, @createActionId, 'Create Lookup');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @lookupMgmtModuleId AND action_id = @updateActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@lookupMgmtModuleId, @updateActionId, 'Update Lookup');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @lookupMgmtModuleId AND action_id = @deleteActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@lookupMgmtModuleId, @deleteActionId, 'Delete Lookup');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @lookupMgmtModuleId AND action_id = @manageMetadataActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@lookupMgmtModuleId, @manageMetadataActionId, 'Manage Metadata');
 
-PRINT '  ✓ Created 13 module-action mappings (including MANAGE_METADATA)';
+-- MQ Templates actions (Merged from 03)
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @mqMgmtModuleId AND action_id = @viewActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@mqMgmtModuleId, @viewActionId, 'View Templates');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @mqMgmtModuleId AND action_id = @createActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@mqMgmtModuleId, @createActionId, 'Create Template');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @mqMgmtModuleId AND action_id = @updateActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@mqMgmtModuleId, @updateActionId, 'Update Template');
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @mqMgmtModuleId AND action_id = @deleteActionId)
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label) VALUES (@mqMgmtModuleId, @deleteActionId, 'Delete Template');
+
+PRINT '  ✓ Created/Verified module-action mappings';
 
 -- ============================================================================
 -- Grant All Permissions to Super Admin Role
@@ -111,15 +151,18 @@ PRINT '  ✓ Created 13 module-action mappings (including MANAGE_METADATA)';
 PRINT 'Granting permissions to Super Admin...';
 
 INSERT INTO ccms_acl_role_permissions (role_id, module_action_id, granted, created_by)
-SELECT 1, module_action_id, 1, 'SYSTEM'
-FROM ccms_acl_module_actions
-WHERE module_id IN (@bankMgmtModuleId, @clauseMgmtModuleId, @lookupMgmtModuleId);
+SELECT 1, ma.module_action_id, 1, 'SYSTEM'
+FROM ccms_acl_module_actions ma
+WHERE ma.module_id IN (@bankMgmtModuleId, @clauseMgmtModuleId, @lookupMgmtModuleId, @mqMgmtModuleId)
+AND ma.module_action_id NOT IN (
+    SELECT module_action_id FROM ccms_acl_role_permissions WHERE role_id = 1
+);
 
 DECLARE @permissionCount INT = (SELECT COUNT(*) FROM ccms_acl_role_permissions WHERE role_id = 1 AND module_action_id IN (
-    SELECT module_action_id FROM ccms_acl_module_actions WHERE module_id IN (@bankMgmtModuleId, @clauseMgmtModuleId, @lookupMgmtModuleId)
+    SELECT module_action_id FROM ccms_acl_module_actions WHERE module_id IN (@bankMgmtModuleId, @clauseMgmtModuleId, @lookupMgmtModuleId, @mqMgmtModuleId)
 ));
 
-PRINT '  ✓ Granted ' + CAST(@permissionCount AS VARCHAR) + ' permissions to Super Admin (13 total for master data)';
+PRINT '  ✓ Granted ' + CAST(@permissionCount AS VARCHAR) + ' permissions to Super Admin (17 total for master data)';
 
 -- ============================================================================
 -- Verification
@@ -139,7 +182,7 @@ SELECT
 FROM ccms_acl_modules m
 LEFT JOIN ccms_acl_categories c ON m.category_id = c.category_id
 LEFT JOIN ccms_acl_module_actions ma ON m.module_id = ma.module_id
-WHERE m.module_code IN ('BANK_MGMT', 'CLAUSE_MGMT', 'LOOKUP_MGMT')
+WHERE m.module_code IN ('BANK_MGMT', 'CLAUSE_MGMT', 'LOOKUP_MGMT', 'MQ_TEMPLATES_MGMT')
 GROUP BY m.module_name, m.module_code, m.icon, m.route, m.category_id, c.category_name, m.display_order
 ORDER BY m.display_order;
 

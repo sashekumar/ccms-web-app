@@ -361,7 +361,8 @@ export class AdmissionsService extends BaseService<Admission> {
       throw new Error('Admission not found');
     }
 
-    if (admission.admission_status !== 'PENDING_APPROVAL') {
+    const finalizedStatuses = ['APPROVED', 'REJECTED', 'DELETED'];
+    if (finalizedStatuses.includes(admission.admission_status || '') || admission.is_deleted) {
       throw new Error(`Cannot send MQ for admission with status: ${admission.admission_status}`);
     }
 
@@ -395,7 +396,8 @@ export class AdmissionsService extends BaseService<Admission> {
     await this.repository.respondToMQ(
       admissionId,
       dto.responseText,
-      respondedBy
+      respondedBy,
+      dto.document
     );
   }
 
@@ -455,9 +457,14 @@ export class AdmissionsService extends BaseService<Admission> {
   }
 
   /**
-   * Get global medical query history
+   * Get global medical query history with pagination and filtering
    */
-  public async getMQHistory(filters: any = {}): Promise<any[]> {
+  public async getMQHistory(filters: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  } = {}): Promise<{ data: any[], total: number }> {
     return await this.repository.getGlobalMQHistory(filters);
   }
 

@@ -8,12 +8,15 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 
-import { Admission, AdmissionWithRemarks, AdmissionRemark } from '../../../shared/models/admission.model';
+import { Admission, AdmissionWithRemarks, AdmissionRemark, RespondToMQDto } from '../../../shared/models/admission.model';
 import { LookupItem } from '../../../shared/services/lookup.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
 import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-modal/mq-builder-modal.component';
+import { MqPrintService } from '../../../core/services/mq-print.service';
+import { UploadService } from '../../../core/services/upload.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-admission-detail',
@@ -22,7 +25,8 @@ import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-m
     CommonModule,
     LoadingSpinnerComponent,
     HasPermissionDirective,
-    MqBuilderModalComponent
+    MqBuilderModalComponent,
+    FormsModule
   ],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
@@ -83,19 +87,6 @@ import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-m
               </button>
             </ng-container>
 
-            <!-- Send MQ Button -->
-            <ng-container *hasPermission="PERMISSIONS_MQ.MANAGE">
-              <button
-                *ngIf="admission && !admission.is_deleted && canSendMQ(admission.admission_status)"
-                (click)="sendMedicalQuery()"
-              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Send MQ
-              </button>
-            </ng-container>
- 
             <!-- Send MQ Button -->
             <ng-container *hasPermission="PERMISSIONS_MQ.MANAGE">
               <button
@@ -395,6 +386,19 @@ import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-m
                       <span class="text-xs text-gray-500">{{ remark.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
                     </div>
                     <p class="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{{ remark.remark_text }}</p>
+                    
+                    <!-- Attachment Link in History -->
+                    <div *ngIf="getAttachmentUrl(remark)" class="mt-3 flex items-center">
+                      <a 
+                        [href]="getAttachmentUrl(remark)" 
+                        target="_blank"
+                        class="inline-flex items-center px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all border border-slate-200"
+                      >
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                        View Attachment
+                      </a>
+                    </div>
+                    
                     <p class="mt-1 text-xs text-gray-500">by {{ remark.created_by_username || remark.created_by || 'System' }}</p>
                   </div>
                 </div>
@@ -430,9 +434,6 @@ import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-m
               <div *ngFor="let mq of getFilteredMQRemarks(); let i = index" class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
                 <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
                   <div class="flex items-center space-x-4">
-                    <div class="w-10 h-10 bg-blue-600/10 text-blue-600 rounded-xl flex items-center justify-center font-bold">
-                      MQ {{ i + 1 }}
-                    </div>
                     <div>
                       <h4 class="text-sm font-bold text-gray-900">Medical Questionnaire</h4>
                       <p class="text-xs text-gray-500">{{ mq.created_at | date:'dd MMM yyyy, HH:mm' }}</p>
@@ -440,30 +441,99 @@ import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-m
                   </div>
                   
                   <div class="flex items-center space-x-3">
-                    <!-- Manual Status Management -->
-                    <select 
-                      (change)="updateMQStatus(mq, $any($event.target).value)" 
-                      class="text-xs font-bold px-3 py-1.5 rounded-lg border-gray-200 focus:ring-blue-500 bg-white"
-                      [ngClass]="{
-                        'text-yellow-600 bg-yellow-50': !mq.action_for?.includes('RESPONSE'),
-                        'text-green-600 bg-green-50': mq.action_for?.includes('RESPONSE')
-                      }"
-                    >
-                      <option value="SENT" [selected]="mq.action_for === 'MQ_SENT'">SENT</option>
-                      <option value="FOLLOW_UP">FOLLOW UP</option>
-                      <option value="RECEIVED">RECEIVED</option>
-                      <option value="CLOSED">CLOSED</option>
-                    </select>
+                    <!-- Status Indicator/Management -->
+                    <ng-container *ngIf="getLatestMQStatus(mq) !== 'CLOSED'; else closedBadge">
+                      <select 
+                        (change)="updateMQStatus(mq, $any($event.target).value)" 
+                        class="text-xs font-bold px-3 py-1.5 rounded-lg border-gray-200 focus:ring-blue-500 bg-white"
+                        [ngClass]="{
+                          'text-yellow-600 bg-yellow-50': (getLatestMQStatus(mq) === 'SENT' || getLatestMQStatus(mq) === 'FOLLOW_UP'),
+                          'text-blue-600 bg-blue-50': getLatestMQStatus(mq) === 'RECEIVED'
+                        }"
+                      >
+                        <option value="SENT" [selected]="getLatestMQStatus(mq) === 'SENT'">SENT</option>
+                        <option value="FOLLOW_UP" [selected]="getLatestMQStatus(mq) === 'FOLLOW_UP'">FOLLOW UP</option>
+                        <option value="RECEIVED" [selected]="getLatestMQStatus(mq) === 'RECEIVED'">RECEIVED</option>
+                        <option value="CLOSED">RESOLVE / CLOSE</option>
+                      </select>
+                    </ng-container>
 
-                    <button class="p-2 text-gray-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-gray-100">
+                    <ng-template #closedBadge>
+                      <div class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-black uppercase tracking-wider flex items-center border border-green-100">
+                        <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        Closed / Resolved
+                      </div>
+                    </ng-template>
+
+                    <button 
+                      (click)="viewMQ(mq)"
+                      class="p-2 text-gray-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-gray-100"
+                      title="View Details"
+                    >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+
+                    <button 
+                      (click)="downloadMQ(mq)"
+                      class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-gray-100"
+                      title="Download MQ PDF"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M7 10l5 5m0 0l5-5m-5 5V3" /></svg>
+                    </button>
+
+                    <button 
+                      *ngIf="canRespondToMQ(mq)"
+                      (click)="openResponseModal(mq)"
+                      class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all flex items-center shadow-sm"
+                    >
+                      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                      Respond
                     </button>
                   </div>
                 </div>
                 <div class="p-5">
-                  <p class="text-sm text-gray-600 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap font-medium">
+                  <!-- Query Text -->
+                  <p class="text-sm text-gray-600 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap font-medium mb-3">
                     {{ mq.remark_text }}
                   </p>
+                  
+                  <!-- Response Section -->
+                  <div *ngIf="getMQResponse(mq) as resp" class="mt-4 pt-4 border-t border-gray-100">
+                    <div class="flex items-center space-x-2 mb-2">
+                      <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                      <span class="text-[10px] font-black text-green-600 uppercase tracking-widest">Hospital Response Received</span>
+                      <span class="text-[10px] text-gray-400 ml-auto">{{ resp.created_at | date:'dd MMM yyyy, HH:mm' }}</span>
+                    </div>
+                    <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
+                      <p class="text-xs text-slate-800 font-bold whitespace-pre-wrap">
+                        {{ getCleanResponse(resp.remark_text) }}
+                      </p>
+                      
+                      <!-- Attachment from Response -->
+                      <div *ngIf="getAttachmentUrl(resp)" class="mt-3 flex">
+                        <a 
+                          [href]="getAttachmentUrl(resp)" 
+                          target="_blank"
+                          class="inline-flex items-center px-3 py-1.5 bg-white text-emerald-700 rounded-lg text-xs font-black shadow-sm border border-emerald-100 hover:bg-emerald-100 transition-all"
+                        >
+                          <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                          Open Attached Documents
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Legacy/Manual Attachment Link (if no full response object but tag exists) -->
+                  <div *ngIf="!getMQResponse(mq) && getAttachmentUrl(mq)" class="mt-3 flex items-center">
+                    <a 
+                      [href]="getAttachmentUrl(mq)" 
+                      target="_blank"
+                      class="inline-flex items-center px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all border border-slate-200"
+                    >
+                      <svg class="w-3.5 h-3.5 mr-1.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                      View Scans / Attachment
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -498,6 +568,139 @@ import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-m
       (generate)="onMqGenerate($event)"
       (email)="onMqEmail($event)"
     ></app-mq-builder-modal>
+
+    <!-- MQ Viewer Modal -->
+    <div *ngIf="showMQViewModal" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true" (click)="closeMQView()"></div>
+
+        <!-- Center modal -->
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in fade-in zoom-in duration-200">
+          <!-- Header -->
+          <div class="bg-white px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 class="text-xl font-black text-slate-900 tracking-tight">Medical Questionnaire Details</h3>
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Generated: {{ selectedMQ?.created_at | date:'dd MMM yyyy, HH:mm' }}</p>
+            </div>
+            <button (click)="closeMQView()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          
+          <!-- Body -->
+          <div class="p-8">
+            <div class="bg-blue-50/30 rounded-3xl p-8 border border-blue-100/50 mb-6">
+              <div class="flex items-center space-x-2 mb-4">
+                <span class="w-2 h-6 bg-blue-600 rounded-full"></span>
+                <h4 class="text-xs font-black text-blue-600 uppercase tracking-[0.2em]">Sent Questionnaire Content</h4>
+              </div>
+              <p class="text-[13px] text-slate-700 leading-relaxed whitespace-pre-wrap font-medium bg-white/50 p-6 rounded-2xl border border-white">
+                {{ selectedMQ?.remark_text }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="bg-slate-50/50 px-8 py-6 border-t border-slate-100 flex justify-end">
+            <button (click)="closeMQView()" class="px-8 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm hover:shadow-md active:scale-95">
+              Close Preview
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Response Modal -->
+    <div *ngIf="showResponseModal" class="fixed inset-0 z-[60] overflow-y-auto">
+      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="showResponseModal = false"></div>
+        <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in fade-in zoom-in duration-200">
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 flex items-center justify-between">
+            <h3 class="text-xl font-bold text-white">Submit MQ Response</h3>
+            <button (click)="showResponseModal = false" class="text-white/80 hover:text-white transition-all">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <div class="p-8">
+            <div class="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">Original Query Details</span>
+              <p class="text-sm text-slate-700 line-clamp-2 italic">{{ respondingMQ?.remark_text }}</p>
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-sm font-bold text-slate-800 mb-2">Summary of Medical Info <span class="text-red-500">*</span></label>
+              <textarea 
+                [(ngModel)]="responseSummary"
+                placeholder="Briefly describe the medical info received from the hospital..." 
+                class="w-full px-4 py-3 rounded-xl border-slate-200 focus:border-blue-500 focus:ring focus:ring-blue-200 min-h-[120px] text-sm transition-all"
+              ></textarea>
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-sm font-bold text-slate-800 mb-2">Attachment (Scanned Copy)</label>
+              <div 
+                (click)="fileInput.click()"
+                class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/20 transition-all group"
+              >
+                <input #fileInput type="file" class="hidden" (change)="onFileSelected($event)" accept=".pdf,.jpg,.jpeg,.png">
+                <div *ngIf="!selectedFile" class="flex flex-col items-center">
+                  <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                  </div>
+                  <p class="text-sm font-medium text-slate-600">Click to browse or drag and drop</p>
+                  <p class="text-xs text-slate-400 mt-1">PDF, JPG, PNG (Max 10MB)</p>
+                </div>
+                <div *ngIf="selectedFile" class="flex items-center justify-center space-x-3">
+                  <div class="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  </div>
+                  <div class="text-left">
+                    <p class="text-sm font-bold text-slate-800">{{ selectedFile.name }}</p>
+                    <p class="text-xs text-slate-500">{{ (selectedFile.size / 1024 / 1024) | number:'1.1-2' }} MB</p>
+                  </div>
+                  <button (click)="$event.stopPropagation(); selectedFile = null" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Progress Bar -->
+              <div *ngIf="isUploading" class="mt-4">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-bold text-blue-600">Uploading...</span>
+                  <span class="text-xs font-bold text-blue-600">{{ uploadProgress }}%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-blue-600 rounded-full transition-all duration-300" [style.width.%]="uploadProgress"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-3">
+            <button 
+              (click)="showResponseModal = false"
+              class="px-6 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              (click)="submitMQResponse()"
+              [disabled]="!responseSummary || isUploading"
+              class="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-200 hover:translate-y-[-2px] active:scale-95 disabled:opacity-50 disabled:translate-y-0 flex items-center"
+            >
+              <svg *ngIf="!isUploading" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+              <svg *ngIf="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              {{ isUploading ? 'Processing...' : 'Submit Response' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   `
 })
 export class AdmissionDetailComponent implements OnInit, OnDestroy {
@@ -519,6 +722,10 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   showMqBuilder = false;
   mqRecipientType: 'HOSP' | 'PH' = 'HOSP';
 
+  // MQ Viewer
+  selectedMQ: AdmissionRemark | null = null;
+  showMQViewModal = false;
+
   tabs: Array<{ id: 'info' | 'history' | 'queries', label: string }> = [
     { id: 'info', label: 'Admission Information' },
     { id: 'history', label: 'Workflow History' },
@@ -534,8 +741,18 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
     private admissionService: AdmissionService,
     private lookupService: LookupService,
     private logger: LoggerService,
-    private toast: ToastService
+    private toast: ToastService,
+    private printService: MqPrintService,
+    private uploadService: UploadService
   ) {}
+
+  // Response Modal State
+  showResponseModal = false;
+  responseSummary = '';
+  selectedFile: File | null = null;
+  isUploading = false;
+  uploadProgress = 0;
+  respondingMQ: AdmissionRemark | null = null;
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -769,6 +986,17 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toast.success('Medical questionnaire generated and saved to history');
+          
+          // Also trigger download of the generated PDF
+          this.printService.print({
+            refNo: this.admission?.claim_ref_no || 'MQ-DOC',
+            recipientType: this.mqRecipientType,
+            questions: questions.map(q => ({ text: q.text, lines: q.lines || 3 })),
+            date: new Date(),
+            patientName: this.admission?.member_name,
+            hospitalName: this.admission?.hospital_name
+          });
+          
           this.loadAdmission();
           this.loadRemarks(); // Refresh history tab if needed
         },
@@ -901,17 +1129,14 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
 
   /**
    * Check if medical query can be sent
+   * Allowed up until approval or rejection
    */
   canSendMQ(status: string | null | undefined): boolean {
-    return status === 'PENDING_APPROVAL';
+    if (!status) return true;
+    const finalStatuses = ['APPROVED', 'REJECTED', 'DISCHARGED', 'CANCELLED'];
+    return !finalStatuses.includes(status);
   }
 
-  /**
-   * Check if medical query can be responded to
-   */
-  canRespondToMQ(status: string | null | undefined): boolean {
-    return status === 'PENDING_MQ';
-  }
 
   /**
    * Check if admission can be deferred
@@ -936,18 +1161,202 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
     return lookup ? lookup.lookup_code : value;
   }
 
-  /**
-   * Format status for display
-   */
-  /**
-   * Filter remarks to find only MQ related entries
-   */
   getFilteredMQRemarks(): AdmissionRemark[] {
-    return this.remarks.filter(r => 
+    const mqs = this.remarks.filter(r => 
       r.action_for === 'MQ_SENT' || 
-      r.action_for === 'MQ_GENERATED' || 
       (r.remark_text && r.remark_text.includes('[GENERATED MQ]'))
     );
+    // Sort oldest first for numbering (MQ 1, 2, 3...)
+    return [...mqs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }
+
+  viewMQ(mq: AdmissionRemark): void {
+    this.selectedMQ = mq;
+    this.showMQViewModal = true;
+  }
+
+  closeMQView(): void {
+    this.selectedMQ = null;
+    this.showMQViewModal = false;
+  }
+
+  // MQ Response UI Logic
+  canRespondToMQ(mq: AdmissionRemark): boolean {
+    const status = this.getLatestMQStatus(mq);
+    // Only allow responding if the MQ is currently SENT or FOLLOW_UP
+    // If it's already RECEIVED or CLOSED, hospitals cannot respond again.
+    const isRespondableStatus = status === 'SENT' || status === 'FOLLOW_UP';
+    return isRespondableStatus && (mq.remark_text?.includes('[GENERATED MQ]') || false);
+  }
+
+  openResponseModal(mq: AdmissionRemark): void {
+    this.respondingMQ = mq;
+    this.responseSummary = '';
+    this.selectedFile = null;
+    this.showResponseModal = true;
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        this.toast.error('File size exceeds 10MB limit');
+        return;
+      }
+      this.selectedFile = file;
+    }
+  }
+
+  submitMQResponse(): void {
+    if (!this.admissionId || !this.responseSummary) return;
+
+    this.isUploading = true;
+    this.uploadProgress = 0;
+
+    if (this.selectedFile) {
+      // First upload file
+      this.uploadService.uploadWithProgress(this.selectedFile, 'mq-responses')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res: any) => {
+            if (res.status === 'progress') {
+              this.uploadProgress = res.message;
+            } else if (res.status === 'success') {
+              // res.body.data contains: { fileName, originalName, mimeType, size, url, relativePath }
+              this.finalizeMQSubmission(res.body.data);
+            }
+          },
+          error: (err) => {
+            this.isUploading = false;
+            this.toast.error('File upload failed');
+            this.logger.error('Upload error', err);
+          }
+        });
+    } else {
+      this.finalizeMQSubmission();
+    }
+  }
+
+  private finalizeMQSubmission(uploadResult?: any): void {
+    if (!this.admissionId) return;
+
+    const dto: RespondToMQDto = { 
+      responseText: this.responseSummary
+    };
+
+    if (uploadResult) {
+      dto.document = {
+        fileName: uploadResult.originalName || uploadResult.fileName,
+        filePath: uploadResult.url,
+        fileSize: uploadResult.size,
+        fileExtension: uploadResult.originalName ? uploadResult.originalName.split('.').pop() || '' : ''
+      };
+    }
+
+    this.admissionService.respondToMQ(this.admissionId, dto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isUploading = false;
+          this.showResponseModal = false;
+          this.toast.success('MQ response submitted successfully');
+          this.loadRemarks();
+          this.loadAdmission();
+        },
+        error: (err) => {
+          this.isUploading = false;
+          this.toast.error('Failed to submit response');
+          this.logger.error('Response error', err);
+        }
+      });
+  }
+
+  getAttachmentUrl(remark: AdmissionRemark): string | null {
+    if (!remark) return null;
+    
+    // Prioritize the dedicated database field from ccms_documents
+    if (remark.attachment_url) return remark.attachment_url;
+
+    // Fallback for legacy tags if still present
+    if (!remark.remark_text) return null;
+    const match = remark.remark_text.match(/\[ATTACHMENT: (.*?)\]/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Get the status for a SPECIFIC MQ chain
+   * Uses a "Time Window" to prevent statuses from leaking across MQs
+   */
+  getLatestMQStatus(mq: AdmissionRemark): string {
+    if (!mq) return 'SENT';
+
+    const startTime = new Date(mq.created_at).getTime();
+    
+    // Find when the NEXT MQ was sent (to define the end of this MQ's window)
+    const allMQs = this.getFilteredMQRemarks();
+    const currentIndex = allMQs.findIndex(m => m.remark_id === mq.remark_id);
+    const nextMQ = allMQs[currentIndex + 1];
+    const endTime = nextMQ ? new Date(nextMQ.created_at).getTime() : Infinity;
+
+    // Filter remarks that belong ONLY to this MQ's window
+    const windowRemarks = this.remarks.filter(r => {
+      const rTime = new Date(r.created_at).getTime();
+      return rTime >= startTime && rTime < endTime;
+    });
+
+    // Find the latest status action in THIS specific window
+    const latest = windowRemarks.find(r => 
+      r.action_for === 'MQ_SENT' || 
+      r.action_for === 'MQ_FOLLOW_UP' || 
+      r.action_for === 'MQ_RESPONSE' || 
+      r.action_for === 'MQ_CLOSED'
+    );
+
+    if (!latest) return 'SENT';
+    
+    if (latest.action_for === 'MQ_RESPONSE') return 'RECEIVED';
+    if (latest.action_for === 'MQ_FOLLOW_UP') return 'FOLLOW_UP';
+    if (latest.action_for === 'MQ_CLOSED') return 'CLOSED';
+    return 'SENT';
+  }
+
+  /**
+   * Find the response remark for a specific MQ window
+   */
+  getMQResponse(mq: AdmissionRemark): AdmissionRemark | null {
+    if (!mq) return null;
+
+    const startTime = new Date(mq.created_at).getTime();
+    const allMQs = this.getFilteredMQRemarks();
+    const currentIndex = allMQs.findIndex(m => m.remark_id === mq.remark_id);
+    const nextMQ = allMQs[currentIndex + 1];
+    const endTime = nextMQ ? new Date(nextMQ.created_at).getTime() : Infinity;
+
+    // Find all response remarks in this window
+    const windowResponses = this.remarks.filter(r => {
+      const rTime = new Date(r.created_at).getTime();
+      return rTime >= startTime && rTime < endTime && r.action_for === 'MQ_RESPONSE';
+    });
+
+    if (windowResponses.length === 0) return null;
+
+    // Prioritize: 
+    // 1. A remark that has an actual database attachment URL
+    // 2. A remark that doesn't look like an automated status update
+    // 3. Fallback to the latest response found
+    const realResponse = windowResponses.find(r => r.attachment_url) || 
+                         windowResponses.find(r => !r.remark_text?.includes('MQ Status manually updated')) ||
+                         windowResponses[0];
+
+    return realResponse || null;
+  }
+
+  /**
+   * Clean up technical prefix from response text
+   */
+  getCleanResponse(text: string | null | undefined): string {
+    if (!text) return '';
+    return text.replace(/^Medical Query response received\. Response:\s*/, '').replace(/\[ATTACHMENT: .*?\]/, '').trim();
   }
 
   /**
@@ -956,18 +1365,52 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   updateMQStatus(mq: AdmissionRemark, status: string): void {
     if (!this.admissionId) return;
 
+    // Prevent any status changes if THIS MQ is already CLOSED
+    if (this.getLatestMQStatus(mq) === 'CLOSED' && status !== 'CLOSED') {
+      this.toast.error('Cannot change status of a closed/resolved MQ');
+      return;
+    }
+
     this.admissionService.updateMQStatus(this.admissionId, status)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success(`MQ status updated to: ${status}`);
-          this.loadRemarks(); // Refresh list to show latest status
-        },
-        error: (err) => {
-          this.toast.error('Failed to update MQ status');
-          this.logger.error('Update MQ Status error', err);
+          this.loadRemarks(); // Reload to update UI and lock if closed
         }
       });
+  }
+
+  downloadMQ(mq: AdmissionRemark): void {
+    if (!mq.remark_text) {
+      this.toast.error('No questionnaire content found');
+      return;
+    }
+
+    // Parse questions from remark_text
+    const lines = mq.remark_text.split('\n');
+    const questions = lines
+      .filter(line => /^\d+\.\s/.test(line))
+      .map(line => ({
+        text: line.replace(/^\d+\.\s/, ''),
+        lines: 3
+      }));
+
+    if (questions.length === 0) {
+      questions.push({
+        text: mq.remark_text.replace('[GENERATED MQ]', '').trim(),
+        lines: 3
+      });
+    }
+
+    this.printService.print({
+      refNo: this.admission?.claim_ref_no || 'MQ-DOC',
+      recipientType: mq.remark_text.toLowerCase().includes('policyholder') ? 'PH' : 'HOSP',
+      questions: questions,
+      date: mq.created_at ? new Date(mq.created_at) : new Date(),
+      patientName: this.admission?.member_name,
+      hospitalName: this.admission?.hospital_name
+    });
   }
 
   formatStatus(status: string | null | undefined): string {

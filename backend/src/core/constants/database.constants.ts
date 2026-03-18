@@ -68,7 +68,10 @@ export const DB_TABLES = {
 
   // MQ Templates (Medical Questionnaire)
   MQ_TEMPLATES: 'ccms_query_templates',
-  MQ_TEMPLATE_QUESTIONS: 'ccms_query_template_questions'
+  MQ_TEMPLATE_QUESTIONS: 'ccms_query_template_questions',
+
+  // System
+  DOCUMENTS: 'ccms_documents'
 } as const;
 
 // ============================================================================

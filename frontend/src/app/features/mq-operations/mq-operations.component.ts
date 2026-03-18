@@ -2,10 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AdmissionService } from '../../core/services/admission.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoggerService } from '../../core/services/logger.service';
+import { MqPrintService } from '../../core/services/mq-print.service';
 import { PERMISSIONS } from '../../core/constants/permissions.constants';
 
 @Component({
@@ -24,21 +25,38 @@ export class MqOperationsComponent implements OnInit, OnDestroy {
   readonly PERMISSIONS = PERMISSIONS;
   
   mqList: any[] = [];
-  filteredList: any[] = [];
   loading = false;
+  
+  // Pagination & Filtering
   searchQuery = '';
   statusFilter = 'ALL';
+  page = 1;
+  limit = 10;
+  total = 0;
+  totalPages = 0;
   
   private destroy$ = new Subject<void>();
+  private searchSubject = new Subject<string>();
 
   constructor(
     private admissionService: AdmissionService,
     private toast: ToastService,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private printService: MqPrintService
   ) {}
 
   ngOnInit(): void {
     this.loadMQHistory();
+    
+    // Setup search debouncing
+    this.searchSubject.pipe(
+      takeUntil(this.destroy$),
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.page = 1;
+      this.loadMQHistory();
+    });
   }
 
   ngOnDestroy(): void {
@@ -48,70 +66,44 @@ export class MqOperationsComponent implements OnInit, OnDestroy {
 
   loadMQHistory(): void {
     this.loading = true;
-    this.admissionService.getGlobalMQHistory()
+    const filters = {
+      page: this.page,
+      limit: this.limit,
+      search: this.searchQuery,
+      status: this.statusFilter
+    };
+
+    this.admissionService.getGlobalMQHistory(filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.mqList = data;
-          this.applyFilters();
+        next: (response) => {
+          this.mqList = response.data;
+          this.total = response.total;
+          this.totalPages = Math.ceil(this.total / this.limit);
           this.loading = false;
         },
         error: (error) => {
           this.loading = false;
           this.logger.error('Error loading MQ history', error);
-          // In development, if endpoint doesn't exist yet, we can mock it
           this.toast.error('Failed to load global MQ history');
-          this.mockData();
         }
       });
   }
 
-  mockData(): void {
-    // Mock data for UI demonstration while backend endpoint is being implemented
-    this.mqList = [
-      {
-        remark_id: 101,
-        admission_id: 501,
-        claim_ref_no: 'CLM-2026-00124',
-        patient_name: 'John Doe',
-        hospital_name: 'Central General Hospital',
-        remark_text: '[GENERATED MQ]\n1. Please provide the detailed clinical history.\n2. When was the patient first diagnosed?',
-        action_for: 'MQ_SENT',
-        created_at: new Date(Date.now() - 3600000 * 2), // 2 hours ago
-        created_by_username: 'doctor_admin'
-      },
-      {
-        remark_id: 102,
-        admission_id: 504,
-        claim_ref_no: 'CLM-2026-00128',
-        patient_name: 'Sarah Smith',
-        hospital_name: 'City Medical Center',
-        remark_text: '[GENERATED MQ]\n1. Confirm the surgical procedure performed.\n2. Provide discharge summary.',
-        action_for: 'MQ_SENT',
-        created_at: new Date(Date.now() - 3600000 * 24), // 24 hours ago
-        created_by_username: 'case_manager_1'
-      }
-    ];
-    this.applyFilters();
-  }
-
-  applyFilters(): void {
-    this.filteredList = this.mqList.filter(item => {
-      const matchesSearch = !this.searchQuery || 
-        item.claim_ref_no?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        item.patient_name?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        item.hospital_name?.toLowerCase().includes(this.searchQuery.toLowerCase());
-      
-      const matchesStatus = this.statusFilter === 'ALL' || 
-        (this.statusFilter === 'PENDING' && item.action_for === 'MQ_SENT') ||
-        (this.statusFilter === 'CLOSED' && item.action_for === 'MQ_CLOSED');
-
-      return matchesSearch && matchesStatus;
-    });
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchQuery);
   }
 
   onFilterChange(): void {
-    this.applyFilters();
+    this.page = 1;
+    this.loadMQHistory();
+  }
+
+  onPageChange(newPage: number): void {
+    if (newPage >= 1 && newPage <= this.totalPages) {
+      this.page = newPage;
+      this.loadMQHistory();
+    }
   }
 
   updateStatus(mq: any, status: string): void {
@@ -121,7 +113,6 @@ export class MqOperationsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toast.success(`MQ ${mq.claim_ref_no} status updated to ${status}`);
-          // Refresh list to show latest status
           this.loadMQHistory();
         },
         error: (err) => {
@@ -134,6 +125,56 @@ export class MqOperationsComponent implements OnInit, OnDestroy {
   formatDate(date: any): string {
     return new Date(date).toLocaleString('en-GB', { 
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+    });
+  }
+
+  getPaginationRange(): number[] {
+    const range: number[] = [];
+    const maxPagesToShow = 5;
+    let start = Math.max(1, this.page - 2);
+    let end = Math.min(this.totalPages, start + maxPagesToShow - 1);
+    
+    if (end - start < maxPagesToShow - 1) {
+      start = Math.max(1, end - maxPagesToShow + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+    return range;
+  }
+
+  downloadMQ(mq: any): void {
+    if (!mq.remark_text || mq.remark_text === 'No questionnaire content') {
+      this.toast.error('No questionnaire content found for this MQ');
+      return;
+    }
+
+    // Parse questions from remark_text
+    // Format: "[GENERATED MQ]\n1. Question text\n2. Next question..."
+    const lines = mq.remark_text.split('\n');
+    const questions = lines
+      .filter((line: string) => /^\d+\.\s/.test(line)) // Match "1. ", "2. ", etc.
+      .map((line: string) => ({
+        text: line.replace(/^\d+\.\s/, ''),
+        lines: 3 // Default lines for printed view if not known
+      }));
+
+    if (questions.length === 0) {
+      // If parsing failed (maybe it's old format), just show the whole text as one question
+      questions.push({
+        text: mq.remark_text.replace('[GENERATED MQ]', '').trim() || 'Record without specific questions',
+        lines: 3
+      });
+    }
+
+    this.printService.print({
+      refNo: mq.claim_ref_no,
+      recipientType: mq.remark_text.toLowerCase().includes('policyholder') ? 'PH' : 'HOSP',
+      questions: questions,
+      date: new Date(mq.created_at),
+      patientName: mq.patient_name,
+      hospitalName: mq.hospital_name
     });
   }
 }

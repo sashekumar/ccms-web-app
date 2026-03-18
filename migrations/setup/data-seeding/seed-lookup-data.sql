@@ -58,9 +58,10 @@ VALUES
     ('ROOM_TYPE', 'Types of hospital room accommodation', 1),
     ('EHM_STATUS', 'Enhanced Healthcare Management status tracking', 1),
     ('DEFERMENT_STATUS', 'Deferment processing status', 1),
-    ('ALERT_LEVEL', 'LOS Alert Levels', 1);
+    ('ALERT_LEVEL', 'LOS Alert Levels', 1),
+    ('MQ_CATEGORY', 'Categories for Medical Questionnaire Templates', 1);
 
-PRINT '  ✓ Created 33 lookup categories';
+PRINT '  ✓ Created 34 lookup categories';
 GO
 
 -- ============================================================================
@@ -783,6 +784,26 @@ VALUES
     (@BillTypeCategoryId, 'CREDIT_NOTE', 'Credit Note', 5, 1);
 
 PRINT '  ✓ Created 5 bill types';
+GO
+
+-- ============================================================================
+-- SECTION 35: MQ CATEGORIES
+-- ============================================================================
+
+PRINT 'Populating MQ_CATEGORY lookups...';
+
+DECLARE @MqCategoryCategoryId INT;
+SELECT @MqCategoryCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'MQ_CATEGORY';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@MqCategoryCategoryId, 'ADMISSION', 'Kemasukan (Admission)', 10, 1),
+    (@MqCategoryCategoryId, 'BILLING', 'Pebilan (Billing)', 20, 1),
+    (@MqCategoryCategoryId, 'ACCIDENT', 'Kemalangan (Accident)', 30, 1),
+    (@MqCategoryCategoryId, 'DOCS', 'Dokumen (Docs)', 40, 1),
+    (@MqCategoryCategoryId, 'CLINICAL', 'Klinikal (Clinical)', 50, 1);
+
+PRINT '  ✓ Created 5 MQ categories';
 GO
 
 -- ============================================================================

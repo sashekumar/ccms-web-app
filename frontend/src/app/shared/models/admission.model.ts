@@ -126,6 +126,12 @@ export interface SendMedicalQueryDto {
 export interface RespondToMQDto {
   responseText: string;   // Required hospital response
   attachments?: string;   // Optional file references
+  document?: {            // Optional: Uploaded file details
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    fileExtension: string;
+  };
 }
 
 export interface DeferAdmissionDto {
@@ -191,4 +197,9 @@ export interface AdmissionRemark {
   created_by?: string;
   created_by_username?: string;  // Joined from ccms_users table
   created_at: Date | string;
+  
+  // Attachment info (joined from ccms_documents)
+  attachment_url?: string;
+  attachment_name?: string;
+  attachment_size?: number;
 }

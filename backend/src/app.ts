@@ -1,11 +1,15 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import routes from './routes';
 import { errorHandler } from './core/middleware/error.middleware';
 
 export const createApp = (): Application => {
   const app = express();
+
+  // Serving static files (Uploads)
+  app.use('/public', express.static(path.join(__dirname, '../public')));
 
   // Middleware
   app.use(cors({

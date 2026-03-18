@@ -60,6 +60,7 @@ Thumbs.db
 /backend/build
 /backend/.env
 /backend/.env.local
+/backend/public
 
 # Logs
 logs

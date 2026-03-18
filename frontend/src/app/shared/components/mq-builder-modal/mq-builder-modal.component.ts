@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { MqTemplateService } from '../../../core/services/mq-template.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { MqPrintService } from '../../../core/services/mq-print.service';
 import { MqBuilderData, MqBuilderCategory, MqBuilderTemplateItem } from '../../models/mq-template.model';
 
 interface SelectedQuestion {
@@ -44,7 +45,8 @@ export class MqBuilderModalComponent implements OnInit, OnDestroy {
 
   constructor(
     private mqService: MqTemplateService,
-    private toast: ToastService
+    private toast: ToastService,
+    private printService: MqPrintService
   ) {}
 
   ngOnInit(): void {
@@ -193,5 +195,18 @@ export class MqBuilderModalComponent implements OnInit, OnDestroy {
 
   getLineArray(count: number): number[] {
     return Array(count).fill(0);
+  }
+
+  printDocument(): void {
+    if (this.selectedQuestions.length === 0) {
+      this.toast.error('No questions to print');
+      return;
+    }
+    this.printService.print({
+      refNo: this.refNo || 'PENDING-ADM-001',
+      recipientType: this.recipientType,
+      questions: this.selectedQuestions.map(q => ({ text: q.text, lines: q.lines })),
+      date: new Date()
+    });
   }
 }

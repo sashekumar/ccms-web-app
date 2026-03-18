@@ -486,7 +486,8 @@ export class AdmissionsController {
 
       const dto: RespondToMQDto = {
         responseText: req.body.responseText,
-        attachments: req.body.attachments
+        attachments: req.body.attachments,
+        document: req.body.document
       };
 
       await this.service.respondToMQ(admissionId, dto, userId);

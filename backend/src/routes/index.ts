@@ -40,6 +40,10 @@ router.use('/members', membersRoutes);
 router.use('/admissions', admissionsRoutes);
 router.use('/claims', claimsRoutes);
 
+// Common utilities
+import commonRoutes from '../features/common/upload.routes';
+router.use('/common/upload', commonRoutes);
+
 // Monitoring routes (LOS Alerts & 8-Hour Monitoring)
 router.use('/monitoring', monitoringRoutes);
 

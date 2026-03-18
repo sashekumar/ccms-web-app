@@ -254,10 +254,10 @@ export class AdmissionService {
   }
 
   /**
-   * Get global medical query history (across all admissions)
+   * Get global medical query history (across all admissions) with pagination and filters
    */
-  getGlobalMQHistory(filters: any = {}): Observable<any[]> {
-    return this.api.post<ApiResponse<any[]>>(
+  getGlobalMQHistory(filters: any = {}): Observable<{ data: any[], total: number }> {
+    return this.api.post<ApiResponse<{ data: any[], total: number }>>(
       API_ENDPOINTS.ADMISSIONS.GET_MQ_HISTORY,
       filters
     ).pipe(

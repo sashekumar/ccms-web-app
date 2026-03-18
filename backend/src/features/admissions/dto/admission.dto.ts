@@ -135,6 +135,12 @@ export interface SendMedicalQueryDto {
 export interface RespondToMQDto {
   responseText: string;       // Required: Hospital's response to the query
   attachments?: string[];     // Optional: Document references
+  document?: {                // Optional: Uploaded file details
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    fileExtension: string;
+  };
 }
 
 /**
