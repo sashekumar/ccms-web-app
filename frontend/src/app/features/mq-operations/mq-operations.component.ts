@@ -26,6 +26,7 @@ export class MqOperationsComponent implements OnInit, OnDestroy {
   
   mqList: any[] = [];
   loading = false;
+  selectedMQ: any = null;
   
   // Pagination & Filtering
   searchQuery = '';
@@ -150,18 +151,15 @@ export class MqOperationsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Parse questions from remark_text
-    // Format: "[GENERATED MQ]\n1. Question text\n2. Next question..."
     const lines = mq.remark_text.split('\n');
     const questions = lines
-      .filter((line: string) => /^\d+\.\s/.test(line)) // Match "1. ", "2. ", etc.
+      .filter((line: string) => /^\d+\.\s/.test(line)) 
       .map((line: string) => ({
         text: line.replace(/^\d+\.\s/, ''),
-        lines: 3 // Default lines for printed view if not known
+        lines: 3
       }));
 
     if (questions.length === 0) {
-      // If parsing failed (maybe it's old format), just show the whole text as one question
       questions.push({
         text: mq.remark_text.replace('[GENERATED MQ]', '').trim() || 'Record without specific questions',
         lines: 3
@@ -176,5 +174,13 @@ export class MqOperationsComponent implements OnInit, OnDestroy {
       patientName: mq.patient_name,
       hospitalName: mq.hospital_name
     });
+  }
+
+  /**
+   * Clean up technical prefix from response text
+   */
+  getCleanResponse(text: string | null | undefined): string {
+    if (!text) return '';
+    return text.replace(/^Medical Query response received\. Response:\s*/, '').replace(/\[ATTACHMENT: .*?\]/, '').trim();
   }
 }

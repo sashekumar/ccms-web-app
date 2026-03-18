@@ -909,6 +909,16 @@ UPDATE ${DB_TABLES.ADMISSIONS}
         WHERE r.ref_type = 'ADMISSION' 
           AND (r.remark_text LIKE '%[GENERATED MQ]%' OR r.action_for IN ('MQ_SENT', 'MQ_GENERATED'))
       ),
+      LatestResponse AS (
+        SELECT 
+          r.ref_id as admission_id,
+          r.remark_text as response_text,
+          ROW_NUMBER() OVER(PARTITION BY r.ref_id ORDER BY r.created_at DESC) as rn
+        FROM ${DB_TABLES.REMARKS} r
+        WHERE r.ref_type = 'ADMISSION' 
+          AND r.action_for = 'MQ_RESPONSE' 
+          AND r.remark_text NOT LIKE 'MQ Status manually updated%'
+      ),
       FilteredHistory AS (
         SELECT 
           lms.admission_id,
@@ -916,18 +926,25 @@ UPDATE ${DB_TABLES.ADMISSIONS}
           lms.created_at,
           lms.created_by,
           ISNULL(lmxt.remark_text, 'No questionnaire content') as remark_text,
+          lr.response_text,
           u.username as created_by_username,
           c.claim_ref_no,
           m.full_name as patient_name,
           h.hospital_name,
+          d.file_path as attachment_url,
+          d.file_name as attachment_name,
           COUNT(*) OVER() as total_count
         FROM LatestMQStatus lms
         LEFT JOIN LatestMQText lmxt ON lms.admission_id = lmxt.admission_id AND lmxt.rn = 1
+        LEFT JOIN LatestResponse lr ON lms.admission_id = lr.admission_id AND lr.rn = 1
         INNER JOIN ${DB_TABLES.ADMISSIONS} a ON lms.admission_id = a.admission_id
         INNER JOIN ${DB_TABLES.CLAIMS} c ON a.claim_id = c.claim_id
         INNER JOIN ${DB_TABLES.MEMBERS} m ON c.member_id = m.member_id
         INNER JOIN ${DB_TABLES.HOSPITALS} h ON c.hospital_id = h.hospital_id
         LEFT JOIN ${DB_TABLES.USERS} u ON lms.created_by = CAST(u.user_id AS VARCHAR(50))
+        -- Join with documents for the LATEST status specifically
+        LEFT JOIN ${DB_TABLES.REMARKS} r_status ON r_status.ref_type = 'ADMISSION' AND r_status.ref_id = lms.admission_id AND r_status.action_for = lms.action_for AND r_status.created_at = lms.created_at
+        LEFT JOIN ${DB_TABLES.DOCUMENTS} d ON d.ref_type = 'REMARK' AND d.ref_id = r_status.remark_id
         WHERE lms.rn = 1 
           ${filters.search ? 'AND (c.claim_ref_no LIKE @search OR m.full_name LIKE @search OR h.hospital_name LIKE @search)' : ''}
           ${filters.status === 'PENDING' ? "AND lms.action_for IN ('MQ_SENT', 'MQ_GENERATED', 'MQ_FOLLOW_UP', 'MQ_RESPONSE')" : ''}

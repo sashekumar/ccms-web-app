@@ -453,8 +453,8 @@ import { FormsModule } from '@angular/forms';
                       >
                         <option value="SENT" [selected]="getLatestMQStatus(mq) === 'SENT'">SENT</option>
                         <option value="FOLLOW_UP" [selected]="getLatestMQStatus(mq) === 'FOLLOW_UP'">FOLLOW UP</option>
-                        <option value="RECEIVED" [selected]="getLatestMQStatus(mq) === 'RECEIVED'">RECEIVED</option>
-                        <option value="CLOSED">RESOLVE / CLOSE</option>
+                        <option value="RECEIVED" disabled [selected]="getLatestMQStatus(mq) === 'RECEIVED'">RECEIVED (AUTO)</option>
+                        <option value="CLOSED" [disabled]="getLatestMQStatus(mq) !== 'RECEIVED'">RESOLVE / CLOSE</option>
                       </select>
                     </ng-container>
 
