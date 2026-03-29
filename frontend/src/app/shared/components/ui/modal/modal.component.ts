@@ -25,16 +25,19 @@ import { CommonModule } from '@angular/common';
     <!-- Backdrop -->
     <div 
       *ngIf="isOpen" 
-      class="fixed inset-0 z-50 bg-black opacity-50 cursor-pointer"
+      class="fixed inset-0 z-40 bg-black opacity-50 cursor-pointer"
       (click)="close()">
     </div>
 
-    <!-- Modal -->
+    <!-- Modal Container (full screen flex center) -->
     <div 
       *ngIf="isOpen" 
-      [class]="'fixed inset-0 z-50 flex items-center justify-center p-4 ' + getModalClass()">
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      (click)="$event.stopPropagation()">
+      
+      <!-- Modal Content Box (gets the size classes) -->
       <div 
-        class="bg-white rounded-lg shadow-xl max-w-full"
+        [class]="'bg-white rounded-lg shadow-xl max-w-full ' + getModalClass()"
         (click)="$event.stopPropagation()">
         
         <!-- Header -->
@@ -42,7 +45,7 @@ import { CommonModule } from '@angular/common';
           <h2 *ngIf="title" class="text-xl font-semibold text-gray-900">{{ title }}</h2>
           <button 
             (click)="close()" 
-            class="text-gray-500 hover:text-gray-700">
+            class="text-gray-500 hover:text-gray-700 flex-shrink-0">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -50,11 +53,11 @@ import { CommonModule } from '@angular/common';
         </div>
 
         <!-- Body -->
-        <div class="p-6">
+        <div class="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
           <ng-content></ng-content>
         </div>
 
-        <!-- Footer (if slots provided) -->
+        <!-- Footer (if showFooter provided) -->
         <div *ngIf="showFooter" class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
           <button 
             (click)="close()"

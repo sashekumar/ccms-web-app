@@ -1,0 +1,363 @@
+<div class="space-y-6">
+
+  <!-- ── Filters ────────────────────────────────────────────────────── -->
+  <div *ngIf="filters.length > 0" class="mb-6 rounded-lg bg-white p-4 shadow">
+    <div [class]="'grid grid-cols-1 gap-4 ' + filterGridClass">
+      <ng-container *ngFor="let filter of filters">
+
+        <!-- Search Text Input -->
+        <div *ngIf="filter.type === 'search'">
+          <app-text-input
+            [label]="filter.label"
+            [placeholder]="filter.placeholder || 'Search…'"
+            [inputType]="filter.inputType || 'string'"
+            [decimalPlaces]="filter.decimalPlaces || 2"
+            [(ngModel)]="filterValues[filter.key]"
+            (valueChange)="onSearchChange()"
+          ></app-text-input>
+        </div>
+
+        <!-- Select Dropdown -->
+        <div *ngIf="filter.type === 'select'">
+          <app-dropdown
+            [label]="filter.label"
+            [options]="filter.options || []"
+            [placeholder]="filter.placeholder || 'Select…'"
+            [(ngModel)]="filterValues[filter.key]"
+            (selectionChange)="onSelectFilterChange(filter.key, $event)"
+            [clearable]="true"
+          ></app-dropdown>
+        </div>
+
+        <!-- Date Filter -->
+        <div *ngIf="filter.type === 'date'">
+          <app-date-picker
+            mode="date"
+            [label]="filter.label"
+            [placeholder]="filter.placeholder || 'Pick a date…'"
+            [minDate]="filter.minDate || null"
+            [maxDate]="filter.maxDate || null"
+            [(ngModel)]="filterValues[filter.key]"
+            (dateChange)="onDateFilterChange(filter.key, $event)"
+          ></app-date-picker>
+        </div>
+
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────── -->
+  <app-loading-spinner *ngIf="loading" message="Loading…"></app-loading-spinner>
+
+  <!-- ── Alert Messages ─────────────────────────────────────────────── -->
+  <div *ngIf="successMessage" class="mb-4 rounded-md bg-green-50 p-4">
+    <div class="flex">
+      <svg class="h-5 w-5 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <p class="ml-3 text-sm text-green-800">{{ successMessage }}</p>
+    </div>
+  </div>
+  <div *ngIf="errorMessage" class="mb-4 rounded-md bg-red-50 p-4">
+    <div class="flex">
+      <svg class="h-5 w-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <p class="ml-3 text-sm text-red-800">{{ errorMessage }}</p>
+    </div>
+  </div>
+
+  <!-- ── Table ──────────────────────────────────────────────────────── -->
+  <div *ngIf="!loading && rows.length > 0" class="overflow-hidden rounded-lg bg-white shadow">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+
+        <!-- Head -->
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              *ngFor="let col of columns"
+              (click)="onSortColumn(col)"
+              [class]="'px-6 py-3 text-xs font-medium uppercase tracking-wider '
+                + (col.sortable ? 'cursor-pointer select-none hover:bg-gray-100 ' : '')
+                + (getSortState(col) !== 'none' ? 'text-[#1e3c72] ' : 'text-gray-500 ')
+                + getAlignClass(col.align)"
+            >
+              <div class="inline-flex items-center gap-1"
+                [class.flex-row-reverse]="col.align === 'right'"
+                [class.justify-center]="col.align === 'center'">
+                <span>{{ col.label }}</span>
+                <ng-container *ngIf="col.sortable">
+                  <!-- Unsorted -->
+                  <svg *ngIf="getSortState(col) === 'none'" class="h-3.5 w-3.5 flex-shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
+                  <!-- Ascending -->
+                  <svg *ngIf="getSortState(col) === 'asc'" class="h-3.5 w-3.5 flex-shrink-0 text-[#1e3c72]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                  </svg>
+                  <!-- Descending -->
+                  <svg *ngIf="getSortState(col) === 'desc'" class="h-3.5 w-3.5 flex-shrink-0 text-[#1e3c72]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </ng-container>
+              </div>
+            </th>
+            <th
+              *ngIf="rowActions.length > 0"
+              class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+
+        <!-- Body -->
+        <tbody class="divide-y divide-gray-200 bg-white">
+          <tr
+            *ngFor="let row of rows; trackBy: trackByRow"
+            class="transition hover:bg-gray-50"
+          >
+            <!-- Data cells -->
+            <td
+              *ngFor="let col of columns"
+              [class]="'px-6 py-4 ' + getCellWrapClass(col) + ' ' + getAlignClass(col.align)"
+            >
+
+              <!-- Avatar cell -->
+              <ng-container *ngIf="col.type === 'avatar'">
+                <div class="flex items-center">
+                  <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#1e3c72] to-[#2a5298] text-sm font-semibold text-white">
+                    {{ getInitials(getCellValue(row, col.key)) }}
+                  </div>
+                  <div class="ml-3">
+                    <div class="text-sm font-medium text-gray-900">{{ getCellValue(row, col.key) }}</div>
+                    <div *ngIf="col.avatarSubKey" class="text-sm text-gray-500">
+                      {{ col.avatarSubPrefix || '' }}{{ getCellValue(row, col.avatarSubKey) }}
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- Badge cell -->
+              <ng-container *ngIf="col.type === 'badge'">
+                <span
+                  *ngIf="getBadge(col, row) as badge"
+                  [class]="'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ' + getBadgeClasses(badge.color)"
+                >
+                  {{ badge.label }}
+                </span>
+                <span *ngIf="!getBadge(col, row)" class="text-sm text-gray-400">
+                  {{ col.emptyText || '—' }}
+                </span>
+              </ng-container>
+
+              <!-- Status cell (auto-resolved via StatusBadgeComponent) -->
+              <ng-container *ngIf="col.type === 'status'">
+                <app-status-badge
+                  *ngIf="getCellValue(row, col.key) as val; else emptyStatus"
+                  [status]="val"
+                ></app-status-badge>
+                <ng-template #emptyStatus>
+                  <span class="text-sm text-gray-400">{{ col.emptyText || '—' }}</span>
+                </ng-template>
+              </ng-container>
+
+              <!-- Toggle cell -->
+              <ng-container *ngIf="col.type === 'toggle'">
+                <app-toggle
+                  [isActive]="getCellValue(row, col.key)"
+                  [disabled]="false"
+                  [loading]="false"
+                  (toggle)="onToggleCellValue($event, row, col)"
+                ></app-toggle>
+              </ng-container>
+
+              <!-- Tags cell -->
+              <ng-container *ngIf="col.type === 'tags'">
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    *ngFor="let tag of getCellValue(row, col.key)"
+                    [class]="'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ' + getBadgeClasses(col.tagColor || 'blue')"
+                  >
+                    {{ col.tagLabelKey ? tag[col.tagLabelKey] : tag }}
+                  </span>
+                  <span
+                    *ngIf="!getCellValue(row, col.key)?.length"
+                    class="text-sm text-gray-400"
+                  >
+                    {{ col.emptyText || '—' }}
+                  </span>
+                </div>
+              </ng-container>
+
+              <!-- Date cell -->
+              <ng-container *ngIf="col.type === 'date'">
+                <span class="text-sm text-gray-700">
+                  {{ getCellValue(row, col.key) ? (getCellValue(row, col.key) | date:(col.dateFormat || 'dd MMM yyyy')) : (col.emptyText || '—') }}
+                </span>
+              </ng-container>
+
+              <!-- Number cell -->
+              <ng-container *ngIf="col.type === 'number'">
+                <span class="text-sm font-mono text-gray-900">
+                  {{ getCellValue(row, col.key) ?? (col.emptyText || '—') }}
+                </span>
+              </ng-container>
+
+              <!-- Currency cell (Malaysian Ringgit via CurrencyMyrPipe) -->
+              <ng-container *ngIf="col.type === 'currency'">
+                <span class="text-sm font-mono text-gray-900 whitespace-nowrap">
+                  {{ getCellValue(row, col.key) | currencyMyr }}
+                </span>
+              </ng-container>
+
+              <!-- Default text cell -->
+              <ng-container *ngIf="!col.type || col.type === 'text'">
+                <span class="text-sm text-gray-700">
+                  {{ getCellValue(row, col.key) ?? (col.emptyText || '—') }}
+                </span>
+              </ng-container>
+
+            </td>
+
+            <!-- Actions cell -->
+            <td
+              *ngIf="rowActions.length > 0"
+              class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium"
+            >
+              <ng-container *ngFor="let action of rowActions; let last = last">
+                <!-- Show button without permission check if permission is not defined -->
+                <button
+                  *ngIf="!action.permission"
+                  type="button"
+                  [title]="action.title"
+                  (click)="rowAction.emit({ action: action.id, row: row })"
+                  [class]="getActionButtonClasses(action.color, last)"
+                >
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="action.iconPath"/>
+                  </svg>
+                </button>
+                <!-- Show button with permission check if permission is defined -->
+                <ng-container *ngIf="action.permission">
+                  <button
+                    *hasPermission="action.permission!"
+                    type="button"
+                    [title]="action.title"
+                    (click)="rowAction.emit({ action: action.id, row: row })"
+                    [class]="getActionButtonClasses(action.color, last)"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="action.iconPath"/>
+                    </svg>
+                  </button>
+                </ng-container>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Pagination ──────────────────────────────────────────────── -->
+    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+
+      <!-- Mobile prev/next -->
+      <div class="flex flex-1 justify-between sm:hidden">
+        <button
+          type="button"
+          (click)="previousPage()"
+          [disabled]="pagination.page === 1"
+          [class.opacity-50]="pagination.page === 1"
+          [class.cursor-not-allowed]="pagination.page === 1"
+          class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Previous
+        </button>
+        <button
+          type="button"
+          (click)="nextPage()"
+          [disabled]="pagination.page >= pagination.totalPages"
+          [class.opacity-50]="pagination.page >= pagination.totalPages"
+          [class.cursor-not-allowed]="pagination.page >= pagination.totalPages"
+          class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Next
+        </button>
+      </div>
+
+      <!-- Desktop pagination -->
+      <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-500 whitespace-nowrap">Rows per page</label>
+            <select
+              [(ngModel)]="currentLimit"
+              (ngModelChange)="onLimitChange()"
+              class="rounded border border-gray-300 px-2 py-1 text-sm focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+            >
+              <option *ngFor="let n of pageSizeOptions" [ngValue]="n">{{ n }}</option>
+            </select>
+          </div>
+          <p class="text-sm text-gray-700">
+            Showing
+            <span class="font-medium">{{ getStartItem() }}</span>
+            to
+            <span class="font-medium">{{ getEndItem() }}</span>
+            of
+            <span class="font-medium">{{ pagination.total }}</span>
+            results
+          </p>
+        </div>
+        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+          <button
+            type="button"
+            (click)="previousPage()"
+            [disabled]="pagination.page === 1"
+            class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span class="sr-only">Previous</span>
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <button
+            *ngFor="let page of getPageNumbers()"
+            type="button"
+            (click)="goToPage(page)"
+            [class.text-white]="page === pagination.page"
+            [class.bg-primary-800]="page === pagination.page"
+            [class.text-gray-900]="page !== pagination.page"
+            [class.hover\:bg-gray-50]="page !== pagination.page"
+            class="relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0"
+          >
+            {{ page }}
+          </button>
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="pagination.page >= pagination.totalPages"
+            class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span class="sr-only">Next</span>
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </nav>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Empty State ────────────────────────────────────────────────── -->
+  <div *ngIf="!loading && rows.length === 0" class="rounded-lg bg-white p-12 text-center shadow">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="emptyIconPath"/>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">{{ emptyMessage }}</h3>
+    <p class="mt-1 text-sm text-gray-500">{{ emptySubMessage }}</p>
+  </div>
+
+</div>

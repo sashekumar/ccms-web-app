@@ -1,0 +1,67 @@
+// Toggle chip — mirrors the data-table tags badge style
+
+:host {
+  display: inline-block;
+}
+
+.app-toggle-chip {
+  transition: opacity 0.15s ease;
+
+  // Active state — green (mirrors bg-green-100 / text-green-800 palette)
+  &.chip-active {
+    background-color: #dcfce7;   // green-100
+    color: #166534;              // green-800
+    cursor: pointer;
+
+    &:hover {
+      background-color: #bbf7d0; // green-200
+    }
+
+    &:focus-visible {
+      outline: 2px solid #16a34a;
+      outline-offset: 2px;
+    }
+
+    // Dot is green when active
+    .toggle-dot {
+      background-color: #16a34a; // green-600
+    }
+  }
+
+  // Inactive state — gray (mirrors bg-gray-100 / text-gray-800)
+  &.chip-inactive {
+    background-color: #f3f4f6;   // gray-100
+    color: #1f2937;              // gray-800
+    cursor: pointer;
+
+    &:hover {
+      background-color: #e5e7eb; // gray-200
+    }
+
+    &:focus-visible {
+      outline: 2px solid #6b7280;
+      outline-offset: 2px;
+    }
+
+    // Dot is gray when inactive
+    .toggle-dot {
+      background-color: #9ca3af; // gray-400
+    }
+  }
+
+  // Disabled / loading state
+  &.chip-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// The sliding dot indicator
+.toggle-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}

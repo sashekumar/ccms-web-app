@@ -1,0 +1,25 @@
+<div
+  role="switch"
+  [attr.aria-checked]="isActive"
+  [attr.aria-label]="isActive ? 'Status Active' : 'Status Inactive'"
+  [attr.tabindex]="disabled || loading ? -1 : 0"
+  (click)="!disabled && !loading && onToggle()"
+  (keydown.space)="$event.preventDefault(); !disabled && !loading && onToggle()"
+  (keydown.enter)="$event.preventDefault(); !disabled && !loading && onToggle()"
+  class="app-toggle-chip inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold select-none"
+  [class.chip-active]="isActive"
+  [class.chip-inactive]="!isActive"
+  [class.chip-disabled]="disabled || loading"
+>
+  <!-- Inactive: dot LEFT, text RIGHT -->
+  <ng-container *ngIf="!isActive">
+    <span class="toggle-dot"></span>
+    <span>Inactive</span>
+  </ng-container>
+
+  <!-- Active: text LEFT, dot RIGHT -->
+  <ng-container *ngIf="isActive">
+    <span>Active</span>
+    <span class="toggle-dot"></span>
+  </ng-container>
+</div>
