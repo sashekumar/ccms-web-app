@@ -12,6 +12,7 @@ import { Claim, ClaimFilters } from '../../../shared/models/claims/claim.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 
 @Component({
   selector: 'app-claim-list',
@@ -30,6 +31,15 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
           <h1 class="text-3xl font-bold text-gray-900">Claims</h1>
           <p class="mt-2 text-sm text-gray-600">View and progress claims records tracking reimbursement and cashless status.</p>
         </div>
+        <ng-container *hasPermission="PERMISSIONS.CLAIMS.CREATE">
+          <button (click)="newClaim()"
+            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1e3c72] hover:bg-[#2a5298] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1e3c72]">
+            <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New Claim
+          </button>
+        </ng-container>
       </div>
 
       <!-- Stats Cards (Hardcoded layout for demonstration) -->
@@ -176,8 +186,18 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div class="flex justify-end space-x-2">
-                    <!-- View Button -->
-                    <button
+                    <!-- Go to Admission Button (for cashless claims with admission) -->
+                    <button *ngIf="claim.admission_id"
+                      (click)="goToAdmission(claim.admission_id)"
+                      class="text-purple-600 hover:text-purple-900 transition-colors duration-150"
+                      title="Go to Admission">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </button>
+
+                    <!-- View Button (for reimbursement claims) -->
+                    <button *ngIf="!claim.admission_id"
                       (click)="viewClaim(claim.claim_id)"
                       class="text-blue-600 hover:text-blue-900 transition-colors duration-150"
                       title="View Claim">
@@ -187,14 +207,26 @@ import { PERMISSIONS } from '../../../core/constants/permissions.constants';
                       </svg>
                     </button>
 
-                    <!-- Edit Button -->
+                    <!-- Edit Button (for reimbursement claims) -->
                     <ng-container *hasPermission="PERMISSIONS.CLAIMS.UPDATE">
-                      <button
+                      <button *ngIf="!claim.admission_id"
                         (click)="editClaim(claim.claim_id)"
-                        class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150"
+                        class="text-blue-600 hover:text-blue-900 transition-colors duration-150"
                         title="Edit Claim">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    </ng-container>
+
+                    <!-- Delete Button (for reimbursement claims) -->
+                    <ng-container *hasPermission="PERMISSIONS.CLAIMS.DELETE">
+                      <button *ngIf="!claim.admission_id"
+                        (click)="deleteClaim(claim.claim_id)"
+                        class="text-red-600 hover:text-red-900 transition-colors duration-150"
+                        title="Delete Claim">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </ng-container>
@@ -395,10 +427,41 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   }
 
   viewClaim(id: number): void {
-    this.router.navigate(['/claims', id]);
+    this.router.navigate([APP_ROUTES.CLAIMS.DETAIL(id)]);
   }
 
   editClaim(id: number): void {
-    this.router.navigate(['/claims', id, 'edit']);
+    this.router.navigate([APP_ROUTES.CLAIMS.EDIT(id)]);
+  }
+
+  goToAdmission(admissionId: number): void {
+    this.router.navigate([APP_ROUTES.ADMISSIONS.DETAIL(admissionId)]);
+  }
+
+  newClaim(): void {
+    this.router.navigate([APP_ROUTES.CLAIMS.CREATE]);
+  }
+
+  deleteClaim(id: number): void {
+    if (confirm('Are you sure you want to delete this claim? This action cannot be undone.')) {
+      this.loading = true;
+      this.claimService.deleteClaim(id).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.toastService.success('Claim deleted successfully');
+            this.loadClaims();
+          } else {
+            this.toastService.error(res.message || 'Failed to delete claim');
+            this.loading = false;
+          }
+        },
+        error: (err) => {
+          this.toastService.error(err.error?.message || 'Error deleting claim');
+          this.loading = false;
+        }
+      });
+    }
   }
 }
+
+

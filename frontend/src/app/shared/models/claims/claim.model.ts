@@ -1,66 +1,70 @@
-
-
 export interface Claim {
   claim_id: number;
   claim_ref_no: string;
-  fwd_claim_ref_no?: string;
-  file_no?: string;
+  fwd_claim_ref_no?: string | null;
+  file_no?: string | null;
   member_id: number;
   
   // Joined details
-  member_name?: string;
-  member_ic_no?: string;
-  hospital_name?: string;
+  member_name?: string | null;
+  member_ic_no?: string | null;
+  hospital_name?: string | null;
   
-  patient_type?: string;
-  patient_id?: number;
-  policy_record_id?: number;
-  hospital_id?: number;
-  doctor_id?: number;
-  diagnosis_id?: number;
+  // Admission link (for cashless claims)
+  admission_id?: number | null;
+  gl_ref_no?: string | null;
   
-  disability_code?: string;
-  disability_category?: string;
+  patient_type?: string | null;
+  patient_id?: number | null;
+  policy_record_id?: number | null;
+  hospital_id?: number | null;
+  doctor_id?: number | null;
+  diagnosis_id?: number | null;
   
-  claim_status_id?: number;
-  claim_status?: string;
-  claim_mode?: string;
-  priority_level?: number;
+  disability_code?: string | null;
+  disability_category?: string | null;
   
-  total_billed?: number;
-  total_approved?: number;
+  claim_status_id?: number | null;
+  claim_status?: string | null;
+  claim_mode?: string | null;
+  priority_level?: number | null;
   
-  pre_auth_required?: boolean;
-  pre_auth_no?: string;
+  total_billed?: number | null;
+  total_approved?: number | null;
   
-  rejection_type?: string;
-  rejection_reason?: string;
-  rejection_date?: Date | string;
+  pre_auth_required?: boolean | null;
+  pre_auth_no?: string | null;
   
-  sla_days?: number;
-  sla_deadline?: Date | string;
-  sla_status?: string;
+  rejection_type?: string | null;
+  rejection_reason?: string | null;
+  rejection_date?: Date | string | null;
   
-  approval_authority?: string;
-  approval_date?: Date | string;
-  batch_no?: string;
+  sla_days?: number | null;
+  sla_deadline?: Date | string | null;
+  sla_status?: string | null;
   
-  payee_name?: string;
-  payee_ic_no?: string;
-  payee_bank_name?: string;
-  payee_bank_account_no?: string;
+  approval_authority?: string | null;
+  approval_date?: Date | string | null;
+  batch_no?: string | null;
   
-  is_ec_case?: boolean;
-  ec_status?: string;
-  ec_notification_date?: Date | string;
-  ec_closed_date?: Date | string;
+  payee_name?: string | null;
+  payee_ic_no?: string | null;
+  payee_bank_name?: string | null;
+  payee_bank_account_no?: string | null;
   
-  document_received_at?: Date | string;
+  is_ec_case?: boolean | null;
+  ec_status?: string | null;
+  ec_notification_date?: Date | string | null;
+  ec_closed_date?: Date | string | null;
   
-  created_at?: Date | string;
-  created_by?: string;
-  updated_at?: Date | string;
-  updated_by?: string;
+  document_received_at?: Date | string | null;
+  
+  created_at?: Date | string | null;
+  created_by?: string | null;
+  creator_name?: string | null;
+  updated_at?: Date | string | null;
+  updated_by?: string | null;
+  updater_name?: string | null;
 }
 
 export interface ClaimFilters {
@@ -75,18 +79,48 @@ export interface ClaimFilters {
   limit?: number;
 }
 
+export interface CreateClaimDto {
+  member_id: number;
+  hospital_id: number;
+  policy_record_id?: number | null;
+  patient_type?: string | null;
+  patient_id?: number | null;
+  disability_category?: string | null;
+  total_billed?: number | null;
+  document_received_at?: string | Date | null;
+  payee_name?: string | null;
+  payee_ic_no?: string | null;
+  payee_bank_name?: string | null;
+  payee_bank_account_no?: string | null;
+  claim_mode?: string | null;
+}
+
 export interface UpdateClaimDto {
-  claim_status?: string;
-  total_billed?: number;
-  total_approved?: number;
-  rejection_type?: string;
-  rejection_reason?: string;
-  approval_authority?: string;
-  payee_name?: string;
-  payee_ic_no?: string;
-  payee_bank_name?: string;
-  payee_bank_account_no?: string;
-  document_received_at?: string | Date;
+  claim_status?: string | null;
+  member_id?: number | null;
+  hospital_id?: number | null;
+  patient_type?: string | null;
+  patient_id?: number | null;
+  disability_category?: string | null;
+  total_billed?: number | null;
+  total_approved?: number | null;
+  rejection_type?: string | null;
+  rejection_reason?: string | null;
+  approval_authority?: string | null;
+  payee_name?: string | null;
+  payee_ic_no?: string | null;
+  payee_bank_name?: string | null;
+  payee_bank_account_no?: string | null;
+  document_received_at?: string | Date | null;
+  is_ec_case?: boolean | null;
+  ec_status?: string | null;
+  ec_notification_date?: string | Date | null;
+  ec_closed_date?: string | Date | null;
+  claim_mode?: string | null;
+
+  // Added for frontend handling
+  expenses?: any[] | null;
+  documents?: any[] | null;
 }
 
 export interface PaginatedClaims {

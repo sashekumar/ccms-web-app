@@ -7,11 +7,17 @@ import {
   GrantPermissionDto,
   RevokePermissionDto,
   CreateCategoryDto,
-  UpdateCategoryDto
+  UpdateCategoryDto,
+  PermissionCheck
 } from './permissions.types';
 import { getErrorMessage } from '../../core/utils/error.util';
 import { ResponseUtil } from '../../core/utils/response.util';
 
+/**
+ * Permissions Controller
+ * Handles role and permission management with specialized business logic
+ * Not extending BaseController due to custom permission-checking requirements
+ */
 export class PermissionsController {
   private service: PermissionsService;
 

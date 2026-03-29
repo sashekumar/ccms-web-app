@@ -10,6 +10,7 @@ import {
 } from '../../../shared/models/product.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
@@ -465,21 +466,21 @@ export class ProductListComponent implements OnInit, OnDestroy {
    * Navigate to create product page
    */
   createProduct(): void {
-    this.router.navigate(['/products/create']);
+    this.router.navigate([APP_ROUTES.PRODUCTS.CREATE]);
   }
 
   /**
    * Navigate to view product page
    */
   viewProduct(product_id: string): void {
-    this.router.navigate(['/products/view', product_id]);
+    this.router.navigate([APP_ROUTES.PRODUCTS.DETAIL(product_id)]);
   }
 
   /**
    * Navigate to edit product page
    */
   editProduct(product_id: string): void {
-    this.router.navigate(['/products/edit', product_id]);
+    this.router.navigate([APP_ROUTES.PRODUCTS.EDIT(product_id)]);
   }
 
   /**
@@ -613,3 +614,5 @@ export class ProductListComponent implements OnInit, OnDestroy {
     return Math.min(this.pagination.page * this.pagination.limit, this.pagination.total);
   }
 }
+
+

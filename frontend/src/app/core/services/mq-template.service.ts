@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ApiResponse } from './base-api.service';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -16,12 +17,6 @@ import {
   PaginatedMqTemplates,
   MqBuilderData
 } from '../../shared/models/mq-template.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 @Injectable({ providedIn: 'root' })
 export class MqTemplateService {

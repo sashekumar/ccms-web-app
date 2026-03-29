@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, UserFilters } from './users.types';
+import { User, CreateUserDto, UpdateUserDto, UserFilters } from './users.types';
 import { getErrorMessage } from '../../core/utils/error.util';
 import { ResponseUtil } from '../../core/utils/response.util';
+import { BaseController } from '../../core/base';
 
-export class UsersController {
-  private service: UsersService;
+export class UsersController extends BaseController<User> {
+  protected service: UsersService;
 
   constructor() {
-    this.service = new UsersService();
+    const service = new UsersService();
+    super(service);
+    this.service = service;
   }
 
   /**

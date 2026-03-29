@@ -1,7 +1,7 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError, switchMap, filter, take } from 'rxjs';
+import { catchError, throwError, switchMap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { LoggerService } from '../services/logger.service';
 import { API_ENDPOINTS } from '../constants';
@@ -53,18 +53,8 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
             // Attempt automatic token refresh
 
-            // If already refreshing, wait for it to complete
-            if (authService.isRefreshingToken()) {
-              return authService.getRefreshState().pipe(
-                filter(refreshed => refreshed === true),
-                take(1),
-                switchMap(() => {
-                  return next(req);
-                })
-              );
-            }
-
-            // Attempt token refresh
+            // refreshAccessToken() handles concurrent requests internally:
+            // if a refresh is already in progress, it waits for it to complete.
             return authService.refreshAccessToken().pipe(
               switchMap((success) => {
                 if (success) {

@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
 import { HospitalsService } from './hospitals.service';
-import { CreateHospitalDto, UpdateHospitalDto, HospitalFilters, GetHospitalRequest } from './hospitals.types';
+import { Hospital, CreateHospitalDto, UpdateHospitalDto, HospitalFilters, GetHospitalRequest } from './hospitals.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
+import { BaseController } from '../../core/base';
 
-export class HospitalsController {
-  private service: HospitalsService;
+export class HospitalsController extends BaseController<Hospital> {
+  protected service: HospitalsService;
 
   constructor() {
-    this.service = new HospitalsService();
+    const service = new HospitalsService();
+    super(service);
+    this.service = service;
   }
 
   /**

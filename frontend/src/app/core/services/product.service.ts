@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ApiResponse } from './base-api.service';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -20,12 +21,6 @@ import {
   CreateProductLosThresholdDto,
   UpdateProductLosThresholdDto
 } from '../../shared/models/product.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 /**
  * Product Service - Handles products/policy management operations
@@ -59,7 +54,6 @@ export class ProductService {
         };
       }),
       catchError(error => {
-        console.error('Error fetching products:', error);
         throw error;
       })
     );
@@ -75,7 +69,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching product:', error);
         throw error;
       })
     );
@@ -91,7 +84,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error checking plan code:', error);
         throw error;
       })
     );
@@ -107,7 +99,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data.product_id),
       catchError(error => {
-        console.error('Error creating product:', error);
         throw error;
       })
     );
@@ -123,7 +114,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating product:', error);
         throw error;
       })
     );
@@ -139,7 +129,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting product:', error);
         throw error;
       })
     );
@@ -155,7 +144,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error activating product:', error);
         throw error;
       })
     );
@@ -171,7 +159,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deactivating product:', error);
         throw error;
       })
     );
@@ -191,7 +178,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching product limits:', error);
         throw error;
       })
     );
@@ -207,7 +193,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching product limit:', error);
         throw error;
       })
     );
@@ -223,7 +208,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data.limit_id),
       catchError(error => {
-        console.error('Error creating product limit:', error);
         throw error;
       })
     );
@@ -239,7 +223,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating product limit:', error);
         throw error;
       })
     );
@@ -254,7 +237,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting product limit:', error);
         throw error;
       })
     );
@@ -274,7 +256,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching product copay:', error);
         throw error;
       })
     );
@@ -290,7 +271,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching product copay:', error);
         throw error;
       })
     );
@@ -306,7 +286,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data.copay_id),
       catchError(error => {
-        console.error('Error creating product copay:', error);
         throw error;
       })
     );
@@ -322,7 +301,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating product copay:', error);
         throw error;
       })
     );
@@ -337,7 +315,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting product copay:', error);
         throw error;
       })
     );
@@ -357,7 +334,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching product LOS thresholds:', error);
         throw error;
       })
     );
@@ -373,7 +349,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching product LOS threshold:', error);
         throw error;
       })
     );
@@ -389,7 +364,6 @@ export class ProductService {
     ).pipe(
       map(response => response.data.threshold_id),
       catchError(error => {
-        console.error('Error creating product LOS threshold:', error);
         throw error;
       })
     );
@@ -405,7 +379,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating product LOS threshold:', error);
         throw error;
       })
     );
@@ -420,7 +393,6 @@ export class ProductService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting product LOS threshold:', error);
         throw error;
       })
     );

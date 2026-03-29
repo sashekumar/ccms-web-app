@@ -1,18 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
-import { tap, switchMap, catchError, shareReplay } from 'rxjs/operators';
+import { tap, switchMap, catchError, filter, take } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ApiService } from './api.service';
 import { LoggerService } from './logger.service';
 import { API_ENDPOINTS } from '../constants';
 import { PermissionService } from './permission.service';
 import { User } from '../../shared/models/user.model';
+import { ApiResponse } from './base-api.service';
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
 
 /**
  * Auth Service - Authentication and authorization
@@ -28,7 +24,7 @@ export class AuthService {
   
   // Token refresh management
   private isRefreshing = false;
-  private refreshTokenSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  private refreshTokenSubject: BehaviorSubject<boolean | null> = new BehaviorSubject<boolean | null>(null);
 
   constructor(
     private api: ApiService,
@@ -69,8 +65,34 @@ export class AuthService {
           }
         },
         error: () => {
-          // No valid session - user will be redirected to login by guard
-          resolve();
+          // Access token may be expired — try refreshing and retrying /me
+          this.refreshAccessToken().subscribe({
+            next: (success) => {
+              if (success) {
+                this.api.get<ApiResponse<User>>(API_ENDPOINTS.AUTH.ME).subscribe({
+                  next: (response) => {
+                    if (response.success && response.data) {
+                      this.currentUserSubject.next(response.data);
+                      sessionStorage.setItem('currentUser', JSON.stringify(response.data));
+                      this.permissionService.loadUserPermissions().subscribe({
+                        next: () => resolve(),
+                        error: () => {
+                          this.logger.warn('Failed to load permissions on init');
+                          resolve();
+                        }
+                      });
+                    } else {
+                      resolve();
+                    }
+                  },
+                  error: () => resolve()
+                });
+              } else {
+                resolve();
+              }
+            },
+            error: () => resolve() // Refresh token also expired — guard will redirect to login
+          });
         }
       });
     });
@@ -144,20 +166,22 @@ export class AuthService {
    * Returns observable that completes when refresh is done
    */
   refreshAccessToken(): Observable<boolean> {
-    // Prevent multiple concurrent refresh requests
+    // If a refresh is already in progress, wait for it to complete
     if (this.isRefreshing) {
-      return this.refreshTokenSubject.asObservable();
+      return this.refreshTokenSubject.asObservable().pipe(
+        filter((state): state is boolean => state !== null),
+        take(1)
+      );
     }
 
     this.isRefreshing = true;
-    this.refreshTokenSubject.next(false);
+    this.refreshTokenSubject.next(null); // null = refresh in progress
 
     return this.api.post<ApiResponse<null>>(API_ENDPOINTS.AUTH.REFRESH, {}).pipe(
       tap((response) => {
-        if (response.success) {
-          this.isRefreshing = false;
-          this.refreshTokenSubject.next(true);
-        }
+        // Always reset regardless of response.success to prevent isRefreshing from getting stuck
+        this.isRefreshing = false;
+        this.refreshTokenSubject.next(response.success);
       }),
       switchMap((response) => of(response.success)),
       catchError((error) => {
@@ -183,15 +207,14 @@ export class AuthService {
         }
         
         return throwError(() => error);
-      }),
-      shareReplay(1) // Share the result with all subscribers
+      })
     );
   }
 
   /**
    * Get refresh state observable for queuing requests during token refresh
    */
-  getRefreshState(): Observable<boolean> {
+  getRefreshState(): Observable<boolean | null> {
     return this.refreshTokenSubject.asObservable();
   }
 

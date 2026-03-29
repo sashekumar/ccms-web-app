@@ -8,6 +8,8 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CreateUserDto, UpdateUserDto } from '../../../shared/models/user.model';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-user-form',
   standalone: true,
@@ -305,7 +307,7 @@ export class UserFormComponent implements OnInit, OnDestroy {
         next: (userId) => {
           this.loading = false;
           this.toast.success('User created successfully');
-          this.router.navigate(['/admin/users']);
+          this.router.navigate([APP_ROUTES.ADMIN_USERS.LIST]);
         },
         error: (error) => {
           this.logger.error('Error creating user', error);
@@ -335,7 +337,7 @@ export class UserFormComponent implements OnInit, OnDestroy {
         next: () => {
           this.loading = false;
           this.toast.success('User updated successfully');
-          this.router.navigate(['/admin/users']);
+          this.router.navigate([APP_ROUTES.ADMIN_USERS.LIST]);
         },
         error: (error) => {
           this.logger.error('Error updating user', error);
@@ -352,6 +354,9 @@ export class UserFormComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/admin/users']);
+    this.router.navigate([APP_ROUTES.ADMIN_USERS.LIST]);
   }
 }
+
+
+

@@ -30,6 +30,8 @@ export interface CreateAdmissionDto {
   member_id: number;               // Required: FK to ccms_members (patient)
   hospital_id: number;             // Required: FK to ccms_hospitals
   policy_record_id?: number;       // Optional: Specific policy if member has multiple
+  patient_type?: string;           // Optional: PRINCIPAL | DEPENDENT (default: PRINCIPAL)
+  claim_mode?: string;             // Optional: CASHLESS | REIMB (default: CASHLESS)
   admission_date: Date | string;   // Required: When patient admitted
   discharge_date?: Date | string;  // Optional: When patient discharged (can be null for ongoing)
   admission_type: string;          // Required: From ADMISSION_TYPE lookup (EMERGENCY, ELECTIVE)
@@ -84,7 +86,11 @@ export interface UpdateAdmissionDto {
  * Permission Required: ADMISSIONS.APPROVE
  */
 export interface ApproveAdmissionDto {
-  remarks?: string;  // Optional approval notes (e.g., "Approved for RM 8,000", "Standard approval")
+  approved_amount?: number;    // RM for the committed GL
+  ehm_status?: string;         // Monitoring status
+  discharge_date?: Date | string; // Updated discharge/completion date
+  alert_flag?: boolean;        // Boolean indicating if alert logic is enabled
+  remarks?: string;            // Free text notes for the approval
 }
 
 /**
@@ -102,7 +108,8 @@ export interface ApproveAdmissionDto {
  * Permission Required: ADMISSIONS.APPROVE
  */
 export interface RejectAdmissionDto {
-  rejectionReason: string;  // Required: Reason for rejection (e.g., "Missing documents", "Outside policy coverage")
+  rejectionReason: string;   // Required: Reason for rejection
+  rejection_type?: string;   // Optional: e.g. POLICY_EXCLUSION, INCOMPLETE_DOCS, DUPLICATE
 }
 
 /**

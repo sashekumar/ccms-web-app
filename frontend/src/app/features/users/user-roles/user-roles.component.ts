@@ -15,6 +15,8 @@ interface RoleAssignment {
   expiresAt?: string;
 }
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-user-roles',
   standalone: true,
@@ -407,9 +409,9 @@ export class UserRolesComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     if (this.userId) {
-      this.router.navigate(['/admin/users/view', this.userId]);
+      this.router.navigate([APP_ROUTES.ADMIN_USERS.DETAIL(this.userId)]);
     } else {
-      this.router.navigate(['/admin/users']);
+      this.router.navigate([APP_ROUTES.ADMIN_USERS.LIST]);
     }
   }
 
@@ -421,3 +423,6 @@ export class UserRolesComponent implements OnInit, OnDestroy {
     return role.role_id;
   }
 }
+
+
+

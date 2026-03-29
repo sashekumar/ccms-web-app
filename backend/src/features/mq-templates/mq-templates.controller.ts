@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
 import { MqTemplatesService } from './mq-templates.service';
+import { MqTemplate } from './mq-templates.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
-
+/**
+ * MQ Templates Controller
+ * Manages message queue template configuration
+ * Not extending BaseController due to specialized messaging requirements
+ */
 export class MqTemplatesController {
   private service: MqTemplatesService;
 

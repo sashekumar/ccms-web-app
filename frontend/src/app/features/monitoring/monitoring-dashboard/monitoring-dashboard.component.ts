@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { MonitoringService } from '../../../core/services/monitoring.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -14,30 +15,55 @@ import { LOSAlert, EightHourCheck, MonitoringFilters } from '../../../shared/mod
 @Component({
   selector: 'app-monitoring-dashboard',
   standalone: true,
-  imports: [CommonModule, LoadingSpinnerComponent],
+  imports: [CommonModule, LoadingSpinnerComponent, FormsModule],
   templateUrl: './monitoring-dashboard.component.html'
 })
 export class MonitoringDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // Tab management
+  // Main tab management
   activeTab: 'alerts' | 'checks' = 'alerts';
 
-  // LOS Alerts
+  // LOS Alerts with multi-level tabs
   alerts: LOSAlert[] = [];
   loadingAlerts = false;
   alertsPage = 1;
   alertsLimit = 10;
   alertsTotal = 0;
   alertsTotalPages = 0;
+  activeLevelTab: 'all' | 1 | 2 | 3 = 'all';
+  expandedAlertIds: Set<number> = new Set();
+  
+  // Alert filtering
+  alertSearchTerm = '';
+  alertStatusFilter: 'all' | 'ACTIVE' | 'ACKNOWLEDGED' = 'all';
 
-  // 8HM Checks
+  // 8HM Checks with multi-level tabs
   checks: EightHourCheck[] = [];
   loadingChecks = false;
   checksPage = 1;
   checksLimit = 10;
   checksTotal = 0;
   checksTotalPages = 0;
+  activeStatusTab: 'all' | 'STABLE' | 'REQUIRES_ATTENTION' | 'CRITICAL' = 'all';
+  expandedCheckIds: Set<number> = new Set();
+  
+  // Check filtering
+  checkSearchTerm = '';
+  checkStatusFilter: 'all' | 'STABLE' | 'REQUIRES_ATTENTION' | 'CRITICAL' = 'all';
+
+  // Acknowledge Alert Modal
+  showAckModal = false;
+  ackAlertId: number | null = null;
+  ackNotes = '';
+  ackLoading = false;
+
+  // Record Check Modal
+  showCheckModal = false;
+  checkAdmissionId: number | null = null;
+  checkStatus = 'STABLE';
+  checkNotes = '';
+  checkLoading = false;
 
   constructor(
     private monitoringService: MonitoringService,
@@ -55,7 +81,7 @@ export class MonitoringDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Switch between tabs
+   * Switch between main tabs
    */
   switchTab(tab: 'alerts' | 'checks'): void {
     this.activeTab = tab;
@@ -68,18 +94,159 @@ export class MonitoringDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Switch alert level sub-tab (Task 13)
+   */
+  switchLevelTab(level: 'all' | 1 | 2 | 3): void {
+    this.activeLevelTab = level;
+    this.alertsPage = 1;
+    this.loadAlerts();
+  }
+
+  /**
+   * Switch check status sub-tab (Task 15)
+   */
+  switchStatusTab(status: 'all' | 'STABLE' | 'REQUIRES_ATTENTION' | 'CRITICAL'): void {
+    this.activeStatusTab = status;
+    this.checksPage = 1;
+    this.loadChecks();
+  }
+
+  /**
+   * Toggle alert expansion (Task 14)
+   */
+  toggleAlertExpanded(alertId: number): void {
+    if (this.expandedAlertIds.has(alertId)) {
+      this.expandedAlertIds.delete(alertId);
+    } else {
+      this.expandedAlertIds.add(alertId);
+    }
+  }
+
+  /**
+   * Check if alert is expanded (Task 14)
+   */
+  isAlertExpanded(alertId: number): boolean {
+    return this.expandedAlertIds.has(alertId);
+  }
+
+  /**
+   * Toggle check expansion (Task 14)
+   */
+  toggleCheckExpanded(checkId: number): void {
+    if (this.expandedCheckIds.has(checkId)) {
+      this.expandedCheckIds.delete(checkId);
+    } else {
+      this.expandedCheckIds.add(checkId);
+    }
+  }
+
+  /**
+   * Check if check is expanded (Task 14)
+   */
+  isCheckExpanded(checkId: number): boolean {
+    return this.expandedCheckIds.has(checkId);
+  }
+
+  /**
+   * Filter alerts by search term (Task 16)
+   */
+  applyAlertFilter(): void {
+    this.alertsPage = 1;
+    this.loadAlerts();
+  }
+
+  /**
+   * Filter checks by search term (Task 16)
+   */
+  applyCheckFilter(): void {
+    this.checksPage = 1;
+    this.loadChecks();
+  }
+
+  /**
+   * Get filtered alerts for display
+   */
+  getFilteredAlerts(): LOSAlert[] {
+    return this.alerts.filter(alert => {
+      // Filter by level
+      if (this.activeLevelTab !== 'all' && alert.alert_level !== this.activeLevelTab) {
+        return false;
+      }
+      // Filter by status
+      if (this.alertStatusFilter !== 'all' && alert.status !== this.alertStatusFilter) {
+        return false;
+      }
+      // Filter by search term
+      if (this.alertSearchTerm.trim()) {
+        const term = this.alertSearchTerm.toLowerCase();
+        return (
+          alert.member_name?.toLowerCase().includes(term) ||
+          alert.hospital_name?.toLowerCase().includes(term) ||
+          alert.claim_ref_no?.toLowerCase().includes(term)
+        );
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Get filtered checks for display
+   */
+  getFilteredChecks(): EightHourCheck[] {
+    return this.checks.filter(check => {
+      // Filter by status
+      if (this.activeStatusTab !== 'all' && check.status !== this.activeStatusTab) {
+        return false;
+      }
+      // Filter by search term
+      if (this.checkSearchTerm.trim()) {
+        const term = this.checkSearchTerm.toLowerCase();
+        return (
+          check.member_name?.toLowerCase().includes(term) ||
+          check.hospital_name?.toLowerCase().includes(term) ||
+          check.claim_ref_no?.toLowerCase().includes(term)
+        );
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Get count of alerts by level
+   */
+  getAlertCountByLevel(level: 1 | 2 | 3): number {
+    return this.alerts.filter(a => a.alert_level === level).length;
+  }
+
+  /**
+   * Get count of checks by status
+   */
+  getCheckCountByStatus(status: 'STABLE' | 'REQUIRES_ATTENTION' | 'CRITICAL'): number {
+    return this.checks.filter(c => c.status === status).length;
+  }
+
+  /**
    * Load LOS alerts
    */
   loadAlerts(): void {
     this.loadingAlerts = true;
     
     const filters: MonitoringFilters = {
-      alertStatus: 'ACTIVE',
       page: this.alertsPage,
       limit: this.alertsLimit,
       sortBy: 'triggered_at',
       sortOrder: 'DESC'
     };
+
+    // Add level filter if specific level selected (Task 13)
+    if (this.activeLevelTab !== 'all') {
+      filters.alertLevel = this.activeLevelTab;
+    }
+
+    // Add search term if provided (Task 16)
+    if (this.alertSearchTerm.trim()) {
+      filters.searchTerm = this.alertSearchTerm;
+    }
 
     this.monitoringService.getLOSAlerts(filters)
       .pipe(takeUntil(this.destroy$))
@@ -112,6 +279,16 @@ export class MonitoringDashboardComponent implements OnInit, OnDestroy {
       sortOrder: 'DESC'
     };
 
+    // Add status filter if specific status selected (Task 15)
+    if (this.activeStatusTab !== 'all') {
+      filters.checkStatus = this.activeStatusTab;
+    }
+
+    // Add search term if provided (Task 16)
+    if (this.checkSearchTerm.trim()) {
+      filters.searchTerm = this.checkSearchTerm;
+    }
+
     this.monitoringService.get8HMChecks(filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -131,20 +308,32 @@ export class MonitoringDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Acknowledge alert
+   * Open acknowledge modal
    */
   acknowledgeAlert(alertId: number): void {
-    const notes = prompt('Optional notes for acknowledgment:');
-    if (notes === null) return; // User cancelled
+    this.ackAlertId = alertId;
+    this.ackNotes = '';
+    this.showAckModal = true;
+  }
 
-    this.monitoringService.acknowledgeAlert({ alert_id: alertId, notes: notes || undefined })
+  /**
+   * Submit acknowledgment
+   */
+  submitAcknowledge(): void {
+    if (!this.ackAlertId) return;
+    this.ackLoading = true;
+
+    this.monitoringService.acknowledgeAlert({ alert_id: this.ackAlertId, notes: this.ackNotes || undefined })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
+          this.ackLoading = false;
+          this.showAckModal = false;
           this.toast.success('Alert acknowledged successfully');
-          this.loadAlerts(); // Reload to show updated status
+          this.loadAlerts();
         },
         error: (error) => {
+          this.ackLoading = false;
           this.logger.error('Error acknowledging alert:', error);
           this.toast.error(error.error?.message || 'Failed to acknowledge alert');
         }
@@ -152,39 +341,41 @@ export class MonitoringDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Record monitoring check
+   * Open record check modal
    */
   recordCheck(admissionId: number): void {
-    const status = prompt('Enter status (STABLE, REQUIRES_ATTENTION, CRITICAL):');
-    if (!status) {
-      this.toast.error('Status is required');
-      return;
-    }
+    this.checkAdmissionId = admissionId;
+    this.checkStatus = 'STABLE';
+    this.checkNotes = '';
+    this.showCheckModal = true;
+  }
 
-    const validStatuses = ['STABLE', 'REQUIRES_ATTENTION', 'CRITICAL'];
-    if (!validStatuses.includes(status.toUpperCase())) {
-      this.toast.error('Invalid status. Must be STABLE, REQUIRES_ATTENTION, or CRITICAL');
-      return;
-    }
+  /**
+   * Submit monitoring check
+   */
+  submitCheck(): void {
+    if (!this.checkAdmissionId || !this.checkStatus) return;
+    this.checkLoading = true;
 
-    const notes = prompt('Optional notes:');
-
-    this.monitoringService.recordCheck({ 
-      admission_id: admissionId, 
-      status: status.toUpperCase(),
-      notes: notes || undefined
+    this.monitoringService.recordCheck({
+      admission_id: this.checkAdmissionId,
+      status: this.checkStatus,
+      notes: this.checkNotes || undefined
     })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Check recorded successfully');
-          this.loadChecks(); // Reload to show new check
-        },
-        error: (error) => {
-          this.logger.error('Error recording check:', error);
-          this.toast.error(error.error?.message || 'Failed to record check');
-        }
-      });
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: () => {
+        this.checkLoading = false;
+        this.showCheckModal = false;
+        this.toast.success('Check recorded successfully');
+        this.loadChecks();
+      },
+      error: (error) => {
+        this.checkLoading = false;
+        this.logger.error('Error recording check:', error);
+        this.toast.error(error.error?.message || 'Failed to record check');
+      }
+    });
   }
 
   /**

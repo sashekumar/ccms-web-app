@@ -11,6 +11,8 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-role-list',
   standalone: true,
@@ -355,15 +357,15 @@ export class RoleListComponent implements OnInit, OnDestroy {
   }
 
   createRole(): void {
-    this.router.navigate(['/admin/roles/create']);
+    this.router.navigate([APP_ROUTES.ADMIN_ROLES.CREATE]);
   }
 
   viewPermissions(roleId: number): void {
-    this.router.navigate(['/admin/roles/permissions', roleId]);
+    this.router.navigate([APP_ROUTES.ADMIN_ROLES.PERMISSIONS(roleId)]);
   }
 
   editRole(roleId: number): void {
-    this.router.navigate(['/admin/roles/edit', roleId]);
+    this.router.navigate([APP_ROUTES.ADMIN_ROLES.EDIT(roleId)]);
   }
 
   confirmDelete(roleId: number, roleName: string, isSystemRole: boolean): void {
@@ -439,3 +441,6 @@ export class RoleListComponent implements OnInit, OnDestroy {
     return role.role_id;
   }
 }
+
+
+

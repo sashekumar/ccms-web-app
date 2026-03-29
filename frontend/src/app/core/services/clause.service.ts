@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ApiResponse } from './base-api.service';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -10,12 +11,6 @@ import {
   ClauseFilters,
   PaginatedClauses
 } from '../../shared/models/clause.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 /**
  * Clause Service - Handles clause management operations
@@ -36,7 +31,6 @@ export class ClauseService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching clauses:', error);
         throw error;
       })
     );
@@ -52,7 +46,6 @@ export class ClauseService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching clause:', error);
         throw error;
       })
     );
@@ -68,7 +61,6 @@ export class ClauseService {
     ).pipe(
       map(response => response.data.clause_id),
       catchError(error => {
-        console.error('Error creating clause:', error);
         throw error;
       })
     );
@@ -84,7 +76,6 @@ export class ClauseService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating clause:', error);
         throw error;
       })
     );
@@ -100,7 +91,6 @@ export class ClauseService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting clause:', error);
         throw error;
       })
     );
@@ -116,7 +106,6 @@ export class ClauseService {
     ).pipe(
       map(response => response.data.available),
       catchError(error => {
-        console.error('Error checking clause code:', error);
         throw error;
       })
     );

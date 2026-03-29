@@ -117,6 +117,9 @@ describe('AuthService', () => {
       apiServiceMock.get.mockReturnValue(
         throwError(() => new Error('Unauthorized'))
       );
+      apiServiceMock.post.mockReturnValue(
+        throwError(() => new Error('Refresh failed'))
+      );
 
       await service.initializeAuth();
 
@@ -367,11 +370,14 @@ describe('AuthService', () => {
 
   describe('getRefreshState()', () => {
     it('should return refresh state observable', () => {
+      // Initial value is null (no refresh in progress); emitted values are boolean | null
+      let emittedValue: boolean | null = undefined as any;
       service.getRefreshState().subscribe({
         next: (state) => {
-          expect(typeof state).toBe('boolean');
+          emittedValue = state;
         }
       });
+      expect(emittedValue).toBeNull();
     });
   });
 });

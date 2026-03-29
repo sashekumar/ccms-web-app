@@ -12,6 +12,8 @@ import { ToastService } from '../../../core/services/toast.service';
 import { CreateMemberDto, UpdateMemberDto, Member } from '../../../shared/models/member.model';
 import { Bank } from '../../../shared/models/bank.model';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-member-form',
   standalone: true,
@@ -190,7 +192,7 @@ export class MemberFormComponent implements OnInit, OnDestroy {
         error: (error: any) => {
           this.logger.error('Error loading member:', error);
           this.toast.error('Failed to load member');
-          this.router.navigate(['/members']);
+          this.router.navigate([APP_ROUTES.MEMBERS.LIST]);
         }
       });
   }
@@ -257,7 +259,7 @@ export class MemberFormComponent implements OnInit, OnDestroy {
         next: (memberId: string) => {
           this.toast.success('Member created successfully');
           this.submitting = false;
-          this.router.navigate(['/members', memberId]);
+          this.router.navigate([APP_ROUTES.MEMBERS.DETAIL(memberId)]);
         },
         error: (error: any) => {
           this.logger.error('Error creating member:', error);
@@ -279,7 +281,9 @@ export class MemberFormComponent implements OnInit, OnDestroy {
         next: () => {
           this.toast.success('Member updated successfully');
           this.submitting = false;
-          this.router.navigate(['/members', this.memberId]);
+          if (this.memberId) {
+            this.router.navigate([APP_ROUTES.MEMBERS.DETAIL(this.memberId)]);
+          }
         },
         error: (error: any) => {
           this.logger.error('Error updating member:', error);
@@ -333,9 +337,9 @@ export class MemberFormComponent implements OnInit, OnDestroy {
     }
 
     if (this.isEditMode && this.memberId) {
-      this.router.navigate(['/members', this.memberId]);
+      this.router.navigate([APP_ROUTES.MEMBERS.DETAIL(this.memberId)]);
     } else {
-      this.router.navigate(['/members']);
+      this.router.navigate([APP_ROUTES.MEMBERS.LIST]);
     }
   }
 
@@ -427,3 +431,6 @@ export class MemberFormComponent implements OnInit, OnDestroy {
     return 'Invalid date';
   }
 }
+
+
+

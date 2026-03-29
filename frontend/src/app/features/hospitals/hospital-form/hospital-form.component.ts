@@ -11,6 +11,8 @@ import { Bank } from '../../../shared/models/bank.model';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-hospital-form',
   standalone: true,
@@ -380,7 +382,7 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
    * Navigate back to hospital list
    */
   goBack(): void {
-    this.router.navigate(['/hospitals']);
+    this.router.navigate([APP_ROUTES.HOSPITALS.LIST]);
   }
 
   /**
@@ -399,3 +401,6 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 }
+
+
+

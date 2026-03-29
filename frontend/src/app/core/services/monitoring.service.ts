@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ApiResponse } from './base-api.service';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -12,12 +13,6 @@ import {
   PaginatedLOSAlerts,
   Paginated8HMChecks
 } from '../../shared/models/monitoring.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 /**
  * Monitoring Service
@@ -45,7 +40,6 @@ export class MonitoringService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching LOS alerts:', error);
         throw error;
       })
     );
@@ -61,7 +55,6 @@ export class MonitoringService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error acknowledging alert:', error);
         throw error;
       })
     );
@@ -77,7 +70,6 @@ export class MonitoringService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching 8HM checks:', error);
         throw error;
       })
     );
@@ -93,7 +85,6 @@ export class MonitoringService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error recording check:', error);
         throw error;
       })
     );

@@ -13,6 +13,8 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-user-list',
   standalone: true,
@@ -442,19 +444,19 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   viewUser(user: User): void {
-    this.router.navigate(['/admin/users/view', user.user_id]);
+    this.router.navigate([APP_ROUTES.ADMIN_USERS.DETAIL(user.user_id)]);
   }
 
   editUser(user: User): void {
-    this.router.navigate(['/admin/users/edit', user.user_id]);
+    this.router.navigate([APP_ROUTES.ADMIN_USERS.EDIT(user.user_id)]);
   }
 
   manageRoles(user: User): void {
-    this.router.navigate(['/admin/users/roles', user.user_id]);
+    this.router.navigate([APP_ROUTES.ADMIN_USERS.ROLES(user.user_id)]);
   }
 
   openCreateModal(): void {
-    this.router.navigate(['/admin/users/create'])
+    this.router.navigate([APP_ROUTES.ADMIN_USERS.CREATE])
       .then(success => {
         if (!success) {
           this.logger.error('Navigation to create user failed');
@@ -526,3 +528,6 @@ export class UserListComponent implements OnInit, OnDestroy {
     return page;
   }
 }
+
+
+

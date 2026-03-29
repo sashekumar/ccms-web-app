@@ -16,6 +16,7 @@ import { MemberListItem } from '../../../shared/models/member.model';
 import { HospitalListItem } from '../../../shared/models/hospital.model';
 import { LookupItem } from '../../../shared/services/lookup.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 
 @Component({
   selector: 'app-admission-form',
@@ -678,7 +679,7 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
         next: (response) => {
           this.submitting = false;
           this.toast.success(`Admission created successfully! Claim: ${response.claim_ref_no}`);
-          this.router.navigate(['/admissions', response.admission_id]);
+          this.router.navigate([APP_ROUTES.ADMISSIONS.DETAIL(response.admission_id)]);
         },
         error: (error) => {
           this.submitting = false;
@@ -701,7 +702,9 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
         next: () => {
           this.submitting = false;
           this.toast.success('Admission updated successfully');
-          this.router.navigate(['/admissions', this.admissionId]);
+          if (this.admissionId) {
+            this.router.navigate([APP_ROUTES.ADMISSIONS.DETAIL(this.admissionId)]);
+          }
         },
         error: (error) => {
           this.submitting = false;
@@ -716,9 +719,11 @@ export class AdmissionFormComponent implements OnInit, OnDestroy {
    */
   goBack(): void {
     if (this.isEditMode && this.admissionId) {
-      this.router.navigate(['/admissions', this.admissionId]);
+      this.router.navigate([APP_ROUTES.ADMISSIONS.DETAIL(this.admissionId)]);
     } else {
-      this.router.navigate(['/admissions']);
+      this.router.navigate([APP_ROUTES.ADMISSIONS.LIST]);
     }
   }
 }
+
+

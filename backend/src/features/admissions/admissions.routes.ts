@@ -123,4 +123,7 @@ router.post('/mq-history', requirePermission('MQ_OPERATIONS', 'VIEW'), controlle
  */
 router.post('/update-mq-status', requirePermission('MQ_OPERATIONS', 'MANAGE'), controller.updateMQStatus);
 
+router.post('/assessments/get', requirePermission('ADMISSIONS', 'VIEW'), controller.getAdmissionAssessments);
+router.post('/assessments/upsert', requirePermission('ADMISSIONS', 'UPDATE'), controller.upsertAdmissionAssessments);
+
 export default router;

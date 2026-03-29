@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MembersService } from './members.service';
 import { 
+  Member,
   MemberFilters, 
   CreateMemberDto, 
   UpdateMemberDto, 
@@ -40,12 +41,15 @@ import {
 } from './member-pec.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
+import { BaseController } from '../../core/base';
 
-export class MembersController {
-  private service: MembersService;
+export class MembersController extends BaseController<Member> {
+  protected service: MembersService;
 
   constructor() {
-    this.service = new MembersService();
+    const service = new MembersService();
+    super(service);
+    this.service = service;
   }
 
   // ============================================================================

@@ -365,7 +365,9 @@ export const ADMISSIONS_ENDPOINTS = {
   DEFER: `admissions/defer`,
   RESOLVE_DEFERMENT: `admissions/resolve-deferment`,
   GET_MQ_HISTORY: `admissions/mq-history`,
-  UPDATE_MQ_STATUS: `admissions/update-mq-status`
+  UPDATE_MQ_STATUS: `admissions/update-mq-status`,
+  ASSESSMENTS_GET: `admissions/assessments/get`,
+  ASSESSMENTS_UPSERT: `admissions/assessments/upsert`
 } as const;
 
 // ============================================================================
@@ -407,7 +409,14 @@ export const API_ENDPOINTS = {
   PRODUCTS: PRODUCTS_ENDPOINTS,
   MEMBERS: MEMBERS_ENDPOINTS,
   ADMISSIONS: ADMISSIONS_ENDPOINTS,
-  MONITORING: MONITORING_ENDPOINTS
+  MONITORING: MONITORING_ENDPOINTS,
+  CLAIMS: {
+    LIST:   'claims/list',
+    GET:    'claims',
+    CREATE: 'claims',
+    UPDATE: 'claims',
+    DELETE: 'claims'
+  }
 } as const;
 
 // ============================================================================

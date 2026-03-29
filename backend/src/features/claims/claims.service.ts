@@ -1,6 +1,6 @@
 import { BaseService } from '../../core/base/base.service';
 import { Claim, ClaimFilters, PaginatedClaims } from './entities/claim.entity';
-import { UpdateClaimDto } from './dto/claim.dto';
+import { CreateClaimDto, UpdateClaimDto } from './dto/claim.dto';
 import { ClaimsRepository } from './claims.repository';
 
 export class ClaimsService extends BaseService<Claim> {
@@ -48,5 +48,86 @@ export class ClaimsService extends BaseService<Claim> {
   public async deleteClaim(id: number, deletedBy: string): Promise<void> {
     await this.getClaimById(id);
     await this.repository.deleteClaim(id, deletedBy);
+  }
+
+  public async createClaim(
+    dto: CreateClaimDto,
+    createdBy: string
+  ): Promise<Claim> {
+    const { claimId } = await this.repository.createClaim(dto, createdBy);
+    return await this.getClaimById(claimId);
+  }
+
+  // ============================================================================
+  // CLAIM EXPENSES
+  // ============================================================================
+
+  public async getClaimExpenses(claimId: number): Promise<any[]> {
+    await this.getClaimById(claimId); // Ensure claim exists
+    return await this.repository.getClaimExpenses(claimId);
+  }
+
+  public async addClaimExpense(claimId: number, expense: {
+    benefit_category: string;
+    description?: string;
+    billed_amt: number;
+    receipt_no?: string;
+    receipt_date?: string;
+  }, userId: string): Promise<{ expense_id: number }> {
+    await this.getClaimById(claimId); // Ensure claim exists
+    const expenseId = await this.repository.addClaimExpense(claimId, expense, userId);
+    return { expense_id: expenseId };
+  }
+
+  public async updateClaimExpense(claimId: number, expenseId: number, expense: {
+    benefit_category?: string;
+    description?: string;
+    billed_amt?: number;
+    receipt_no?: string;
+    receipt_date?: string;
+  }, userId: string): Promise<void> {
+    await this.getClaimById(claimId);
+    await this.repository.updateClaimExpense(expenseId, expense, userId);
+  }
+
+  public async deleteClaimExpense(claimId: number, expenseId: number): Promise<void> {
+    await this.getClaimById(claimId);
+    await this.repository.deleteClaimExpense(expenseId);
+  }
+
+  // ============================================================================
+  // CLAIM DOCUMENTS
+  // ============================================================================
+
+  public async getClaimDocuments(claimId: number): Promise<any[]> {
+    await this.getClaimById(claimId);
+    return await this.repository.getClaimDocuments(claimId);
+  }
+
+  public async addClaimDocument(claimId: number, doc: {
+    file_name: string;
+    doc_category: string;
+    file_path: string;
+    file_extension?: string;
+    file_size_bytes?: number;
+  }, userId: string): Promise<{ doc_id: number }> {
+    await this.getClaimById(claimId);
+    const docId = await this.repository.addClaimDocument(claimId, doc, userId);
+    return { doc_id: docId };
+  }
+
+  public async updateClaimDocument(claimId: number, docId: number, doc: {
+    file_name?: string;
+    doc_category?: string;
+    file_path?: string;
+    remarks?: string;
+  }, userId: string): Promise<void> {
+    await this.getClaimById(claimId);
+    await this.repository.updateClaimDocument(docId, doc, userId);
+  }
+
+  public async deleteClaimDocument(claimId: number, docId: number, userId: string): Promise<void> {
+    await this.getClaimById(claimId);
+    await this.repository.deleteClaimDocument(docId, userId);
   }
 }

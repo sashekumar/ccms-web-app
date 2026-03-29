@@ -59,9 +59,11 @@ VALUES
     ('EHM_STATUS', 'Enhanced Healthcare Management status tracking', 1),
     ('DEFERMENT_STATUS', 'Deferment processing status', 1),
     ('ALERT_LEVEL', 'LOS Alert Levels', 1),
-    ('MQ_CATEGORY', 'Categories for Medical Questionnaire Templates', 1);
+    ('MQ_CATEGORY', 'Categories for Medical Questionnaire Templates', 1),
+    ('BENEFIT_CATEGORY', 'Benefit categories for claim expense line items', 1),
+    ('CLAIM_DOCUMENT_TYPE', 'Document types for claim attachments', 1);
 
-PRINT '  ✓ Created 34 lookup categories';
+PRINT '  ✓ Created 36 lookup categories';
 GO
 
 -- ============================================================================
@@ -804,6 +806,55 @@ VALUES
     (@MqCategoryCategoryId, 'CLINICAL', 'Klinikal (Clinical)', 50, 1);
 
 PRINT '  ✓ Created 5 MQ categories';
+GO
+
+-- ============================================================================
+-- SECTION 36: BENEFIT CATEGORIES (for claim expense line items)
+-- ============================================================================
+
+PRINT 'Populating BENEFIT_CATEGORY lookups...';
+
+DECLARE @BenefitCategoryId INT;
+SELECT @BenefitCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'BENEFIT_CATEGORY';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@BenefitCategoryId, 'ROOM_BOARD', 'Room & Board', 1, 1),
+    (@BenefitCategoryId, 'SURGICAL', 'Surgical Fees', 2, 1),
+    (@BenefitCategoryId, 'ICU', 'ICU Charges', 3, 1),
+    (@BenefitCategoryId, 'MEDICATION', 'Medication', 4, 1),
+    (@BenefitCategoryId, 'CONSULTATION', 'Doctor Consultation', 5, 1),
+    (@BenefitCategoryId, 'LAB_TEST', 'Laboratory Tests', 6, 1),
+    (@BenefitCategoryId, 'IMAGING', 'X-Ray/MRI/CT Scan', 7, 1),
+    (@BenefitCategoryId, 'PHYSIOTHERAPY', 'Physiotherapy', 8, 1),
+    (@BenefitCategoryId, 'AMBULANCE', 'Ambulance Service', 9, 1),
+    (@BenefitCategoryId, 'OTHER', 'Other Charges', 99, 1);
+
+PRINT '  ✓ Created 10 benefit categories';
+GO
+
+-- ============================================================================
+-- SECTION 37: CLAIM DOCUMENT TYPES (for claim attachments)
+-- ============================================================================
+
+PRINT 'Populating CLAIM_DOCUMENT_TYPE lookups...';
+
+DECLARE @ClaimDocTypeCategoryId INT;
+SELECT @ClaimDocTypeCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'CLAIM_DOCUMENT_TYPE';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@ClaimDocTypeCategoryId, 'CLAIM_FORM', 'Claim Form', 1, 1),
+    (@ClaimDocTypeCategoryId, 'BILLS_RECEIPTS', 'Bills & Receipts', 2, 1),
+    (@ClaimDocTypeCategoryId, 'MEDICAL_REPORT', 'Medical Report', 3, 1),
+    (@ClaimDocTypeCategoryId, 'DISCHARGE_SUMMARY', 'Discharge Summary', 4, 1),
+    (@ClaimDocTypeCategoryId, 'LAB_RESULTS', 'Lab Results', 5, 1),
+    (@ClaimDocTypeCategoryId, 'PRESCRIPTION', 'Prescription', 6, 1),
+    (@ClaimDocTypeCategoryId, 'ID_COPY', 'IC/ID Copy', 7, 1),
+    (@ClaimDocTypeCategoryId, 'BANK_STATEMENT', 'Bank Statement', 8, 1),
+    (@ClaimDocTypeCategoryId, 'OTHER', 'Other Supporting Docs', 99, 1);
+
+PRINT '  ✓ Created 9 claim document types';
 GO
 
 -- ============================================================================

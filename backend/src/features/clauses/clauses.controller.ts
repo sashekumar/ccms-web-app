@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
 import { ClausesService } from './clauses.service';
-import { CreateClauseDto, UpdateClauseDto, ClauseFilters, GetClauseRequest } from './clauses.types';
+import { Clause, CreateClauseDto, UpdateClauseDto, ClauseFilters, GetClauseRequest } from './clauses.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
+import { BaseController } from '../../core/base';
 
-export class ClausesController {
-  private service: ClausesService;
+export class ClausesController extends BaseController<Clause> {
+  protected service: ClausesService;
 
   constructor() {
-    this.service = new ClausesService();
+    const service = new ClausesService();
+    super(service);
+    this.service = service;
   }
 
   /**

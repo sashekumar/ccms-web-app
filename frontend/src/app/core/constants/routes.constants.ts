@@ -75,9 +75,89 @@ export const ADMIN_ROUTES = {
 } as const;
 
 // ============================================================================
-// FEATURE ROUTES (Business/Application Features)
+// CLAIMS MANAGEMENT ROUTES
 // ============================================================================
-// Note: Add routes here as features are implemented
+
+export const CLAIMS_ROUTES = {
+  BASE: 'claims',
+  LIST: 'claims',
+  CREATE: 'claims/new',
+  DETAIL: (id: string | number) => `claims/${id}`,
+  EDIT: (id: string | number) => `claims/${id}/edit`
+} as const;
+
+// ============================================================================
+// ADMISSIONS MANAGEMENT ROUTES
+// ============================================================================
+
+export const ADMISSIONS_ROUTES = {
+  BASE: 'admissions',
+  LIST: 'admissions',
+  CREATE: 'admissions/create',
+  DETAIL: (id: string | number) => `admissions/${id}`,
+  EDIT: (id: string | number) => `admissions/${id}/edit`
+} as const;
+
+// ============================================================================
+// MEMBERS / POLICY HOLDERS ROUTES
+// ============================================================================
+
+export const MEMBERS_ROUTES = {
+  BASE: 'members',
+  LIST: 'members',
+  CREATE: 'members/create',
+  DETAIL: (id: string | number) => `members/${id}`,
+  EDIT: (id: string | number) => `members/${id}/edit`
+} as const;
+
+// ============================================================================
+// HOSPITALS MANAGEMENT ROUTES
+// ============================================================================
+
+export const HOSPITALS_ROUTES = {
+  BASE: 'hospitals',
+  LIST: 'hospitals',
+  CREATE: 'hospitals/create',
+  DETAIL: (id: string | number) => `hospitals/view/${id}`,
+  EDIT: (id: string | number) => `hospitals/edit/${id}`
+} as const;
+
+// ============================================================================
+// PRODUCTS / POLICIES MANAGEMENT ROUTES
+// ============================================================================
+
+export const PRODUCTS_ROUTES = {
+  BASE: 'products',
+  LIST: 'products',
+  CREATE: 'products/create',
+  DETAIL: (id: string | number) => `products/view/${id}`,
+  EDIT: (id: string | number) => `products/edit/${id}`
+} as const;
+
+// ============================================================================
+// ADMIN - USERS SUBMODULE
+// ============================================================================
+
+export const ADMIN_USERS_ROUTES = {
+  BASE: 'admin/users',
+  LIST: 'admin/users',
+  CREATE: 'admin/users/create',
+  DETAIL: (id: string | number) => `admin/users/view/${id}`,
+  EDIT: (id: string | number) => `admin/users/edit/${id}`,
+  ROLES: (id: string | number) => `admin/users/roles/${id}`
+} as const;
+
+// ============================================================================
+// ADMIN - ROLES SUBMODULE
+// ============================================================================
+
+export const ADMIN_ROLES_ROUTES = {
+  BASE: 'admin/roles',
+  LIST: 'admin/roles',
+  CREATE: 'admin/roles/create',
+  EDIT: (id: string | number) => `admin/roles/edit/${id}`,
+  PERMISSIONS: (id: string | number) => `admin/roles/permissions/${id}`
+} as const;
 
 // ============================================================================
 // CONSOLIDATED APP ROUTES
@@ -87,7 +167,16 @@ export const APP_ROUTES = {
   AUTH: AUTH_ROUTES,
   PUBLIC: PUBLIC_ROUTES,
   MAIN: MAIN_ROUTES,
-  ADMIN: ADMIN_ROUTES
+  ADMIN: ADMIN_ROUTES,
+  // Feature routes
+  CLAIMS: CLAIMS_ROUTES,
+  ADMISSIONS: ADMISSIONS_ROUTES,
+  MEMBERS: MEMBERS_ROUTES,
+  HOSPITALS: HOSPITALS_ROUTES,
+  PRODUCTS: PRODUCTS_ROUTES,
+  // Admin submodule routes
+  ADMIN_USERS: ADMIN_USERS_ROUTES,
+  ADMIN_ROLES: ADMIN_ROLES_ROUTES
 } as const;
 
 // ============================================================================

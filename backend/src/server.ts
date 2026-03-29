@@ -3,6 +3,7 @@ config();
 
 import { createApp } from './app';
 import { connectionManager } from './core/database/connection-manager';
+import { MonitoringJobs } from './jobs';
 
 const PORT = process.env.PORT || 3000;
 
@@ -19,6 +20,10 @@ const startServer = async () => {
       console.log(`✓ API available at http://localhost:${PORT}/api`);
       console.log(`✓ Health check: http://localhost:${PORT}/api/health`);
     });
+
+    // Initialize monitoring jobs (TASKS 7-9)
+    const monitoringJobs = new MonitoringJobs();
+    monitoringJobs.startAll();
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

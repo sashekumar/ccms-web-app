@@ -403,5 +403,221 @@ describe('HospitalService', () => {
         }
       });
     });
+
+    it('should handle errors when updating hospital', () => {
+      const error = new Error('Update failed');
+      apiService.put.mockReturnValue(throwError(() => error));
+
+      service.updateHospital('1', { hospital_name: 'Updated' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when deleting hospital', () => {
+      const error = new Error('Delete failed');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.deleteHospital('1').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors for address operations', () => {
+      const error = new Error('Address error');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.getHospitalAddresses('1').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when creating hospital address', () => {
+      const error = new Error('Create address failed');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.createHospitalAddress('1', { street_line1: 'Test' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when updating hospital address', () => {
+      const error = new Error('Update address failed');
+      apiService.put.mockReturnValue(throwError(() => error));
+
+      service.updateHospitalAddress('1', '2', { street_line1: 'Updated' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when deleting hospital address', () => {
+      const error = new Error('Delete address failed');
+      apiService.delete.mockReturnValue(throwError(() => error));
+
+      service.deleteHospitalAddress('1', '2').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors for code operations', () => {
+      const error = new Error('Code error');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.getHospitalCodes('1').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when creating hospital code', () => {
+      const error = new Error('Create code failed');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.createHospitalCode('1', { code_type: 'INSURER_CODE', code_value: 'X' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when updating hospital code', () => {
+      const error = new Error('Update code failed');
+      apiService.put.mockReturnValue(throwError(() => error));
+
+      service.updateHospitalCode('1', '2', { code_value: 'Y' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when deleting hospital code', () => {
+      const error = new Error('Delete code failed');
+      apiService.delete.mockReturnValue(throwError(() => error));
+
+      service.deleteHospitalCode('1', '2').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors for staff operations', () => {
+      const error = new Error('Staff error');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.getHospitalStaff('1').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when creating hospital staff', () => {
+      const error = new Error('Create staff failed');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.createHospitalStaff('1', { staff_name: 'Dr Test', staff_type: 'Doctor' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when updating hospital staff', () => {
+      const error = new Error('Update staff failed');
+      apiService.put.mockReturnValue(throwError(() => error));
+
+      service.updateHospitalStaff('1', '2', { staff_name: 'Updated' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when deleting hospital staff', () => {
+      const error = new Error('Delete staff failed');
+      apiService.delete.mockReturnValue(throwError(() => error));
+
+      service.deleteHospitalStaff('1', '2').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors for staff contact operations', () => {
+      const error = new Error('Contact error');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.getStaffContacts('1', '1').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when creating staff contact', () => {
+      const error = new Error('Create contact failed');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.createStaffContact('1', '1', { contact_type: 'EMAIL', contact_value: 'test@test.com' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when updating staff contact', () => {
+      const error = new Error('Update contact failed');
+      apiService.put.mockReturnValue(throwError(() => error));
+
+      service.updateStaffContact('1', '1', '2', { contact_value: 'new@test.com' }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when deleting staff contact', () => {
+      const error = new Error('Delete contact failed');
+      apiService.delete.mockReturnValue(throwError(() => error));
+
+      service.deleteStaffContact('1', '1', '2').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors for fee operations', () => {
+      const error = new Error('Fee error');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.getHospitalFees('1').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when creating hospital fee', () => {
+      const error = new Error('Create fee failed');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.createHospitalFee('1', { fee_type: 'TPA', item_code: 'X', amount: 50 }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when updating hospital fee', () => {
+      const error = new Error('Update fee failed');
+      apiService.put.mockReturnValue(throwError(() => error));
+
+      service.updateHospitalFee('1', '2', { amount: 100 }).subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when deleting hospital fee', () => {
+      const error = new Error('Delete fee failed');
+      apiService.delete.mockReturnValue(throwError(() => error));
+
+      service.deleteHospitalFee('1', '2').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when getting hospital by ID', () => {
+      const error = new Error('Not found');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.getHospitalById('999').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
+
+    it('should handle errors when checking hospital code', () => {
+      const error = new Error('Check code failed');
+      apiService.post.mockReturnValue(throwError(() => error));
+
+      service.checkHospitalCode('XXX').subscribe({
+        error: (err) => expect(err).toBe(error)
+      });
+    });
   });
 });

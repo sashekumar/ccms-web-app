@@ -10,6 +10,8 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-user-view',
   standalone: true,
@@ -219,18 +221,18 @@ export class UserViewComponent implements OnInit, OnDestroy {
 
   editUser(): void {
     if (this.userId) {
-      this.router.navigate(['/admin/users/edit', this.userId]);
+      this.router.navigate([APP_ROUTES.ADMIN_USERS.EDIT(this.userId)]);
     }
   }
 
   manageRoles(): void {
     if (this.userId) {
-      this.router.navigate(['/admin/users/roles', this.userId]);
+      this.router.navigate([APP_ROUTES.ADMIN_USERS.ROLES(this.userId)]);
     }
   }
 
   goBack(): void {
-    this.router.navigate(['/admin/users']);
+    this.router.navigate([APP_ROUTES.ADMIN_USERS.LIST]);
   }
 
   /**
@@ -241,3 +243,6 @@ export class UserViewComponent implements OnInit, OnDestroy {
     return role.role_id;
   }
 }
+
+
+

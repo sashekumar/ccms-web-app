@@ -8,6 +8,7 @@ import { Product, ProductLimit, ProductCopay, CreateProductLimitDto, UpdateProdu
 import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
@@ -138,7 +139,7 @@ export class ProductViewComponent implements OnInit, OnDestroy {
    * Navigate back to list
    */
   goBack(): void {
-    this.router.navigate(['/products']);
+    this.router.navigate([APP_ROUTES.PRODUCTS.LIST]);
   }
 
   /**
@@ -146,7 +147,7 @@ export class ProductViewComponent implements OnInit, OnDestroy {
    */
   editProduct(): void {
     if (this.product) {
-      this.router.navigate(['/products/edit', this.product.product_id]);
+      this.router.navigate([APP_ROUTES.PRODUCTS.EDIT(this.product.product_id)]);
     }
   }
 
@@ -552,3 +553,5 @@ export class ProductViewComponent implements OnInit, OnDestroy {
     };
   }
 }
+
+

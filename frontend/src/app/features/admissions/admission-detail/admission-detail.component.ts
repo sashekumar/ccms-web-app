@@ -8,11 +8,12 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 
-import { Admission, AdmissionWithRemarks, AdmissionRemark, RespondToMQDto } from '../../../shared/models/admission.model';
+import { Admission, AdmissionWithRemarks, AdmissionRemark, RespondToMQDto, AdmissionAssessment, AssessmentFieldDto, UpsertAssessmentDto, ASSESSMENT_FIELDS } from '../../../shared/models/admission.model';
 import { LookupItem } from '../../../shared/services/lookup.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { MqBuilderModalComponent } from '../../../shared/components/mq-builder-modal/mq-builder-modal.component';
 import { MqPrintService } from '../../../core/services/mq-print.service';
 import { UploadService } from '../../../core/services/upload.service';
@@ -414,6 +415,7 @@ import { FormsModule } from '@angular/forms';
                 <p class="text-xs text-gray-500 mt-1">Manage and track manual status of sent MQs</p>
               </div>
               <button 
+                *ngIf="admission && canSendMQ(admission.admission_status)"
                 (click)="sendMedicalQuery()"
                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-all"
               >
@@ -538,6 +540,72 @@ import { FormsModule } from '@angular/forms';
               </div>
             </div>
           </div>
+
+          <!-- Assessment Tab -->
+          <div *ngIf="activeTab === 'assessment'">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="text-lg font-bold text-gray-900">Clinical Assessment</h3>
+                <p class="text-xs text-gray-500 mt-1">Diagnosis, medical necessity, and clinical notes</p>
+              </div>
+              <button
+                *hasPermission="PERMISSIONS.UPDATE"
+                (click)="saveAssessments()"
+                [disabled]="savingAssessment || !assessmentDirty"
+                class="inline-flex items-center px-4 py-2 bg-[#1e3c72] text-white rounded-lg text-sm font-bold shadow-md hover:bg-[#2a5298] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg *ngIf="!savingAssessment" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg *ngIf="savingAssessment" class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                {{ savingAssessment ? 'Saving...' : 'Save Assessment' }}
+              </button>
+            </div>
+
+            <!-- Loading -->
+            <div *ngIf="loadingAssessment" class="flex justify-center py-20">
+              <app-loading-spinner></app-loading-spinner>
+            </div>
+
+            <!-- Assessment Form -->
+            <div *ngIf="!loadingAssessment" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ng-container *ngFor="let field of ASSESSMENT_FIELDS">
+                <div [class.md:col-span-2]="field.type === 'textarea'" class="flex flex-col">
+                  <label class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">{{ field.label }}</label>
+
+                  <!-- Text input -->
+                  <input
+                    *ngIf="field.type === 'text'"
+                    type="text"
+                    [(ngModel)]="assessmentForm[field.key]"
+                    (ngModelChange)="onAssessmentChange()"
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3c72] focus:border-transparent"
+                    [placeholder]="'Enter ' + field.label"
+                  />
+
+                  <!-- Textarea -->
+                  <textarea
+                    *ngIf="field.type === 'textarea'"
+                    rows="3"
+                    [(ngModel)]="assessmentForm[field.key]"
+                    (ngModelChange)="onAssessmentChange()"
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3c72] focus:border-transparent resize-none"
+                    [placeholder]="'Enter ' + field.label"
+                  ></textarea>
+
+                  <!-- Select -->
+                  <select
+                    *ngIf="field.type === 'select'"
+                    [(ngModel)]="assessmentForm[field.key]"
+                    (ngModelChange)="onAssessmentChange()"
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3c72] focus:border-transparent"
+                  >
+                    <option value="">-- Select --</option>
+                    <option *ngFor="let opt of $any(field).options" [value]="opt">{{ opt }}</option>
+                  </select>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -570,7 +638,7 @@ import { FormsModule } from '@angular/forms';
     ></app-mq-builder-modal>
 
     <!-- MQ Viewer Modal -->
-    <div *ngIf="showMQViewModal" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div *ngIf="showMQViewModal" class="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <!-- Overlay -->
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true" (click)="closeMQView()"></div>
@@ -614,7 +682,7 @@ import { FormsModule } from '@angular/forms';
     </div>
 
     <!-- Response Modal -->
-    <div *ngIf="showResponseModal" class="fixed inset-0 z-[60] overflow-y-auto">
+    <div *ngIf="showResponseModal" class="fixed inset-0 z-[9999] overflow-y-auto">
       <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="showResponseModal = false"></div>
         <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in fade-in zoom-in duration-200">
@@ -701,6 +769,183 @@ import { FormsModule } from '@angular/forms';
         </div>
       </div>
     </div>
+
+    <!-- Final Decision Modal (Approve/Reject/Defer/Resolve Deferment) -->
+    <div *ngIf="showDecisionModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="showDecisionModal = false"></div>
+        
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300 border border-slate-100">
+          <!-- Modal Header -->
+          <div [ngClass]="{
+            'bg-green-600': decisionType === 'APPROVE',
+            'bg-red-600': decisionType === 'REJECT',
+            'bg-yellow-600': decisionType === 'DEFER',
+            'bg-purple-600': decisionType === 'RESOLVE_DEFERMENT'
+          }" class="px-8 py-6 text-white relative flex flex-col">
+            <h3 class="text-2xl font-bold flex items-center">
+              <svg *ngIf="decisionType === 'APPROVE'" class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <svg *ngIf="decisionType === 'REJECT'" class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <svg *ngIf="decisionType === 'DEFER'" class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <svg *ngIf="decisionType === 'RESOLVE_DEFERMENT'" class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {{ decisionType === 'APPROVE' ? 'Approve Admission' : decisionType === 'REJECT' ? 'Reject Admission' : decisionType === 'DEFER' ? 'Defer Admission' : 'Resolve Deferment' }}
+            </h3>
+            <p class="text-white/80 mt-1 text-sm font-medium">Finalize the workflow state of this admission request.</p>
+            <button (click)="showDecisionModal = false" class="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <div class="px-8 py-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <!-- Approval Fields -->
+            <ng-container *ngIf="decisionType === 'APPROVE'">
+              <div class="grid grid-cols-2 gap-6">
+                <!-- Approved Amount -->
+                <div class="col-span-2 sm:col-span-1">
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Approved Amount (RM)</label>
+                  <div class="relative group">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold group-focus-within:text-green-600 transition-colors">RM</span>
+                    <input 
+                      type="number" 
+                      [(ngModel)]="decisionData.approvedAmount" 
+                      class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-green-500 font-bold text-slate-800 transition-all outline-none"
+                    >
+                  </div>
+                  <p class="text-[10px] text-slate-400 mt-2 italic">* Initially populated from estimation</p>
+                </div>
+
+                <!-- EHM Status -->
+                <div class="col-span-2 sm:col-span-1">
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">8hr Monitoring (EHM)</label>
+                  <select 
+                    [(ngModel)]="decisionData.ehmStatus"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-green-500 font-bold text-slate-800 transition-all outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="NOT_APPLICABLE">Not Applicable</option>
+                    <option value="REQUIRED">Required</option>
+                    <option value="COMPLETED">Completed</option>
+                  </select>
+                </div>
+
+                <!-- Discharge Date / Expected Stay -->
+                <div class="col-span-2 sm:col-span-1">
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expected Discharge</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="decisionData.dischargeDate"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-green-500 font-bold text-slate-800 transition-all outline-none"
+                  >
+                </div>
+
+                <!-- Alert Flag Toggle -->
+                <div class="col-span-2 sm:col-span-1 flex items-center space-x-3 pt-6">
+                  <button 
+                    (click)="decisionData.alertFlag = !decisionData.alertFlag"
+                    class="w-12 h-6 rounded-full transition-colors relative shadow-inner"
+                    [ngClass]="decisionData.alertFlag ? 'bg-green-500' : 'bg-slate-300'"
+                  >
+                    <div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform shadow-md" [style.transform]="decisionData.alertFlag ? 'translateX(24px)' : 'translateX(0)'"></div>
+                  </button>
+                  <span class="text-sm font-bold" [ngClass]="decisionData.alertFlag ? 'text-green-600' : 'text-slate-500'">
+                    Enable LOS Alerts
+                  </span>
+                </div>
+              </div>
+
+              <!-- General Remarks -->
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Approval Remarks</label>
+                <textarea 
+                  [(ngModel)]="decisionData.remarks"
+                  rows="3"
+                  class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-green-500 font-medium text-slate-800 transition-all outline-none resize-none"
+                  placeholder="Additional notes for the hospital or internal history..."
+                ></textarea>
+              </div>
+            </ng-container>
+
+            <!-- Rejection Fields -->
+            <ng-container *ngIf="decisionType === 'REJECT'">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Rejection Reason <span class="text-red-500">*</span></label>
+                <textarea 
+                  [(ngModel)]="decisionData.rejectionReason"
+                  rows="4"
+                  class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-red-500 font-medium text-slate-800 transition-all outline-none resize-none"
+                  placeholder="State the clear reason for rejection (Policy exclusion, non-medical, etc)..."
+                ></textarea>
+                <div class="flex items-start mt-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                  <svg class="w-5 h-5 text-red-500 mr-3 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <p class="text-xs text-red-700 leading-relaxed font-bold">Rejection is permanent and will trigger an immediate notification to the hospital. Ensure the reason is detailed and accurate.</p>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Deferment Fields -->
+            <ng-container *ngIf="decisionType === 'DEFER'">
+              <div class="space-y-6">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Deferment Reason <span class="text-red-500">*</span></label>
+                  <textarea 
+                    [(ngModel)]="decisionData.defermentReason"
+                    rows="3"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-yellow-500 font-medium text-slate-800 transition-all outline-none resize-none"
+                    placeholder="Why is this case being deferred? (Awaiting specialist report, missing docs...)"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Follow-up Expected By</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="decisionData.followUpDate"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-yellow-500 font-bold text-slate-800 transition-all outline-none"
+                  >
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Resolve Deferment Fields -->
+            <ng-container *ngIf="decisionType === 'RESOLVE_DEFERMENT'">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Resolution Notes <span class="text-red-500">*</span></label>
+                <textarea 
+                  [(ngModel)]="decisionData.resolutionNotes"
+                  rows="4"
+                  class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-purple-500 font-medium text-slate-800 transition-all outline-none resize-none"
+                  placeholder="Describe how the deferment issue was resolved (e.g., received specialist report, documents verified)..."
+                ></textarea>
+                <div class="flex items-start mt-4 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                  <svg class="w-5 h-5 text-purple-500 mr-3 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <p class="text-xs text-purple-700 leading-relaxed font-bold">Resolving the deferment will allow the admission to proceed for approval or rejection. The resolution notes will be recorded in the workflow history.</p>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+          <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-4">
+            <button 
+              (click)="showDecisionModal = false"
+              class="px-6 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              (click)="submitDecision()"
+              [disabled]="(decisionType === 'REJECT' && !decisionData.rejectionReason) || (decisionType === 'DEFER' && !decisionData.defermentReason) || (decisionType === 'RESOLVE_DEFERMENT' && !decisionData.resolutionNotes) || loading"
+              [ngClass]="{
+                'bg-green-600 shadow-green-200': decisionType === 'APPROVE',
+                'bg-red-600 shadow-red-200': decisionType === 'REJECT',
+                'bg-yellow-600 shadow-yellow-200': decisionType === 'DEFER',
+                'bg-purple-600 shadow-purple-200': decisionType === 'RESOLVE_DEFERMENT'
+              }"
+              class="px-8 py-2.5 text-white font-bold rounded-xl transition-all shadow-lg hover:translate-y-[-2px] active:scale-95 disabled:opacity-50 disabled:translate-y-0 flex items-center"
+            >
+              <svg *ngIf="!loading" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+              <svg *ngIf="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Confirm {{ decisionType === 'APPROVE' ? 'Approval' : decisionType === 'REJECT' ? 'Rejection' : decisionType === 'DEFER' ? 'Deferment' : 'Resolution' }}
+            </button>
+          </div>
+        </div>
+      </div>
   `
 })
 export class AdmissionDetailComponent implements OnInit, OnDestroy {
@@ -716,7 +961,7 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   
   loading = false;
   loadingRemarks = false;
-  activeTab: 'info' | 'history' | 'queries' = 'info';
+  activeTab: 'info' | 'history' | 'queries' | 'assessment' = 'info';
 
   // MQ Builder
   showMqBuilder = false;
@@ -726,11 +971,20 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   selectedMQ: AdmissionRemark | null = null;
   showMQViewModal = false;
 
-  tabs: Array<{ id: 'info' | 'history' | 'queries', label: string }> = [
+  tabs: Array<{ id: 'info' | 'history' | 'queries' | 'assessment', label: string }> = [
     { id: 'info', label: 'Admission Information' },
     { id: 'history', label: 'Workflow History' },
-    { id: 'queries', label: 'Medical Queries' }
+    { id: 'queries', label: 'Medical Queries' },
+    { id: 'assessment', label: 'Assessment' }
   ];
+
+  // Assessment state
+  assessments: AdmissionAssessment[] = [];
+  assessmentForm: Record<string, string> = {};
+  loadingAssessment = false;
+  savingAssessment = false;
+  assessmentDirty = false;
+  readonly ASSESSMENT_FIELDS = ASSESSMENT_FIELDS;
 
   private destroy$ = new Subject<void>();
   private admissionId: number | null = null;
@@ -745,6 +999,21 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
     private printService: MqPrintService,
     private uploadService: UploadService
   ) {}
+
+  // Decision Modal State
+  showDecisionModal = false;
+  decisionType: 'APPROVE' | 'REJECT' | 'DEFER' | 'RESOLVE_DEFERMENT' = 'APPROVE';
+  decisionData = {
+    approvedAmount: 0,
+    ehmStatus: 'NOT_APPLICABLE',
+    dischargeDate: '',
+    alertFlag: true,
+    remarks: '',
+    rejectionReason: '',
+    defermentReason: '',
+    followUpDate: '',
+    resolutionNotes: ''
+  };
 
   // Response Modal State
   showResponseModal = false;
@@ -830,12 +1099,17 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   /**
    * Switch tabs and load data as needed
    */
-  switchTab(tabId: 'info' | 'history' | 'queries'): void {
+  switchTab(tabId: 'info' | 'history' | 'queries' | 'assessment'): void {
     this.activeTab = tabId;
     
     // Load remarks when switching tabs as needed
     if ((tabId === 'history' || tabId === 'queries') && this.remarks.length === 0 && !this.loadingRemarks) {
       this.loadRemarks();
+    }
+
+    // Load assessments lazily
+    if (tabId === 'assessment' && this.assessments.length === 0 && !this.loadingAssessment) {
+      this.loadAssessments();
     }
   }
 
@@ -862,11 +1136,66 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
       });
   }
 
+  // ============================================================================
+  // ASSESSMENTS
+  // ============================================================================
+
+  loadAssessments(): void {
+    if (!this.admissionId) return;
+    this.loadingAssessment = true;
+    this.admissionService.getAdmissionAssessments(this.admissionId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.assessments = data;
+          // Populate form from saved data
+          this.assessmentForm = {};
+          for (const field of data) {
+            this.assessmentForm[field.field_name] = field.field_value ?? '';
+          }
+          this.assessmentDirty = false;
+          this.loadingAssessment = false;
+        },
+        error: (error) => {
+          this.loadingAssessment = false;
+          this.logger.error('Error loading assessments:', error);
+          this.toast.error('Failed to load assessment data');
+        }
+      });
+  }
+
+  saveAssessments(): void {
+    if (!this.admissionId) return;
+    this.savingAssessment = true;
+    const fields: AssessmentFieldDto[] = ASSESSMENT_FIELDS.map(f => ({
+      field_name: f.key,
+      field_value: this.assessmentForm[f.key] ?? null
+    }));
+    this.admissionService.upsertAdmissionAssessments({ admission_id: this.admissionId, fields })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.savingAssessment = false;
+          this.assessmentDirty = false;
+          this.toast.success('Assessment saved successfully');
+        },
+        error: (error) => {
+          this.savingAssessment = false;
+          this.logger.error('Error saving assessments:', error);
+          this.toast.error('Failed to save assessment data');
+        }
+      });
+  }
+
+  onAssessmentChange(): void {
+    this.assessmentDirty = true;
+  }
+
   /**
    * Navigate back to list
    */
   goBack(): void {
-    this.router.navigate(['/admissions']);
+    this.router.navigate([APP_ROUTES.ADMISSIONS.LIST]);
   }
 
   /**
@@ -874,64 +1203,37 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
    */
   editAdmission(): void {
     if (!this.admissionId) return;
-    this.router.navigate(['/admissions', this.admissionId, 'edit']);
+    this.router.navigate([APP_ROUTES.ADMISSIONS.EDIT(this.admissionId)]);
   }
 
   /**
-   * Approve admission
+   * Open Approval Dialog
    */
   approveAdmission(): void {
-    if (!this.admissionId) return;
-
-    const remarks = prompt('Optional remarks for approval:');
-    if (remarks === null) return; // User cancelled
-
-    this.loading = true;
-    this.admissionService.approveAdmission(this.admissionId, { remarks: remarks || undefined })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (glRefNo) => {
-          this.toast.success(`Admission approved successfully. GL: ${glRefNo}`);
-          this.loadAdmission(); // Reload to show updated status
-        },
-        error: (error) => {
-          this.loading = false;
-          this.logger.error('Error approving admission:', error);
-          this.toast.error(error.error?.message || 'Failed to approve admission');
-        }
-      });
+    if (!this.admissionId || !this.admission) return;
+    this.decisionType = 'APPROVE';
+    this.decisionData = {
+      approvedAmount: this.admission.estimated_amount || 0,
+      ehmStatus: this.admission.ehm_status || 'NOT_APPLICABLE',
+      dischargeDate: this.admission.discharge_date ? new Date(this.admission.discharge_date).toISOString().split('T')[0] : '',
+      alertFlag: this.admission.alert_flag ?? true,
+      remarks: '',
+      rejectionReason: '',
+      defermentReason: '',
+      followUpDate: '',
+      resolutionNotes: ''
+    };
+    this.showDecisionModal = true;
   }
 
   /**
-   * Reject admission
+   * Open Rejection Dialog
    */
   rejectAdmission(): void {
     if (!this.admissionId) return;
-
-    const reason = prompt('Please enter rejection reason (required):');
-    if (!reason || reason.trim() === '') {
-      this.toast.error('Rejection reason is required');
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to reject this admission?`)) {
-      return;
-    }
-
-    this.loading = true;
-    this.admissionService.rejectAdmission(this.admissionId, { rejectionReason: reason })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Admission rejected successfully');
-          this.loadAdmission(); // Reload to show updated status
-        },
-        error: (error) => {
-          this.loading = false;
-          this.logger.error('Error rejecting admission:', error);
-          this.toast.error(error.error?.message || 'Failed to reject admission');
-        }
-      });
+    this.decisionType = 'REJECT';
+    this.decisionData.rejectionReason = '';
+    this.showDecisionModal = true;
   }
 
   /**
@@ -1040,28 +1342,74 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
   // respondToMQ(): void { ... }
 
   /**
-   * Defer admission for later review
+   * Open Deferment Dialog
    */
   deferAdmission(): void {
     if (!this.admissionId) return;
+    this.decisionType = 'DEFER';
+    this.decisionData.defermentReason = '';
+    this.decisionData.followUpDate = '';
+    this.showDecisionModal = true;
+  }
 
-    const defermentReason = prompt('Enter reason for deferment:');
-    if (!defermentReason || defermentReason.trim() === '') {
-      this.toast.error('Deferment reason is required');
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to defer this admission?`)) {
-      return;
-    }
-
+  /**
+   * Submit the final decision (Approve/Reject/Defer)
+   */
+  submitDecision(): void {
+    if (!this.admissionId) return;
+    
     this.loading = true;
-    this.admissionService.deferAdmission(this.admissionId, { defermentReason })
+    this.showDecisionModal = false;
+
+    if (this.decisionType === 'APPROVE') {
+      this.admissionService.approveAdmission(this.admissionId, {
+        approved_amount: this.decisionData.approvedAmount,
+        ehm_status: this.decisionData.ehmStatus,
+        discharge_date: this.decisionData.dischargeDate || undefined,
+        alert_flag: this.decisionData.alertFlag,
+        remarks: this.decisionData.remarks || undefined
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (glRefNo) => {
+          this.toast.success(`Admission approved successfully. GL: ${glRefNo}`);
+          this.loadAdmission();
+          this.loadRemarks();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.logger.error('Error approving admission:', error);
+          this.toast.error(error.error?.message || 'Failed to approve admission');
+        }
+      });
+    } else if (this.decisionType === 'REJECT') {
+      this.admissionService.rejectAdmission(this.admissionId, {
+        rejectionReason: this.decisionData.rejectionReason
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Admission rejected successfully');
+          this.loadAdmission();
+          this.loadRemarks();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.logger.error('Error rejecting admission:', error);
+          this.toast.error(error.error?.message || 'Failed to reject admission');
+        }
+      });
+    } else if (this.decisionType === 'DEFER') {
+      this.admissionService.deferAdmission(this.admissionId, {
+        defermentReason: this.decisionData.defermentReason,
+        followUpDate: this.decisionData.followUpDate || undefined
+      })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('Admission deferred successfully');
-          this.loadAdmission(); // Reload to show updated status
+          this.loadAdmission();
+          this.loadRemarks();
         },
         error: (error) => {
           this.loading = false;
@@ -1069,27 +1417,16 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
           this.toast.error(error.error?.message || 'Failed to defer admission');
         }
       });
-  }
-
-  /**
-   * Resolve deferment and continue review
-   */
-  resolveDeferment(): void {
-    if (!this.admissionId) return;
-
-    const resolutionNotes = prompt('Enter resolution notes:');
-    if (!resolutionNotes || resolutionNotes.trim() === '') {
-      this.toast.error('Resolution notes are required');
-      return;
-    }
-
-    this.loading = true;
-    this.admissionService.resolveDeferment(this.admissionId, { resolutionNotes })
+    } else if (this.decisionType === 'RESOLVE_DEFERMENT') {
+      this.admissionService.resolveDeferment(this.admissionId, {
+        resolutionNotes: this.decisionData.resolutionNotes
+      })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('Deferment resolved successfully');
-          this.loadAdmission(); // Reload to show updated status
+          this.loadAdmission();
+          this.loadRemarks();
         },
         error: (error) => {
           this.loading = false;
@@ -1097,6 +1434,17 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
           this.toast.error(error.error?.message || 'Failed to resolve deferment');
         }
       });
+    }
+  }
+
+  /**
+   * Open Resolve Deferment Dialog
+   */
+  resolveDeferment(): void {
+    if (!this.admissionId) return;
+    this.decisionType = 'RESOLVE_DEFERMENT';
+    this.decisionData.resolutionNotes = '';
+    this.showDecisionModal = true;
   }
 
   /**
@@ -1458,3 +1806,5 @@ export class AdmissionDetailComponent implements OnInit, OnDestroy {
     }
   }
 }
+
+

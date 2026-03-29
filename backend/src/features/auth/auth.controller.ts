@@ -1,14 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
-import { LoginDto } from './auth.types';
+import { User, LoginDto } from './auth.types';
 import { CsrfService } from '../../core/auth/csrf.service';
 import { ResponseUtil } from '../../core/utils/response.util';
+import { BaseController } from '../../core/base';
 
-export class AuthController {
-  private authService: AuthService;
+export class AuthController extends BaseController<User> {
+  protected service: AuthService;
 
   constructor() {
-    this.authService = new AuthService();
+    const service = new AuthService();
+    super(service);
+    this.service = service;
   }
 
   /**
@@ -48,7 +51,7 @@ export class AuthController {
         return;
       }
 
-      const result = await this.authService.login(loginDto);
+      const result = await this.service.login(loginDto);
 
       // Set httpOnly cookies
       res.cookie('accessToken', result.accessToken, {
@@ -108,7 +111,7 @@ export class AuthController {
         return;
       }
 
-      const user = await this.authService.getCurrentUser(userId);
+      const user = await this.service.getCurrentUser(userId);
 
       ResponseUtil.success(res, user, 'User retrieved successfully');
     } catch (error) {
@@ -133,7 +136,7 @@ export class AuthController {
         return;
       }
 
-      const result = await this.authService.refreshToken(refreshToken);
+      const result = await this.service.refreshToken(refreshToken);
 
       // Set new httpOnly cookies
       res.cookie('accessToken', result.accessToken, {

@@ -5,3 +5,4 @@
  */
 
 export * from './database.constants';
+export * from './routes.constants';

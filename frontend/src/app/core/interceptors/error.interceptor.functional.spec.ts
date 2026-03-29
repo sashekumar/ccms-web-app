@@ -6,7 +6,7 @@ import { errorInterceptor } from './error.interceptor.functional';
 import { AuthService } from '../services/auth.service';
 import { LoggerService } from '../services/logger.service';
 import { API_ENDPOINTS } from '../constants';
-import { of, throwError, BehaviorSubject } from 'rxjs';
+import { of, throwError, BehaviorSubject, filter, take } from 'rxjs';
 
 describe('errorInterceptor (Functional)', () => {
   let httpClient: HttpClient;
@@ -188,10 +188,18 @@ describe('errorInterceptor (Functional)', () => {
   describe('401 Unauthorized - Concurrent Requests', () => {
     it('should wait for ongoing refresh instead of starting new one', () => {
       authServiceMock.isRefreshingToken.mockReturnValue(true);
+      authServiceMock.refreshAccessToken.mockReturnValue(
+        refreshStateSubject.asObservable().pipe(
+          filter((state: boolean | null): state is boolean => state !== null),
+          take(1)
+        )
+      );
 
       httpClient.get('/api/protected1').subscribe({
-        next: () => {
-          expect(authServiceMock.refreshAccessToken).not.toHaveBeenCalled();
+        next: (response: any) => {
+          // refreshAccessToken is always called; concurrent handling is delegated to AuthService internally
+          expect(authServiceMock.refreshAccessToken).toHaveBeenCalledTimes(1);
+          expect(response).toEqual({ data: 'success' });
           
         }
       });

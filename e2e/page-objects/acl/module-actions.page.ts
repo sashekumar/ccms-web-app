@@ -3,53 +3,86 @@ import { AclBasePage } from './acl-base.page';
 
 /**
  * Module Actions Page Object - ACL Module-Action Mapping
- * 
+ *
  * Following coding-standards.md principles:
  * - REUSABILITY: Extends AclBasePage for common functionality
  * - MODULARIZATION: Specific to module-action mapping
  */
 export class ModuleActionsPage extends AclBasePage {
   protected readonly pageUrl = '/admin/module-actions';
-  protected readonly pageTitle = /Module.*Action|Action/i;
+  protected readonly pageTitle = /Module-Action Management/i;
 
   constructor(page: Page) {
     super(page);
   }
 
   /**
-   * Get module filter dropdown
+   * Get "Attach Actions to Module" button
+   */
+  getCreateButton(): Locator {
+    return this.page.locator('button:has-text("Attach Actions to Module")');
+  }
+
+  /**
+   * Get module select in create form
+   */
+  getModuleSelect(): Locator {
+    return this.page.locator('select[name="module"]');
+  }
+
+  /**
+   * Get module filter dropdown (first select on page)
    */
   getModuleFilter(): Locator {
-    return this.page.locator('select[formcontrolname*="module"], select[name*="module"]').first();
+    return this.page.locator('select').nth(0);
   }
 
   /**
-   * Filter by module
+   * Get action filter dropdown (second select on page)
    */
-  async filterByModule(moduleId: string): Promise<void> {
-    await this.getModuleFilter().selectOption(moduleId);
-    await this.page.waitForLoadState('networkidle');
+  getActionFilter(): Locator {
+    return this.page.locator('select').nth(1);
   }
 
   /**
-   * Get action checkboxes
+   * Get status filter dropdown (third select on page)
+   */
+  getStatusFilter(): Locator {
+    return this.page.locator('select').nth(2);
+  }
+
+  /**
+   * Get action checkboxes in create form
    */
   getActionCheckboxes(): Locator {
-    return this.page.locator('input[type="checkbox"]');
+    return this.page.locator('input[type="checkbox"][id^="action-"]');
   }
 
   /**
-   * Toggle action assignment
-   */
-  async toggleAction(actionName: string): Promise<void> {
-    const checkbox = this.page.locator(`label:has-text("${actionName}") input[type="checkbox"], input[type="checkbox"]:near(:text("${actionName}"))`);
-    await checkbox.click();
-  }
-
-  /**
-   * Get search input (overrides base method for module-specific placeholder)
+   * Get search input
    */
   getSearchInput(): Locator {
-    return this.page.locator('input[placeholder*="Module"], input[placeholder*="action"]').first();
+    return this.page.locator('input[placeholder*="Module or action name"]');
+  }
+
+  /**
+   * Get edit buttons
+   */
+  getEditButtons(): Locator {
+    return this.page.locator('[data-testid="edit-module-action-button"]');
+  }
+
+  /**
+   * Get delete buttons
+   */
+  getDeleteButtons(): Locator {
+    return this.page.locator('[data-testid="delete-module-action-button"]');
+  }
+
+  /**
+   * Get custom label input in modal
+   */
+  getLabelInput(): Locator {
+    return this.page.locator('input[name="label"]');
   }
 }

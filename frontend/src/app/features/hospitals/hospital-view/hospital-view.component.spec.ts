@@ -36,6 +36,7 @@ import { HospitalViewComponent } from './hospital-view.component';
 import { HospitalService } from '../../../core/services/hospital.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import {
   Hospital,
   HospitalAddress,
@@ -141,7 +142,11 @@ describe('HospitalViewComponent', () => {
         { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: activatedRoute },
         { provide: ToastService, useValue: toastService },
-        { provide: LoggerService, useValue: loggerService }
+        { provide: LoggerService, useValue: loggerService },
+        { provide: PermissionService, useValue: {
+          hasPermission: vi.fn().mockReturnValue(of(true)),
+          userPermissions$: of(null)
+        }}
       ]
     }).compileComponents();
 
@@ -2822,6 +2827,171 @@ describe('HospitalViewComponent', () => {
       component.resetAddressForm();
 
       expect(component.addressFormData.address_type).toBe('');
+    });
+  });
+
+  describe('Template Rendering', () => {
+    it('should render hospital name in header', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Test Hospital');
+    });
+
+    it('should render overview tab by default', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Basic Information');
+    });
+
+    it('should render tabs navigation', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Addresses');
+      expect(compiled.textContent).toContain('Codes');
+      expect(compiled.textContent).toContain('Staff');
+      expect(compiled.textContent).toContain('Fee Schedules');
+    });
+
+    it('should render hospital type in overview', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Hospital Type');
+    });
+
+    it('should render addresses tab when activeTab is pre-set', () => {
+      component.activeTab = 'addresses';
+      fixture.detectChanges();
+      expect(component.activeTab).toBe('addresses');
+    });
+
+    it('should render codes tab when activeTab is pre-set', () => {
+      component.activeTab = 'codes';
+      fixture.detectChanges();
+      expect(component.activeTab).toBe('codes');
+    });
+
+    it('should render staff tab when activeTab is pre-set', () => {
+      component.activeTab = 'staff';
+      fixture.detectChanges();
+      expect(component.activeTab).toBe('staff');
+    });
+
+    it('should render fees tab when activeTab is pre-set', () => {
+      component.activeTab = 'fees';
+      fixture.detectChanges();
+      expect(component.activeTab).toBe('fees');
+    });
+
+    it('should not show content when hospital is null', () => {
+      hospitalService.getHospitalById.mockReturnValue(of(null as any));
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).not.toContain('Basic Information');
+    });
+
+    it('should render address form when showAddressForm is true', () => {
+      component.activeTab = 'addresses';
+      component.addresses = [];
+      component.showAddressForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Address');
+    });
+
+    it('should render edit address form when editingAddress is set', () => {
+      component.activeTab = 'addresses';
+      component.showAddressForm = true;
+      component.editingAddress = { address_id: 'a1', hospital_id: '1', address_type: 'MAIN', is_primary: true, is_deleted: false } as any;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Address');
+    });
+
+    it('should render code form when showCodeForm is true', () => {
+      component.activeTab = 'codes';
+      component.codes = [];
+      component.showCodeForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Code');
+    });
+
+    it('should render edit code form when editingCode is set', () => {
+      component.activeTab = 'codes';
+      component.showCodeForm = true;
+      component.editingCode = { code_id: 'c1', hospital_id: '1', code_type: 'MSC', code_value: 'ABC123', is_active: true } as any;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Code');
+    });
+
+    it('should render staff form when showStaffForm is true', () => {
+      component.activeTab = 'staff';
+      component.staff = [];
+      component.showStaffForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Staff');
+    });
+
+    it('should render edit staff form when editingStaff is set', () => {
+      component.activeTab = 'staff';
+      component.showStaffForm = true;
+      component.editingStaff = { staff_id: 's1', hospital_id: '1', staff_name: 'Dr Smith', is_active: true } as any;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Staff');
+    });
+
+    it('should render fee form when showFeeForm is true', () => {
+      component.activeTab = 'fees';
+      component.fees = [];
+      component.showFeeForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Fee Schedule');
+    });
+
+    it('should render edit fee form when editingFee is set', () => {
+      component.activeTab = 'fees';
+      component.showFeeForm = true;
+      component.editingFee = { fee_id: 'f1', hospital_id: '1', fee_type: 'CONSULTATION', fee_amount: 100, is_active: true } as any;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Fee Schedule');
+    });
+
+    it('should render address cards when addresses are pre-loaded', () => {
+      component.activeTab = 'addresses';
+      component.addresses = [{ address_id: 'a1', hospital_id: '1', address_type: 'MAIN', street_line1: '99 Hospital Rd', is_primary: true, is_deleted: false } as any];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('99 Hospital Rd');
+    });
+
+    it('should render fee cards when fees are pre-loaded', () => {
+      component.activeTab = 'fees';
+      component.fees = [{ fee_id: 'f1', hospital_id: '1', fee_type: 'CONSULTATION', item_code: 'CONS001', amount: 150, is_active: true } as any];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('CONSULTATION');
+      expect(compiled.textContent).toContain('CONS001');
+    });
+
+    it('should render staff cards when staff are pre-loaded', () => {
+      component.activeTab = 'staff';
+      component.staff = [{ staff_id: 's1', hospital_id: '1', staff_name: 'Dr. Smith', designation: 'Physician', is_active: true } as any];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Dr. Smith');
+    });
+
+    it('should render code cards when codes are pre-loaded', () => {
+      component.activeTab = 'codes';
+      component.codes = [{ code_id: 'c1', hospital_id: '1', code_type: 'MSC', code_value: 'MSC-12345', is_active: true } as any];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('MSC-12345');
     });
   });
 });

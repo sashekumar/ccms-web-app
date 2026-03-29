@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { LookupsService } from './lookups.service';
 import {
+  LookupCategory,
   CreateLookupCategoryDto,
   UpdateLookupCategoryDto,
   LookupCategoryFilters,
@@ -17,7 +18,11 @@ import {
 } from './lookups.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
-
+/**
+ * Lookups Controller
+ * Manages lookup categories, lookup items, and metadata
+ * Not extending BaseController due to multi-entity management requirements
+ */
 export class LookupsController {
   private service: LookupsService;
 

@@ -15,6 +15,7 @@ import { LookupItem } from '../../../shared/services/lookup.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 
 @Component({
   selector: 'app-admission-list',
@@ -640,21 +641,21 @@ export class AdmissionListComponent implements OnInit, OnDestroy {
    * Navigate to create admission page
    */
   createAdmission(): void {
-    this.router.navigate(['/admissions/create']);
+    this.router.navigate([APP_ROUTES.ADMISSIONS.CREATE]);
   }
 
   /**
    * Navigate to view admission page
    */
   viewAdmission(admission_id: number): void {
-    this.router.navigate(['/admissions', admission_id]);
+    this.router.navigate([APP_ROUTES.ADMISSIONS.DETAIL(admission_id)]);
   }
 
   /**
    * Navigate to edit admission page
    */
   editAdmission(admission_id: number): void {
-    this.router.navigate(['/admissions', admission_id, 'edit']);
+    this.router.navigate([APP_ROUTES.ADMISSIONS.EDIT(admission_id)]);
   }
 
   /**
@@ -880,3 +881,5 @@ export class AdmissionListComponent implements OnInit, OnDestroy {
     return Math.min(this.pagination.page * this.pagination.limit, this.pagination.total);
   }
 }
+
+

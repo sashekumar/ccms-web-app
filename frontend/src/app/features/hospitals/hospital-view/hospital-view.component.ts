@@ -8,6 +8,7 @@ import { LookupService, LookupItem } from '../../../shared/services/lookup.servi
 import { Hospital, HospitalAddress, HospitalCode, HospitalStaff, HospitalStaffContact, FeeSchedule } from '../../../shared/models/hospital.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
@@ -171,7 +172,7 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    */
   editHospital(): void {
     if (this.hospital) {
-      this.router.navigate(['/hospitals/edit', this.hospital.hospital_id]);
+      this.router.navigate([APP_ROUTES.HOSPITALS.EDIT(this.hospital.hospital_id)]);
     }
   }
 
@@ -934,6 +935,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    * Navigate back to list
    */
   goBack(): void {
-    this.router.navigate(['/hospitals']);
+    this.router.navigate([APP_ROUTES.HOSPITALS.LIST]);
   }
 }
+
+

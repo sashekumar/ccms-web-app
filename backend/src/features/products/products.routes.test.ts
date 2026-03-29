@@ -20,7 +20,7 @@ describe('ProductsRoutes', () => {
 
     it('should have correct number of routes registered', () => {
       const routes = router.stack.filter((layer: any) => layer.route);
-      expect(routes.length).toBe(18);
+      expect(routes.length).toBe(23);
     });
   });
 

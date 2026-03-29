@@ -17,6 +17,8 @@ interface PermissionMatrixRow {
   }[];
 }
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-role-permissions',
   standalone: true,
@@ -507,7 +509,7 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
       const confirmed = confirm('You have unsaved changes. Are you sure you want to leave?');
       if (!confirmed) return;
     }
-    this.router.navigate(['/admin/roles']);
+    this.router.navigate([APP_ROUTES.ADMIN_ROLES.LIST]);
   }
 
   /**
@@ -526,3 +528,6 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
     return index;
   }
 }
+
+
+

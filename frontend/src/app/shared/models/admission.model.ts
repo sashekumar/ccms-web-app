@@ -111,11 +111,15 @@ export interface UpdateAdmissionDto {
 }
 
 export interface ApproveAdmissionDto {
-  remarks?: string;  // Optional approval notes
+  approved_amount?: number;    // RM amount committed for this admission
+  ehm_status?: string;         // 8-hour monitoring status
+  discharge_date?: Date | string; // Updated expected discharge
+  alert_flag?: boolean;        // Enable LOS alerts (default: check category)
+  remarks?: string;            // General approval notes
 }
 
 export interface RejectAdmissionDto {
-  rejectionReason: string;  // Required rejection reason
+  rejectionReason: string;     // Required rejection reason
 }
 
 export interface SendMedicalQueryDto {
@@ -203,3 +207,39 @@ export interface AdmissionRemark {
   attachment_name?: string;
   attachment_size?: number;
 }
+
+// ============================================================================
+// CLINICAL ASSESSMENTS (ccms_admission_assessments)
+// ============================================================================
+
+export interface AdmissionAssessment {
+  assessment_id: number;
+  admission_id: number;
+  field_name: string;
+  field_value: string | null;
+  created_at: Date | string;
+  created_by: string;
+  updated_at: Date | string;
+  updated_by: string;
+}
+
+export interface AssessmentFieldDto {
+  field_name: string;
+  field_value: string | null;
+}
+
+export interface UpsertAssessmentDto {
+  admission_id: number;
+  fields: AssessmentFieldDto[];
+}
+
+export const ASSESSMENT_FIELDS = [
+  { key: 'DIAGNOSIS_CODE',        label: 'Diagnosis Code',                  type: 'text' as const },
+  { key: 'DIAGNOSIS_DESCRIPTION', label: 'Diagnosis Description',           type: 'textarea' as const },
+  { key: 'MEDICAL_NECESSITY',     label: 'Medical Necessity Justification', type: 'textarea' as const },
+  { key: 'ATTENDING_PHYSICIAN',   label: 'Attending Physician',             type: 'text' as const },
+  { key: 'COMPLICATIONS',         label: 'Complications / Comorbidities',   type: 'textarea' as const },
+  { key: 'TREATMENT_PLAN',        label: 'Treatment Plan',                  type: 'textarea' as const },
+  { key: 'PROGNOSIS',             label: 'Prognosis',                       type: 'select' as const, options: ['GOOD', 'FAIR', 'POOR', 'CRITICAL'] as const },
+  { key: 'CLINICAL_NOTES',        label: 'Additional Clinical Notes',       type: 'textarea' as const }
+];

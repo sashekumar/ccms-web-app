@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ApiResponse } from './base-api.service';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -17,12 +18,6 @@ import {
   HospitalStaffContact,
   FeeSchedule
 } from '../../shared/models/hospital.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 /**
  * Hospital Service - Handles hospital management operations
@@ -43,7 +38,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching hospitals:', error);
         throw error;
       })
     );
@@ -59,7 +53,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching hospital:', error);
         throw error;
       })
     );
@@ -75,7 +68,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data.hospital_id),
       catchError(error => {
-        console.error('Error creating hospital:', error);
         throw error;
       })
     );
@@ -91,7 +83,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating hospital:', error);
         throw error;
       })
     );
@@ -107,7 +98,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting hospital:', error);
         throw error;
       })
     );
@@ -127,7 +117,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data.available),
       catchError(error => {
-        console.error('Error checking hospital code:', error);
         throw error;
       })
     );
@@ -147,7 +136,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching hospital addresses:', error);
         throw error;
       })
     );
@@ -163,7 +151,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data.address_id),
       catchError(error => {
-        console.error('Error creating hospital address:', error);
         throw error;
       })
     );
@@ -179,7 +166,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating hospital address:', error);
         throw error;
       })
     );
@@ -194,7 +180,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting hospital address:', error);
         throw error;
       })
     );
@@ -214,7 +199,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching hospital codes:', error);
         throw error;
       })
     );
@@ -230,7 +214,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data.code_id),
       catchError(error => {
-        console.error('Error creating hospital code:', error);
         throw error;
       })
     );
@@ -246,7 +229,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating hospital code:', error);
         throw error;
       })
     );
@@ -261,7 +243,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting hospital code:', error);
         throw error;
       })
     );
@@ -281,7 +262,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching hospital staff:', error);
         throw error;
       })
     );
@@ -297,7 +277,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data.staff_id),
       catchError(error => {
-        console.error('Error creating hospital staff:', error);
         throw error;
       })
     );
@@ -313,7 +292,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating hospital staff:', error);
         throw error;
       })
     );
@@ -328,7 +306,6 @@ export class HospitalService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting hospital staff:', error);
         throw error;
       })
     );
@@ -352,7 +329,6 @@ export class HospitalService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching hospital fees:', error);
         throw error;
       })
     );

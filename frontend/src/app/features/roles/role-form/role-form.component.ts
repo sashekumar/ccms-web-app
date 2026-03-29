@@ -8,6 +8,8 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CreateRoleDto, UpdateRoleDto } from '../../../shared/models/permission.model';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-role-form',
   standalone: true,
@@ -282,7 +284,7 @@ export class RoleFormComponent implements OnInit, OnDestroy {
           this.loading = false;
           this.toast.success('Role created successfully');
           // Navigate to permissions page to assign permissions
-          this.router.navigate(['/admin/roles/permissions', roleId]);
+          this.router.navigate([APP_ROUTES.ADMIN_ROLES.PERMISSIONS(roleId)]);
         },
         error: (error) => {
           this.logger.error('Error creating role', error);
@@ -308,7 +310,7 @@ export class RoleFormComponent implements OnInit, OnDestroy {
         next: () => {
           this.loading = false;
           this.toast.success('Role updated successfully');
-          this.router.navigate(['/admin/roles']);
+          this.router.navigate([APP_ROUTES.ADMIN_ROLES.LIST]);
         },
         error: (error) => {
           this.logger.error('Error updating role', error);
@@ -325,6 +327,9 @@ export class RoleFormComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/admin/roles']);
+    this.router.navigate([APP_ROUTES.ADMIN_ROLES.LIST]);
   }
 }
+
+
+

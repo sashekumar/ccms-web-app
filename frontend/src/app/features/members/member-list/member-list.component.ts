@@ -13,6 +13,7 @@ import { MemberListItem, MemberFilters } from '../../../shared/models/member.mod
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 
 @Component({
   selector: 'app-member-list',
@@ -486,21 +487,21 @@ export class MemberListComponent implements OnInit, OnDestroy {
    * Navigate to create member page
    */
   createMember(): void {
-    this.router.navigate(['/members/create']);
+    this.router.navigate([APP_ROUTES.MEMBERS.CREATE]);
   }
 
   /**
    * Navigate to view member page
    */
   viewMember(member_id: string): void {
-    this.router.navigate(['/members', member_id]);
+    this.router.navigate([APP_ROUTES.MEMBERS.DETAIL(member_id)]);
   }
 
   /**
    * Navigate to edit member page
    */
   editMember(member_id: string): void {
-    this.router.navigate(['/members', member_id, 'edit']);
+    this.router.navigate([APP_ROUTES.MEMBERS.EDIT(member_id)]);
   }
 
   /**
@@ -617,3 +618,5 @@ export class MemberListComponent implements OnInit, OnDestroy {
     return Math.min(this.pagination.page * this.pagination.limit, this.pagination.total);
   }
 }
+
+

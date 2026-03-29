@@ -6,12 +6,15 @@
 -- Route: /claims
 -- Tables: ccms_claims
 -- 
--- Actions: 2 permissions
+-- Actions: 4 permissions
 --   - VIEW: View claims list and details
+--   - CREATE: Register a new reimbursement (REIMB) claim
 --   - UPDATE: Update claim information and progress status
+--   - DELETE: Delete a reimbursement claim
 -- 
 -- Business Rules:
 --   - Claims are read-only except for updating progressing status and billing details
+--   - Reimbursement claims can be created directly via the Claims module
 -- ============================================================================
 
 USE db_ccms;
@@ -47,7 +50,7 @@ PRINT 'Step 1: Creating ACL actions...';
 DECLARE @ExistingActions TABLE (action_code VARCHAR(50));
 INSERT INTO @ExistingActions
 SELECT action_code FROM ccms_acl_actions 
-WHERE action_code IN ('VIEW', 'UPDATE');
+WHERE action_code IN ('VIEW', 'CREATE', 'UPDATE', 'DELETE');
 
 -- Insert VIEW if not exists (reusable across modules)
 IF NOT EXISTS (SELECT 1 FROM @ExistingActions WHERE action_code = 'VIEW')
@@ -59,6 +62,16 @@ END
 ELSE
     PRINT '  ℹ Action already exists: VIEW';
 
+-- Insert CREATE if not exists (reusable across modules)
+IF NOT EXISTS (SELECT 1 FROM @ExistingActions WHERE action_code = 'CREATE')
+BEGIN
+    INSERT INTO ccms_acl_actions (action_name, action_code, description, is_active, created_at, created_by)
+    VALUES ('Create', 'CREATE', 'Create new records', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Created action: CREATE';
+END
+ELSE
+    PRINT '  ℹ Action already exists: CREATE';
+
 -- Insert UPDATE if not exists (reusable across modules)
 IF NOT EXISTS (SELECT 1 FROM @ExistingActions WHERE action_code = 'UPDATE')
 BEGIN
@@ -68,6 +81,16 @@ BEGIN
 END
 ELSE
     PRINT '  ℹ Action already exists: UPDATE';
+
+-- Insert DELETE if not exists (reusable across modules)
+IF NOT EXISTS (SELECT 1 FROM @ExistingActions WHERE action_code = 'DELETE')
+BEGIN
+    INSERT INTO ccms_acl_actions (action_name, action_code, description, is_active, created_at, created_by)
+    VALUES ('Delete', 'DELETE', 'Delete records', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Created action: DELETE';
+END
+ELSE
+    PRINT '  ℹ Action already exists: DELETE';
 
 PRINT '';
 
@@ -121,10 +144,13 @@ PRINT '';
 PRINT 'Step 3: Linking actions to module...';
 
 -- Get action IDs
-DECLARE @ActionView INT, @ActionUpdate INT;
+DECLARE @ActionView INT, @ActionCreate INT, @ActionUpdate INT;
 
-SELECT @ActionView = action_id FROM ccms_acl_actions WHERE action_code = 'VIEW';
+SELECT @ActionView   = action_id FROM ccms_acl_actions WHERE action_code = 'VIEW';
+SELECT @ActionCreate = action_id FROM ccms_acl_actions WHERE action_code = 'CREATE';
 SELECT @ActionUpdate = action_id FROM ccms_acl_actions WHERE action_code = 'UPDATE';
+DECLARE @ActionDelete INT;
+SELECT @ActionDelete = action_id FROM ccms_acl_actions WHERE action_code = 'DELETE';
 
 -- Link VIEW
 IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @ModuleId AND action_id = @ActionView)
@@ -136,6 +162,16 @@ END
 ELSE
     PRINT '  ℹ Action already linked: VIEW';
 
+-- Link CREATE
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @ModuleId AND action_id = @ActionCreate)
+BEGIN
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label, is_active, created_at, created_by)
+    VALUES (@ModuleId, @ActionCreate, 'Create Claim', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Linked action: CREATE';
+END
+ELSE
+    PRINT '  ℹ Action already linked: CREATE';
+
 -- Link UPDATE
 IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @ModuleId AND action_id = @ActionUpdate)
 BEGIN
@@ -145,6 +181,16 @@ BEGIN
 END
 ELSE
     PRINT '  ℹ Action already linked: UPDATE';
+
+-- Link DELETE
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @ModuleId AND action_id = @ActionDelete)
+BEGIN
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label, is_active, created_at, created_by)
+    VALUES (@ModuleId, @ActionDelete, 'Delete Claim', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Linked action: DELETE';
+END
+ELSE
+    PRINT '  ℹ Action already linked: DELETE';
 
 PRINT '';
 
@@ -212,7 +258,7 @@ PRINT 'Permissions granted to Super Admin: ' + CAST(@PermissionCount AS VARCHAR)
 
 PRINT '';
 
-IF @ModuleActionCount = 2 AND @PermissionCount = 2
+IF @ModuleActionCount = 4 AND @PermissionCount = 4
 BEGIN
     PRINT '✓✓✓ SUCCESS: Claims module ACL setup complete! ✓✓✓';
     PRINT '';

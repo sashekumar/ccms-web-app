@@ -216,7 +216,9 @@ export const ADMISSIONS_PERMISSIONS = {
 export const CLAIMS_PERMISSIONS = {
   // Main Claims Operations
   VIEW: 'CLAIMS.VIEW',
-  UPDATE: 'CLAIMS.UPDATE'
+  CREATE: 'CLAIMS.CREATE',
+  UPDATE: 'CLAIMS.UPDATE',
+  DELETE: 'CLAIMS.DELETE'
 } as const;
 
 export const MQ_OPERATIONS_PERMISSIONS = {

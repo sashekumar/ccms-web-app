@@ -34,6 +34,7 @@ import {
 
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 
 @Component({
@@ -185,7 +186,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
    * Navigate back to list
    */
   goBack(): void {
-    this.router.navigate(['/members']);
+    this.router.navigate([APP_ROUTES.MEMBERS.LIST]);
   }
 
   /**
@@ -193,7 +194,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
    */
   editMember(): void {
     if (this.member) {
-      this.router.navigate(['/members', this.member.member_id, 'edit']);
+      this.router.navigate([APP_ROUTES.MEMBERS.EDIT(this.member.member_id)]);
     }
   }
 
@@ -926,3 +927,5 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     return d.toISOString().split('T')[0];
   }
 }
+
+

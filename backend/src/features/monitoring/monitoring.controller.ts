@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { MonitoringService } from './monitoring.service';
-import { MonitoringFilters, AcknowledgeAlertDto, RecordCheckDto } from './dto/monitoring.dto';
+import { LOSAlert, MonitoringFilters, AcknowledgeAlertDto, RecordCheckDto } from './dto/monitoring.dto';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
-
+import { logger } from '../../core/utils/logger.util';
 /**
  * Monitoring Controller
  * Handles HTTP requests for 8-Hour Monitoring and LOS Alerts
+ * Not extending BaseController due to specialized monitoring logic
  * 
  * Permissions Required:
  * - ADMISSIONS.VIEW: View alerts and checks
@@ -138,6 +139,32 @@ export class MonitoringController {
       }
 
       ResponseUtil.error(res, 'Error recording monitoring check', 500, errorMessage);
+    }
+  };
+
+  /**
+   * Manually trigger LOS alert scan (Admin only)
+   * POST /api/monitoring/scan-los-alerts
+   * Permission: ADMISSIONS.ADMIN
+   * TASK 6: Admin endpoint to manually trigger alert generation
+   */
+  public scanLOSAlerts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      logger.info('[Manual Scan] Starting LOS alert scan...');
+      
+      const result = await this.service.scanAndTriggerLOSAlerts();
+      
+      logger.info('[Manual Scan] Scan completed:', result);
+
+      ResponseUtil.success(
+        res,
+        result,
+        `LOS scan completed: ${result.scanned} scanned, ${result.alertsCreated} created, ${result.alertsUpgraded} upgraded`
+      );
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      console.error('[Manual Scan] Error:', errorMessage);
+      ResponseUtil.error(res, 'Error scanning LOS alerts', 500, errorMessage);
     }
   };
 }

@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
 import { BanksService } from './banks.service';
-import { CreateBankDto, UpdateBankDto, BankFilters, GetBankRequest } from './banks.types';
+import { Bank, CreateBankDto, UpdateBankDto, BankFilters, GetBankRequest } from './banks.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
+import { BaseController } from '../../core/base';
 
-export class BanksController {
-  private service: BanksService;
+export class BanksController extends BaseController<Bank> {
+  protected service: BanksService;
 
   constructor() {
-    this.service = new BanksService();
+    const service = new BanksService();
+    super(service);
+    this.service = service;
   }
 
   /**

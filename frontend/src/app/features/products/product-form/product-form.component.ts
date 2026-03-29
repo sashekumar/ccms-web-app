@@ -8,6 +8,8 @@ import { CreateProductDto, UpdateProductDto, Product } from '../../../shared/mod
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 
+import { APP_ROUTES } from '../../../core/constants/routes.constants'
+
 @Component({
   selector: 'app-product-form',
   standalone: true,
@@ -318,6 +320,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
    * Navigate back to product list
    */
   goBack(): void {
-    this.router.navigate(['/products']);
+    this.router.navigate([APP_ROUTES.PRODUCTS.LIST]);
   }
 }
+
+
+

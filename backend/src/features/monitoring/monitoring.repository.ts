@@ -252,4 +252,293 @@ export class MonitoringRepository extends BaseRepository<LOSAlert> {
       .input('notes', sql.VarChar(sql.MAX), notes)
       .query(query);
   }
+
+  /**
+   * Create new LOS alert
+   * TASK 1: Create LOS alert for admission
+   */
+  async createLOSAlert(
+    admissionId: number,
+    alertLevel: 1 | 2 | 3,
+    currentLOS: number,
+    thresholdDays: number
+  ): Promise<number> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      INSERT INTO ccms_los_alerts (
+        admission_id,
+        alert_level,
+        triggered_at,
+        current_los,
+        threshold_days,
+        status,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        @admissionId,
+        @alertLevel,
+        GETDATE(),
+        @currentLOS,
+        @thresholdDays,
+        'ACTIVE',
+        GETDATE(),
+        GETDATE()
+      );
+      SELECT SCOPE_IDENTITY() as alert_id;
+    `;
+
+    const result = await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .input('alertLevel', sql.Int, alertLevel)
+      .input('currentLOS', sql.Int, currentLOS)
+      .input('thresholdDays', sql.Int, thresholdDays)
+      .query(query);
+
+    return result.recordset[0].alert_id;
+  }
+
+  /**
+   * Check if alert already exists for admission at specific level
+   * TASK 1: Check existing alert
+   */
+  async checkExistingAlert(admissionId: number, alertLevel: number): Promise<boolean> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      SELECT COUNT(*) as count
+      FROM ccms_los_alerts
+      WHERE admission_id = @admissionId
+        AND alert_level = @alertLevel
+        AND status IN ('ACTIVE', 'ACKNOWLEDGED')
+    `;
+
+    const result = await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .input('alertLevel', sql.Int, alertLevel)
+      .query(query);
+
+    return result.recordset[0].count > 0;
+  }
+
+  /**
+   * Upgrade alert from one level to another
+   * TASK 1: Upgrade existing alert to higher level
+   */
+  async upgradeAlert(
+    admissionId: number,
+    fromLevel: number,
+    toLevel: number,
+    newLOS: number
+  ): Promise<void> {
+    const pool = await connectionManager.getPool();
+
+    const thresholdDays = toLevel === 2 ? 14 : toLevel === 3 ? 21 : 7;
+
+    const query = `
+      UPDATE ccms_los_alerts
+      SET 
+        alert_level = @toLevel,
+        current_los = @newLOS,
+        threshold_days = @thresholdDays,
+        updated_at = GETDATE()
+      WHERE admission_id = @admissionId
+        AND alert_level = @fromLevel
+        AND status IN ('ACTIVE', 'ACKNOWLEDGED')
+    `;
+
+    await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .input('fromLevel', sql.Int, fromLevel)
+      .input('toLevel', sql.Int, toLevel)
+      .input('newLOS', sql.Int, newLOS)
+      .input('thresholdDays', sql.Int, thresholdDays)
+      .query(query);
+  }
+
+  /**
+   * Initialize 8HM monitoring for new admission
+   * TASK 2: Initialize monitoring on admission create
+   */
+  async initialize8HMMonitoring(admissionId: number, admissionDatetime: Date): Promise<void> {
+    const pool = await connectionManager.getPool();
+
+    // Calculate next check due (8 hours after admission)
+    const query = `
+      INSERT INTO ccms_8hm_monitoring (
+        admission_id,
+        check_time,
+        hours_elapsed,
+        status,
+        next_check_due,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        @admissionId,
+        NULL,
+        0,
+        'Pending',
+        DATEADD(HOUR, 8, @admissionDatetime),
+        GETDATE(),
+        GETDATE()
+      )
+    `;
+
+    await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .input('admissionDatetime', sql.DateTime2, admissionDatetime)
+      .query(query);
+  }
+
+  /**
+   * Complete 8HM monitoring when admission is discharged
+   * TASK 2: Mark all pending checks as completed
+   */
+  async complete8HMMonitoring(admissionId: number): Promise<void> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      UPDATE ccms_8hm_monitoring
+      SET 
+        status = 'Completed',
+        updated_at = GETDATE()
+      WHERE admission_id = @admissionId
+        AND status = 'Pending'
+    `;
+
+    await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .query(query);
+  }
+
+  /**
+   * Resolve all LOS alerts when admission is discharged
+   * TASK 2: Mark active/acknowledged alerts as resolved
+   */
+  async resolveLOSAlerts(admissionId: number): Promise<void> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      UPDATE ccms_los_alerts
+      SET 
+        status = 'RESOLVED',
+        resolved_at = GETDATE(),
+        updated_at = GETDATE()
+      WHERE admission_id = @admissionId
+        AND status IN ('ACTIVE', 'ACKNOWLEDGED')
+    `;
+
+    await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .query(query);
+  }
+
+  /**
+   * Get overdue 8HM checks (past next_check_due time)
+   * TASK 3: Find checks that need attention
+   */
+  async getOverdue8HMChecks(): Promise<any[]> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      SELECT 
+        m.monitoring_id,
+        m.admission_id,
+        m.next_check_due,
+        m.status,
+        DATEDIFF(HOUR, m.next_check_due, GETDATE()) as hours_overdue,
+        c.claim_ref_no,
+        mem.full_name as patient_name,
+        mem.ic_number as patient_ic,
+        h.hospital_name,
+        ad.admission_date
+      FROM ccms_8hm_monitoring m
+      INNER JOIN ccms_admissions ad ON m.admission_id = ad.admission_id
+      INNER JOIN ccms_claims c ON ad.claim_id = c.claim_id
+      LEFT JOIN ccms_members mem ON c.member_id = mem.member_id
+      LEFT JOIN ccms_hospitals h ON c.hospital_id = h.hospital_id
+      WHERE m.status = 'Pending'
+        AND m.next_check_due <= GETDATE()
+        AND ad.discharge_date IS NULL
+        AND ad.is_deleted = 0
+      ORDER BY m.next_check_due ASC
+    `;
+
+    const result = await pool.request().query(query);
+    return result.recordset;
+  }
+
+  /**
+   * Get active admissions (not discharged)
+   * TASK 3: Used by LOS scanner to check all active cases
+   */
+  async getActiveAdmissions(): Promise<any[]> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      SELECT 
+        ad.admission_id,
+        ad.admission_date,
+        DATEDIFF(DAY, ad.admission_date, GETDATE()) as current_los,
+        c.claim_ref_no,
+        mem.full_name as patient_name,
+        h.hospital_name
+      FROM ccms_admissions ad
+      INNER JOIN ccms_claims c ON ad.claim_id = c.claim_id
+      LEFT JOIN ccms_members mem ON c.member_id = mem.member_id
+      LEFT JOIN ccms_hospitals h ON c.hospital_id = h.hospital_id
+      WHERE ad.discharge_date IS NULL
+        AND ad.is_deleted = 0
+        AND ad.admission_status NOT IN ('Cancelled', 'Rejected')
+      ORDER BY ad.admission_date ASC
+    `;
+
+    const result = await pool.request().query(query);
+    return result.recordset;
+  }
+
+  /**
+   * Get alert count for admission (helper for tracking)
+   * TASK 3: Helper method for service layer
+   */
+  async getAlertCount(admissionId: number): Promise<number> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      SELECT COUNT(*) as count
+      FROM ccms_los_alerts
+      WHERE admission_id = @admissionId
+        AND status IN ('ACTIVE', 'ACKNOWLEDGED')
+    `;
+
+    const result = await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .query(query);
+
+    return result.recordset[0].count;
+  }
+
+  /**
+   * Get latest alert for admission
+   * TASK 3: Helper to check if alert was upgraded
+   */
+  async getLatestAlert(admissionId: number): Promise<any> {
+    const pool = await connectionManager.getPool();
+
+    const query = `
+      SELECT TOP 1 *
+      FROM ccms_los_alerts
+      WHERE admission_id = @admissionId
+        AND status IN ('ACTIVE', 'ACKNOWLEDGED')
+      ORDER BY created_at DESC, alert_level DESC
+    `;
+
+    const result = await pool.request()
+      .input('admissionId', sql.Int, admissionId)
+      .query(query);
+
+    return result.recordset[0] || null;
+  }
 }

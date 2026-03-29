@@ -45,4 +45,12 @@ router.post('/8hm-checks', requirePermission('ADMISSIONS', 'VIEW'), controller.g
  */
 router.post('/record-check', requirePermission('ADMISSIONS', 'UPDATE'), controller.recordCheck);
 
+/**
+ * Manually trigger LOS alert scan (Admin only)
+ * POST /api/monitoring/scan-los-alerts
+ * Permission: ADMISSIONS.ADMIN
+ * TASK 6: Admin endpoint for manual alert generation
+ */
+router.post('/scan-los-alerts', requirePermission('ADMISSIONS', 'ADMIN'), controller.scanLOSAlerts);
+
 export default router;

@@ -8,6 +8,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Product, ProductLimit, ProductCopay } from '../../../shared/models/product.model';
+import { PermissionService } from '../../../core/services/permission.service';
 
 describe('ProductViewComponent', () => {
   let component: ProductViewComponent;
@@ -55,7 +56,11 @@ describe('ProductViewComponent', () => {
       deleteLimit: vi.fn().mockReturnValue(of(null)),
       createCopay: vi.fn().mockReturnValue(of(mockCopay)),
       updateCopay: vi.fn().mockReturnValue(of(null)),
-      deleteCopay: vi.fn().mockReturnValue(of(null))
+      deleteCopay: vi.fn().mockReturnValue(of(null)),
+      getThresholdsByProductId: vi.fn().mockReturnValue(of([])),
+      createThreshold: vi.fn().mockReturnValue(of('thresh1')),
+      updateThreshold: vi.fn().mockReturnValue(of(null)),
+      deleteThreshold: vi.fn().mockReturnValue(of(null))
     };
 
     router = {
@@ -91,7 +96,11 @@ describe('ProductViewComponent', () => {
         { provide: Router, useValue: router },
         { provide: ActivatedRoute, useValue: route },
         { provide: ToastService, useValue: toastService },
-        { provide: LoggerService, useValue: loggerService }
+        { provide: LoggerService, useValue: loggerService },
+        { provide: PermissionService, useValue: {
+          hasPermission: vi.fn().mockReturnValue(of(true)),
+          userPermissions$: of(null)
+        }}
       ]
     }).compileComponents();
 
@@ -941,7 +950,8 @@ describe('ProductViewComponent', () => {
       expect(component.tabs).toEqual([
         { id: 'details', label: 'Product Details' },
         { id: 'limits', label: 'Limits' },
-        { id: 'copay', label: 'Copay' }
+        { id: 'copay', label: 'Copay' },
+        { id: 'thresholds', label: 'LOS Alert Thresholds' }
       ]);
     });
   });
@@ -1055,6 +1065,339 @@ describe('ProductViewComponent', () => {
       component.loadProduct('1');
 
       expect(loggerService.error).toHaveBeenCalledWith('Error loading product:', error);
+    });
+  });
+
+  describe('Threshold Management', () => {
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should load thresholds when tab is activated', () => {
+      component.onTabChange('thresholds');
+
+      expect(productService.getThresholdsByProductId).toHaveBeenCalledWith('1');
+    });
+
+    it('should not reload thresholds if already loaded', () => {
+      component.thresholds = [{ threshold_id: 't1', product_id: '1', is_active: true }] as any;
+      component.onTabChange('thresholds');
+
+      expect(productService.getThresholdsByProductId).not.toHaveBeenCalled();
+    });
+
+    it('should set loading states when loading thresholds', () => {
+      component.loadThresholds();
+
+      expect(productService.getThresholdsByProductId).toHaveBeenCalledWith('1');
+      expect(component.thresholds).toEqual([]);
+      expect(component.loadingThresholds).toBe(false);
+    });
+
+    it('should handle error when loading thresholds fails', () => {
+      const error = new Error('Load thresholds failed');
+      productService.getThresholdsByProductId.mockReturnValue(throwError(() => error));
+
+      component.loadThresholds();
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error loading thresholds:', error);
+    });
+
+    it('should log success when thresholds load', () => {
+      component.loadThresholds();
+
+      expect(loggerService.info).toHaveBeenCalledWith('Thresholds loaded successfully');
+    });
+  });
+
+  describe('Threshold Form Operations', () => {
+    const mockThreshold = {
+      threshold_id: 'thr1',
+      product_id: '1',
+      diagnosis_category: 'Cardiac',
+      threshold_days: 5,
+      alert_level: 3,
+      is_active: true
+    };
+
+    beforeEach(() => {
+      component.product = mockProduct;
+    });
+
+    it('should open new threshold form with reset data when called without argument', () => {
+      component.showThresholdFormDialog();
+
+      expect(component.showThresholdForm).toBe(true);
+      expect(component.editingThreshold).toBeNull();
+      expect(component.thresholdFormData.diagnosis_category).toBe('');
+    });
+
+    it('should open edit threshold form with pre-filled data when called with argument', () => {
+      component.showThresholdFormDialog(mockThreshold as any);
+
+      expect(component.showThresholdForm).toBe(true);
+      expect(component.editingThreshold).toBe(mockThreshold);
+      expect(component.thresholdFormData.diagnosis_category).toBe('Cardiac');
+      expect(component.thresholdFormData.threshold_days).toBe(5);
+      expect(component.thresholdFormData.alert_level).toBe(3);
+    });
+
+    it('should create threshold when saveThreshold is called with valid form and no editingThreshold', () => {
+      const mockForm = { invalid: false };
+      component.editingThreshold = null;
+      const expectedData = {
+        diagnosis_category: 'Cardiac',
+        threshold_days: 5,
+        alert_level: 3,
+        is_active: true
+      };
+      component.thresholdFormData = { ...expectedData };
+
+      component.saveThreshold(mockForm);
+
+      expect(productService.createThreshold).toHaveBeenCalledWith('1', expectedData);
+      expect(toastService.success).toHaveBeenCalledWith('Threshold created successfully');
+      expect(component.showThresholdForm).toBe(false);
+    });
+
+    it('should update threshold when saveThreshold is called with valid form and editingThreshold set', () => {
+      const mockForm = { invalid: false };
+      component.editingThreshold = mockThreshold as any;
+      const expectedData = {
+        diagnosis_category: 'Cardiac Updated',
+        threshold_days: 7,
+        alert_level: 2,
+        is_active: true
+      };
+      component.thresholdFormData = { ...expectedData };
+
+      component.saveThreshold(mockForm);
+
+      expect(productService.updateThreshold).toHaveBeenCalledWith('1', 'thr1', expectedData);
+      expect(toastService.success).toHaveBeenCalledWith('Threshold updated successfully');
+      expect(component.showThresholdForm).toBe(false);
+      expect(component.editingThreshold).toBeNull();
+    });
+
+    it('should not call service when saveThreshold is called with invalid form', () => {
+      const mockForm = { invalid: true };
+
+      component.saveThreshold(mockForm);
+
+      expect(productService.createThreshold).not.toHaveBeenCalled();
+      expect(productService.updateThreshold).not.toHaveBeenCalled();
+    });
+
+    it('should not call service when saveThreshold is called without product', () => {
+      const mockForm = { invalid: false };
+      component.product = null as any;
+
+      component.saveThreshold(mockForm);
+
+      expect(productService.createThreshold).not.toHaveBeenCalled();
+    });
+
+    it('should handle error when createThreshold fails', () => {
+      const error = new Error('Create failed');
+      productService.createThreshold.mockReturnValue(throwError(() => error));
+      const mockForm = { invalid: false };
+      component.editingThreshold = null;
+
+      component.saveThreshold(mockForm);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error creating threshold:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to create threshold');
+    });
+
+    it('should handle error when updateThreshold fails', () => {
+      const error = new Error('Update failed');
+      productService.updateThreshold.mockReturnValue(throwError(() => error));
+      const mockForm = { invalid: false };
+      component.editingThreshold = mockThreshold as any;
+
+      component.saveThreshold(mockForm);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error updating threshold:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to update threshold');
+    });
+
+    it('should delete threshold after confirmation', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      component.deleteThreshold(mockThreshold as any);
+
+      expect(productService.deleteThreshold).toHaveBeenCalledWith('1', 'thr1');
+      expect(toastService.success).toHaveBeenCalledWith('Threshold deleted successfully');
+    });
+
+    it('should not delete threshold if confirmation is cancelled', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      component.deleteThreshold(mockThreshold as any);
+
+      expect(productService.deleteThreshold).not.toHaveBeenCalled();
+    });
+
+    it('should not call deleteThreshold service if product is null', () => {
+      component.product = null as any;
+
+      component.deleteThreshold(mockThreshold as any);
+
+      expect(productService.deleteThreshold).not.toHaveBeenCalled();
+    });
+
+    it('should handle error when deleteThreshold fails', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      const error = new Error('Delete failed');
+      productService.deleteThreshold.mockReturnValue(throwError(() => error));
+
+      component.deleteThreshold(mockThreshold as any);
+
+      expect(loggerService.error).toHaveBeenCalledWith('Error deleting threshold:', error);
+      expect(toastService.error).toHaveBeenCalledWith('Failed to delete threshold');
+    });
+
+    it('should cancel threshold form and reset state', () => {
+      component.showThresholdForm = true;
+      component.editingThreshold = mockThreshold as any;
+
+      component.cancelThresholdForm();
+
+      expect(component.showThresholdForm).toBe(false);
+      expect(component.editingThreshold).toBeNull();
+      expect(component.thresholdFormData.diagnosis_category).toBe('');
+    });
+
+    it('should reset threshold form data', () => {
+      component.thresholdFormData = { diagnosis_category: 'X', threshold_days: 10, alert_level: 2, is_active: false };
+
+      component.resetThresholdForm();
+
+      expect(component.thresholdFormData.diagnosis_category).toBe('');
+      expect(component.thresholdFormData.is_active).toBe(true);
+    });
+  });
+
+  describe('Template Rendering', () => {
+    it('should render product plan name in header', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Test Plan');
+    });
+
+    it('should render tabs navigation', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Details');
+      expect(compiled.textContent).toContain('Limits');
+      expect(compiled.textContent).toContain('Copay');
+      expect(compiled.textContent).toContain('LOS Alert Thresholds');
+    });
+
+    it('should render details tab content by default', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('TEST001');
+      expect(compiled.textContent).toContain('Test Insurer');
+    });
+
+    it('should render limits tab when pre-set', () => {
+      component.activeTab = 'limits';
+      component.limits = [];
+      fixture.detectChanges();
+      expect(component.activeTab).toBe('limits');
+    });
+
+    it('should render copay tab when pre-set', () => {
+      component.activeTab = 'copay';
+      component.copayList = [];
+      fixture.detectChanges();
+      expect(component.activeTab).toBe('copay');
+    });
+
+    it('should render thresholds tab when pre-set', () => {
+      component.activeTab = 'thresholds';
+      component.thresholds = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('LOS Alert');
+    });
+
+    it('should render limits with pre-loaded data', () => {
+      component.activeTab = 'limits';
+      component.limits = [mockLimit];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('ANNUAL');
+    });
+
+    it('should render copay list with pre-loaded data', () => {
+      component.activeTab = 'copay';
+      component.copayList = [mockCopay];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('PERCENTAGE');
+    });
+
+    it('should render limit form modal when showLimitForm is true', () => {
+      component.activeTab = 'limits';
+      component.showLimitForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add Limit');
+    });
+
+    it('should render edit limit form when editingLimit is set', () => {
+      component.activeTab = 'limits';
+      component.showLimitForm = true;
+      component.editingLimit = mockLimit;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Limit');
+    });
+
+    it('should render copay form modal when showCopayForm is true', () => {
+      component.activeTab = 'copay';
+      component.showCopayForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add Copay');
+    });
+
+    it('should render edit copay form when editingCopay is set', () => {
+      component.activeTab = 'copay';
+      component.showCopayForm = true;
+      component.editingCopay = mockCopay;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Copay');
+    });
+
+    it('should render threshold form modal when showThresholdForm is true', () => {
+      component.activeTab = 'thresholds';
+      component.showThresholdForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add Threshold');
+    });
+
+    it('should render edit threshold form when editingThreshold is set', () => {
+      const mockThreshold = { threshold_id: 'thr1', product_id: '1', diagnosis_category: 'Cardiac', threshold_days: 5, alert_level: 3, is_active: true };
+      component.activeTab = 'thresholds';
+      component.showThresholdForm = true;
+      component.editingThreshold = mockThreshold as any;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Threshold');
+    });
+
+    it('should render thresholds table when data is pre-loaded', () => {
+      const mockThreshold = { threshold_id: 'thr1', product_id: '1', diagnosis_category: 'Cardiac', threshold_days: 5, alert_level: 3, is_active: true };
+      component.activeTab = 'thresholds';
+      component.thresholds = [mockThreshold as any];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Cardiac');
     });
   });
 });

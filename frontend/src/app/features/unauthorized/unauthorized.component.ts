@@ -1,11 +1,13 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { APP_ROUTES } from '../../core/constants/routes.constants';
 
 /**
  * Unauthorized/Access Denied page
  * Displayed when user tries to access resources without proper permissions
  */
+
 @Component({
   selector: 'app-unauthorized',
   standalone: true,
@@ -75,11 +77,14 @@ export class UnauthorizedComponent {
       window.history.back();
     } else {
       // Fallback for SSR
-      this.router.navigate(['/dashboard']);
+      this.router.navigate([APP_ROUTES.MAIN.DASHBOARD]);
     }
   }
 
   goToDashboard(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate([APP_ROUTES.MAIN.DASHBOARD]);
   }
 }
+
+
+

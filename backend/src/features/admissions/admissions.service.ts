@@ -1,4 +1,7 @@
 import { AdmissionsRepository } from './admissions.repository';
+import { AdmissionAssessmentRepository } from './admission-assessment.repository';
+import { MonitoringRepository } from '../monitoring/monitoring.repository';
+import { UpsertAdmissionAssessmentsDto, AdmissionAssessment } from './dto/admission-assessment.dto';
 import {
   Admission,
   AdmissionFilters,
@@ -15,6 +18,7 @@ import {
   ResolveDefermentDto
 } from './dto/admission.dto';
 import { BaseService } from '../../core/base/base.service';
+import { logger } from '../../core/utils/logger.util';
 
 /**
  * Admissions Service
@@ -31,6 +35,7 @@ import { BaseService } from '../../core/base/base.service';
  */
 export class AdmissionsService extends BaseService<Admission> {
   protected repository: AdmissionsRepository;
+  private assessmentRepository = new AdmissionAssessmentRepository();
 
   constructor() {
     const repository = new AdmissionsRepository();
@@ -167,7 +172,31 @@ export class AdmissionsService extends BaseService<Admission> {
       throw new Error('Cannot update deleted admission');
     }
 
+    // TASK 11: Check if discharge is being set
+    const isDischarging = dto.discharge_date !== undefined && dto.discharge_date !== null;
+
     await this.repository.updateAdmission(admissionId, dto, updatedBy);
+
+    // TASK 11: Complete monitoring when patient is discharged
+    if (isDischarging) {
+      try {
+        logger.info(`[Discharge] Completing monitoring for admission ${admissionId}`);
+        
+        const monitoringRepository = new MonitoringRepository();
+        
+        // Mark all pending 8HM checks as completed
+        await monitoringRepository.complete8HMMonitoring(admissionId);
+        
+        // Resolve all active LOS alerts
+        await monitoringRepository.resolveLOSAlerts(admissionId);
+        
+        logger.info(`[Discharge] Monitoring completed for admission ${admissionId}`);
+      } catch (error) {
+        console.error(`[Discharge] Error completing monitoring for admission ${admissionId}:`, error);
+        // Don't throw - we still want the discharge to succeed even if monitoring cleanup fails
+        // Log for manual review
+      }
+    }
   }
 
   /**
@@ -470,5 +499,17 @@ export class AdmissionsService extends BaseService<Admission> {
 
   public async updateMQStatus(admissionId: number, status: string, updatedBy: string): Promise<void> {
     return await this.repository.updateMQStatus(admissionId, status, updatedBy);
+  }
+
+  // ============================================================================
+  // ASSESSMENTS
+  // ============================================================================
+
+  public async getAdmissionAssessments(admissionId: number): Promise<AdmissionAssessment[]> {
+    return await this.assessmentRepository.getByAdmissionId(admissionId);
+  }
+
+  public async upsertAdmissionAssessments(dto: UpsertAdmissionAssessmentsDto, performedBy: string): Promise<void> {
+    await this.assessmentRepository.upsertAssessments(dto, performedBy);
   }
 }

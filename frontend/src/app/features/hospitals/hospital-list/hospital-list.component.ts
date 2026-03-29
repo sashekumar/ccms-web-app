@@ -11,6 +11,7 @@ import {
 } from '../../../shared/models/hospital.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
@@ -472,21 +473,21 @@ export class HospitalListComponent implements OnInit, OnDestroy {
    * Navigate to create hospital page
    */
   createHospital(): void {
-    this.router.navigate(['/hospitals/create']);
+    this.router.navigate([APP_ROUTES.HOSPITALS.CREATE]);
   }
 
   /**
    * Navigate to view hospital page
    */
   viewHospital(hospital_id: string): void {
-    this.router.navigate(['/hospitals/view', hospital_id]);
+    this.router.navigate([APP_ROUTES.HOSPITALS.DETAIL(hospital_id)]);
   }
 
   /**
    * Navigate to edit hospital page
    */
   editHospital(hospital_id: string): void {
-    this.router.navigate(['/hospitals/edit', hospital_id]);
+    this.router.navigate([APP_ROUTES.HOSPITALS.EDIT(hospital_id)]);
   }
 
   /**
@@ -572,3 +573,5 @@ export class HospitalListComponent implements OnInit, OnDestroy {
     return Math.min(this.pagination.page * this.pagination.limit, this.pagination.total);
   }
 }
+
+

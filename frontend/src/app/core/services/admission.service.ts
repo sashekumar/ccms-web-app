@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ApiResponse } from './base-api.service';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -17,14 +18,11 @@ import {
   DeferAdmissionDto,
   ResolveDefermentDto,
   AdmissionFilters,
-  PaginatedAdmissions
+  PaginatedAdmissions,
+  AdmissionAssessment,
+  AssessmentFieldDto,
+  UpsertAssessmentDto
 } from '../../shared/models/admission.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 /**
  * Admission Service
@@ -56,7 +54,6 @@ export class AdmissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching admissions:', error);
         throw error;
       })
     );
@@ -72,7 +69,6 @@ export class AdmissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching admission:', error);
         throw error;
       })
     );
@@ -88,7 +84,6 @@ export class AdmissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching admission with remarks:', error);
         throw error;
       })
     );
@@ -106,7 +101,6 @@ export class AdmissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error creating admission:', error);
         throw error;
       })
     );
@@ -122,7 +116,6 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating admission:', error);
         throw error;
       })
     );
@@ -138,7 +131,6 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting admission:', error);
         throw error;
       })
     );
@@ -159,7 +151,6 @@ export class AdmissionService {
     ).pipe(
       map(response => response.data.gl_ref_no),
       catchError(error => {
-        console.error('Error approving admission:', error);
         throw error;
       })
     );
@@ -175,7 +166,6 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error rejecting admission:', error);
         throw error;
       })
     );
@@ -195,7 +185,6 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error sending medical query:', error);
         throw error;
       })
     );
@@ -211,7 +200,6 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error responding to medical query:', error);
         throw error;
       })
     );
@@ -231,7 +219,6 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deferring admission:', error);
         throw error;
       })
     );
@@ -247,7 +234,6 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error resolving deferment:', error);
         throw error;
       })
     );
@@ -263,7 +249,6 @@ export class AdmissionService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching global MQ history:', error);
         throw error;
       })
     );
@@ -279,7 +264,30 @@ export class AdmissionService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating MQ status:', error);
+        throw error;
+      })
+    );
+  }
+
+  getAdmissionAssessments(admission_id: number): Observable<AdmissionAssessment[]> {
+    return this.api.post<ApiResponse<AdmissionAssessment[]>>(
+      API_ENDPOINTS.ADMISSIONS.ASSESSMENTS_GET,
+      { admission_id }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        throw error;
+      })
+    );
+  }
+
+  upsertAdmissionAssessments(dto: UpsertAssessmentDto): Observable<void> {
+    return this.api.post<ApiResponse<void>>(
+      API_ENDPOINTS.ADMISSIONS.ASSESSMENTS_UPSERT,
+      dto
+    ).pipe(
+      map(() => undefined),
+      catchError(error => {
         throw error;
       })
     );

@@ -19,6 +19,7 @@ import {
   ResolveDefermentDto
 } from './dto/admission.dto';
 import { CreateRemarkDto } from '../remarks/entities/remark.entity';
+import { MonitoringRepository } from '../monitoring/monitoring.repository';
 
 /**
  * Admissions Repository
@@ -28,6 +29,7 @@ import { CreateRemarkDto } from '../remarks/entities/remark.entity';
  * - CRUD operations
  * - GL auto-generation (GL-YYYY-NNNN format)
  * - Workflow tracking via ccms_remarks
+ * - Automatic 8HM monitoring initialization (Task 10)
  * - Transaction support for approve/reject
  * - Row-level locking for GL generation
  * 
@@ -248,20 +250,21 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
         .input('memberId', sql.BigInt, dto.member_id)
         .input('hospitalId', sql.BigInt, dto.hospital_id)
         .input('policyRecordId', sql.BigInt, dto.policy_record_id || null)
+        .input('patientType', sql.VarChar(20), dto.patient_type || 'PRINCIPAL')
         .input('claimStatus', sql.VarChar(50), 'PENDING')
-        .input('claimMode', sql.VarChar(20), 'CASHLESS')
+        .input('claimMode', sql.VarChar(20), dto.claim_mode || 'CASHLESS')
         .input('totalBilled', sql.Money, dto.estimated_amount || 0)
         .input('disabilityCategory', sql.VarChar(100), dto.diagnosis_category || null)
         .input('createdBy', sql.VarChar(50), createdBy)
         .query(`
           INSERT INTO ${DB_TABLES.CLAIMS} (
             claim_ref_no, member_id, hospital_id, policy_record_id,
-            claim_status, claim_mode, total_billed, disability_category, created_by
+            patient_type, claim_status, claim_mode, total_billed, disability_category, created_by
           )
           OUTPUT INSERTED.claim_id
           VALUES (
             @claimRefNo, @memberId, @hospitalId, @policyRecordId,
-            @claimStatus, @claimMode, @totalBilled, @disabilityCategory, @createdBy
+            @patientType, @claimStatus, @claimMode, @totalBilled, @disabilityCategory, @createdBy
           )
         `);
 
@@ -316,6 +319,17 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
             @refType, @refId, @refDesc, @actionFor, @remarkText, @createdBy
           )
         `);
+
+      // Step 5: Initialize 8HM monitoring (TASK 10)
+      // Create initial monitoring record with first check due in 8 hours
+      const monitoringRepository = new MonitoringRepository();
+      const admissionDateObj = typeof dto.admission_date === 'string' 
+        ? new Date(dto.admission_date) 
+        : dto.admission_date;
+      await monitoringRepository.initialize8HMMonitoring(
+        admissionId,
+        admissionDateObj
+      );
 
       await transaction.commit();
 
@@ -431,22 +445,52 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
       // Step 1: Generate GL number with row-level lock
       const glRefNo = await this.generateGLNumber(transaction);
 
-      // Step 2: Update admission status and GL
+      // Step 2: Get claim_id to update total_approved later
+      const admissionSelect = await transaction.request()
+        .input('admissionId', sql.BigInt, admissionId)
+        .query(`SELECT claim_id FROM ${DB_TABLES.ADMISSIONS} WHERE admission_id = @admissionId`);
+      
+      const claimId = admissionSelect.recordset[0]?.claim_id;
+
+      // Step 3: Update admission status, GL, and new approval fields
       await transaction.request()
         .input('admissionId', sql.BigInt, admissionId)
         .input('glRefNo', sql.VarChar(50), glRefNo)
+        .input('ehmStatus', sql.VarChar(50), dto.ehm_status || 'NOT_APPLICABLE')
+        .input('dischargeDate', sql.DateTime, dto.discharge_date || null)
+        .input('alertFlag', sql.Bit, dto.alert_flag ? 1 : 0)
         .input('updatedBy', sql.VarChar(50), approvedBy)
         .query(`
           UPDATE ${DB_TABLES.ADMISSIONS}
           SET admission_status = 'APPROVED',
               gl_ref_no = @glRefNo,
+              ehm_status = @ehmStatus,
+              discharge_date = ISNULL(@dischargeDate, discharge_date),
+              alert_flag = @alertFlag,
               updated_by = @updatedBy,
               updated_at = GETDATE()
           WHERE admission_id = @admissionId
         `);
 
-      // Step 3: Insert remark (workflow tracking)
-      const remarkText = dto.remarks || 'Admission approved';
+      // Step 4: Update Claim's total_approved + sync claim status to APPROVED
+      if (claimId) {
+        await transaction.request()
+          .input('claimId', sql.BigInt, claimId)
+          .input('approvedAmount', sql.Money, dto.approved_amount ?? null)
+          .input('approvedBy', sql.VarChar(50), approvedBy)
+          .query(`
+            UPDATE ${DB_TABLES.CLAIMS}
+            SET claim_status    = 'APPROVED',
+                approval_date   = GETDATE(),
+                updated_at      = GETDATE(),
+                updated_by      = @approvedBy
+                ${dto.approved_amount !== undefined ? ', total_approved = @approvedAmount' : ''}
+            WHERE claim_id = @claimId
+          `);
+      }
+
+      // Step 5: Insert remark (workflow tracking)
+      const remarkText = dto.remarks || `Admission approved for RM ${dto.approved_amount || '0'}`;
       await transaction.request()
         .input('refType', sql.VarChar(50), 'ADMISSION')
         .input('refId', sql.BigInt, admissionId)
@@ -462,6 +506,40 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
             @refType, @refId, @refDesc, @actionFor, @remarkText, @createdBy
           )
         `);
+
+      // Step 6: If alert_flag enabled, seed an active LOS alert for monitoring
+      if (dto.alert_flag) {
+        await transaction.request()
+          .input('admissionId', sql.BigInt, admissionId)
+          .input('createdBy', sql.VarChar(50), approvedBy)
+          .query(`
+            INSERT INTO ccms_los_alerts (
+              admission_id, alert_level, current_los, threshold_days, status, created_by
+            )
+            VALUES (
+              @admissionId, 1, 0, 7, 'ACTIVE', @createdBy
+            )
+          `);
+      }
+
+      // Step 7: If EHM required, seed the first 8-hour monitoring check
+      if (dto.ehm_status === 'REQUIRED') {
+        await transaction.request()
+          .input('admissionId', sql.BigInt, admissionId)
+          .input('checkedBy', sql.VarChar(50), approvedBy)
+          .query(`
+            INSERT INTO ccms_8hm_monitoring (
+              admission_id, check_time, hours_elapsed, status, checked_by, notes, next_check_due, created_by
+            )
+            VALUES (
+              @admissionId, GETDATE(), 0, 'STABLE',
+              @checkedBy,
+              'Initial monitoring check created at admission approval.',
+              DATEADD(HOUR, 8, GETDATE()),
+              @checkedBy
+            )
+          `);
+      }
 
       await transaction.commit();
       return glRefNo;
@@ -489,6 +567,12 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
     try {
       await transaction.begin();
 
+      // Step 0: Fetch claim_id so we can sync claim status
+      const admSelect = await transaction.request()
+        .input('admissionId', sql.BigInt, admissionId)
+        .query(`SELECT claim_id FROM ${DB_TABLES.ADMISSIONS} WHERE admission_id = @admissionId`);
+      const claimId = admSelect.recordset[0]?.claim_id;
+
       // Step 1: Update admission status
       await transaction.request()
         .input('admissionId', sql.BigInt, admissionId)
@@ -500,6 +584,25 @@ UPDATE ${DB_TABLES.ADMISSIONS}
               updated_at = GETDATE()
           WHERE admission_id = @admissionId
         `);
+
+      // Step 1.5: Sync claim status + rejection columns
+      if (claimId) {
+        await transaction.request()
+          .input('claimId', sql.BigInt, claimId)
+          .input('rejectionType', sql.VarChar(50), dto.rejection_type || null)
+          .input('rejectionReason', sql.NVarChar(sql.MAX), dto.rejectionReason)
+          .input('rejectedBy', sql.VarChar(50), rejectedBy)
+          .query(`
+            UPDATE ${DB_TABLES.CLAIMS}
+            SET claim_status     = 'REJECTED',
+                rejection_date   = GETDATE(),
+                rejection_type   = @rejectionType,
+                rejection_reason = @rejectionReason,
+                updated_at       = GETDATE(),
+                updated_by       = @rejectedBy
+            WHERE claim_id = @claimId
+          `);
+      }
 
       // Step 2: Insert remark (workflow tracking)
       await transaction.request()

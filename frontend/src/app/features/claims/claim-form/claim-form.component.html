@@ -1,0 +1,206 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <button
+        (click)="goBack()"
+        class="mb-2 inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-150">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Cancel
+      </button>
+      <h1 class="text-3xl font-bold text-gray-900">
+        {{ claimId === 0 ? 'New Reimbursement Claim' : 'Edit Claim' }}
+      </h1>
+      <p class="mt-2 text-sm text-gray-600" *ngIf="claimData && claimId > 0">
+        {{ claimData.claim_ref_no || 'N/A' }} - {{ getMemberName() }}
+      </p>
+    </div>
+  </div>
+
+  <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()" class="space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Member & Patient -->
+      <div class="bg-white rounded-lg shadow-lg">
+        <div class="bg-blue-50 px-6 py-4 border-b border-blue-100 rounded-t-lg">
+          <h2 class="text-lg font-semibold text-blue-800">Patient & Hospital</h2>
+        </div>
+        <div class="p-6 space-y-4">
+          <!-- Member -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Member (Patient) *</label>
+            <select formControlName="member_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+              <option value="">-- Select Member --</option>
+              <option *ngFor="let m of members" [value]="m.member_id">{{ m.full_name }} ({{ m.ic_no }})</option>
+            </select>
+          </div>
+          <!-- Patient Type -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Patient Type</label>
+            <select formControlName="patient_type" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="PRINCIPAL">Principal</option>
+              <option value="DEPENDENT">Dependent</option>
+            </select>
+          </div>
+          <!-- Dependent Select (shown if dependent) -->
+          <div *ngIf="createForm.get('patient_type')?.value === 'DEPENDENT'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Select Dependent *</label>
+            <select formControlName="patient_id" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="">-- Select Dependent --</option>
+              <option *ngFor="let d of dependents" [value]="d.dependent_id">{{ d.full_name }} ({{ d.ic_no || 'No IC' }})</option>
+            </select>
+          </div>
+          <!-- Hospital -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Hospital *</label>
+            <select formControlName="hospital_id" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="">-- Select Hospital --</option>
+              <option *ngFor="let h of hospitals" [value]="h.hospital_id">{{ h.hospital_name }}</option>
+            </select>
+          </div>
+          <!-- Disability Category -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosis Category</label>
+            <select formControlName="disability_category" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="">-- Select Category --</option>
+              <option *ngFor="let dc of diagnosisCategories" [value]="dc.lookup_code">{{ dc.lookup_value }}</option>
+            </select>
+          </div>
+          <!-- Date Received -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Document Received Date</label>
+            <input type="date" formControlName="document_received_at" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Payee & Payment Info -->
+      <div class="bg-white rounded-lg shadow-lg">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+          <h2 class="text-lg font-semibold text-gray-800">Payee & Payment Info</h2>
+        </div>
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payee Name</label>
+            <input type="text" formControlName="payee_name" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payee IC / Passport No</label>
+            <input type="text" formControlName="payee_ic_no" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+            <select formControlName="payee_bank_name" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="">-- Select Bank --</option>
+              <option *ngFor="let b of banks" [value]="b.bank_name">{{ b.bank_name }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Bank Account No</label>
+            <input type="text" formControlName="payee_bank_account_no" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+          <div class="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
+            <p class="text-xs font-medium text-blue-600 mb-1">Total Billed (RM)</p>
+            <p class="text-xl font-bold text-blue-900">{{ createForm.get('total_billed')?.value | number:'1.2-2' }}</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Expenses -->
+    <div class="bg-white rounded-lg shadow-lg">
+      <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-gray-800">Expense Items</h2>
+        <button type="button" (click)="addExpense()" class="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">+ Add Expense</button>
+      </div>
+      <div class="p-6">
+        <div formArrayName="expenses" class="space-y-4">
+          <div *ngFor="let exp of expenses.controls; let i = index" [formGroupName]="i" class="border p-4 rounded-lg bg-gray-50">
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold uppercase text-gray-400">Expense #{{ i + 1 }}</span>
+              <button type="button" (click)="removeExpense(i)" class="text-red-600 text-sm">Remove</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-medium mb-1">Category *</label>
+                <select formControlName="benefit_category" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                  <option value="">-- Select Category --</option>
+                  <option *ngFor="let cat of benefitCategories" [value]="cat.lookup_code">{{ cat.lookup_value }}</option>
+                </select>
+              </div>
+              <div class="md:col-span-1 lg:col-span-2">
+                <label class="block text-xs font-medium mb-1">Description</label>
+                <input type="text" formControlName="description" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">Amount (RM) *</label>
+                <input type="number" formControlName="billed_amt" (change)="onExpenseAmountChange()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-right" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">Receipt No</label>
+                <input type="text" formControlName="receipt_no" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">Receipt Date</label>
+                <input type="date" formControlName="receipt_date" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="bg-white rounded-lg shadow-lg">
+      <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-gray-800">Documents</h2>
+        <button type="button" (click)="addDocument()" class="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700">+ Add Document</button>
+      </div>
+      <div class="p-6">
+        <div formArrayName="documents" class="space-y-4">
+          <div *ngFor="let doc of documents.controls; let i = index" [formGroupName]="i" class="border p-4 rounded-lg bg-gray-50">
+             <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold uppercase text-gray-400">Document #{{ i + 1 }}</span>
+              <button type="button" (click)="removeDocument(i)" class="text-red-600 text-sm">Remove</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-medium mb-1">Type *</label>
+                <select formControlName="doc_type" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                   <option value="">-- Select Type --</option>
+                  <option *ngFor="let dt of documentTypes" [value]="dt.lookup_code">{{ dt.lookup_value }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">Document Name *</label>
+                <input type="text" formControlName="doc_name" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1">File Attachment</label>
+                <div class="flex items-center gap-2">
+                   <input type="file" (change)="onDocumentFileSelected($event, i)" class="text-xs w-full" />
+                   <button *ngIf="canViewDocument(i)" type="button" (click)="viewDocument(i)" class="h-8 w-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center">
+                      <i class="fas fa-eye"></i>
+                   </button>
+                </div>
+                <div class="text-[10px] mt-1 text-gray-500 truncate">{{ getDocumentFileName(i) }}</div>
+                <div *ngIf="hasFileMissingWarning(i)" class="text-[10px] text-amber-600 font-semibold"><i class="fas fa-exclamation-triangle"></i> Missing actual file upload</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
+      <button type="button" (click)="goBack()" class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
+      <button type="submit" [disabled]="saving || createForm.invalid" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+        {{ saving ? 'Saving...' : (claimId === 0 ? 'Create Claim' : 'Save Changes') }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -11,8 +11,11 @@ import {
   DeferAdmissionDto,
   ResolveDefermentDto
 } from './dto/admission.dto';
+import { Admission } from './entities/admission.entity';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
+import { UpsertAdmissionAssessmentsDto } from './dto/admission-assessment.dto';
+import { BaseController } from '../../core/base';
 
 /**
  * Admissions Controller
@@ -28,11 +31,13 @@ import { getErrorMessage } from '../../core/utils/error.util';
  * All routes require authentication (applied in routes.ts)
  * Permission checks applied at route level via requirePermission middleware
  */
-export class AdmissionsController {
-  private service: AdmissionsService;
+export class AdmissionsController extends BaseController<Admission> {
+  protected service: AdmissionsService;
 
   constructor() {
-    this.service = new AdmissionsService();
+    const service = new AdmissionsService();
+    super(service);
+    this.service = service;
   }
 
   // ============================================================================
@@ -318,7 +323,11 @@ export class AdmissionsController {
       }
 
       const dto: ApproveAdmissionDto = {
-        remarks: req.body.remarks
+        remarks: req.body.remarks,
+        approved_amount: req.body.approved_amount,
+        ehm_status: req.body.ehm_status,
+        discharge_date: req.body.discharge_date,
+        alert_flag: req.body.alert_flag
       };
 
       const glRefNo = await this.service.approveAdmission(admissionId, dto, userId);
@@ -651,6 +660,63 @@ export class AdmissionsController {
       ResponseUtil.success(res, null, 'MQ status updated successfully');
     } catch (error: unknown) {
       ResponseUtil.error(res, 'Error updating MQ status', 500, getErrorMessage(error));
+    }
+  };
+
+  // ============================================================================
+  // ASSESSMENTS
+  // ============================================================================
+
+  /**
+   * Get clinical assessments for an admission
+   * POST /api/admissions/assessments/get
+   * Permission: ADMISSIONS.VIEW
+   * Body: { admission_id: number }
+   */
+  public getAdmissionAssessments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const admissionId = req.body.admission_id;
+
+      if (!admissionId || isNaN(admissionId)) {
+        ResponseUtil.error(res, 'Invalid admission ID', 400);
+        return;
+      }
+
+      const assessments = await this.service.getAdmissionAssessments(admissionId);
+      ResponseUtil.success(res, assessments, 'Assessments retrieved successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error fetching assessments', 500, getErrorMessage(error));
+    }
+  };
+
+  /**
+   * Upsert clinical assessments for an admission
+   * POST /api/admissions/assessments/upsert
+   * Permission: ADMISSIONS.UPDATE
+   * Body: UpsertAdmissionAssessmentsDto
+   */
+  public upsertAdmissionAssessments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as any).user?.userId?.toString() || 'system';
+      const dto: UpsertAdmissionAssessmentsDto = {
+        admission_id: req.body.admission_id,
+        fields: req.body.fields
+      };
+
+      if (!dto.admission_id || isNaN(dto.admission_id)) {
+        ResponseUtil.error(res, 'Invalid admission ID', 400);
+        return;
+      }
+
+      if (!Array.isArray(dto.fields) || dto.fields.length === 0) {
+        ResponseUtil.error(res, 'fields array is required', 400);
+        return;
+      }
+
+      await this.service.upsertAdmissionAssessments(dto, userId);
+      ResponseUtil.success(res, null, 'Assessments saved successfully');
+    } catch (error: unknown) {
+      ResponseUtil.error(res, 'Error saving assessments', 500, getErrorMessage(error));
     }
   };
 }

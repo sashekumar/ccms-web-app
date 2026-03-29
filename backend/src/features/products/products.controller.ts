@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ProductsService } from './products.service';
 import { 
+  Product,
   ProductFilters, 
   CreateProductDto, 
   UpdateProductDto, 
@@ -14,12 +15,15 @@ import { CreateProductCopayDto, UpdateProductCopayDto, GetProductCopayRequest } 
 import { CreateProductLosThresholdDto, UpdateProductLosThresholdDto, GetProductLosThresholdRequest } from './product-los-thresholds.types';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { getErrorMessage } from '../../core/utils/error.util';
+import { BaseController } from '../../core/base';
 
-export class ProductsController {
-  private service: ProductsService;
+export class ProductsController extends BaseController<Product> {
+  protected service: ProductsService;
 
   constructor() {
-    this.service = new ProductsService();
+    const service = new ProductsService();
+    super(service);
+    this.service = service;
   }
 
   // ============================================================================

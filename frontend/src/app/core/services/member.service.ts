@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ApiResponse } from './base-api.service';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -26,12 +27,6 @@ import {
   CreateMemberPECDto,
   UpdateMemberPECDto
 } from '../../shared/models/member.model';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
 
 /**
  * Member Service - Handles policy holder operations
@@ -66,7 +61,6 @@ export class MemberService {
         };
       }),
       catchError(error => {
-        console.error('Error fetching members:', error);
         throw error;
       })
     );
@@ -82,7 +76,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching member:', error);
         throw error;
       })
     );
@@ -98,7 +91,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error checking IC number:', error);
         throw error;
       })
     );
@@ -114,7 +106,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data.member_id),
       catchError(error => {
-        console.error('Error creating member:', error);
         throw error;
       })
     );
@@ -130,7 +121,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating member:', error);
         throw error;
       })
     );
@@ -146,7 +136,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting member:', error);
         throw error;
       })
     );
@@ -162,7 +151,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error restoring member:', error);
         throw error;
       })
     );
@@ -182,7 +170,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching member addresses:', error);
         throw error;
       })
     );
@@ -198,7 +185,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching address:', error);
         throw error;
       })
     );
@@ -214,7 +200,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data.address_id),
       catchError(error => {
-        console.error('Error creating address:', error);
         throw error;
       })
     );
@@ -230,7 +215,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating address:', error);
         throw error;
       })
     );
@@ -245,7 +229,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting address:', error);
         throw error;
       })
     );
@@ -261,7 +244,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error setting primary address:', error);
         throw error;
       })
     );
@@ -281,7 +263,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching member contacts:', error);
         throw error;
       })
     );
@@ -297,7 +278,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching contact:', error);
         throw error;
       })
     );
@@ -313,7 +293,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data.contact_id),
       catchError(error => {
-        console.error('Error creating contact:', error);
         throw error;
       })
     );
@@ -329,7 +308,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating contact:', error);
         throw error;
       })
     );
@@ -344,7 +322,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting contact:', error);
         throw error;
       })
     );
@@ -360,7 +337,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error setting primary contact:', error);
         throw error;
       })
     );
@@ -380,7 +356,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching member policies:', error);
         throw error;
       })
     );
@@ -396,7 +371,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching policy:', error);
         throw error;
       })
     );
@@ -412,7 +386,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error checking policy number:', error);
         throw error;
       })
     );
@@ -428,7 +401,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data.policy_id),
       catchError(error => {
-        console.error('Error creating policy:', error);
         throw error;
       })
     );
@@ -444,7 +416,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating policy:', error);
         throw error;
       })
     );
@@ -459,7 +430,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting policy:', error);
         throw error;
       })
     );
@@ -479,7 +449,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching member dependents:', error);
         throw error;
       })
     );
@@ -495,7 +464,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching dependent:', error);
         throw error;
       })
     );
@@ -511,7 +479,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data.dependent_id),
       catchError(error => {
-        console.error('Error creating dependent:', error);
         throw error;
       })
     );
@@ -527,7 +494,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating dependent:', error);
         throw error;
       })
     );
@@ -542,7 +508,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting dependent:', error);
         throw error;
       })
     );
@@ -558,7 +523,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error toggling dependent status:', error);
         throw error;
       })
     );
@@ -578,7 +542,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching PEC conditions:', error);
         throw error;
       })
     );
@@ -594,7 +557,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data),
       catchError(error => {
-        console.error('Error fetching PEC condition:', error);
         throw error;
       })
     );
@@ -610,7 +572,6 @@ export class MemberService {
     ).pipe(
       map(response => response.data.pec_id),
       catchError(error => {
-        console.error('Error creating PEC condition:', error);
         throw error;
       })
     );
@@ -626,7 +587,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error updating PEC condition:', error);
         throw error;
       })
     );
@@ -641,7 +601,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error deleting PEC condition:', error);
         throw error;
       })
     );
@@ -657,7 +616,6 @@ export class MemberService {
     ).pipe(
       map(() => undefined),
       catchError(error => {
-        console.error('Error toggling PEC excluded status:', error);
         throw error;
       })
     );

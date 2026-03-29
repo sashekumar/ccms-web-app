@@ -53,7 +53,9 @@ export interface MonitoringFilters {
   admissionStatus?: string;
   alertLevel?: number;
   alertStatus?: string;
+  checkStatus?: string;
   hospitalId?: number;
+  searchTerm?: string;
   page?: number;
   limit?: number;
   sortBy?: string;

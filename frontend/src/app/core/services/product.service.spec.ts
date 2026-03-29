@@ -8,7 +8,8 @@ import {
   PaginatedProducts,
   ProductFilters,
   ProductLimit,
-  ProductCopay
+  ProductCopay,
+  ProductLosThreshold
 } from '../../shared/models/product.model';
 import {
   mockProduct,
@@ -353,6 +354,136 @@ describe('ProductService', () => {
       );
 
       req.flush({ success: true, data: null });
+    });
+  });
+
+  describe('LOS Threshold Management', () => {
+    const mockThreshold: ProductLosThreshold = {
+      threshold_id: 'thresh1',
+      product_id: '1',
+      diagnosis_category: 'General',
+      threshold_days: 5,
+      alert_level: 1,
+      is_active: true
+    };
+
+    it('should get thresholds by product ID', () => {
+      service.getThresholdsByProductId('1').subscribe(result => {
+        expect(result).toEqual([mockThreshold]);
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/list') && request.method === 'POST'
+      );
+      req.flush({ success: true, data: [mockThreshold] });
+    });
+
+    it('should handle error when getting thresholds', () => {
+      service.getThresholdsByProductId('1').subscribe({
+        error: (err) => expect(err).toBeDefined()
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/list')
+      );
+      req.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    });
+
+    it('should get threshold by ID', () => {
+      service.getThresholdById('1', 'thresh1').subscribe(result => {
+        expect(result).toEqual(mockThreshold);
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/get') && request.method === 'POST'
+      );
+      expect(req.request.body).toEqual({ threshold_id: 'thresh1' });
+      req.flush({ success: true, data: mockThreshold });
+    });
+
+    it('should handle error when getting threshold by ID', () => {
+      service.getThresholdById('1', 'invalid').subscribe({
+        error: (err) => expect(err).toBeDefined()
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/get')
+      );
+      req.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    });
+
+    it('should create a threshold', () => {
+      const dto = { diagnosis_category: 'Cardiac', threshold_days: 7, alert_level: 2, is_active: true };
+
+      service.createThreshold('1', dto).subscribe(result => {
+        expect(result).toBe('thresh2');
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds') &&
+        !request.url.includes('thresholds/list') &&
+        !request.url.includes('thresholds/get') &&
+        request.method === 'POST'
+      );
+      expect(req.request.body).toEqual(dto);
+      req.flush({ success: true, data: { threshold_id: 'thresh2' } });
+    });
+
+    it('should handle error when creating threshold', () => {
+      service.createThreshold('1', {}).subscribe({
+        error: (err) => expect(err).toBeDefined()
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds') &&
+        !request.url.includes('thresholds/list') &&
+        !request.url.includes('thresholds/get') &&
+        request.method === 'POST'
+      );
+      req.flush({ message: 'Error' }, { status: 500, statusText: 'Server Error' });
+    });
+
+    it('should update a threshold', () => {
+      const updates = { threshold_days: 10, alert_level: 3 };
+
+      service.updateThreshold('1', 'thresh1', updates).subscribe();
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/thresh1') && request.method === 'PUT'
+      );
+      expect(req.request.body).toEqual(updates);
+      req.flush({ success: true, data: null });
+    });
+
+    it('should handle error when updating threshold', () => {
+      service.updateThreshold('1', 'thresh1', {}).subscribe({
+        error: (err) => expect(err).toBeDefined()
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/thresh1') && request.method === 'PUT'
+      );
+      req.flush({ message: 'Error' }, { status: 500, statusText: 'Server Error' });
+    });
+
+    it('should delete a threshold', () => {
+      service.deleteThreshold('1', 'thresh1').subscribe();
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/thresh1') && request.method === 'DELETE'
+      );
+      req.flush({ success: true, data: null });
+    });
+
+    it('should handle error when deleting threshold', () => {
+      service.deleteThreshold('1', 'thresh1').subscribe({
+        error: (err) => expect(err).toBeDefined()
+      });
+
+      const req = httpMock.expectOne(request =>
+        request.url.includes('products/1/thresholds/thresh1') && request.method === 'DELETE'
+      );
+      req.flush({ message: 'Error' }, { status: 500, statusText: 'Server Error' });
     });
   });
 

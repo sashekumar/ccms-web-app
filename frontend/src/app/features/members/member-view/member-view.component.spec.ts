@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { MemberViewComponent } from './member-view.component';
@@ -8,6 +8,7 @@ import { MemberService } from '../../../core/services/member.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Member, MemberAddress, MemberContact } from '../../../shared/models/member.model';
+import { PermissionService } from '../../../core/services/permission.service';
 
 describe('MemberViewComponent', () => {
   let component: MemberViewComponent;
@@ -85,7 +86,11 @@ describe('MemberViewComponent', () => {
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: LoggerService, useValue: mockLogger },
-        { provide: ToastService, useValue: mockToast }
+        { provide: ToastService, useValue: mockToast },
+        { provide: PermissionService, useValue: {
+          hasPermission: vi.fn().mockReturnValue(of(true)),
+          userPermissions$: of(null)
+        }}
       ]
     }).compileComponents();
 
@@ -1428,6 +1433,246 @@ describe('MemberViewComponent', () => {
 
       expect(component['destroy$'].next).toHaveBeenCalled();
       expect(component['destroy$'].complete).toHaveBeenCalled();
+    });
+  });
+
+  describe('Template Rendering', () => {
+    it('should render member name in header after loading', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('John Doe');
+    });
+
+    it('should render details tab content by default', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('IC Number');
+      expect(compiled.textContent).toContain('Member Information');
+      expect(compiled.textContent).toContain('900101011234');
+    });
+
+    it('should render member status badge for active member', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Active');
+    });
+
+    it('should render tabs navigation', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Addresses');
+      expect(compiled.textContent).toContain('Contacts');
+    });
+
+    it('should show loading spinner when member is loading', () => {
+      const loadSubject = new Subject<typeof mockMember>();
+      mockMemberService.getMemberById.mockReturnValue(loadSubject.asObservable());
+      fixture.detectChanges();
+      expect(component.loading).toBe(true);
+    });
+
+    it('should render addresses tab empty state when tab is pre-set', () => {
+      component.activeTab = 'addresses';
+      component.addresses = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Member Addresses');
+      expect(compiled.textContent).toContain('No addresses found');
+    });
+
+    it('should render address cards when addresses are pre-loaded', () => {
+      component.activeTab = 'addresses';
+      component.addresses = [
+        {
+          address_id: 'addr1',
+          member_id: '1',
+          address_type: 'PRIMARY',
+          street_line1: '123 Main St',
+          city: 'Kuala Lumpur',
+          is_primary: true,
+          is_deleted: false
+        } as any
+      ];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('123 Main St');
+    });
+
+    it('should render contacts tab empty state when tab is pre-set', () => {
+      component.activeTab = 'contacts';
+      component.contacts = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Member Contacts');
+      expect(compiled.textContent).toContain('No contacts found');
+    });
+
+    it('should render contacts list when contacts are pre-loaded', () => {
+      component.activeTab = 'contacts';
+      component.contacts = [
+        {
+          contact_id: 'c1',
+          member_id: '1',
+          contact_type: 'MOBILE',
+          contact_value: '+601234567890',
+          is_primary: true,
+          is_deleted: false
+        } as any
+      ];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('+601234567890');
+    });
+
+    it('should render policies tab empty state when tab is pre-set', () => {
+      component.activeTab = 'policies';
+      component.policies = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Member Policies');
+    });
+
+    it('should render dependents tab empty state when tab is pre-set', () => {
+      component.activeTab = 'dependents';
+      component.dependents = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Dependents');
+    });
+
+    it('should render deleted member with deleted badge', () => {
+      const deletedMember = { ...mockMember, is_deleted: true };
+      mockMemberService.getMemberById.mockReturnValue(of(deletedMember));
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Deleted');
+    });
+
+    it('should render address form when showAddressForm is true', () => {
+      component.activeTab = 'addresses';
+      component.addresses = [];
+      component.showAddressForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Address');
+    });
+
+    it('should render edit address form when editingAddress is set', () => {
+      component.activeTab = 'addresses';
+      component.showAddressForm = true;
+      component.editingAddress = { address_id: 'a1', member_id: '1', address_type: 'PRIMARY', is_primary: true, is_deleted: false } as any;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Address');
+    });
+
+    it('should render contact form when showContactForm is true', () => {
+      component.activeTab = 'contacts';
+      component.contacts = [];
+      component.showContactForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Contact');
+    });
+
+    it('should render edit contact form when editingContact is set', () => {
+      component.activeTab = 'contacts';
+      component.showContactForm = true;
+      component.editingContact = { contact_id: 'c1', member_id: '1', contact_type: 'MOBILE', contact_value: '+60123', is_primary: true, is_deleted: false } as any;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Contact');
+    });
+
+    it('should render policy form when showPolicyForm is true', () => {
+      component.activeTab = 'policies';
+      component.policies = [];
+      component.showPolicyForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Policy');
+    });
+
+    it('should render dependent form when showDependentForm is true', () => {
+      component.activeTab = 'dependents';
+      component.dependents = [];
+      component.showDependentForm = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New Dependent');
+    });
+
+    it('should render PEC section when selectedDependentForPEC is set', () => {
+      component.activeTab = 'dependents';
+      component.selectedDependentForPEC = { dependent_id: 'd1', member_id: '1', full_name: 'Jane Doe', ic_no: 'IC001', is_deleted: false } as any;
+      component.pecConditions = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('PEC Conditions for Jane Doe');
+    });
+
+    it('should render PEC form when showPECForm is true', () => {
+      component.activeTab = 'dependents';
+      component.selectedDependentForPEC = { dependent_id: 'd1', member_id: '1', full_name: 'Jane Doe', ic_no: 'IC001', is_deleted: false } as any;
+      component.showPECForm = true;
+      component.pecConditions = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Add New PEC Condition');
+    });
+
+    it('should render PEC table when pecConditions are pre-loaded', () => {
+      component.activeTab = 'dependents';
+      component.selectedDependentForPEC = { dependent_id: 'd1', member_id: '1', full_name: 'Jane Doe', ic_no: 'IC001', is_deleted: false } as any;
+      component.pecConditions = [
+        { pec_id: 'p1', dependent_id: 'd1', condition_code: 'A01', condition_name: 'Hypertension', is_excluded: false } as any
+      ];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('A01');
+      expect(compiled.textContent).toContain('Hypertension');
+    });
+
+    it('should render excluded PEC status badge', () => {
+      component.activeTab = 'dependents';
+      component.selectedDependentForPEC = { dependent_id: 'd1', member_id: '1', full_name: 'Jane Doe', ic_no: 'IC001', is_deleted: false } as any;
+      component.pecConditions = [
+        { pec_id: 'p2', dependent_id: 'd1', condition_code: 'B02', condition_name: 'Diabetes', is_excluded: true } as any
+      ];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Excluded');
+    });
+
+    it('should render edit PEC form when editingPEC is set', () => {
+      component.activeTab = 'dependents';
+      component.selectedDependentForPEC = { dependent_id: 'd1', member_id: '1', full_name: 'Jane Doe', ic_no: 'IC001', is_deleted: false } as any;
+      component.showPECForm = true;
+      component.editingPEC = { pec_id: 'p1', dependent_id: 'd1', condition_code: 'A01', is_excluded: false } as any;
+      component.pecConditions = [];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit PEC Condition');
+    });
+
+    it('should render dependent cards when dependents are pre-loaded', () => {
+      component.activeTab = 'dependents';
+      component.dependents = [
+        { dependent_id: 'd1', member_id: '1', full_name: 'Child One', ic_no: 'IC123', relationship: 'CHILD', is_deleted: false } as any
+      ];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Child One');
+    });
+
+    it('should render policy table when policies are pre-loaded', () => {
+      component.activeTab = 'policies';
+      component.policies = [
+        { policy_id: 'pol1', member_id: '1', policy_no: 'POL-001', product_id: 'p1', is_deleted: false } as any
+      ];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('POL-001');
     });
   });
 });

@@ -473,4 +473,65 @@ describe('CategoriesComponent', () => {
       expect(completeSpy).toHaveBeenCalled();
     });
   });
+
+  describe('Template Rendering', () => {
+    it('should render page header', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Categories');
+    });
+
+    it('should render categories in table after load', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('User Management');
+      expect(compiled.textContent).toContain('System Settings');
+    });
+
+    it('should render category codes in table', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('USER_MGMT');
+    });
+
+    it('should render empty state when no categories', () => {
+      categoryServiceMock.getAllCategories.mockReturnValue(of([]));
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('No categories found');
+    });
+
+    it('should render count text', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('categories');
+    });
+
+    it('should render create modal when showModal is true', () => {
+      component.showModal = true;
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Create Category');
+    });
+
+    it('should render edit modal title when editingCategory is set', () => {
+      component.showModal = true;
+      component.editingCategory = mockCategories[0];
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Edit Category');
+    });
+
+    it('should show active/inactive status badges', () => {
+      fixture.detectChanges();
+      const compiled: HTMLElement = fixture.nativeElement;
+      expect(compiled.textContent).toContain('Active');
+    });
+
+    it('should render search input', () => {
+      fixture.detectChanges();
+      const input = fixture.nativeElement.querySelector('input[type="text"]');
+      expect(input).toBeTruthy();
+    });
+  });
 });
