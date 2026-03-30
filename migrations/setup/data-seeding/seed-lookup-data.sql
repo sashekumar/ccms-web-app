@@ -61,9 +61,10 @@ VALUES
     ('ALERT_LEVEL', 'LOS Alert Levels', 1),
     ('MQ_CATEGORY', 'Categories for Medical Questionnaire Templates', 1),
     ('BENEFIT_CATEGORY', 'Benefit categories for claim expense line items', 1),
-    ('CLAIM_DOCUMENT_TYPE', 'Document types for claim attachments', 1);
+    ('CLAIM_DOCUMENT_TYPE', 'Document types for claim attachments', 1),
+    ('CLAIM_PROCESS_TYPE', 'Claim workflow process type (GL/Pre/Post/MR/RL)', 1);
 
-PRINT '  ✓ Created 36 lookup categories';
+PRINT '  ✓ Created 37 lookup categories';
 GO
 
 -- ============================================================================
@@ -168,8 +169,8 @@ INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, 
 VALUES 
     (@ClaimStatusCategoryId, 'DRAFT', 'Draft', 1, 1),
     (@ClaimStatusCategoryId, 'SUBMITTED', 'Submitted', 2, 1),
-    (@ClaimStatusCategoryId, 'PENDING_REVIEW', 'Pending Review', 3, 1),
-    (@ClaimStatusCategoryId, 'UNDER_REVIEW', 'Under Review', 4, 1),
+    (@ClaimStatusCategoryId, 'PENDING', 'Pending Review', 3, 1),
+    (@ClaimStatusCategoryId, 'IN_REVIEW', 'Under Review', 4, 1),
     (@ClaimStatusCategoryId, 'APPROVED', 'Approved', 5, 1),
     (@ClaimStatusCategoryId, 'PARTIALLY_APPROVED', 'Partially Approved', 6, 1),
     (@ClaimStatusCategoryId, 'REJECTED', 'Rejected', 7, 1),
@@ -202,6 +203,26 @@ VALUES
     (@ClaimTypeCategoryId, 'REIMBURSEMENT', 'Reimbursement', 8, 1);
 
 PRINT '  ✓ Created 8 claim types';
+GO
+
+-- ============================================================================
+-- SECTION 7B: CLAIM PROCESS TYPE (GL/Pre/Post/MR/RL workflow classification)
+-- ============================================================================
+
+PRINT 'Populating CLAIM_PROCESS_TYPE lookups...';
+
+DECLARE @ClaimProcessTypeCategoryId INT;
+SELECT @ClaimProcessTypeCategoryId = category_id FROM ccms_m_lookup_categories WHERE category_name = 'CLAIM_PROCESS_TYPE';
+
+INSERT INTO ccms_m_lookups (category_id, lookup_code, lookup_value, sort_order, is_active)
+VALUES 
+    (@ClaimProcessTypeCategoryId, 'GL', 'Guarantee Letter (Pre-approval)', 1, 1),
+    (@ClaimProcessTypeCategoryId, 'Pre', 'Pre-Authorization', 2, 1),
+    (@ClaimProcessTypeCategoryId, 'Post', 'Post-Hospitalization Reimbursement', 3, 1),
+    (@ClaimProcessTypeCategoryId, 'MR', 'Medical Report', 4, 1),
+    (@ClaimProcessTypeCategoryId, 'RL', 'Reimbursement Letter', 5, 1);
+
+PRINT '  ✓ Created 5 claim process types';
 GO
 
 -- ============================================================================

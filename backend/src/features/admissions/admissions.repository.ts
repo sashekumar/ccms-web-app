@@ -19,7 +19,7 @@ import {
   ResolveDefermentDto
 } from './dto/admission.dto';
 import { CreateRemarkDto } from '../remarks/entities/remark.entity';
-import { MonitoringRepository } from '../monitoring/monitoring.repository';
+import { EightHourMonitoringRepository } from '../eight-hour-monitoring/eight-hour-monitoring.repository';
 
 /**
  * Admissions Repository
@@ -322,14 +322,19 @@ export class AdmissionsRepository extends BaseRepository<Admission> {
 
       // Step 5: Initialize 8HM monitoring (TASK 10)
       // Create initial monitoring record with first check due in 8 hours
-      const monitoringRepository = new MonitoringRepository();
+      const eightHourMonitoringRepository = new EightHourMonitoringRepository();
       const admissionDateObj = typeof dto.admission_date === 'string' 
         ? new Date(dto.admission_date) 
         : dto.admission_date;
-      await monitoringRepository.initialize8HMMonitoring(
-        admissionId,
-        admissionDateObj
-      );
+      const nextCheckDue = new Date(admissionDateObj.getTime() + 8 * 60 * 60 * 1000);
+      await eightHourMonitoringRepository.createMonitoringCheck({
+        admission_id: admissionId,
+        check_time: admissionDateObj,
+        hours_elapsed: 0,
+        status: 'PENDING',
+        checked_by: 'system',
+        next_check_due: nextCheckDue
+      });
 
       await transaction.commit();
 

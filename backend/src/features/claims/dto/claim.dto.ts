@@ -12,6 +12,10 @@ export interface CreateClaimDto {
   payee_bank_name?: string | null;
   payee_bank_account_no?: string | null;
   claim_mode?: string | null;
+  // Injected by service
+  sla_days?: number;
+  sla_deadline?: Date;
+  sla_status?: string;
 }
 
 export interface UpdateClaimDto {
@@ -44,4 +48,18 @@ export interface UpdateClaimDto {
   expenses?: any[] | null;
   documents?: any[] | null;
   claim_mode?: string | null;
+}
+
+export interface ApproveClaimDto {
+  total_approved: number;
+  remarks?: string | null;
+  // Injected by service
+  sla_status?: string;
+  approved_by?: string;
+}
+
+export interface RejectClaimDto {
+  rejection_reason: string;
+  rejection_type?: string | null;
+  remarks?: string | null;
 }

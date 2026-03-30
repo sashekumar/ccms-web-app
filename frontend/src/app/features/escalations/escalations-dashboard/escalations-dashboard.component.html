@@ -1,0 +1,450 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Page Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Escalations Management</h1>
+    <p class="mt-2 text-sm text-gray-600">Track and manage escalated cases requiring attention</p>
+  </div>
+
+  <!-- Main Content (Two-column layout when details view is active) -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Escalations List (Left/Full column) -->
+    <div [class]="selectedEscalation ? 'lg:col-span-2' : 'lg:col-span-3'">
+      <!-- Search & Filter Section -->
+      <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <div class="flex space-x-2">
+              <input
+                [(ngModel)]="searchTerm"
+                type="text"
+                placeholder="Search source, nature, remarks..."
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+              <button
+                (click)="applyFilters()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                Search
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+            <select
+              [(ngModel)]="activePriorityFilter"
+              (change)="switchPriorityFilter(activePriorityFilter)"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+              <option value="all">All Priorities</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Filter Tabs -->
+      <div class="mb-6">
+        <div class="flex flex-wrap space-x-2 border-b border-gray-200 pb-3 overflow-x-auto">
+          <button
+            (click)="switchStatusTab('UNASSIGNED')"
+            [class.border-blue-500]="activeStatusTab === 'UNASSIGNED'"
+            [class.text-blue-600]="activeStatusTab === 'UNASSIGNED'"
+            [class.border-transparent]="activeStatusTab !== 'UNASSIGNED'"
+            [class.text-gray-600]="activeStatusTab !== 'UNASSIGNED'"
+            class="whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 hover:text-blue-600">
+            Unassigned
+            <span class="ml-1 px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="activeStatusTab === 'UNASSIGNED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'">
+              {{ getEscalationCountByStatus('UNASSIGNED') }}
+            </span>
+          </button>
+
+          <button
+            (click)="switchStatusTab('ASSIGNED')"
+            [class.border-blue-500]="activeStatusTab === 'ASSIGNED'"
+            [class.text-blue-600]="activeStatusTab === 'ASSIGNED'"
+            [class.border-transparent]="activeStatusTab !== 'ASSIGNED'"
+            [class.text-gray-600]="activeStatusTab !== 'ASSIGNED'"
+            class="whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 hover:text-blue-600">
+            Assigned
+            <span class="ml-1 px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="activeStatusTab === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'">
+              {{ getEscalationCountByStatus('ASSIGNED') }}
+            </span>
+          </button>
+
+          <button
+            (click)="switchStatusTab('RESOLVED')"
+            [class.border-blue-500]="activeStatusTab === 'RESOLVED'"
+            [class.text-blue-600]="activeStatusTab === 'RESOLVED'"
+            [class.border-transparent]="activeStatusTab !== 'RESOLVED'"
+            [class.text-gray-600]="activeStatusTab !== 'RESOLVED'"
+            class="whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 hover:text-blue-600">
+            Resolved
+            <span class="ml-1 px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="activeStatusTab === 'RESOLVED' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'">
+              {{ getEscalationCountByStatus('RESOLVED') }}
+            </span>
+          </button>
+
+          <button
+            (click)="switchStatusTab('CLOSED')"
+            [class.border-blue-500]="activeStatusTab === 'CLOSED'"
+            [class.text-blue-600]="activeStatusTab === 'CLOSED'"
+            [class.border-transparent]="activeStatusTab !== 'CLOSED'"
+            [class.text-gray-600]="activeStatusTab !== 'CLOSED'"
+            class="whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 hover:text-blue-600">
+            Closed
+            <span class="ml-1 px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="activeStatusTab === 'CLOSED' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-800'">
+              {{ getEscalationCountByStatus('CLOSED') }}
+            </span>
+          </button>
+
+          <button
+            (click)="switchStatusTab('all')"
+            [class.border-blue-500]="activeStatusTab === 'all'"
+            [class.text-blue-600]="activeStatusTab === 'all'"
+            [class.border-transparent]="activeStatusTab !== 'all'"
+            [class.text-gray-600]="activeStatusTab !== 'all'"
+            class="whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 hover:text-blue-600">
+            All
+            <span class="ml-1 px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="activeStatusTab === 'all' ? 'bg-gray-300 text-gray-900' : 'bg-gray-100 text-gray-800'">
+              {{ total }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div *ngIf="loading" class="flex justify-center py-8">
+        <app-loading-spinner></app-loading-spinner>
+      </div>
+
+      <!-- Escalations List -->
+      <div *ngIf="!loading" class="space-y-4">
+        <div *ngFor="let escalation of getFilteredEscalations()" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <div class="flex items-center space-x-3 mb-2">
+                <span class="text-xs font-semibold px-2 py-1 rounded" [ngClass]="getStatusColor(escalation.status)">
+                  {{ escalation.status }}
+                </span>
+                <span class="text-xs font-semibold px-2 py-1 rounded" [ngClass]="getPriorityColor(escalation.priority)">
+                  {{ escalation.priority }}
+                </span>
+              </div>
+
+              <h3 class="text-sm font-medium text-gray-900">
+                {{ escalation.source_name }} - {{ escalation.nature_name }}
+              </h3>
+
+              <p *ngIf="escalation.remarks" class="text-sm text-gray-600 mt-1">
+                {{ escalation.remarks | slice:0:80 }}{{ escalation.remarks.length > 80 ? '...' : '' }}
+              </p>
+
+              <div class="text-xs text-gray-500 mt-2 space-y-1">
+                <p *ngIf="escalation.assigned_to_name">
+                  <strong>Assigned to:</strong> {{ escalation.assigned_to_name }}
+                </p>
+                <p>
+                  <strong>Created:</strong> {{ formatDate(escalation.created_at) }}
+                </p>
+                <p *ngIf="escalation.deadline">
+                  <strong>Deadline:</strong> {{ formatDate(escalation.deadline) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col space-y-2 ml-4">
+              <button
+                (click)="viewDetails(escalation)"
+                class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-xs font-medium whitespace-nowrap">
+                View
+              </button>
+
+              <button
+                *ngIf="escalation.status !== 'CLOSED'"
+                (click)="openAssignModal(escalation)"
+                class="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-xs font-medium whitespace-nowrap">
+                Assign
+              </button>
+
+              <button
+                *ngIf="escalation.status !== 'CLOSED'"
+                (click)="openUpdateModal(escalation)"
+                class="px-3 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 text-xs font-medium whitespace-nowrap">
+                Update
+              </button>
+
+              <button
+                *ngIf="escalation.status !== 'CLOSED'"
+                (click)="openCloseModal(escalation)"
+                class="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-xs font-medium whitespace-nowrap">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="getFilteredEscalations().length === 0" class="text-center py-8">
+          <p class="text-gray-500 text-sm">No escalations found</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="!loading && total > 0" class="mt-6 flex justify-between items-center">
+        <p class="text-sm text-gray-600">
+          Showing {{ (page - 1) * pageSize + 1 }} to {{ Math.min(page * pageSize, total) }} of {{ total }}
+        </p>
+        <div class="flex space-x-2">
+          <button
+            (click)="prevPage()"
+            [disabled]="page === 1"
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50 text-sm font-medium">
+            Previous
+          </button>
+          <span class="px-4 py-2 text-sm text-gray-600">
+            Page {{ page }} of {{ totalPages }}
+          </span>
+          <button
+            (click)="nextPage()"
+            [disabled]="page === totalPages"
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50 text-sm font-medium">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details View (Right column) -->
+    <div *ngIf="selectedEscalation" class="lg:col-span-1">
+      <div class="bg-white rounded-lg border border-gray-200 p-5 sticky top-6">
+        <!-- Close Button -->
+        <button
+          (click)="closeDetails()"
+          class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+          ✕
+        </button>
+
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Escalation Details</h2>
+
+        <!-- Status & Priority -->
+        <div class="mb-4 pb-4 border-b border-gray-200">
+          <p class="text-xs text-gray-500 mb-2">Status & Priority</p>
+          <div class="flex space-x-2 mb-2">
+            <span class="text-xs font-semibold px-2 py-1 rounded" [ngClass]="getStatusColor(selectedEscalation.status)">
+              {{ selectedEscalation.status }}
+            </span>
+            <span class="text-xs font-semibold px-2 py-1 rounded" [ngClass]="getPriorityColor(selectedEscalation.priority)">
+              {{ selectedEscalation.priority }}
+            </span>
+          </div>
+
+          <!-- Priority Dropdown -->
+          <label class="block text-xs text-gray-700 mb-1 mt-3">Change Priority:</label>
+          <select
+            (change)="onPriorityChange($event)"
+            [value]="selectedEscalation.priority"
+            [disabled]="selectedEscalation.status === 'CLOSED'"
+            class="w-full text-xs px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+            <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+
+        <!-- Details -->
+        <div class="mb-4 pb-4 border-b border-gray-200">
+          <p class="text-xs text-gray-500 mb-2">Source & Nature</p>
+          <p class="text-sm font-medium text-gray-900">{{ selectedEscalation.source_name }}</p>
+          <p class="text-sm text-gray-600">{{ selectedEscalation.nature_name }}</p>
+
+          <p class="text-xs text-gray-500 mb-2 mt-3">Claim ID</p>
+          <p class="text-sm font-medium text-gray-900">#{{ selectedEscalation.claim_id }}</p>
+
+          <p *ngIf="selectedEscalation.assigned_to_name" class="text-xs text-gray-500 mb-2 mt-3">Assigned To</p>
+          <p *ngIf="selectedEscalation.assigned_to_name" class="text-sm font-medium text-gray-900">{{ selectedEscalation.assigned_to_name }}</p>
+        </div>
+
+        <!-- Remarks -->
+        <div *ngIf="selectedEscalation.remarks" class="mb-4 pb-4 border-b border-gray-200">
+          <p class="text-xs text-gray-500 mb-2">Remarks</p>
+          <p class="text-sm text-gray-700">{{ selectedEscalation.remarks }}</p>
+        </div>
+
+        <!-- Timeline -->
+        <div class="mb-4 pb-4 border-b border-gray-200">
+          <p class="text-xs text-gray-500 mb-2">Timeline</p>
+          <p class="text-xs text-gray-600">
+            <strong>Created:</strong> {{ formatDate(selectedEscalation.created_at) }}
+          </p>
+          <p *ngIf="selectedEscalation.deadline" class="text-xs text-gray-600">
+            <strong>Deadline:</strong> {{ formatDate(selectedEscalation.deadline) }}
+          </p>
+          <p *ngIf="selectedEscalation.closed_at" class="text-xs text-gray-600">
+            <strong>Closed:</strong> {{ formatDate(selectedEscalation.closed_at) }}
+          </p>
+        </div>
+
+        <!-- Updates/History -->
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-gray-900 mb-2">Updates ({{ selectedEscalationUpdates.length }})</p>
+
+          <div *ngIf="loadingUpdates" class="flex justify-center py-4">
+            <app-loading-spinner></app-loading-spinner>
+          </div>
+
+          <div *ngIf="!loadingUpdates && selectedEscalationUpdates.length > 0" class="space-y-2 bg-gray-50 rounded p-2 max-h-64 overflow-y-auto">
+            <div *ngFor="let update of selectedEscalationUpdates" class="text-xs">
+              <p class="font-medium text-gray-700">{{ update.escalation_type }}</p>
+              <p class="text-gray-600">{{ update.update_text }}</p>
+              <p class="text-gray-500 text-xs">{{ formatDate(update.created_at) }}</p>
+            </div>
+          </div>
+
+          <p *ngIf="!loadingUpdates && selectedEscalationUpdates.length === 0" class="text-xs text-gray-500">
+            No updates yet
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2">
+          <button
+            *ngIf="selectedEscalation.status !== 'CLOSED'"
+            (click)="openAssignModal(selectedEscalation)"
+            class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">
+            Assign
+          </button>
+
+          <button
+            *ngIf="selectedEscalation.status !== 'CLOSED'"
+            (click)="openUpdateModal(selectedEscalation)"
+            class="w-full px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 text-sm font-medium">
+            Add Update
+          </button>
+
+          <button
+            *ngIf="selectedEscalation.status !== 'CLOSED'"
+            (click)="openCloseModal(selectedEscalation)"
+            class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium">
+            Close Escalation
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Assign Modal -->
+  <div *ngIf="showAssignModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">Assign Escalation</h2>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Assignee</label>
+        <input
+          [(ngModel)]="assigneeId"
+          type="number"
+          placeholder="Enter user ID"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+        <p class="text-xs text-gray-500 mt-1">TODO: Replace with user dropdown</p>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+        <textarea
+          [(ngModel)]="assignRemarks"
+          placeholder="Optional assignment notes..."
+          rows="3"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"></textarea>
+      </div>
+
+      <div class="flex space-x-3">
+        <button
+          (click)="showAssignModal = false"
+          class="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-medium">
+          Cancel
+        </button>
+        <button
+          (click)="assignEscalation()"
+          [disabled]="assigning"
+          class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50">
+          {{ assigning ? 'Assigning...' : 'Assign' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Modal -->
+  <div *ngIf="showUpdateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">Add Update</h2>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Update Type</label>
+        <select
+          [(ngModel)]="updateType"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+          <option value="INTERNAL_NOTE">Internal Note</option>
+          <option value="STATUS_CHANGE">Status Change</option>
+          <option value="ACTION_TAKEN">Action Taken</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Update</label>
+        <textarea
+          [(ngModel)]="updateText"
+          placeholder="Enter update details..."
+          rows="4"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"></textarea>
+      </div>
+
+      <div class="flex space-x-3">
+        <button
+          (click)="showUpdateModal = false"
+          class="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-medium">
+          Cancel
+        </button>
+        <button
+          (click)="addUpdate()"
+          [disabled]="addingUpdate"
+          class="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium disabled:opacity-50">
+          {{ addingUpdate ? 'Adding...' : 'Add Update' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Close Modal -->
+  <div *ngIf="showCloseModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">Close Escalation</h2>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Closure Remarks</label>
+        <textarea
+          [(ngModel)]="closeRemarks"
+          placeholder="Enter closure reason and final notes..."
+          rows="4"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"></textarea>
+      </div>
+
+      <div class="flex space-x-3">
+        <button
+          (click)="showCloseModal = false"
+          class="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-medium">
+          Cancel
+        </button>
+        <button
+          (click)="closeEscalation()"
+          [disabled]="closing"
+          class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50">
+          {{ closing ? 'Closing...' : 'Close Escalation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

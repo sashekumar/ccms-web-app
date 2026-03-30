@@ -1,0 +1,387 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Page Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Deferment Monitoring</h1>
+    <p class="mt-2 text-sm text-gray-600">Manage and track settlement deferment requests</p>
+  </div>
+
+  <!-- Statistics Bar -->
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+      <p class="text-sm text-gray-600">Total Deferments</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total_deferments }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
+      <p class="text-sm text-gray-600">Pending Approval</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.pending_approval }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+      <p class="text-sm text-gray-600">Approved</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.approved_deferments }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+      <p class="text-sm text-gray-600">Rejected</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.rejected_deferments }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+      <p class="text-sm text-gray-600">Avg Defer (Days)</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.average_deferment_days | number:'1.1-1' }}</p>
+    </div>
+  </div>
+
+  <!-- Search & Filter Section -->
+  <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+        <input
+          [(ngModel)]="searchTerm"
+          type="text"
+          placeholder="Admission ID, claim ref..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Admission ID</label>
+        <input
+          [(ngModel)]="admissionIdFilter"
+          type="text"
+          placeholder="Enter admission ID..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Requested By</label>
+        <input
+          [(ngModel)]="requestedByFilter"
+          type="text"
+          placeholder="User name..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+        <select
+          [(ngModel)]="statusFilter"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+          <option value="all">All Status</option>
+          <option value="PENDING">Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        (click)="applyFilters()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        Apply Filters
+      </button>
+      <button
+        (click)="clearFilters()"
+        class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 text-sm font-medium">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Status Tabs -->
+  <div class="mb-6">
+    <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
+      <button
+        (click)="switchStatusTab('all')"
+        [class.border-blue-500]="activeStatusTab === 'all'"
+        [class.text-blue-600]="activeStatusTab === 'all'"
+        [class.border-transparent]="activeStatusTab !== 'all'"
+        [class.text-gray-500]="activeStatusTab !== 'all'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        All Requests
+        <span
+          *ngIf="statusCounts.all"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-blue-100]="activeStatusTab === 'all'"
+          [class.text-blue-800]="activeStatusTab === 'all'"
+          [class.bg-gray-100]="activeStatusTab !== 'all'"
+          [class.text-gray-900]="activeStatusTab !== 'all'">
+          {{ statusCounts.all }}
+        </span>
+      </button>
+
+      <button
+        (click)="switchStatusTab('PENDING')"
+        [class.border-blue-500]="activeStatusTab === 'PENDING'"
+        [class.text-blue-600]="activeStatusTab === 'PENDING'"
+        [class.border-transparent]="activeStatusTab !== 'PENDING'"
+        [class.text-gray-500]="activeStatusTab !== 'PENDING'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        Pending
+        <span
+          *ngIf="statusCounts.PENDING"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-yellow-100]="activeStatusTab === 'PENDING'"
+          [class.text-yellow-800]="activeStatusTab === 'PENDING'"
+          [class.bg-gray-100]="activeStatusTab !== 'PENDING'"
+          [class.text-gray-900]="activeStatusTab !== 'PENDING'">
+          {{ statusCounts.PENDING }}
+        </span>
+      </button>
+
+      <button
+        (click)="switchStatusTab('APPROVED')"
+        [class.border-blue-500]="activeStatusTab === 'APPROVED'"
+        [class.text-blue-600]="activeStatusTab === 'APPROVED'"
+        [class.border-transparent]="activeStatusTab !== 'APPROVED'"
+        [class.text-gray-500]="activeStatusTab !== 'APPROVED'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        Approved
+        <span
+          *ngIf="statusCounts.APPROVED"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-green-100]="activeStatusTab === 'APPROVED'"
+          [class.text-green-800]="activeStatusTab === 'APPROVED'"
+          [class.bg-gray-100]="activeStatusTab !== 'APPROVED'"
+          [class.text-gray-900]="activeStatusTab !== 'APPROVED'">
+          {{ statusCounts.APPROVED }}
+        </span>
+      </button>
+
+      <button
+        (click)="switchStatusTab('REJECTED')"
+        [class.border-blue-500]="activeStatusTab === 'REJECTED'"
+        [class.text-blue-600]="activeStatusTab === 'REJECTED'"
+        [class.border-transparent]="activeStatusTab !== 'REJECTED'"
+        [class.text-gray-500]="activeStatusTab !== 'REJECTED'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        Rejected
+        <span
+          *ngIf="statusCounts.REJECTED"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-red-100]="activeStatusTab === 'REJECTED'"
+          [class.text-red-800]="activeStatusTab === 'REJECTED'"
+          [class.bg-gray-100]="activeStatusTab !== 'REJECTED'"
+          [class.text-gray-900]="activeStatusTab !== 'REJECTED'">
+          {{ statusCounts.REJECTED }}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loadingDeferments" class="flex justify-center py-8">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <!-- Deferments Table -->
+  <div *ngIf="!loadingDeferments && deferments.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Admission ID
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Requested By
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Original Date
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Proposed Date
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Defer Days
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Status
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Actions
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <ng-container *ngFor="let deferment of deferments; trackBy: trackByDefermentId">
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+              {{ deferment.admission_id }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ deferment.requested_by }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {{ formatDate(deferment.original_settlement_date) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {{ formatDate(deferment.proposed_settlement_date) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+              {{ calculateDefermentDays(deferment.original_settlement_date, deferment.proposed_settlement_date) }} days
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusClass(deferment.status)">
+                {{ deferment.status }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                (click)="toggleExpanded(deferment.deferment_id)"
+                class="text-blue-600 hover:text-blue-800 mr-3">
+                {{ isExpanded(deferment.deferment_id) ? '▼' : '▶' }}
+              </button>
+              <ng-container *ngIf="deferment.status === 'PENDING'">
+                <button
+                  (click)="openActionModal(deferment, 'APPROVE')"
+                  class="text-green-600 hover:text-green-800 mr-3">
+                  Approve
+                </button>
+                <button
+                  (click)="openActionModal(deferment, 'REJECT')"
+                  class="text-red-600 hover:text-red-800">
+                  Reject
+                </button>
+              </ng-container>
+              <span *ngIf="deferment.status !== 'PENDING'" class="text-gray-500">
+                -
+              </span>
+            </td>
+          </tr>
+
+          <!-- Expanded Details Row -->
+          <tr *ngIf="isExpanded(deferment.deferment_id)" class="bg-gray-50">
+            <td colspan="7" class="px-6 py-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p class="text-xs text-gray-600 font-medium">Deferment Reason</p>
+                  <p class="text-sm text-gray-900 mt-1">{{ deferment.deferment_reason }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-600 font-medium">Approved By</p>
+                  <p class="text-sm text-gray-900 mt-1">{{ deferment.approved_by || 'N/A' }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-600 font-medium">Approval Date</p>
+                  <p class="text-sm text-gray-900 mt-1">
+                    {{ deferment.approval_date ? formatDate(deferment.approval_date) : 'N/A' }}
+                  </p>
+                </div>
+                <div class="md:col-span-3">
+                  <p class="text-xs text-gray-600 font-medium">Comments</p>
+                  <p class="text-sm text-gray-900 mt-1">{{ deferment.comments || 'No comments' }}</p>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div class="text-sm text-gray-600">
+        Showing {{ (page - 1) * limit + 1 }} to {{ Math.min(page * limit, total) }} of {{ total }}
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="previousPage()"
+          [disabled]="page <= 1"
+          [class.opacity-50]="page <= 1"
+          [class.cursor-not-allowed]="page <= 1"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:hover:bg-white">
+          Previous
+        </button>
+        <span class="px-4 py-2 text-sm text-gray-600">
+          Page {{ page }} of {{ totalPages }}
+        </span>
+        <button
+          (click)="nextPage()"
+          [disabled]="page >= totalPages"
+          [class.opacity-50]="page >= totalPages"
+          [class.cursor-not-allowed]="page >= totalPages"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:hover:bg-white">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loadingDeferments && deferments.length === 0" class="bg-white rounded-lg shadow p-8 text-center">
+    <p class="text-gray-500">No deferment requests found</p>
+  </div>
+
+  <!-- Action Modal (Approve/Reject) -->
+  <div *ngIf="showActionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full">
+      <div [class]="'border-b border-gray-200 p-4 ' + (actionType === 'APPROVE' ? 'bg-green-50' : 'bg-red-50')">
+        <h3 class="text-lg font-bold text-gray-900">
+          {{ actionType === 'APPROVE' ? 'Approve' : 'Reject' }} Deferment Request
+        </h3>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="selectedDeferment" class="mb-4">
+          <p class="text-sm text-gray-600">
+            <strong>Admission ID:</strong> {{ selectedDeferment.admission_id }}
+          </p>
+          <p class="text-sm text-gray-600 mt-2">
+            <strong>Requested By:</strong> {{ selectedDeferment.requested_by }}
+          </p>
+          <p class="text-sm text-gray-600 mt-2">
+            <strong>Reason:</strong> {{ selectedDeferment.deferment_reason }}
+          </p>
+          <p class="text-sm text-gray-600 mt-2">
+            <strong>Proposed Defer:</strong> {{ calculateDefermentDays(selectedDeferment.original_settlement_date, selectedDeferment.proposed_settlement_date) }} days
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            {{ actionType === 'APPROVE' ? 'Approved' : 'Rejected' }} By *
+          </label>
+          <input
+            [(ngModel)]="actionApprovedBy"
+            type="text"
+            placeholder="Your name or ID..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            {{ actionType === 'APPROVE' ? 'Comments' : 'Rejection Reason' }} {{ actionType === 'REJECT' ? '*' : '' }}
+          </label>
+          <textarea
+            [(ngModel)]="actionComments"
+            placeholder="Add comments..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+            rows="3"
+            [required]="actionType === 'REJECT'"></textarea>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border-t border-gray-200 p-4 flex justify-end gap-2">
+        <button
+          (click)="closeActionModal()"
+          [disabled]="modalLoading"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+          Cancel
+        </button>
+        <button
+          *ngIf="actionType === 'APPROVE'"
+          (click)="approveDeferment()"
+          [disabled]="modalLoading"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+          {{ modalLoading ? 'Processing...' : 'Approve' }}
+        </button>
+        <button
+          *ngIf="actionType === 'REJECT'"
+          (click)="rejectDeferment()"
+          [disabled]="modalLoading"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">
+          {{ modalLoading ? 'Processing...' : 'Reject' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

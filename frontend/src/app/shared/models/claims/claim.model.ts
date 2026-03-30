@@ -123,6 +123,17 @@ export interface UpdateClaimDto {
   documents?: any[] | null;
 }
 
+export interface ApproveClaimDto {
+  total_approved: number;
+  remarks?: string | null;
+}
+
+export interface RejectClaimDto {
+  rejection_reason: string;
+  rejection_type?: string | null;
+  remarks?: string | null;
+}
+
 export interface PaginatedClaims {
   data: Claim[];
   pagination: {

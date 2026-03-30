@@ -41,7 +41,7 @@ PRINT 'Step 0: Checking prerequisites...';
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'ccms_acl_actions')
 BEGIN
-    PRINT '  ✗ ERROR: ACL tables do not exist. Please run ccms_new_schema_2026_v7.sql first.';
+    PRINT '  ✗ ERROR: ACL tables do not exist. Please run ccms_new_schema_2026_v8.sql first.';
     RAISERROR('ACL tables not found', 16, 1);
     RETURN;
 END

@@ -52,52 +52,52 @@ GO
 
 PRINT 'Creating product limits...';
 
-INSERT INTO ccms_product_limits (product_id, limit_type, limit_amount, is_active, created_by)
+INSERT INTO ccms_product_limits (product_id, limit_type, limit_amount, is_active, created_by, is_deleted, deleted_at, deleted_by)
 VALUES 
     -- CUEPACSCARE (GAKUM) - Product 1
-    (1, 'Annual', 150000.00, 1, 'SYSTEM'),
-    (1, 'Room & Board', 180.00, 1, 'SYSTEM'),
-    (1, 'Surgical', 50000.00, 1, 'SYSTEM'),
-    (1, 'Outpatient', 5000.00, 1, 'SYSTEM'),
+    (1, 'Annual', 150000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (1, 'Room & Board', 180.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (1, 'Surgical', 50000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (1, 'Outpatient', 5000.00, 1, 'SYSTEM', 0, NULL, NULL),
     
     -- CUEPACSCARE (MONTHLY) - Product 2
-    (2, 'Annual', 100000.00, 1, 'SYSTEM'),
-    (2, 'Room & Board', 150.00, 1, 'SYSTEM'),
-    (2, 'Surgical', 30000.00, 1, 'SYSTEM'),
+    (2, 'Annual', 100000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (2, 'Room & Board', 150.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (2, 'Surgical', 30000.00, 1, 'SYSTEM', 0, NULL, NULL),
     
     -- EMPLOYEE AND FAMILY - Product 3
-    (3, 'Annual', 200000.00, 1, 'SYSTEM'),
-    (3, 'Lifetime', 500000.00, 1, 'SYSTEM'),
-    (3, 'Room & Board', 200.00, 1, 'SYSTEM'),
-    (3, 'Inpatient', 150000.00, 1, 'SYSTEM'),
+    (3, 'Annual', 200000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (3, 'Lifetime', 500000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (3, 'Room & Board', 200.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (3, 'Inpatient', 150000.00, 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Allianz MedicalCare Plus - Product 4
-    (4, 'Annual', 300000.00, 1, 'SYSTEM'),
-    (4, 'Lifetime', 1000000.00, 1, 'SYSTEM'),
-    (4, 'Room & Board', 250.00, 1, 'SYSTEM'),
-    (4, 'Surgical', 100000.00, 1, 'SYSTEM'),
-    (4, 'Outpatient', 10000.00, 1, 'SYSTEM'),
+    (4, 'Annual', 300000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (4, 'Lifetime', 1000000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (4, 'Room & Board', 250.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (4, 'Surgical', 100000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (4, 'Outpatient', 10000.00, 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Allianz Family Shield - Product 5
-    (5, 'Annual', 250000.00, 1, 'SYSTEM'),
-    (5, 'Room & Board', 200.00, 1, 'SYSTEM'),
-    (5, 'Inpatient', 180000.00, 1, 'SYSTEM'),
+    (5, 'Annual', 250000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (5, 'Room & Board', 200.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (5, 'Inpatient', 180000.00, 1, 'SYSTEM', 0, NULL, NULL),
     
     -- AIA Health Guard - Product 6
-    (6, 'Annual', 180000.00, 1, 'SYSTEM'),
-    (6, 'Lifetime', 600000.00, 1, 'SYSTEM'),
-    (6, 'Room & Board', 180.00, 1, 'SYSTEM'),
-    (6, 'Surgical', 60000.00, 1, 'SYSTEM'),
+    (6, 'Annual', 180000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (6, 'Lifetime', 600000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (6, 'Room & Board', 180.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (6, 'Surgical', 60000.00, 1, 'SYSTEM', 0, NULL, NULL),
     
     -- AIA Medical Protector - Product 7
-    (7, 'Annual', 350000.00, 1, 'SYSTEM'),
-    (7, 'Lifetime', 1500000.00, 1, 'SYSTEM'),
-    (7, 'Room & Board', 300.00, 1, 'SYSTEM'),
-    (7, 'Surgical', 120000.00, 1, 'SYSTEM'),
-    (7, 'Outpatient', 15000.00, 1, 'SYSTEM'),
+    (7, 'Annual', 350000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (7, 'Lifetime', 1500000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (7, 'Room & Board', 300.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (7, 'Surgical', 120000.00, 1, 'SYSTEM', 0, NULL, NULL),
+    (7, 'Outpatient', 15000.00, 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Prudential PruHealth Premier - Product 8
-    (8, 'Annual', 400000.00, 1, 'SYSTEM'),
+    (8, 'Annual', 400000.00, 1, 'SYSTEM', 0, NULL, NULL),
     (8, 'Lifetime', 2000000.00, 1, 'SYSTEM'),
     (8, 'Room & Board', 350.00, 1, 'SYSTEM'),
     (8, 'Inpatient', 300000.00, 1, 'SYSTEM'),

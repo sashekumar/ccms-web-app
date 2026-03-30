@@ -108,4 +108,22 @@ router.delete(
   controller.deleteClaimDocument
 );
 
+// ============================================================================
+// WORKFLOW: APPROVE & REJECT
+// ============================================================================
+
+// Approve a claim
+router.post(
+  '/:id/approve',
+  requirePermission('CLAIMS', 'APPROVE'),
+  controller.approveClaimSubmission
+);
+
+// Reject a claim
+router.post(
+  '/:id/reject',
+  requirePermission('CLAIMS', 'APPROVE'),
+  controller.rejectClaimSubmission
+);
+
 export default router;

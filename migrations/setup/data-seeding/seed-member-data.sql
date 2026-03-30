@@ -32,18 +32,18 @@ PRINT 'Creating sample policy holders...';
 
 SET IDENTITY_INSERT ccms_members ON;
 
-INSERT INTO ccms_members (member_id, full_name, ic_no, fwd_member_no, fwd_client_no, client_id, dob, gender, member_type, member_status, bank_id, bank_acc_no, enrollment_date, created_by, is_deleted)
+INSERT INTO ccms_members (member_id, full_name, ic_no, fwd_member_no, fwd_client_no, client_id, dob, gender, member_type, member_status, bank_id, bank_acc_no, enrollment_date, created_by, is_deleted, deleted_at, deleted_by)
 VALUES 
-    (1, 'Ahmad bin Abdullah', '850615-08-5234', 'FWD-M-001', 'FWD-C-001', 'CLI-001', '1985-06-15', 1, 'PRINCIPAL', 'ACTIVE', 1, '1234567890', '2023-01-15', 'SYSTEM', 0),
-    (2, 'Siti Nurhaliza binti Hassan', '900823-14-7856', 'FWD-M-002', 'FWD-C-002', 'CLI-002', '1990-08-23', 0, 'PRINCIPAL', 'ACTIVE', 2, '2345678901', '2023-02-20', 'SYSTEM', 0),
-    (3, 'Kumar Subramaniam', '880412-10-3421', 'FWD-M-003', 'FWD-C-003', 'CLI-003', '1988-04-12', 1, 'PRINCIPAL', 'ACTIVE', 3, '3456789012', '2023-03-10', 'SYSTEM', 0),
-    (4, 'Lim Mei Ling', '920705-01-2345', 'FWD-M-004', 'FWD-C-004', 'CLI-004', '1992-07-05', 0, 'PRINCIPAL', 'ACTIVE', 4, '4567890123', '2023-04-05', 'SYSTEM', 0),
-    (5, 'David Chen Wei Ming', '870920-14-6789', 'FWD-M-005', 'FWD-C-005', 'CLI-005', '1987-09-20', 1, 'EMPLOYEE', 'ACTIVE', 5, '5678901234', '2023-05-12', 'SYSTEM', 0),
-    (6, 'Nurul Aina binti Mohd Noor', '950318-03-4567', 'FWD-M-006', 'FWD-C-006', 'CLI-006', '1995-03-18', 0, 'EMPLOYEE', 'ACTIVE', 6, '6789012345', '2023-06-01', 'SYSTEM', 0),
-    (7, 'Raj Kumar a/l Govindasamy', '840522-08-8901', 'FWD-M-007', 'FWD-C-007', 'CLI-007', '1984-05-22', 1, 'PRINCIPAL', 'ACTIVE', 7, '7890123456', '2023-07-15', 'SYSTEM', 0),
-    (8, 'Wong Sook Yin', '910214-01-5678', 'FWD-M-008', 'FWD-C-008', 'CLI-008', '1991-02-14', 0, 'EMPLOYEE', 'ACTIVE', 8, '8901234567', '2023-08-20', 'SYSTEM', 0),
-    (9, 'Muhammad Faizal bin Ismail', '860901-01-2341', 'FWD-M-009', 'FWD-C-009', 'CLI-009', '1986-09-01', 1, 'PRINCIPAL', 'INACTIVE', 1, '9012345678', '2023-09-10', 'SYSTEM', 0),
-    (10, 'Priya Devi a/p Ramesh', '930627-02-3456', 'FWD-M-010', 'FWD-C-010', 'CLI-010', '1993-06-27', 0, 'EMPLOYEE', 'ACTIVE', 2, '0123456789', '2023-10-05', 'SYSTEM', 0);
+    (1, 'Ahmad bin Abdullah', '850615-08-5234', 'FWD-M-001', 'FWD-C-001', 'CLI-001', '1985-06-15', 1, 'PRINCIPAL', 'ACTIVE', 1, '1234567890', '2023-01-15', 'SYSTEM', 0, NULL, NULL),
+    (2, 'Siti Nurhaliza binti Hassan', '900823-14-7856', 'FWD-M-002', 'FWD-C-002', 'CLI-002', '1990-08-23', 0, 'PRINCIPAL', 'ACTIVE', 2, '2345678901', '2023-02-20', 'SYSTEM', 0, NULL, NULL),
+    (3, 'Kumar Subramaniam', '880412-10-3421', 'FWD-M-003', 'FWD-C-003', 'CLI-003', '1988-04-12', 1, 'PRINCIPAL', 'ACTIVE', 3, '3456789012', '2023-03-10', 'SYSTEM', 0, NULL, NULL),
+    (4, 'Lim Mei Ling', '920705-01-2345', 'FWD-M-004', 'FWD-C-004', 'CLI-004', '1992-07-05', 0, 'PRINCIPAL', 'ACTIVE', 4, '4567890123', '2023-04-05', 'SYSTEM', 0, NULL, NULL),
+    (5, 'David Chen Wei Ming', '870920-14-6789', 'FWD-M-005', 'FWD-C-005', 'CLI-005', '1987-09-20', 1, 'EMPLOYEE', 'ACTIVE', 5, '5678901234', '2023-05-12', 'SYSTEM', 0, NULL, NULL),
+    (6, 'Nurul Aina binti Mohd Noor', '950318-03-4567', 'FWD-M-006', 'FWD-C-006', 'CLI-006', '1995-03-18', 0, 'EMPLOYEE', 'ACTIVE', 6, '6789012345', '2023-06-01', 'SYSTEM', 0, NULL, NULL),
+    (7, 'Raj Kumar a/l Govindasamy', '840522-08-8901', 'FWD-M-007', 'FWD-C-007', 'CLI-007', '1984-05-22', 1, 'PRINCIPAL', 'ACTIVE', 7, '7890123456', '2023-07-15', 'SYSTEM', 0, NULL, NULL),
+    (8, 'Wong Sook Yin', '910214-01-5678', 'FWD-M-008', 'FWD-C-008', 'CLI-008', '1991-02-14', 0, 'EMPLOYEE', 'ACTIVE', 8, '8901234567', '2023-08-20', 'SYSTEM', 0, NULL, NULL),
+    (9, 'Muhammad Faizal bin Ismail', '860901-01-2341', 'FWD-M-009', 'FWD-C-009', 'CLI-009', '1986-09-01', 1, 'PRINCIPAL', 'INACTIVE', 1, '9012345678', '2023-09-10', 'SYSTEM', 0, NULL, NULL),
+    (10, 'Priya Devi a/p Ramesh', '930627-02-3456', 'FWD-M-010', 'FWD-C-010', 'CLI-010', '1993-06-27', 0, 'EMPLOYEE', 'ACTIVE', 2, '0123456789', '2023-10-05', 'SYSTEM', 0, NULL, NULL);
 
 SET IDENTITY_INSERT ccms_members OFF;
 
@@ -151,43 +151,43 @@ GO
 
 PRINT 'Creating member policies...';
 
-INSERT INTO ccms_member_policies (member_id, product_id, policy_no, effective_date, expiry_date, status, created_by, is_deleted)
+INSERT INTO ccms_member_policies (member_id, product_id, policy_no, effective_date, expiry_date, status, created_by, is_deleted, deleted_at, deleted_by)
 VALUES 
     -- Ahmad - CUEPACSCARE (GAKUM)
-    (1, 1, 'POL-2023-001', '2023-01-15', '2024-01-14', 'ACTIVE', 'SYSTEM', 0),
-    (1, 2, 'POL-2024-001', '2024-01-15', '2025-01-14', 'ACTIVE', 'SYSTEM', 0),
+    (1, 1, 'POL-2023-001', '2023-01-15', '2024-01-14', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
+    (1, 2, 'POL-2024-001', '2024-01-15', '2025-01-14', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- Siti - Employee and Family
-    (2, 3, 'POL-2023-002', '2023-02-20', '2024-02-19', 'ACTIVE', 'SYSTEM', 0),
-    (2, 3, 'POL-2024-002', '2024-02-20', '2025-02-19', 'ACTIVE', 'SYSTEM', 0),
+    (2, 3, 'POL-2023-002', '2023-02-20', '2024-02-19', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
+    (2, 3, 'POL-2024-002', '2024-02-20', '2025-02-19', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- Kumar - Allianz MedicalCare Plus
-    (3, 4, 'POL-2023-003', '2023-03-10', '2024-03-09', 'ACTIVE', 'SYSTEM', 0),
-    (3, 4, 'POL-2024-003', '2024-03-10', '2025-03-09', 'ACTIVE', 'SYSTEM', 0),
+    (3, 4, 'POL-2023-003', '2023-03-10', '2024-03-09', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
+    (3, 4, 'POL-2024-003', '2024-03-10', '2025-03-09', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- Lim Mei Ling - AIA Health Guard
-    (4, 6, 'POL-2023-004', '2023-04-05', '2024-04-04', 'ACTIVE', 'SYSTEM', 0),
-    (4, 6, 'POL-2024-004', '2024-04-05', '2025-04-04', 'ACTIVE', 'SYSTEM', 0),
+    (4, 6, 'POL-2023-004', '2023-04-05', '2024-04-04', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
+    (4, 6, 'POL-2024-004', '2024-04-05', '2025-04-04', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- David - Prudential PruHealth
-    (5, 8, 'POL-2023-005', '2023-05-12', '2024-05-11', 'ACTIVE', 'SYSTEM', 0),
-    (5, 9, 'POL-2024-005', '2024-05-12', '2025-05-11', 'ACTIVE', 'SYSTEM', 0),
+    (5, 8, 'POL-2023-005', '2023-05-12', '2024-05-11', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
+    (5, 9, 'POL-2024-005', '2024-05-12', '2025-05-11', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- Nurul - Zurich ZI-Care Basic
-    (6, 10, 'POL-2023-006', '2023-06-01', '2024-05-31', 'ACTIVE', 'SYSTEM', 0),
-    (6, 10, 'POL-2024-006', '2024-06-01', '2025-05-31', 'ACTIVE', 'SYSTEM', 0),
+    (6, 10, 'POL-2023-006', '2023-06-01', '2024-05-31', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
+    (6, 10, 'POL-2024-006', '2024-06-01', '2025-05-31', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- Raj - CUEPACSCARE
-    (7, 1, 'POL-2023-007', '2023-07-15', '2024-07-14', 'ACTIVE', 'SYSTEM', 0),
+    (7, 1, 'POL-2023-007', '2023-07-15', '2024-07-14', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- Wong - Allianz Family Shield
-    (8, 5, 'POL-2023-008', '2023-08-20', '2024-08-19', 'ACTIVE', 'SYSTEM', 0),
+    (8, 5, 'POL-2023-008', '2023-08-20', '2024-08-19', 'ACTIVE', 'SYSTEM', 0, NULL, NULL),
     
     -- Muhammad Faizal - EXPIRED
-    (9, 1, 'POL-2022-009', '2022-09-10', '2023-09-09', 'EXPIRED', 'SYSTEM', 0),
+    (9, 1, 'POL-2022-009', '2022-09-10', '2023-09-09', 'EXPIRED', 'SYSTEM', 0, NULL, NULL),
     
     -- Priya - AIA Medical Protector
-    (10, 7, 'POL-2023-010', '2023-10-05', '2024-10-04', 'ACTIVE', 'SYSTEM', 0);
+    (10, 7, 'POL-2023-010', '2023-10-05', '2024-10-04', 'ACTIVE', 'SYSTEM', 0, NULL, NULL);
 
 PRINT '  ✓ Created 16 member policies';
 GO
@@ -207,34 +207,34 @@ SELECT @DaughterRelId = lookup_id FROM ccms_m_lookups WHERE lookup_code = 'DAUGH
 
 SET IDENTITY_INSERT ccms_member_dependents ON;
 
-INSERT INTO ccms_member_dependents (dependent_id, principal_member_id, full_name, ic_no, relationship_id, dob, is_active, created_by)
+INSERT INTO ccms_member_dependents (dependent_id, principal_member_id, full_name, ic_no, relationship_id, dob, is_active, created_by, is_deleted, deleted_at, deleted_by)
 VALUES 
     -- Ahmad's Dependents
-    (1, 1, 'Aminah binti Hassan', '880710-08-5678', @SpouseRelId, '1988-07-10', 1, 'SYSTEM'),
-    (2, 1, 'Ahmad Aqil bin Ahmad', '150320-08-1234', @SonRelId, '2015-03-20', 1, 'SYSTEM'),
-    (3, 1, 'Nur Aisyah binti Ahmad', '180515-08-5679', @DaughterRelId, '2018-05-15', 1, 'SYSTEM'),
+    (1, 1, 'Aminah binti Hassan', '880710-08-5678', @SpouseRelId, '1988-07-10', 1, 'SYSTEM', 0, NULL, NULL),
+    (2, 1, 'Ahmad Aqil bin Ahmad', '150320-08-1234', @SonRelId, '2015-03-20', 1, 'SYSTEM', 0, NULL, NULL),
+    (3, 1, 'Nur Aisyah binti Ahmad', '180515-08-5679', @DaughterRelId, '2018-05-15', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Siti's Dependents
-    (4, 2, 'Mohd Hafiz bin Rahman', '890425-14-2345', @SpouseRelId, '1989-04-25', 1, 'SYSTEM'),
-    (5, 2, 'Siti Nurfarah binti Hafiz', '160805-14-6789', @DaughterRelId, '2016-08-05', 1, 'SYSTEM'),
+    (4, 2, 'Mohd Hafiz bin Rahman', '890425-14-2345', @SpouseRelId, '1989-04-25', 1, 'SYSTEM', 0, NULL, NULL),
+    (5, 2, 'Siti Nurfarah binti Hafiz', '160805-14-6789', @DaughterRelId, '2016-08-05', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Kumar's Dependents
-    (6, 3, 'Priya Devi a/p Kumar', '900620-10-4567', @SpouseRelId, '1990-06-20', 1, 'SYSTEM'),
-    (7, 3, 'Arun Kumar a/l Kumar', '190215-10-8901', @SonRelId, '2019-02-15', 1, 'SYSTEM'),
+    (6, 3, 'Priya Devi a/p Kumar', '900620-10-4567', @SpouseRelId, '1990-06-20', 1, 'SYSTEM', 0, NULL, NULL),
+    (7, 3, 'Arun Kumar a/l Kumar', '190215-10-8901', @SonRelId, '2019-02-15', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Lim Mei Ling's Dependents
-    (8, 4, 'Chen Wei Jie', '900912-01-3456', @SpouseRelId, '1990-09-12', 1, 'SYSTEM'),
-    (9, 4, 'Chen Xin Yi', '170420-01-7890', @DaughterRelId, '2017-04-20', 1, 'SYSTEM'),
-    (10, 4, 'Chen Kai Wen', '200110-01-2345', @SonRelId, '2020-01-10', 1, 'SYSTEM'),
+    (8, 4, 'Chen Wei Jie', '900912-01-3456', @SpouseRelId, '1990-09-12', 1, 'SYSTEM', 0, NULL, NULL),
+    (9, 4, 'Chen Xin Yi', '170420-01-7890', @DaughterRelId, '2017-04-20', 1, 'SYSTEM', 0, NULL, NULL),
+    (10, 4, 'Chen Kai Wen', '200110-01-2345', @SonRelId, '2020-01-10', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- David Chen's Dependents
-    (11, 5, 'Sarah Tan Mei Hua', '890825-14-6789', @SpouseRelId, '1989-08-25', 1, 'SYSTEM'),
-    (12, 5, 'Chen Li Ming', '140622-14-9012', @SonRelId, '2014-06-22', 1, 'SYSTEM'),
+    (11, 5, 'Sarah Tan Mei Hua', '890825-14-6789', @SpouseRelId, '1989-08-25', 1, 'SYSTEM', 0, NULL, NULL),
+    (12, 5, 'Chen Li Ming', '140622-14-9012', @SonRelId, '2014-06-22', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Raj Kumar's Dependents
-    (13, 7, 'Lakshmi a/p Raj', '850315-08-4567', @SpouseRelId, '1985-03-15', 1, 'SYSTEM'),
-    (14, 7, 'Vikram a/l Raj', '120910-08-8901', @SonRelId, '2012-09-10', 1, 'SYSTEM'),
-    (15, 7, 'Priya a/p Raj', '160425-08-2346', @DaughterRelId, '2016-04-25', 1, 'SYSTEM');
+    (13, 7, 'Lakshmi a/p Raj', '850315-08-4567', @SpouseRelId, '1985-03-15', 1, 'SYSTEM', 0, NULL, NULL),
+    (14, 7, 'Vikram a/l Raj', '120910-08-8901', @SonRelId, '2012-09-10', 1, 'SYSTEM', 0, NULL, NULL),
+    (15, 7, 'Priya a/p Raj', '160425-08-2346', @DaughterRelId, '2016-04-25', 1, 'SYSTEM', 0, NULL, NULL);
 
 SET IDENTITY_INSERT ccms_member_dependents OFF;
 

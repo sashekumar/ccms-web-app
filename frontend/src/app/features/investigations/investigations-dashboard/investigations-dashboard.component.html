@@ -1,0 +1,474 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Page Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Investigations Dashboard</h1>
+    <p class="mt-2 text-sm text-gray-600">Manage and track investigation cases</p>
+  </div>
+
+  <!-- Search & Filter Section -->
+  <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+        <input
+          [(ngModel)]="searchTerm"
+          type="text"
+          placeholder="Claim ref, hospital, clinic..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Claim ID</label>
+        <input
+          [(ngModel)]="claimIdFilter"
+          type="text"
+          placeholder="Enter claim ID..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+        <select
+          [(ngModel)]="priorityFilter"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+          <option value="all">All</option>
+          <option value="PRIORITY">Priority</option>
+          <option value="NORMAL">Normal</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        (click)="applyFilters()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        Apply Filters
+      </button>
+      <button
+        (click)="clearFilters()"
+        class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 text-sm font-medium">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Status Tabs -->
+  <div class="mb-6">
+    <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
+      <button
+        (click)="switchStatusTab('all')"
+        [class.border-blue-500]="activeStatusTab === 'all'"
+        [class.text-blue-600]="activeStatusTab === 'all'"
+        [class.border-transparent]="activeStatusTab !== 'all'"
+        [class.text-gray-500]="activeStatusTab !== 'all'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        All Cases
+        <span
+          *ngIf="statusCounts.all"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-blue-100]="activeStatusTab === 'all'"
+          [class.text-blue-800]="activeStatusTab === 'all'"
+          [class.bg-gray-100]="activeStatusTab !== 'all'"
+          [class.text-gray-900]="activeStatusTab !== 'all'">
+          {{ statusCounts.all }}
+        </span>
+      </button>
+
+      <button
+        (click)="switchStatusTab('OPEN')"
+        [class.border-blue-500]="activeStatusTab === 'OPEN'"
+        [class.text-blue-600]="activeStatusTab === 'OPEN'"
+        [class.border-transparent]="activeStatusTab !== 'OPEN'"
+        [class.text-gray-500]="activeStatusTab !== 'OPEN'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        OPEN
+        <span
+          *ngIf="statusCounts.OPEN"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-blue-100]="activeStatusTab === 'OPEN'"
+          [class.text-blue-800]="activeStatusTab === 'OPEN'"
+          [class.bg-gray-100]="activeStatusTab !== 'OPEN'"
+          [class.text-gray-900]="activeStatusTab !== 'OPEN'">
+          {{ statusCounts.OPEN }}
+        </span>
+      </button>
+
+      <button
+        (click)="switchStatusTab('IN_PROGRESS')"
+        [class.border-blue-500]="activeStatusTab === 'IN_PROGRESS'"
+        [class.text-blue-600]="activeStatusTab === 'IN_PROGRESS'"
+        [class.border-transparent]="activeStatusTab !== 'IN_PROGRESS'"
+        [class.text-gray-500]="activeStatusTab !== 'IN_PROGRESS'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        IN_PROGRESS
+        <span
+          *ngIf="statusCounts.IN_PROGRESS"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-blue-100]="activeStatusTab === 'IN_PROGRESS'"
+          [class.text-blue-800]="activeStatusTab === 'IN_PROGRESS'"
+          [class.bg-gray-100]="activeStatusTab !== 'IN_PROGRESS'"
+          [class.text-gray-900]="activeStatusTab !== 'IN_PROGRESS'">
+          {{ statusCounts.IN_PROGRESS }}
+        </span>
+      </button>
+
+      <button
+        (click)="switchStatusTab('UNDER_REVIEW')"
+        [class.border-blue-500]="activeStatusTab === 'UNDER_REVIEW'"
+        [class.text-blue-600]="activeStatusTab === 'UNDER_REVIEW'"
+        [class.border-transparent]="activeStatusTab !== 'UNDER_REVIEW'"
+        [class.text-gray-500]="activeStatusTab !== 'UNDER_REVIEW'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        UNDER_REVIEW
+        <span
+          *ngIf="statusCounts.UNDER_REVIEW"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-blue-100]="activeStatusTab === 'UNDER_REVIEW'"
+          [class.text-blue-800]="activeStatusTab === 'UNDER_REVIEW'"
+          [class.bg-gray-100]="activeStatusTab !== 'UNDER_REVIEW'"
+          [class.text-gray-900]="activeStatusTab !== 'UNDER_REVIEW'">
+          {{ statusCounts.UNDER_REVIEW }}
+        </span>
+      </button>
+
+      <button
+        (click)="switchStatusTab('COMPLETED')"
+        [class.border-blue-500]="activeStatusTab === 'COMPLETED'"
+        [class.text-blue-600]="activeStatusTab === 'COMPLETED'"
+        [class.border-transparent]="activeStatusTab !== 'COMPLETED'"
+        [class.text-gray-500]="activeStatusTab !== 'COMPLETED'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        COMPLETED
+        <span
+          *ngIf="statusCounts.COMPLETED"
+          class="ml-2 py-0.5 px-2 rounded-full text-xs font-medium"
+          [class.bg-blue-100]="activeStatusTab === 'COMPLETED'"
+          [class.text-blue-800]="activeStatusTab === 'COMPLETED'"
+          [class.bg-gray-100]="activeStatusTab !== 'COMPLETED'"
+          [class.text-gray-900]="activeStatusTab !== 'COMPLETED'">
+          {{ statusCounts.COMPLETED }}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <app-loading-spinner *ngIf="loadingInvestigations" message="Loading investigations..." />
+
+  <!-- Empty State -->
+  <div *ngIf="!loadingInvestigations && investigations.length === 0" class="text-center py-12">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">No investigations found</h3>
+    <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filters</p>
+  </div>
+
+  <!-- Investigations Table -->
+  <div *ngIf="!loadingInvestigations && investigations.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Claim Ref</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Clinic</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Priority</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Assigned To</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Days Active</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <ng-container *ngFor="let investigation of investigations">
+          <!-- Main Row -->
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              {{ investigation.claim_ref_no }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {{ investigation.clinic_name }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusBadgeColor(investigation.status)">
+                {{ investigation.status }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span
+                *ngIf="investigation.is_priority"
+                [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getPriorityBadgeClass(investigation.is_priority)">
+                PRIORITY
+              </span>
+              <span *ngIf="!investigation.is_priority" class="text-gray-500">—</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {{ investigation.assigned_to_name || '—' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {{ investigation.days_since_creation }} days
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+              <button
+                (click)="toggleExpanded(investigation.ix_id)"
+                class="text-blue-600 hover:text-blue-900">
+                {{ isExpanded(investigation.ix_id) ? 'Hide' : 'View' }}
+              </button>
+              <button
+                (click)="viewInvestigationDetails(investigation.ix_id)"
+                class="text-gray-600 hover:text-gray-900">
+                Details
+              </button>
+            </td>
+          </tr>
+
+          <!-- Expanded Details Row -->
+          <tr *ngIf="isExpanded(investigation.ix_id)" class="bg-blue-50">
+            <td colspan="7" class="px-6 py-4">
+              <div class="space-y-4">
+                <!-- Investigation Details -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <p class="text-xs font-medium text-gray-500">Reason</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ investigation.reason || '—' }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium text-gray-500">Expected Duration</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ investigation.expected_duration_days || '—' }} days</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium text-gray-500">Findings</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ investigation.findings || '—' }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium text-gray-500">PEC Found</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ investigation.is_pec_found ? 'Yes' : 'No' }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium text-gray-500">Pending Requests</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ investigation.pending_requests_count }} request(s)</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium text-gray-500">Call Logs</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ investigation.call_logs_count }} log(s)</p>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-2 pt-4 border-t border-blue-200">
+                  <button
+                    (click)="openActionModal(investigation, 'UPDATE_STATUS')"
+                    class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                    Update Status
+                  </button>
+                  <button
+                    (click)="openActionModal(investigation, 'ADD_REQUEST')"
+                    class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                    Add Request
+                  </button>
+                  <button
+                    (click)="openActionModal(investigation, 'ADD_CALL')"
+                    class="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">
+                    Add Call Log
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loadingInvestigations && investigations.length > 0" class="mt-6 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span class="font-medium">{{ (page - 1) * limit + 1 }}</span> to
+      <span class="font-medium">{{ Math.min(page * limit, total) }}</span> of
+      <span class="font-medium">{{ total }}</span> investigations
+    </div>
+    <div class="flex gap-2">
+      <button
+        (click)="previousPage()"
+        [disabled]="page === 1"
+        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        Previous
+      </button>
+      <span class="px-4 py-2 text-sm font-medium">{{ page }} / {{ totalPages }}</span>
+      <button
+        (click)="nextPage()"
+        [disabled]="page === totalPages"
+        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        Next
+      </button>
+    </div>
+  </div>
+
+  <!-- Action Modal -->
+  <div *ngIf="showActionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+      <!-- Update Status Modal -->
+      <div *ngIf="actionType === 'UPDATE_STATUS'">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Update Investigation Status</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select
+              [(ngModel)]="newStatus"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+              <option value="OPEN">Open</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="UNDER_REVIEW">Under Review</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Findings</label>
+            <textarea
+              [(ngModel)]="findings"
+              rows="4"
+              placeholder="Enter investigation findings..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button
+            (click)="closeActionModal()"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">
+            Cancel
+          </button>
+          <button
+            (click)="saveInvestigationUpdate()"
+            [disabled]="modalLoading"
+            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            {{ modalLoading ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Request Modal -->
+      <div *ngIf="actionType === 'ADD_REQUEST'">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Investigation Request</h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Request Type *</label>
+            <select
+              [(ngModel)]="requestType"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Select type...</option>
+              <option value="DOCUMENT_REQUEST">Document Request</option>
+              <option value="INFO_REQUEST">Information Request</option>
+              <option value="SAMPLE_REQUEST">Sample Request</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Requested From *</label>
+            <input
+              [(ngModel)]="requestedFrom"
+              type="text"
+              placeholder="Hospital, clinic, or person..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Expected Date</label>
+            <input
+              [(ngModel)]="expectedDate"
+              type="date"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              [(ngModel)]="requestDescription"
+              rows="3"
+              placeholder="Enter request details..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button
+            (click)="closeActionModal()"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">
+            Cancel
+          </button>
+          <button
+            (click)="addInvestigationRequest()"
+            [disabled]="modalLoading"
+            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+            {{ modalLoading ? 'Adding...' : 'Add Request' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Call Log Modal -->
+      <div *ngIf="actionType === 'ADD_CALL'">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Call Log</h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Call Date</label>
+            <input
+              [(ngModel)]="callDate"
+              type="date"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Called Party *</label>
+            <input
+              [(ngModel)]="calledParty"
+              type="text"
+              placeholder="Person or organization contacted..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Call Duration (minutes)</label>
+            <input
+              [(ngModel)]="callDuration"
+              type="number"
+              min="0"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Call Notes</label>
+            <textarea
+              [(ngModel)]="callNotes"
+              rows="3"
+              placeholder="Summary of call discussion..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button
+            (click)="closeActionModal()"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">
+            Cancel
+          </button>
+          <button
+            (click)="addCallLog()"
+            [disabled]="modalLoading"
+            class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50">
+            {{ modalLoading ? 'Adding...' : 'Add Call Log' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #noData>
+  <div class="text-center py-12">
+    <p class="text-gray-500">No investigations found</p>
+  </div>
+</ng-template>

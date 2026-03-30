@@ -160,6 +160,16 @@ export const ADMIN_ROLES_ROUTES = {
 } as const;
 
 // ============================================================================
+// MONITORING ROUTES (Specialized Modules)
+// ============================================================================
+
+export const MONITORING_ROUTES = {
+  EIGHT_HOUR: 'eight-hour-monitoring',
+  LOS: 'los-monitoring',
+  DEFERMENT: 'deferment-monitoring'
+} as const;
+
+// ============================================================================
 // CONSOLIDATED APP ROUTES
 // ============================================================================
 
@@ -176,7 +186,9 @@ export const APP_ROUTES = {
   PRODUCTS: PRODUCTS_ROUTES,
   // Admin submodule routes
   ADMIN_USERS: ADMIN_USERS_ROUTES,
-  ADMIN_ROLES: ADMIN_ROLES_ROUTES
+  ADMIN_ROLES: ADMIN_ROLES_ROUTES,
+  // Monitoring routes
+  MONITORING: MONITORING_ROUTES
 } as const;
 
 // ============================================================================

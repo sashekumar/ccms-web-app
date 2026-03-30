@@ -48,3 +48,16 @@ export const updateClaimSchema = Joi.object({
   patient_id_copy: Joi.any().optional(), // In case some internal keys leak
   claim_mode: Joi.string().max(20).optional().allow(null, '')
 });
+
+export const approveClaimSchema = Joi.object({
+  total_approved: Joi.number().min(0.01).required()
+    .messages({ 'number.min': 'Approved amount must be greater than 0' }),
+  remarks: Joi.string().max(4000).optional().allow(null, '')
+});
+
+export const rejectClaimSchema = Joi.object({
+  rejection_reason: Joi.string().min(1).max(4000).required()
+    .messages({ 'string.empty': 'Rejection reason is required' }),
+  rejection_type: Joi.string().max(50).optional().allow(null, ''),
+  remarks: Joi.string().max(4000).optional().allow(null, '')
+});

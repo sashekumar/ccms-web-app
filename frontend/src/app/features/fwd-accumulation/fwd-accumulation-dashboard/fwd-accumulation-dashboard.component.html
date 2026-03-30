@@ -1,0 +1,386 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Page Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">FWD Accumulation Tracking</h1>
+    <p class="mt-2 text-sm text-gray-600">Track accumulated benefit amounts across Client, Disability, Onetime and Payment Advice sub-types</p>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div *ngIf="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-blue-50 rounded-lg border border-blue-200 p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs text-blue-700">Client Total</p>
+        <i class="fas fa-users text-blue-400 text-sm"></i>
+      </div>
+      <p class="text-xl font-bold text-blue-800">{{ formatCurrency(stats.total_client_amount) }}</p>
+      <p class="text-xs text-blue-600 mt-1">{{ stats.total_client_records }} records</p>
+    </div>
+    <div class="bg-purple-50 rounded-lg border border-purple-200 p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs text-purple-700">Disability Total</p>
+        <i class="fas fa-wheelchair text-purple-400 text-sm"></i>
+      </div>
+      <p class="text-xl font-bold text-purple-800">{{ formatCurrency(stats.total_disability_amount) }}</p>
+      <p class="text-xs text-purple-600 mt-1">{{ stats.total_disability_records }} records</p>
+    </div>
+    <div class="bg-orange-50 rounded-lg border border-orange-200 p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs text-orange-700">Onetime Total</p>
+        <i class="fas fa-bolt text-orange-400 text-sm"></i>
+      </div>
+      <p class="text-xl font-bold text-orange-800">{{ formatCurrency(stats.total_onetime_amount) }}</p>
+      <p class="text-xs text-orange-600 mt-1">{{ stats.total_onetime_records }} records</p>
+    </div>
+    <div class="bg-green-50 rounded-lg border border-green-200 p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs text-green-700">PA Total</p>
+        <i class="fas fa-file-invoice-dollar text-green-400 text-sm"></i>
+      </div>
+      <p class="text-xl font-bold text-green-800">{{ formatCurrency(stats.total_pa_amount) }}</p>
+      <p class="text-xs text-green-600 mt-1">{{ stats.total_pa_records }} records</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Table Area -->
+    <div [class]="hasSelection ? 'lg:col-span-2' : 'lg:col-span-3'">
+
+      <!-- Sub-type Tabs -->
+      <div class="mb-4">
+        <div class="flex space-x-1 border-b border-gray-200">
+          <button *ngFor="let tab of tabOptions"
+            (click)="setTab(tab)"
+            [class]="activeTab === tab
+              ? 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 -mb-px bg-white'
+              : 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-t-lg'">
+            {{ tab }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Controls -->
+      <div class="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+        <div class="flex space-x-3">
+          <input
+            [(ngModel)]="searchTerm"
+            type="text"
+            placeholder="Search..."
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+          />
+          <button (click)="onSearch()"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+            Search
+          </button>
+          <button (click)="clearFilters()"
+            class="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 text-sm font-medium">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="flex justify-center py-12">
+        <app-loading-spinner></app-loading-spinner>
+      </div>
+
+      <!-- CLIENT TABLE -->
+      <div *ngIf="!loading && activeTab === 'CLIENT'" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FWD Client No</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Accumulated Amount</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">As At Date</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let r of clientRecords"
+                [class]="selectedClientRecord?.client_acc_id === r.client_acc_id ? 'bg-blue-50 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'"
+                (click)="selectClient(r)">
+                <td class="px-4 py-3 text-sm">
+                  <p class="font-medium text-gray-900">{{ r.member_name || '-' }}</p>
+                  <p class="text-xs text-gray-500">{{ r.member_ic || '-' }}</p>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ r.fwd_client_no || '-' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 text-center">{{ r.period_year ?? '-' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 text-center">{{ r.period_month ? getMonthName(r.period_month) : '-' }}</td>
+                <td class="px-4 py-3 text-sm font-medium text-blue-700 text-right">{{ formatCurrency(r.accumulated_amount) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 text-center">{{ formatDate(r.as_at_date) }}</td>
+              </tr>
+              <tr *ngIf="clientRecords.length === 0">
+                <td colspan="6" class="px-4 py-10 text-center text-sm text-gray-500">
+                  <i class="fas fa-layer-group text-gray-300 text-4xl mb-3 block"></i>
+                  No client accumulation records found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-container *ngTemplateOutlet="paginationTpl"></ng-container>
+      </div>
+
+      <!-- DISABILITY TABLE -->
+      <div *ngIf="!loading && activeTab === 'DISABILITY'" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disability Code</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Accumulated Amount</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let r of disabilityRecords"
+                [class]="selectedDisabilityRecord?.disability_acc_id === r.disability_acc_id ? 'bg-blue-50 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'"
+                (click)="selectDisability(r)">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ r.disability_code || '-' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 text-center">{{ r.period_year ?? '-' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 text-center">{{ r.period_month ? getMonthName(r.period_month) : '-' }}</td>
+                <td class="px-4 py-3 text-sm font-medium text-purple-700 text-right">{{ formatCurrency(r.accumulated_amount) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 text-center">{{ formatDate(r.created_at) }}</td>
+              </tr>
+              <tr *ngIf="disabilityRecords.length === 0">
+                <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-500">
+                  <i class="fas fa-layer-group text-gray-300 text-4xl mb-3 block"></i>
+                  No disability accumulation records found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-container *ngTemplateOutlet="paginationTpl"></ng-container>
+      </div>
+
+      <!-- ONETIME TABLE -->
+      <div *ngIf="!loading && activeTab === 'ONETIME'" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FWD Member No</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Benefit Code</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Accumulated Amount</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let r of onetimeRecords"
+                [class]="selectedOnetimeRecord?.onetime_acc_id === r.onetime_acc_id ? 'bg-blue-50 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'"
+                (click)="selectOnetime(r)">
+                <td class="px-4 py-3 text-sm">
+                  <p class="font-medium text-gray-900">{{ r.member_name || '-' }}</p>
+                  <p class="text-xs text-gray-500">{{ r.member_ic || '-' }}</p>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ r.fwd_member_no || '-' }}</td>
+                <td class="px-4 py-3 text-sm">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                    {{ r.benefit_code || '-' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm font-medium text-orange-700 text-right">{{ formatCurrency(r.accumulated_amount) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 text-center">{{ formatDate(r.created_at) }}</td>
+              </tr>
+              <tr *ngIf="onetimeRecords.length === 0">
+                <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-500">
+                  <i class="fas fa-layer-group text-gray-300 text-4xl mb-3 block"></i>
+                  No onetime accumulation records found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-container *ngTemplateOutlet="paginationTpl"></ng-container>
+      </div>
+
+      <!-- PA TABLE -->
+      <div *ngIf="!loading && activeTab === 'PA'" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PA Ref No</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claim Ref No</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Accumulated Amount</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">As At Date</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let r of paRecords"
+                [class]="selectedPaRecord?.pa_acc_id === r.pa_acc_id ? 'bg-blue-50 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'"
+                (click)="selectPa(r)">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ r.pa_ref_no || ('#' + r.pa_id) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ r.claim_ref_no || ('#' + r.claim_id) }}</td>
+                <td class="px-4 py-3 text-sm font-medium text-green-700 text-right">{{ formatCurrency(r.accumulated_amount) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 text-center">{{ formatDate(r.as_at_date) }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 text-center">{{ formatDate(r.created_at) }}</td>
+              </tr>
+              <tr *ngIf="paRecords.length === 0">
+                <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-500">
+                  <i class="fas fa-layer-group text-gray-300 text-4xl mb-3 block"></i>
+                  No PA accumulation records found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-container *ngTemplateOutlet="paginationTpl"></ng-container>
+      </div>
+    </div>
+
+    <!-- Detail Side Panel -->
+    <div *ngIf="hasSelection" class="lg:col-span-1">
+      <div class="bg-white rounded-lg border border-gray-200 shadow-sm sticky top-6">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+          <h3 class="font-semibold text-gray-900 text-sm">Record Detail</h3>
+          <button (click)="closeDetail()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-3 text-sm">
+
+          <!-- CLIENT detail -->
+          <ng-container *ngIf="selectedClientRecord">
+            <div class="flex justify-between">
+              <span class="text-gray-500">ID</span>
+              <span class="font-medium">{{ selectedClientRecord.client_acc_id }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Member</span>
+              <span class="font-medium text-gray-900">{{ selectedClientRecord.member_name || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">IC No</span>
+              <span class="text-gray-700">{{ selectedClientRecord.member_ic || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">FWD Client No</span>
+              <span class="text-gray-700">{{ selectedClientRecord.fwd_client_no || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Period</span>
+              <span class="text-gray-700">{{ getMonthName(selectedClientRecord.period_month) }} {{ selectedClientRecord.period_year }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Accumulated</span>
+              <span class="font-bold text-blue-700">{{ formatCurrency(selectedClientRecord.accumulated_amount) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">As At Date</span>
+              <span class="text-gray-700">{{ formatDate(selectedClientRecord.as_at_date) }}</span>
+            </div>
+          </ng-container>
+
+          <!-- DISABILITY detail -->
+          <ng-container *ngIf="selectedDisabilityRecord">
+            <div class="flex justify-between">
+              <span class="text-gray-500">ID</span>
+              <span class="font-medium">{{ selectedDisabilityRecord.disability_acc_id }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Disability Code</span>
+              <span class="font-medium text-gray-900">{{ selectedDisabilityRecord.disability_code || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Period</span>
+              <span class="text-gray-700">{{ getMonthName(selectedDisabilityRecord.period_month) }} {{ selectedDisabilityRecord.period_year }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Accumulated</span>
+              <span class="font-bold text-purple-700">{{ formatCurrency(selectedDisabilityRecord.accumulated_amount) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Created</span>
+              <span class="text-gray-700">{{ formatDate(selectedDisabilityRecord.created_at) }}</span>
+            </div>
+          </ng-container>
+
+          <!-- ONETIME detail -->
+          <ng-container *ngIf="selectedOnetimeRecord">
+            <div class="flex justify-between">
+              <span class="text-gray-500">ID</span>
+              <span class="font-medium">{{ selectedOnetimeRecord.onetime_acc_id }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Member</span>
+              <span class="font-medium text-gray-900">{{ selectedOnetimeRecord.member_name || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">IC No</span>
+              <span class="text-gray-700">{{ selectedOnetimeRecord.member_ic || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">FWD Member No</span>
+              <span class="text-gray-700">{{ selectedOnetimeRecord.fwd_member_no || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Benefit Code</span>
+              <span class="font-medium text-orange-700">{{ selectedOnetimeRecord.benefit_code || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Accumulated</span>
+              <span class="font-bold text-orange-700">{{ formatCurrency(selectedOnetimeRecord.accumulated_amount) }}</span>
+            </div>
+          </ng-container>
+
+          <!-- PA detail -->
+          <ng-container *ngIf="selectedPaRecord">
+            <div class="flex justify-between">
+              <span class="text-gray-500">ID</span>
+              <span class="font-medium">{{ selectedPaRecord.pa_acc_id }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">PA Ref No</span>
+              <span class="font-medium text-gray-900">{{ selectedPaRecord.pa_ref_no || ('#' + selectedPaRecord.pa_id) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Claim Ref No</span>
+              <span class="text-gray-700">{{ selectedPaRecord.claim_ref_no || ('#' + selectedPaRecord.claim_id) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Accumulated</span>
+              <span class="font-bold text-green-700">{{ formatCurrency(selectedPaRecord.accumulated_amount) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">As At Date</span>
+              <span class="text-gray-700">{{ formatDate(selectedPaRecord.as_at_date) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Created</span>
+              <span class="text-gray-700">{{ formatDate(selectedPaRecord.created_at) }}</span>
+            </div>
+          </ng-container>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pagination Template -->
+<ng-template #paginationTpl>
+  <div *ngIf="totalPages > 1" class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+    <p class="text-sm text-gray-600">
+      Showing {{ (page - 1) * pageSize + 1 }} – {{ Math.min(page * pageSize, total) }} of {{ total }} records
+    </p>
+    <div class="flex space-x-1">
+      <button (click)="goToPage(page - 1)" [disabled]="page === 1"
+        class="px-3 py-1 rounded border text-sm disabled:opacity-50 hover:bg-gray-100">‹</button>
+      <button *ngFor="let p of pageNumbers" (click)="goToPage(p)"
+        [class]="p === page ? 'px-3 py-1 rounded border text-sm bg-blue-600 text-white' : 'px-3 py-1 rounded border text-sm hover:bg-gray-100'">
+        {{ p }}
+      </button>
+      <button (click)="goToPage(page + 1)" [disabled]="page === totalPages"
+        class="px-3 py-1 rounded border text-sm disabled:opacity-50 hover:bg-gray-100">›</button>
+    </div>
+  </div>
+</ng-template>

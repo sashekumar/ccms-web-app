@@ -2,7 +2,7 @@
 -- Add Master Data Management Modules to ACL System
 -- Updated: March 2026 (Merged MQ Templates)
 -- ============================================================================
--- PREREQUISITES: ccms_new_schema_2026_v7.sql must be executed first
+-- PREREQUISITES: ccms_new_schema_2026_v8.sql must be executed first
 -- ============================================================================
 
 USE db_ccms;

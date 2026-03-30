@@ -66,12 +66,57 @@ export const DB_TABLES = {
   ADMISSION_ASSESSMENTS: 'ccms_admission_assessments',
   REMARKS: 'ccms_remarks',
 
+  // Monitoring & Escalations
+  ESCALATIONS: 'ccms_escalations',
+  ESCALATION_UPDATES: 'ccms_escalation_updates',
+  ESCALATION_SOURCES: 'ccms_escalation_sources',
+  ESCALATION_NATURES: 'ccms_escalation_natures',
+
   // MQ Templates (Medical Questionnaire)
   MQ_TEMPLATES: 'ccms_query_templates',
   MQ_TEMPLATE_QUESTIONS: 'ccms_query_template_questions',
 
   // System
-  DOCUMENTS: 'ccms_documents'
+  DOCUMENTS: 'ccms_documents',
+
+  // Financial Management (Payment Advice)
+  PAYMENT_ADVICE: 'ccms_payment_advice',
+  PA_LINE_ITEMS: 'ccms_pa_line_items',
+  PA_SUMMARY: 'ccms_pa_summary',
+  PA_CONSULTATION_BREAKDOWN: 'ccms_pa_consultation_breakdown',
+  PA_CONSULTATION_HISTORY: 'ccms_pa_consultation_breakdown_history',
+  PA_UNCOVERED_CHARGES: 'ccms_pa_uncovered_charges',
+  PA_PAYMENTS: 'ccms_pa_payments',
+  MULTI_PAYMENT_ADVICE: 'ccms_multi_payment_advice',
+  MULTI_PAYMENT_ADVICE_DETAILS: 'ccms_multi_payment_advice_details',
+
+  // Stop Loss
+  STOP_LOSS_DATA: 'ccms_stop_loss_data',
+
+  // FWD Benefit Accumulation
+  FWD_ACCUMULATION_CLIENT: 'ccms_fwd_accumulation_client',
+  FWD_ACCUMULATION_DISABILITY: 'ccms_fwd_accumulation_disability',
+  FWD_ACCUMULATION_ONETIME: 'ccms_fwd_accumulation_onetime',
+  FWD_ACCUMULATION_PA: 'ccms_fwd_accumulation_pa',
+
+  // Claim Tracking / SLA
+  CLAIM_STATUS_LOG: 'ccms_claim_status_log',
+  CLAIM_PROCESSING_MILESTONES: 'ccms_claim_processing_milestones',
+  CLAIM_DURATIONS: 'ccms_claim_durations',
+
+  // Audit Trail
+  AUDIT_LOGS: 'ccms_audit_logs',
+  ADMISSION_LOG: 'ccms_admission_log',
+
+  // Notifications Log
+  NOTIFICATIONS_LOG: 'ccms_log_notifications',
+
+  // Checklists
+  CHECKLISTS: 'ccms_checklists',
+
+  // Monitoring - 8-Hour & LOS
+  EIGHT_HOUR_MONITORING: 'ccms_8hm_monitoring',
+  LOS_ALERTS: 'ccms_los_alerts'
 } as const;
 
 // ============================================================================

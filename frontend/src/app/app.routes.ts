@@ -121,12 +121,90 @@ export const routes: Routes = [
         data: { permission: ['MQ_OPERATIONS', 'VIEW'] },
         title: 'MQ Operations - CCMS'
       },
+
       {
-        path: 'monitoring',
-        loadComponent: () => import('./features/monitoring/monitoring-dashboard/monitoring-dashboard.component').then(m => m.MonitoringDashboardComponent),
+        path: 'eight-hour-monitoring',
+        loadComponent: () => import('./features/monitoring/eight-hour-monitoring/eight-hour-monitoring.component').then(m => m.EightHourMonitoringComponent),
         canActivate: [authGuard, permissionGuard],
-        data: { permission: ['ADMISSIONS', 'VIEW'] },
-        title: 'Monitoring Dashboard - CCMS'
+        data: { permission: ['EIGHT_HOUR_MON', 'VIEW'] },
+        title: 'Eight Hour Monitoring - CCMS'
+      },
+      {
+        path: 'los-monitoring',
+        loadComponent: () => import('./features/monitoring/los-monitoring/los-monitoring.component').then(m => m.LOSMonitoringComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['LOS_MON', 'VIEW'] },
+        title: 'LOS Monitoring - CCMS'
+      },
+      {
+        path: 'deferment-monitoring',
+        loadComponent: () => import('./features/monitoring/deferment-monitoring/deferment-monitoring.component').then(m => m.DefermentMonitoringComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['DEFERMENT_MON', 'VIEW'] },
+        title: 'Deferment Monitoring - CCMS'
+      },
+      {
+        path: 'investigations',
+        loadComponent: () => import('./features/investigations/investigations-dashboard/investigations-dashboard.component').then(m => m.InvestigationsDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['INVESTIGATIONS', 'VIEW'] },
+        title: 'Investigations Dashboard - CCMS'
+      },
+      {
+        path: 'escalations',
+        loadComponent: () => import('./features/escalations/escalations-dashboard/escalations-dashboard.component').then(m => m.EscalationsDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['ESCALATIONS', 'VIEW'] },
+        title: 'Escalations Management - CCMS'
+      },
+      {
+        path: 'financials',
+        loadComponent: () => import('./features/financials/financials-dashboard/financials-dashboard.component').then(m => m.FinancialsDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['FINANCIALS', 'VIEW'] },
+        title: 'Financial Management - CCMS'
+      },
+      {
+        path: 'stop-loss',
+        loadComponent: () => import('./features/stop-loss/stop-loss-dashboard/stop-loss-dashboard.component').then(m => m.StopLossDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['STOP_LOSS', 'VIEW'] },
+        title: 'Stop Loss Management - CCMS'
+      },
+      {
+        path: 'fwd-accumulation',
+        loadComponent: () => import('./features/fwd-accumulation/fwd-accumulation-dashboard/fwd-accumulation-dashboard.component').then(m => m.FwdAccumulationDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['FWD_ACCUMULATION', 'VIEW'] },
+        title: 'FWD Accumulation Tracking - CCMS'
+      },
+      {
+        path: 'claim-tracking',
+        loadComponent: () => import('./features/claim-tracking/claim-tracking-dashboard/claim-tracking-dashboard.component').then(m => m.ClaimTrackingDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['CLAIM_TRACKING', 'VIEW'] },
+        title: 'Claim Tracking & SLA - CCMS'
+      },
+      {
+        path: 'audit-trail',
+        loadComponent: () => import('./features/audit-trail/audit-trail-dashboard/audit-trail-dashboard.component').then(m => m.AuditTrailDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['AUDIT_TRAIL', 'VIEW'] },
+        title: 'Audit Trail & Admission Logging - CCMS'
+      },
+      {
+        path: 'notifications',
+        loadComponent: () => import('./features/notifications/notifications-dashboard/notifications-dashboard.component').then(m => m.NotificationsDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['NOTIFICATIONS_LOG', 'VIEW'] },
+        title: 'Notifications Log - CCMS'
+      },
+      {
+        path: 'checklists',
+        loadComponent: () => import('./features/checklists/checklists-dashboard/checklists-dashboard.component').then(m => m.ChecklistsDashboardComponent),
+        canActivate: [authGuard, permissionGuard],
+        data: { permission: ['CHECKLISTS', 'VIEW'] },
+        title: 'Checklists - CCMS'
       },
       {
         path: 'profile',

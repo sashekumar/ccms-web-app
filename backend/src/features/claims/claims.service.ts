@@ -1,6 +1,6 @@
 import { BaseService } from '../../core/base/base.service';
 import { Claim, ClaimFilters, PaginatedClaims } from './entities/claim.entity';
-import { CreateClaimDto, UpdateClaimDto } from './dto/claim.dto';
+import { CreateClaimDto, UpdateClaimDto, ApproveClaimDto, RejectClaimDto } from './dto/claim.dto';
 import { ClaimsRepository } from './claims.repository';
 
 export class ClaimsService extends BaseService<Claim> {
@@ -29,16 +29,16 @@ export class ClaimsService extends BaseService<Claim> {
     dto: UpdateClaimDto,
     updatedBy: string
   ): Promise<Claim> {
-    // Audit check if it exists
-    await this.getClaimById(id);
-    
-    // Additional domain logic e.g., SLA adjustments could go here.
-    if (dto.claim_status === 'APPROVED' && (!dto.total_approved || dto.total_approved <= 0)) {
-       throw new Error('Approved claims must have an approved amount greater than 0');
+    const claim = await this.getClaimById(id);
+
+    // Finalization guard: APPROVED/SETTLED claims are read-only
+    if (claim.claim_status === 'APPROVED' || claim.claim_status === 'SETTLED') {
+      throw new Error(`Cannot update a claim with status '${claim.claim_status}'. Use the approve/reject endpoints for workflow transitions.`);
     }
 
-    if (dto.claim_status === 'REJECTED' && !dto.rejection_reason) {
-       throw new Error('Rejected claims must include a rejection reason');
+    // REJECTED claims can only be re-opened (changed back to PENDING)
+    if (claim.claim_status === 'REJECTED' && dto.claim_status && dto.claim_status !== 'PENDING') {
+      throw new Error('A rejected claim can only be re-opened back to PENDING status.');
     }
 
     await this.repository.updateClaim(id, dto, updatedBy);
@@ -54,8 +54,73 @@ export class ClaimsService extends BaseService<Claim> {
     dto: CreateClaimDto,
     createdBy: string
   ): Promise<Claim> {
-    const { claimId } = await this.repository.createClaim(dto, createdBy);
+    // Inject SLA: 14 days from today
+    const now = new Date();
+    const slaDays = 14;
+    const slaDeadline = new Date(now);
+    slaDeadline.setDate(slaDeadline.getDate() + slaDays);
+
+    const dtoWithSLA: CreateClaimDto = {
+      ...dto,
+      sla_days: slaDays,
+      sla_deadline: slaDeadline,
+      sla_status: 'ON_TIME'
+    };
+
+    const { claimId } = await this.repository.createClaim(dtoWithSLA, createdBy);
     return await this.getClaimById(claimId);
+  }
+
+  // ============================================================================
+  // WORKFLOW: APPROVE & REJECT
+  // ============================================================================
+
+  public async approveClaimSubmission(
+    id: number,
+    dto: ApproveClaimDto,
+    approvedBy: string
+  ): Promise<Claim> {
+    const claim = await this.getClaimById(id);
+
+    if (claim.claim_status !== 'PENDING') {
+      throw new Error(`Cannot approve a claim with status '${claim.claim_status}'. Only PENDING claims can be approved.`);
+    }
+
+    if (!dto.total_approved || dto.total_approved <= 0) {
+      throw new Error('Approved amount must be greater than 0');
+    }
+
+    // Calculate SLA status at time of approval
+    const now = new Date();
+    const slaDeadline = claim.sla_deadline ? new Date(claim.sla_deadline) : null;
+    const slaStatus = slaDeadline && now > slaDeadline ? 'OVERDUE' : 'ON_TIME';
+
+    await this.repository.approveClaimSubmission(id, { ...dto, sla_status: slaStatus, approved_by: approvedBy }, approvedBy);
+    return await this.getClaimById(id);
+  }
+
+  public async rejectClaimSubmission(
+    id: number,
+    dto: RejectClaimDto,
+    rejectedBy: string
+  ): Promise<Claim> {
+    const claim = await this.getClaimById(id);
+
+    if (claim.claim_status !== 'PENDING') {
+      throw new Error(`Cannot reject a claim with status '${claim.claim_status}'. Only PENDING claims can be rejected.`);
+    }
+
+    if (!dto.rejection_reason || !dto.rejection_reason.trim()) {
+      throw new Error('Rejection reason is required');
+    }
+
+    await this.repository.rejectClaimSubmission(id, dto, rejectedBy);
+    return await this.getClaimById(id);
+  }
+
+  public async getClaimRemarks(claimId: number): Promise<any[]> {
+    await this.getClaimById(claimId);
+    return await this.repository.getClaimRemarks(claimId);
   }
 
   // ============================================================================
@@ -74,7 +139,10 @@ export class ClaimsService extends BaseService<Claim> {
     receipt_no?: string;
     receipt_date?: string;
   }, userId: string): Promise<{ expense_id: number }> {
-    await this.getClaimById(claimId); // Ensure claim exists
+    const claim = await this.getClaimById(claimId);
+    if (claim.claim_status === 'APPROVED' || claim.claim_status === 'SETTLED') {
+      throw new Error(`Cannot modify expenses on a claim with status '${claim.claim_status}'`);
+    }
     const expenseId = await this.repository.addClaimExpense(claimId, expense, userId);
     return { expense_id: expenseId };
   }
@@ -86,12 +154,18 @@ export class ClaimsService extends BaseService<Claim> {
     receipt_no?: string;
     receipt_date?: string;
   }, userId: string): Promise<void> {
-    await this.getClaimById(claimId);
+    const claim = await this.getClaimById(claimId);
+    if (claim.claim_status === 'APPROVED' || claim.claim_status === 'SETTLED') {
+      throw new Error(`Cannot modify expenses on a claim with status '${claim.claim_status}'`);
+    }
     await this.repository.updateClaimExpense(expenseId, expense, userId);
   }
 
   public async deleteClaimExpense(claimId: number, expenseId: number): Promise<void> {
-    await this.getClaimById(claimId);
+    const claim = await this.getClaimById(claimId);
+    if (claim.claim_status === 'APPROVED' || claim.claim_status === 'SETTLED') {
+      throw new Error(`Cannot modify expenses on a claim with status '${claim.claim_status}'`);
+    }
     await this.repository.deleteClaimExpense(expenseId);
   }
 
@@ -111,7 +185,10 @@ export class ClaimsService extends BaseService<Claim> {
     file_extension?: string;
     file_size_bytes?: number;
   }, userId: string): Promise<{ doc_id: number }> {
-    await this.getClaimById(claimId);
+    const claim = await this.getClaimById(claimId);
+    if (claim.claim_status === 'APPROVED' || claim.claim_status === 'SETTLED') {
+      throw new Error(`Cannot modify documents on a claim with status '${claim.claim_status}'`);
+    }
     const docId = await this.repository.addClaimDocument(claimId, doc, userId);
     return { doc_id: docId };
   }
@@ -122,12 +199,18 @@ export class ClaimsService extends BaseService<Claim> {
     file_path?: string;
     remarks?: string;
   }, userId: string): Promise<void> {
-    await this.getClaimById(claimId);
+    const claim = await this.getClaimById(claimId);
+    if (claim.claim_status === 'APPROVED' || claim.claim_status === 'SETTLED') {
+      throw new Error(`Cannot modify documents on a claim with status '${claim.claim_status}'`);
+    }
     await this.repository.updateClaimDocument(docId, doc, userId);
   }
 
   public async deleteClaimDocument(claimId: number, docId: number, userId: string): Promise<void> {
-    await this.getClaimById(claimId);
+    const claim = await this.getClaimById(claimId);
+    if (claim.claim_status === 'APPROVED' || claim.claim_status === 'SETTLED') {
+      throw new Error(`Cannot modify documents on a claim with status '${claim.claim_status}'`);
+    }
     await this.repository.deleteClaimDocument(docId, userId);
   }
 }

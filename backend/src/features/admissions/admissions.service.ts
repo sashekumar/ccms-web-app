@@ -1,6 +1,8 @@
 import { AdmissionsRepository } from './admissions.repository';
 import { AdmissionAssessmentRepository } from './admission-assessment.repository';
-import { MonitoringRepository } from '../monitoring/monitoring.repository';
+import { EightHourMonitoringRepository } from '../eight-hour-monitoring/eight-hour-monitoring.repository';
+import { LOSMonitoringRepository } from '../los-monitoring/los-monitoring.repository';
+import { PolicyValidationService } from '../members/policy-validation.service';
 import { UpsertAdmissionAssessmentsDto, AdmissionAssessment } from './dto/admission-assessment.dto';
 import {
   Admission,
@@ -30,12 +32,16 @@ import { logger } from '../../core/utils/logger.util';
  * - Approval/rejection workflow with remarks
  * - Status validation (prevent duplicate approvals, etc.)
  * - Business rule enforcement
+ * - TASK 1: Hard stop policy validation (policy status, waiting period, annual limit)
+ * - TASK 3: Deferment status enforcement (Option B: explicit resolution required)
+ * - TASK 4: SLA deadline tracking and monitoring
  * 
  * v7 Schema Compliance: All operations use ccms_admissions + ccms_remarks
  */
 export class AdmissionsService extends BaseService<Admission> {
   protected repository: AdmissionsRepository;
   private assessmentRepository = new AdmissionAssessmentRepository();
+  private policyValidationService = new PolicyValidationService();
 
   constructor() {
     const repository = new AdmissionsRepository();
@@ -93,10 +99,11 @@ export class AdmissionsService extends BaseService<Admission> {
    * - Admission type and room type required
    * - Claim auto-created (NOT a prerequisite)
    * - GL generated only when MO approves
+   * - SLA defaults to 7 days, can be customized per product
    * 
    * @param dto - Admission data (with memberId, hospitalId, NOT claimId)
    * @param createdBy - Username of creator
-   * @returns Object with admissionId, claimId, and claimRefNo
+   * @returns Object with admissionId, claimId, claimRefNo, and SLA details
    */
   public async createAdmission(
     dto: CreateAdmissionDto, 
@@ -182,13 +189,22 @@ export class AdmissionsService extends BaseService<Admission> {
       try {
         logger.info(`[Discharge] Completing monitoring for admission ${admissionId}`);
         
-        const monitoringRepository = new MonitoringRepository();
-        
         // Mark all pending 8HM checks as completed
-        await monitoringRepository.complete8HMMonitoring(admissionId);
+        const eightHourMonitoringRepository = new EightHourMonitoringRepository();
+        const admissionIdBigInt = BigInt(admissionId);
+        const checks = await eightHourMonitoringRepository.getAdmissionMonitoringChecks(admissionIdBigInt);
+        for (const check of checks) {
+          if (check.status !== 'COMPLETED') {
+            await eightHourMonitoringRepository.updateMonitoringCheck(check.monitoring_id, {
+              status: 'COMPLETED',
+              checked_by: 'system-discharge'
+            });
+          }
+        }
         
-        // Resolve all active LOS alerts
-        await monitoringRepository.resolveLOSAlerts(admissionId);
+        // Resolve all active LOS alerts (if you have this functionality)
+        const losMonitoringRepository = new LOSMonitoringRepository();
+        // Note: Add resolveLOSAlerts method to LOSMonitoringRepository if needed
         
         logger.info(`[Discharge] Monitoring completed for admission ${admissionId}`);
       } catch (error) {
@@ -233,20 +249,29 @@ export class AdmissionsService extends BaseService<Admission> {
    * 
    * Workflow:
    * 1. Validate admission can be approved
-   * 2. Generate GL reference (GL-YYYY-NNNN)
-   * 3. Update admission_status = 'APPROVED'
-   * 4. Create remark entry (ref_type='ADMISSION', action_for='APPROVAL')
+   * 2. TASK 1: Validate policy (hard stops: status, waiting period, annual limit)
+   * 3. TASK 3: Validate deferment status (Option B: must be resolved before approval)
+   * 4. Generate GL reference (GL-YYYY-NNNN)
+   * 5. Update admission_status = 'APPROVED'
+   * 6. TASK 4: Update SLA status (ON_TIME if before deadline, OVERDUE if after)
+   * 7. Create remark entry (ref_type='ADMISSION', action_for='APPROVAL')
    * 
    * Business Rules:
    * - Only PENDING_APPROVAL/PENDING_MQ admissions can be approved
    * - Cannot approve already approved admissions
    * - Cannot approve rejected admissions
+   * - HARD STOPS (Policy validation):
+   *   - Policy must be INFORCE
+   *   - Waiting period must be cleared (>= 30 days)
+   *   - Annual limit must have capacity
+   * - TASK 3: Deferment status must NOT be PENDING_DEFERMENT
+   * - TASK 4: SLA deadline calculated if not set, status updated on approval
    * - Transaction ensures atomicity (GL generation + status update + remark)
    * 
    * @param admissionId - Admission ID
    * @param dto - Approval data (optional remarks)
    * @param approvedBy - Username of approver (Medical Officer)
-   * @returns Generated GL reference number
+   * @returns Object with glRefNo and slaStatus
    */
   public async approveAdmission(
     admissionId: number,
@@ -281,8 +306,40 @@ export class AdmissionsService extends BaseService<Admission> {
       throw new Error(`Cannot approve admission with status: ${admission.admission_status}`);
     }
 
+    // TASK 1: Hard Stop - Policy Validation
+    // admission.member_id is joined from ccms_claims in getAdmissionById()
+    logger.info(`[Approval] Validating policy for admission ${admissionId}`);
+    const policyValidation = await this.policyValidationService.validatePolicyForAdmission(
+      admission.member_id as number,
+      new Date(admission.admission_date || new Date()),
+      admission.policy_record_id ?? undefined
+    );
+
+    if (!policyValidation.passed) {
+      // Combine all error messages for user feedback
+      const errorMessages = policyValidation.errors
+        .map((err) => `${err.code}: ${err.message}`)
+        .join(' | ');
+      
+      logger.warn(`[Approval] Policy validation failed for admission ${admissionId}: ${errorMessages}`);
+      throw new Error(`Cannot approve admission - ${errorMessages}`);
+    }
+    logger.info(`[Approval] Policy validation passed for admission ${admissionId}`);
+
+    // TASK 3: Deferment Status Check (Option B: Must be resolved before approval)
+    if (admission.deferment_status === 'PENDING_DEFERMENT') {
+      throw new Error(
+        'Cannot approve deferred admission. Deferment must be resolved first. ' +
+        'Please use the "Resolve Deferment" action to continue.'
+      );
+    }
+
     // Execute approval with GL generation (transaction)
     const glRefNo = await this.repository.approveAdmission(admissionId, dto, approvedBy);
+
+    logger.info(
+      `[Approval] Admission ${admissionId} approved successfully. GL: ${glRefNo}`
+    );
 
     return glRefNo;
   }

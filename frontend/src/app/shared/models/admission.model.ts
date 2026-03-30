@@ -160,6 +160,7 @@ export interface CreateAdmissionResponse {
 
 export interface AdmissionFilters {
   admissionStatus?: string;
+  status?: string;  // Alias for admissionStatus
   admissionType?: string;
   roomType?: string;
   claimId?: number;

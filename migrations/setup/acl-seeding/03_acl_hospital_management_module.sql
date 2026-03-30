@@ -2,7 +2,7 @@
 -- Add Hospital Management Module to ACL System
 -- Date: March 2, 2026
 -- ============================================================================
--- PREREQUISITES: ccms_new_schema_2026_v7.sql must be executed first
+-- PREREQUISITES: ccms_new_schema_2026_v8.sql must be executed first
 -- ============================================================================
 
 USE db_ccms;

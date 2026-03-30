@@ -3,7 +3,7 @@ import { connectionManager } from '../../core/database/connection-manager';
 import { DB_TABLES } from '../../core/constants';
 import { BaseRepository } from '../../core/base/base.repository';
 import { Claim, ClaimFilters, PaginatedClaims } from './entities/claim.entity';
-import { CreateClaimDto, UpdateClaimDto } from './dto/claim.dto';
+import { CreateClaimDto, UpdateClaimDto, ApproveClaimDto, RejectClaimDto } from './dto/claim.dto';
 
 export class ClaimsRepository extends BaseRepository<Claim> {
   constructor() {
@@ -302,6 +302,9 @@ export class ClaimsRepository extends BaseRepository<Claim> {
         .input('payeeIcNo', sql.VarChar(20), dto.payee_ic_no || null)
         .input('payeeBankName', sql.NVarChar(100), dto.payee_bank_name || null)
         .input('payeeAccountNo', sql.VarChar(50), dto.payee_bank_account_no || null)
+        .input('slaDays', sql.Int, dto.sla_days || 14)
+        .input('slaDeadline', sql.DateTime2, dto.sla_deadline || null)
+        .input('slaStatus', sql.VarChar(20), dto.sla_status || 'ON_TIME')
         .input('createdBy', sql.VarChar(50), createdBy)
         .query(`
           INSERT INTO ${DB_TABLES.CLAIMS} (
@@ -310,6 +313,7 @@ export class ClaimsRepository extends BaseRepository<Claim> {
             claim_status, claim_mode, total_billed,
             document_received_at,
             payee_name, payee_ic_no, payee_bank_name, payee_bank_account_no,
+            sla_days, sla_deadline, sla_status,
             created_by
           )
           OUTPUT INSERTED.claim_id
@@ -319,11 +323,24 @@ export class ClaimsRepository extends BaseRepository<Claim> {
             @claimStatus, @claimMode, @totalBilled,
             @docReceivedAt,
             @payeeName, @payeeIcNo, @payeeBankName, @payeeAccountNo,
+            @slaDays, @slaDeadline, @slaStatus,
             @createdBy
           )
         `);
 
       const claimId = result.recordset[0].claim_id;
+
+      // Insert creation remark
+      await transaction.request()
+        .input('refType', sql.VarChar(50), 'CLAIM')
+        .input('refId', sql.BigInt, claimId)
+        .input('actionFor', sql.VarChar(50), 'CREATION')
+        .input('remarkText', sql.NVarChar(sql.MAX), 'Claim registered')
+        .input('createdBy', sql.VarChar(50), createdBy)
+        .query(`
+          INSERT INTO ${DB_TABLES.REMARKS} (ref_type, ref_id, action_for, remark_text, created_by)
+          VALUES (@refType, @refId, @actionFor, @remarkText, @createdBy)
+        `);
 
       await transaction.commit();
       return { claimId, claimRefNo };
@@ -559,5 +576,139 @@ export class ClaimsRepository extends BaseRepository<Claim> {
         SET is_deleted = 1, updated_by = @updatedBy, updated_at = GETDATE()
         WHERE doc_id = @docId AND ref_type = 'CLAIM'
       `);
+  }
+
+  // ============================================================================
+  // WORKFLOW: APPROVE & REJECT
+  // ============================================================================
+
+  public async approveClaimSubmission(
+    claimId: number,
+    dto: ApproveClaimDto,
+    approvedBy: string
+  ): Promise<void> {
+    const pool = await connectionManager.getPool();
+    const transaction = pool.transaction();
+
+    try {
+      await transaction.begin();
+
+      await transaction.request()
+        .input('claimId', sql.BigInt, claimId)
+        .input('totalApproved', sql.Money, dto.total_approved)
+        .input('approvalAuthority', sql.VarChar(50), approvedBy)
+        .input('slaStatus', sql.VarChar(20), dto.sla_status || 'ON_TIME')
+        .query(`
+          UPDATE ${DB_TABLES.CLAIMS}
+          SET claim_status = 'APPROVED',
+              total_approved = @totalApproved,
+              approval_authority = @approvalAuthority,
+              sla_status = @slaStatus,
+              updated_by = @approvalAuthority,
+              updated_at = GETDATE()
+          WHERE claim_id = @claimId
+        `);
+
+      await transaction.request()
+        .input('refType', sql.VarChar(50), 'CLAIM')
+        .input('refId', sql.BigInt, claimId)
+        .input('actionFor', sql.VarChar(50), 'APPROVAL')
+        .input('remarkText', sql.NVarChar(sql.MAX), dto.remarks || 'Claim approved')
+        .input('createdBy', sql.VarChar(50), approvedBy)
+        .query(`
+          INSERT INTO ${DB_TABLES.REMARKS} (ref_type, ref_id, action_for, remark_text, created_by)
+          VALUES (@refType, @refId, @actionFor, @remarkText, @createdBy)
+        `);
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  public async rejectClaimSubmission(
+    claimId: number,
+    dto: RejectClaimDto,
+    rejectedBy: string
+  ): Promise<void> {
+    const pool = await connectionManager.getPool();
+    const transaction = pool.transaction();
+
+    try {
+      await transaction.begin();
+
+      await transaction.request()
+        .input('claimId', sql.BigInt, claimId)
+        .input('rejectionReason', sql.NVarChar(sql.MAX), dto.rejection_reason)
+        .input('rejectionType', sql.VarChar(50), dto.rejection_type || null)
+        .input('rejectedBy', sql.VarChar(50), rejectedBy)
+        .query(`
+          UPDATE ${DB_TABLES.CLAIMS}
+          SET claim_status = 'REJECTED',
+              rejection_reason = @rejectionReason,
+              rejection_type = @rejectionType,
+              rejection_date = GETDATE(),
+              updated_by = @rejectedBy,
+              updated_at = GETDATE()
+          WHERE claim_id = @claimId
+        `);
+
+      await transaction.request()
+        .input('refType', sql.VarChar(50), 'CLAIM')
+        .input('refId', sql.BigInt, claimId)
+        .input('actionFor', sql.VarChar(50), 'REJECTION')
+        .input('remarkText', sql.NVarChar(sql.MAX), dto.remarks || dto.rejection_reason)
+        .input('createdBy', sql.VarChar(50), rejectedBy)
+        .query(`
+          INSERT INTO ${DB_TABLES.REMARKS} (ref_type, ref_id, action_for, remark_text, created_by)
+          VALUES (@refType, @refId, @actionFor, @remarkText, @createdBy)
+        `);
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  public async getClaimRemarks(claimId: number): Promise<any[]> {
+    const pool = await connectionManager.getPool();
+    const result = await pool.request()
+      .input('claimId', sql.BigInt, claimId)
+      .query(`
+        SELECT 
+          remark_id,
+          action_for,
+          remark_text,
+          created_by,
+          created_at
+        FROM ${DB_TABLES.REMARKS}
+        WHERE ref_type = 'CLAIM' AND ref_id = @claimId
+        ORDER BY created_at ASC
+      `);
+    return result.recordset;
+  }
+
+  /**
+   * Get total approved amount for a policy
+   * Used by policy validation service to check annual limit
+   *
+   * @param policyRecordId - Policy record ID
+   * @returns Total sum of approved amounts for this policy
+   */
+  public async getTotalApprovedAmountForPolicy(policyRecordId: number): Promise<number> {
+    const pool = await connectionManager.getPool();
+    const result = await pool.request()
+      .input('policyRecordId', sql.BigInt, policyRecordId)
+      .query(`
+        SELECT ISNULL(SUM(total_approved), 0) as total_approved
+        FROM ${DB_TABLES.CLAIMS}
+        WHERE policy_record_id = @policyRecordId 
+          AND claim_status IN ('APPROVED', 'SETTLED')
+          AND is_deleted = 0
+      `);
+
+    return result.recordset[0]?.total_approved || 0;
   }
 }

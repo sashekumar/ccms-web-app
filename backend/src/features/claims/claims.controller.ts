@@ -3,7 +3,7 @@ import { BaseController } from '../../core/base/base.controller';
 import { ResponseUtil } from '../../core/utils/response.util';
 import { ClaimsService } from './claims.service';
 import { Claim, ClaimFilters } from './entities/claim.entity';
-import { createClaimSchema, updateClaimSchema } from './claims.validator';
+import { createClaimSchema, updateClaimSchema, approveClaimSchema, rejectClaimSchema } from './claims.validator';
 
 export class ClaimsController extends BaseController<Claim> {
   protected service: ClaimsService;
@@ -246,6 +246,54 @@ export class ClaimsController extends BaseController<Claim> {
       const userId = (req as any).user?.userId?.toString() || 'SYSTEM';
       await this.service.deleteClaimDocument(claimId, docId, userId);
       ResponseUtil.success(res, null, 'Document deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // ============================================================================
+  // WORKFLOW: APPROVE & REJECT
+  // ============================================================================
+
+  /**
+   * POST /api/claims/:id/approve
+   * Permission: CLAIMS.APPROVE
+   */
+  public approveClaimSubmission = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) throw new Error('Invalid claim ID');
+
+      const { error, value } = approveClaimSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
+      if (error) {
+        throw new Error('Validation Error: ' + error.details.map((d: any) => d.message).join(', '));
+      }
+
+      const userId = (req as any).user?.userId?.toString() || 'SYSTEM';
+      const claim = await this.service.approveClaimSubmission(id, value, userId);
+      ResponseUtil.success(res, claim, 'Claim approved successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /api/claims/:id/reject
+   * Permission: CLAIMS.APPROVE
+   */
+  public rejectClaimSubmission = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) throw new Error('Invalid claim ID');
+
+      const { error, value } = rejectClaimSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
+      if (error) {
+        throw new Error('Validation Error: ' + error.details.map((d: any) => d.message).join(', '));
+      }
+
+      const userId = (req as any).user?.userId?.toString() || 'SYSTEM';
+      const claim = await this.service.rejectClaimSubmission(id, value, userId);
+      ResponseUtil.success(res, claim, 'Claim rejected successfully');
     } catch (error) {
       next(error);
     }

@@ -1,0 +1,324 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Page Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">8-Hour Monitoring Checks</h1>
+    <p class="mt-2 text-sm text-gray-600">Administrative checks that must be completed within 8 hours of case opening</p>
+  </div>
+
+  <!-- Statistics Bar -->
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+      <p class="text-sm text-gray-600">Total Checks</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total_checks }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-600">
+      <p class="text-sm text-gray-600">Checks Today</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.checks_today }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
+      <p class="text-sm text-gray-600">Pending</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.pending_checks }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+      <p class="text-sm text-gray-600">Completed</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.completed_checks }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+      <p class="text-sm text-gray-600">Overdue</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.overdue_checks }}</p>
+    </div>
+  </div>
+
+  <!-- Search & Filter Section -->
+  <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+        <input
+          [(ngModel)]="searchTerm"
+          type="text"
+          placeholder="Admission ID, reference..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Admission ID</label>
+        <input
+          [(ngModel)]="admissionIdFilter"
+          type="text"
+          placeholder="Enter admission ID..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Checked By</label>
+        <input
+          [(ngModel)]="checkedByFilter"
+          type="text"
+          placeholder="Staff name..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        (click)="applyFilters()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        Apply Filters
+      </button>
+      <button
+        (click)="clearFilters()"
+        class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 text-sm font-medium">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Status Tabs -->
+  <div class="mb-6">
+    <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
+      <button
+        (click)="switchStatusTab('all')"
+        [class.border-blue-500]="activeStatusTab === 'all'"
+        [class.text-blue-600]="activeStatusTab === 'all'"
+        [class.border-transparent]="activeStatusTab !== 'all'"
+        [class.text-gray-500]="activeStatusTab !== 'all'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        All <span class="ml-2 bg-gray-300 text-gray-800 px-2 py-0.5 rounded text-xs font-bold">{{ statusCounts.all }}</span>
+      </button>
+      <button
+        (click)="switchStatusTab('PENDING')"
+        [class.border-yellow-500]="activeStatusTab === 'PENDING'"
+        [class.text-yellow-600]="activeStatusTab === 'PENDING'"
+        [class.border-transparent]="activeStatusTab !== 'PENDING'"
+        [class.text-gray-500]="activeStatusTab !== 'PENDING'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        Pending <span class="ml-2 bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-bold">{{ statusCounts.PENDING }}</span>
+      </button>
+      <button
+        (click)="switchStatusTab('COMPLETED')"
+        [class.border-green-500]="activeStatusTab === 'COMPLETED'"
+        [class.text-green-600]="activeStatusTab === 'COMPLETED'"
+        [class.border-transparent]="activeStatusTab !== 'COMPLETED'"
+        [class.text-gray-500]="activeStatusTab !== 'COMPLETED'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        Completed <span class="ml-2 bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-bold">{{ statusCounts.COMPLETED }}</span>
+      </button>
+      <button
+        (click)="switchStatusTab('OVERDUE')"
+        [class.border-red-500]="activeStatusTab === 'OVERDUE'"
+        [class.text-red-600]="activeStatusTab === 'OVERDUE'"
+        [class.border-transparent]="activeStatusTab !== 'OVERDUE'"
+        [class.text-gray-500]="activeStatusTab !== 'OVERDUE'"
+        class="py-2 px-3 border-b-2 font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+        Overdue <span class="ml-2 bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">{{ statusCounts.OVERDUE }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loadingChecks" class="flex justify-center py-8">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+
+  <!-- Checks Table -->
+  <div *ngIf="!loadingChecks && checks.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Admission ID
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Check Time
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Status
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Hours Elapsed
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Checked By
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Actions
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <ng-container *ngFor="let check of checks; trackBy: trackByCheckId">
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+              {{ check.admission_id }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ check.check_time | date: 'short' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusClass(check.status)">
+                {{ check.status }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ check.hours_elapsed }}h
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ check.checked_by }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                *ngIf="check.status !== 'COMPLETED'"
+                (click)="selectCheckForDetail(check)"
+                class="text-green-600 hover:text-green-800 mr-3">
+                Record
+              </button>
+              <button
+                (click)="selectCheckForDetail(check)"
+                class="text-blue-600 hover:text-blue-800">
+                View
+              </button>
+            </td>
+          </tr>
+
+          <!-- Expanded Details Row -->
+          <tr *ngIf="selectedCheck && selectedCheck.monitoring_id === check.monitoring_id" class="bg-blue-50">
+            <td colspan="6" class="px-6 py-4">
+              <div class="border-t border-blue-200 pt-4">
+                <h4 class="font-semibold text-gray-900 mb-4">Check Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label class="text-xs font-medium text-gray-600">Monitoring ID</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ selectedCheck.monitoring_id }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-gray-600">Check Time</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ selectedCheck.check_time | date: 'medium' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-gray-600">Status</label>
+                    <p class="mt-1 text-sm">
+                      <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusClass(selectedCheck.status)">
+                        {{ selectedCheck.status }}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-gray-600">Hours Elapsed</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ selectedCheck.hours_elapsed }} hours</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-gray-600">Checked By</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ selectedCheck.checked_by }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-gray-600">Next Check Due</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ selectedCheck.next_check_due | date: 'medium' }}</p>
+                  </div>
+                </div>
+                <div *ngIf="selectedCheck.notes" class="mb-4">
+                  <label class="text-xs font-medium text-gray-600">Notes</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ selectedCheck.notes }}</p>
+                </div>
+                <div class="border-t border-blue-200 pt-4 flex gap-2">
+                  <button
+                    *ngIf="selectedCheck.status !== 'COMPLETED'"
+                    (click)="openRecordCheckModal(selectedCheck)"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                    Mark as Completed
+                  </button>
+                  <button
+                    (click)="selectedCheck = null"
+                    class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 text-sm font-medium">
+                    Close
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div class="text-sm text-gray-600">
+        Showing page {{ page }} of {{ totalPages }} | Total: {{ total }} records
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="previousPage()"
+          [disabled]="page <= 1"
+          [class.opacity-50]="page <= 1"
+          [class.cursor-not-allowed]="page <= 1"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:hover:bg-white">
+          Previous
+        </button>
+        <span class="px-4 py-2 text-sm text-gray-600">
+          Page {{ page }} of {{ totalPages }}
+        </span>
+        <button
+          (click)="nextPage()"
+          [disabled]="page >= totalPages"
+          [class.opacity-50]="page >= totalPages"
+          [class.cursor-not-allowed]="page >= totalPages"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:hover:bg-white">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loadingChecks && checks.length === 0" class="bg-white rounded-lg shadow p-8 text-center">
+    <p class="text-gray-500">No 8-hour monitoring checks found</p>
+  </div>
+
+  <!-- Record Check Modal -->
+  <div *ngIf="showRecordCheckModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full">
+      <div class="bg-gray-100 border-b border-gray-200 p-4">
+        <h3 class="text-lg font-bold text-gray-900">Record Check Completion</h3>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="selectedCheck" class="mb-4">
+          <p class="text-sm text-gray-600">
+            <strong>Admission ID:</strong> {{ selectedCheck.admission_id }}
+          </p>
+          <p class="text-sm text-gray-600 mt-2">
+            <strong>Current Status:</strong>
+            <span [class]="'ml-2 px-3 py-1 rounded text-xs font-medium ' + getStatusClass(selectedCheck.status)">
+              {{ selectedCheck.status }}
+            </span>
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+          <textarea
+            [(ngModel)]="checkNotes"
+            placeholder="Add any notes (optional)..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+            rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border-t border-gray-200 p-4 flex justify-end gap-2">
+        <button
+          (click)="closeRecordCheckModal()"
+          [disabled]="modalLoading"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+          Cancel
+        </button>
+        <button
+          (click)="recordCheckCompletion()"
+          [disabled]="modalLoading"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+          {{ modalLoading ? 'Recording...' : 'Record Completion' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

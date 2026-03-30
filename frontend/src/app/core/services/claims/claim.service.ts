@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../api.service';
-import { Claim, ClaimFilters, PaginatedClaims, CreateClaimDto, UpdateClaimDto } from '../../../shared/models/claims/claim.model';
+import { Claim, ClaimFilters, PaginatedClaims, CreateClaimDto, UpdateClaimDto, ApproveClaimDto, RejectClaimDto } from '../../../shared/models/claims/claim.model';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -15,7 +15,7 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class ClaimService {
-  private readonly endpoint = '/claims';
+  private readonly endpoint = 'claims';
 
   constructor(private apiService: ApiService) {}
 
@@ -156,5 +156,17 @@ export class ClaimService {
     return this.apiService.delete<ApiResponse<void>>(
       `${this.endpoint}/${claimId}/documents/${docId}`
     );
+  }
+
+  // ============================================================================
+  // WORKFLOW: APPROVE & REJECT
+  // ============================================================================
+
+  approveClaimSubmission(id: number, dto: ApproveClaimDto): Observable<ApiResponse<Claim>> {
+    return this.apiService.post<ApiResponse<Claim>>(`${this.endpoint}/${id}/approve`, dto);
+  }
+
+  rejectClaimSubmission(id: number, dto: RejectClaimDto): Observable<ApiResponse<Claim>> {
+    return this.apiService.post<ApiResponse<Claim>>(`${this.endpoint}/${id}/reject`, dto);
   }
 }

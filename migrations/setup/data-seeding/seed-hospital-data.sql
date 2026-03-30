@@ -32,16 +32,16 @@ PRINT 'Creating sample hospitals...';
 
 SET IDENTITY_INSERT ccms_hospitals ON;
 
-INSERT INTO ccms_hospitals (hospital_id, hospital_name, hospital_code, hospital_type, reg_no, bank_id, bank_acc_no, is_panel, panel_status, panel_effective_date, accreditation_status, accreditation_expiry, created_by, is_deleted)
+INSERT INTO ccms_hospitals (hospital_id, hospital_name, hospital_code, hospital_type, reg_no, bank_id, bank_acc_no, is_panel, panel_status, panel_effective_date, accreditation_status, accreditation_expiry, created_by, is_deleted, deleted_at, deleted_by)
 VALUES 
-    (1, 'Gleneagles Hospital Kuala Lumpur', 'GKL001', 'PRIVATE', 'REG-GKL-001', 1, '112233445566', 1, 'Active', '2020-01-01', 'JCI', '2027-12-31', 'SYSTEM', 0),
-    (2, 'Pantai Hospital Kuala Lumpur', 'PKL001', 'PRIVATE', 'REG-PKL-001', 2, '223344556677', 1, 'Active', '2019-06-15', 'MSQH', '2026-06-30', 'SYSTEM', 0),
-    (3, 'Prince Court Medical Centre', 'PCMC001', 'PRIVATE', 'REG-PCMC-001', 3, '334455667788', 1, 'Active', '2020-03-01', 'JCI', '2028-02-28', 'SYSTEM', 0),
-    (4, 'Hospital Kuala Lumpur', 'HKL001', 'GOVERNMENT', 'REG-HKL-001', 1, '445566778899', 1, 'Active', '2018-01-01', 'MSQH', '2026-12-31', 'SYSTEM', 0),
-    (5, 'University Malaya Medical Centre', 'UMMC001', 'UNIVERSITY', 'REG-UMMC-001', 4, '556677889900', 1, 'Active', '2019-08-01', 'MSQH', '2027-07-31', 'SYSTEM', 0),
-    (6, 'Subang Jaya Medical Centre', 'SJMC001', 'PRIVATE', 'REG-SJMC-001', 5, '667788990011', 1, 'Active', '2020-05-01', 'JCI', '2029-04-30', 'SYSTEM', 0),
-    (7, 'KPJ Damansara Specialist Hospital', 'KPJD001', 'PRIVATE', 'REG-KPJD-001', 6, '778899001122', 1, 'Active', '2019-11-01', 'MSQH', '2027-10-31', 'SYSTEM', 0),
-    (8, 'Columbia Asia Hospital - Petaling Jaya', 'CAPJ001', 'PRIVATE', 'REG-CAPJ-001', 7, '889900112233', 1, 'Active', '2020-02-15', 'JCI', '2028-01-31', 'SYSTEM', 0);
+    (1, 'Gleneagles Hospital Kuala Lumpur', 'GKL001', 'PRIVATE', 'REG-GKL-001', 1, '112233445566', 1, 'Active', '2020-01-01', 'JCI', '2027-12-31', 'SYSTEM', 0, NULL, NULL),
+    (2, 'Pantai Hospital Kuala Lumpur', 'PKL001', 'PRIVATE', 'REG-PKL-001', 2, '223344556677', 1, 'Active', '2019-06-15', 'MSQH', '2026-06-30', 'SYSTEM', 0, NULL, NULL),
+    (3, 'Prince Court Medical Centre', 'PCMC001', 'PRIVATE', 'REG-PCMC-001', 3, '334455667788', 1, 'Active', '2020-03-01', 'JCI', '2028-02-28', 'SYSTEM', 0, NULL, NULL),
+    (4, 'Hospital Kuala Lumpur', 'HKL001', 'GOVERNMENT', 'REG-HKL-001', 1, '445566778899', 1, 'Active', '2018-01-01', 'MSQH', '2026-12-31', 'SYSTEM', 0, NULL, NULL),
+    (5, 'University Malaya Medical Centre', 'UMMC001', 'UNIVERSITY', 'REG-UMMC-001', 4, '556677889900', 1, 'Active', '2019-08-01', 'MSQH', '2027-07-31', 'SYSTEM', 0, NULL, NULL),
+    (6, 'Subang Jaya Medical Centre', 'SJMC001', 'PRIVATE', 'REG-SJMC-001', 5, '667788990011', 1, 'Active', '2020-05-01', 'JCI', '2029-04-30', 'SYSTEM', 0, NULL, NULL),
+    (7, 'KPJ Damansara Specialist Hospital', 'KPJD001', 'PRIVATE', 'REG-KPJD-001', 6, '778899001122', 1, 'Active', '2019-11-01', 'MSQH', '2027-10-31', 'SYSTEM', 0, NULL, NULL),
+    (8, 'Columbia Asia Hospital - Petaling Jaya', 'CAPJ001', 'PRIVATE', 'REG-CAPJ-001', 7, '889900112233', 1, 'Active', '2020-02-15', 'JCI', '2028-01-31', 'SYSTEM', 0, NULL, NULL);
 
 SET IDENTITY_INSERT ccms_hospitals OFF;
 
@@ -134,42 +134,42 @@ PRINT 'Creating hospital staff...';
 
 SET IDENTITY_INSERT ccms_hospital_staff ON;
 
-INSERT INTO ccms_hospital_staff (staff_id, hospital_id, staff_name, staff_type, specialty, is_active, created_by)
+INSERT INTO ccms_hospital_staff (staff_id, hospital_id, staff_name, staff_type, specialty, is_active, created_by, is_deleted, deleted_at, deleted_by)
 VALUES 
     -- Gleneagles KL Staff
-    (1, 1, 'Dr. Ahmad Razali', 'DOCTOR', 'Cardiology', 1, 'SYSTEM'),
-    (2, 1, 'Dr. Siti Aminah', 'DOCTOR', 'Orthopedics', 1, 'SYSTEM'),
-    (3, 1, 'Nurse Lim Mei Ling', 'NURSE', 'General Ward', 1, 'SYSTEM'),
-    (4, 1, 'Sarah Johnson', 'ADMIN', 'Admissions', 1, 'SYSTEM'),
+    (1, 1, 'Dr. Ahmad Razali', 'DOCTOR', 'Cardiology', 1, 'SYSTEM', 0, NULL, NULL),
+    (2, 1, 'Dr. Siti Aminah', 'DOCTOR', 'Orthopedics', 1, 'SYSTEM', 0, NULL, NULL),
+    (3, 1, 'Nurse Lim Mei Ling', 'NURSE', 'General Ward', 1, 'SYSTEM', 0, NULL, NULL),
+    (4, 1, 'Sarah Johnson', 'ADMIN', 'Admissions', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Pantai KL Staff
-    (5, 2, 'Dr. Kumar Subramaniam', 'DOCTOR', 'General Surgery', 1, 'SYSTEM'),
-    (6, 2, 'Dr. Wong Lily', 'DOCTOR', 'ENT', 1, 'SYSTEM'),
-    (7, 2, 'Nurse Fatimah', 'NURSE', 'ICU', 1, 'SYSTEM'),
+    (5, 2, 'Dr. Kumar Subramaniam', 'DOCTOR', 'General Surgery', 1, 'SYSTEM', 0, NULL, NULL),
+    (6, 2, 'Dr. Wong Lily', 'DOCTOR', 'ENT', 1, 'SYSTEM', 0, NULL, NULL),
+    (7, 2, 'Nurse Fatimah', 'NURSE', 'ICU', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Prince Court Staff
-    (8, 3, 'Dr. James Lee', 'DOCTOR', 'Neurology', 1, 'SYSTEM'),
-    (9, 3, 'Dr. Priya Nair', 'DOCTOR', 'Pediatrics', 1, 'SYSTEM'),
+    (8, 3, 'Dr. James Lee', 'DOCTOR', 'Neurology', 1, 'SYSTEM', 0, NULL, NULL),
+    (9, 3, 'Dr. Priya Nair', 'DOCTOR', 'Pediatrics', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Hospital KL Staff
-    (10, 4, 'Dr. Zainab Ismail', 'DOCTOR', 'Emergency Medicine', 1, 'SYSTEM'),
-    (11, 4, 'Nurse Ravi Kumar', 'NURSE', 'Emergency Department', 1, 'SYSTEM'),
+    (10, 4, 'Dr. Zainab Ismail', 'DOCTOR', 'Emergency Medicine', 1, 'SYSTEM', 0, NULL, NULL),
+    (11, 4, 'Nurse Ravi Kumar', 'NURSE', 'Emergency Department', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- UMMC Staff
-    (12, 5, 'Prof. Dr. Tan Kok Seng', 'DOCTOR', 'Oncology', 1, 'SYSTEM'),
-    (13, 5, 'Dr. Nurul Huda', 'DOCTOR', 'Radiology', 1, 'SYSTEM'),
+    (12, 5, 'Prof. Dr. Tan Kok Seng', 'DOCTOR', 'Oncology', 1, 'SYSTEM', 0, NULL, NULL),
+    (13, 5, 'Dr. Nurul Huda', 'DOCTOR', 'Radiology', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- SJMC Staff
-    (14, 6, 'Dr. David Chen', 'DOCTOR', 'Gastroenterology', 1, 'SYSTEM'),
-    (15, 6, 'Nurse Amy Tan', 'NURSE', 'Day Care', 1, 'SYSTEM'),
+    (14, 6, 'Dr. David Chen', 'DOCTOR', 'Gastroenterology', 1, 'SYSTEM', 0, NULL, NULL),
+    (15, 6, 'Nurse Amy Tan', 'NURSE', 'Day Care', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- KPJ Damansara Staff
-    (16, 7, 'Dr. Azman Ibrahim', 'DOCTOR', 'Obstetrics & Gynecology', 1, 'SYSTEM'),
-    (17, 7, 'Lab Tech Raj', 'TECHNICIAN', 'Laboratory', 1, 'SYSTEM'),
+    (16, 7, 'Dr. Azman Ibrahim', 'DOCTOR', 'Obstetrics & Gynecology', 1, 'SYSTEM', 0, NULL, NULL),
+    (17, 7, 'Lab Tech Raj', 'TECHNICIAN', 'Laboratory', 1, 'SYSTEM', 0, NULL, NULL),
     
     -- Columbia Asia PJ Staff
-    (18, 8, 'Dr. Susan Lim', 'DOCTOR', 'Internal Medicine', 1, 'SYSTEM'),
-    (19, 8, 'Nurse Aisha', 'NURSE', 'Maternity Ward', 1, 'SYSTEM');
+    (18, 8, 'Dr. Susan Lim', 'DOCTOR', 'Internal Medicine', 1, 'SYSTEM', 0, NULL, NULL),
+    (19, 8, 'Nurse Aisha', 'NURSE', 'Maternity Ward', 1, 'SYSTEM', 0, NULL, NULL);
 
 SET IDENTITY_INSERT ccms_hospital_staff OFF;
 

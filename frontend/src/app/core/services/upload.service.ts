@@ -54,14 +54,25 @@ export class UploadService {
       map(event => {
         switch (event.type) {
           case HttpEventType.UploadProgress:
-            const progress = Math.round(100 * (event.loaded || 0) / (event.total || 1));
-            return { status: 'progress', message: progress };
+            // Return progress event with loaded and total for progress bar calculation
+            return {
+              type: 'progress',
+              loaded: event.loaded || 0,
+              total: event.total || 1
+            };
 
           case HttpEventType.Response:
-            return { status: 'success', body: event.body };
+            // Return response event with the body data
+            return {
+              type: 'complete',
+              response: event.body
+            };
             
           default:
-            return { status: 'other', message: `Unhandled event: ${event.type}` };
+            return {
+              type: 'other',
+              event: event
+            };
         }
       })
     );

@@ -75,6 +75,9 @@ export interface Admission {
   
   // Joined data (from related tables - available in some queries)
   claim_ref_no?: string;      // From ccms_claims
+  member_id?: number;          // From ccms_claims → ccms_members (joined)
+  hospital_id?: number;        // From ccms_claims → ccms_hospitals (joined)
+  policy_record_id?: number;   // From ccms_claims (joined)
   member_name?: string;        // From ccms_members via ccms_claims
   hospital_name?: string;      // From ccms_hospitals via ccms_claims
 }

@@ -6,11 +6,12 @@
 -- Route: /claims
 -- Tables: ccms_claims
 -- 
--- Actions: 4 permissions
+-- Actions: 5 permissions
 --   - VIEW: View claims list and details
 --   - CREATE: Register a new reimbursement (REIMB) claim
 --   - UPDATE: Update claim information and progress status
 --   - DELETE: Delete a reimbursement claim
+--   - APPROVE: Approve or reject a claim submission
 -- 
 -- Business Rules:
 --   - Claims are read-only except for updating progressing status and billing details
@@ -33,7 +34,7 @@ PRINT 'Step 0: Checking prerequisites...';
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'ccms_acl_actions')
 BEGIN
-    PRINT '  ✗ ERROR: ACL tables do not exist. Please run ccms_new_schema_2026_v7.sql first.';
+    PRINT '  ✗ ERROR: ACL tables do not exist. Please run ccms_new_schema_2026_v8.sql first.';
     RAISERROR('ACL tables not found', 16, 1);
     RETURN;
 END
@@ -50,7 +51,7 @@ PRINT 'Step 1: Creating ACL actions...';
 DECLARE @ExistingActions TABLE (action_code VARCHAR(50));
 INSERT INTO @ExistingActions
 SELECT action_code FROM ccms_acl_actions 
-WHERE action_code IN ('VIEW', 'CREATE', 'UPDATE', 'DELETE');
+WHERE action_code IN ('VIEW', 'CREATE', 'UPDATE', 'DELETE', 'APPROVE');
 
 -- Insert VIEW if not exists (reusable across modules)
 IF NOT EXISTS (SELECT 1 FROM @ExistingActions WHERE action_code = 'VIEW')
@@ -91,6 +92,16 @@ BEGIN
 END
 ELSE
     PRINT '  ℹ Action already exists: DELETE';
+
+-- Insert APPROVE if not exists (reusable across modules)
+IF NOT EXISTS (SELECT 1 FROM @ExistingActions WHERE action_code = 'APPROVE')
+BEGIN
+    INSERT INTO ccms_acl_actions (action_name, action_code, description, is_active, created_at, created_by)
+    VALUES ('Approve', 'APPROVE', 'Approve or reject records', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Created action: APPROVE';
+END
+ELSE
+    PRINT '  ℹ Action already exists: APPROVE';
 
 PRINT '';
 
@@ -151,6 +162,8 @@ SELECT @ActionCreate = action_id FROM ccms_acl_actions WHERE action_code = 'CREA
 SELECT @ActionUpdate = action_id FROM ccms_acl_actions WHERE action_code = 'UPDATE';
 DECLARE @ActionDelete INT;
 SELECT @ActionDelete = action_id FROM ccms_acl_actions WHERE action_code = 'DELETE';
+DECLARE @ActionApprove INT;
+SELECT @ActionApprove = action_id FROM ccms_acl_actions WHERE action_code = 'APPROVE';
 
 -- Link VIEW
 IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @ModuleId AND action_id = @ActionView)
@@ -191,6 +204,16 @@ BEGIN
 END
 ELSE
     PRINT '  ℹ Action already linked: DELETE';
+
+-- Link APPROVE
+IF NOT EXISTS (SELECT 1 FROM ccms_acl_module_actions WHERE module_id = @ModuleId AND action_id = @ActionApprove)
+BEGIN
+    INSERT INTO ccms_acl_module_actions (module_id, action_id, action_label, is_active, created_at, created_by)
+    VALUES (@ModuleId, @ActionApprove, 'Approve Claim', 1, GETDATE(), 'admin');
+    PRINT '  ✓ Linked action: APPROVE';
+END
+ELSE
+    PRINT '  ℹ Action already linked: APPROVE';
 
 PRINT '';
 
@@ -258,7 +281,7 @@ PRINT 'Permissions granted to Super Admin: ' + CAST(@PermissionCount AS VARCHAR)
 
 PRINT '';
 
-IF @ModuleActionCount = 4 AND @PermissionCount = 4
+IF @ModuleActionCount = 5 AND @PermissionCount = 5
 BEGIN
     PRINT '✓✓✓ SUCCESS: Claims module ACL setup complete! ✓✓✓';
     PRINT '';

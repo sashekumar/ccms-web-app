@@ -208,47 +208,61 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   submitDecision(): void {
     if (!this.claimData || !this.decisionType) return;
-    
+
     this.submittingDecision = true;
-    const payload: any = {
-      claim_status: this.decisionType === 'APPROVE' ? 'APPROVED' : 'REJECTED'
-    };
 
     if (this.decisionType === 'APPROVE') {
-      if (this.decisionData.approvedAmount < 0) {
-        this.toastService.error('Invalid approved amount');
+      if (this.decisionData.approvedAmount <= 0) {
+        this.toastService.error('Approved amount must be greater than 0');
         this.submittingDecision = false;
         return;
       }
-      payload.total_approved = this.decisionData.approvedAmount;
-      payload.approval_authority = 'SYSTEM-USER';
-      // In a real app, remarks might go to a different table or field
+      this.claimService.approveClaimSubmission(this.claimId, {
+        total_approved: this.decisionData.approvedAmount,
+        remarks: this.decisionData.remarks || undefined
+      }).subscribe({
+        next: (res) => {
+          this.submittingDecision = false;
+          if (res.success) {
+            this.toastService.success('Claim approved successfully');
+            this.showDecisionModal = false;
+            this.loadAllData();
+          } else {
+            this.toastService.error(res.message || 'Failed to approve claim');
+          }
+        },
+        error: (err) => {
+          this.submittingDecision = false;
+          this.toastService.error(err.error?.message || 'Error approving claim');
+        }
+      });
     } else {
       if (!this.decisionData.rejectionReason.trim()) {
         this.toastService.error('Rejection reason is required');
         this.submittingDecision = false;
         return;
       }
-      payload.rejection_reason = this.decisionData.rejectionReason.trim();
-      payload.rejection_type = this.decisionData.rejectionType;
-    }
-
-    this.claimService.updateClaim(this.claimId, payload).subscribe({
-      next: (res) => {
-        this.submittingDecision = false;
-        if (res.success) {
-          this.toastService.success(`Claim ${this.decisionType.toLowerCase()}d successfully`);
-          this.showDecisionModal = false;
-          this.loadAllData();
-        } else {
-          this.toastService.error(res.message || `Failed to ${this.decisionType.toLowerCase()} claim`);
+      this.claimService.rejectClaimSubmission(this.claimId, {
+        rejection_reason: this.decisionData.rejectionReason.trim(),
+        rejection_type: this.decisionData.rejectionType || undefined,
+        remarks: this.decisionData.remarks || undefined
+      }).subscribe({
+        next: (res) => {
+          this.submittingDecision = false;
+          if (res.success) {
+            this.toastService.success('Claim rejected successfully');
+            this.showDecisionModal = false;
+            this.loadAllData();
+          } else {
+            this.toastService.error(res.message || 'Failed to reject claim');
+          }
+        },
+        error: (err) => {
+          this.submittingDecision = false;
+          this.toastService.error(err.error?.message || 'Error rejecting claim');
         }
-      },
-      error: (err) => {
-        this.submittingDecision = false;
-        this.toastService.error(err.error?.message || `Error ${this.decisionType.toLowerCase()}ing claim`);
-      }
-    });
+      });
+    }
   }
 
   goBack(): void {

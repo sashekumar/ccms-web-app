@@ -38,9 +38,14 @@ module.exports = {
           from: { opacity: '0', transform: 'translateY(10px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        slideIn: {
+          from: { opacity: '0', transform: 'translateY(-4px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         fadeIn: 'fadeIn 0.4s ease-out',
+        slideIn: 'slideIn 0.2s ease-out',
       },
       screens: {
         'xs': '320px',

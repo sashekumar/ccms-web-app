@@ -6,7 +6,7 @@ Module: Policy Management (Uncategorized - Top Level Menu)
 Route: /products
 Actions: VIEW, VIEW_LIMITS, VIEW_COPAY, VIEW_THRESHOLDS, CREATE, UPDATE, DELETE, MANAGE_LIMITS, MANAGE_COPAY, MANAGE_THRESHOLDS, ACTIVATE, DEACTIVATE
 ==============================================================================
-Dependencies: ccms_new_schema_2026_v7.sql (ACL tables must exist)
+Dependencies: ccms_new_schema_2026_v8.sql (ACL tables must exist)
 Idempotent: Yes (safe to run multiple times)
 ==============================================================================
 */
@@ -30,21 +30,21 @@ PRINT 'Checking prerequisites...';
 IF OBJECT_ID('ccms_acl_roles', 'U') IS NULL
 BEGIN
     PRINT '  ✗ ERROR: ccms_acl_roles table does not exist';
-    PRINT '  → Please run ccms_new_schema_2026_v7.sql first';
+    PRINT '  → Please run ccms_new_schema_2026_v8.sql first';
     RETURN;
 END
 
 IF OBJECT_ID('ccms_acl_modules', 'U') IS NULL
 BEGIN
     PRINT '  ✗ ERROR: ccms_acl_modules table does not exist';
-    PRINT '  → Please run ccms_new_schema_2026_v7.sql first';
+    PRINT '  → Please run ccms_new_schema_2026_v8.sql first';
     RETURN;
 END
 
 IF OBJECT_ID('ccms_acl_actions', 'U') IS NULL
 BEGIN
     PRINT '  ✗ ERROR: ccms_acl_actions table does not exist';
-    PRINT '  → Please run ccms_new_schema_2026_v7.sql first';
+    PRINT '  → Please run ccms_new_schema_2026_v8.sql first';
     RETURN;
 END
 
