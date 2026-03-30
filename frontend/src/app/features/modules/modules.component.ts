@@ -8,13 +8,23 @@ import { CategoryService } from '../../core/services/category.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Module, Category } from '../../shared/models/permission.model';
-import { LoadingSpinnerComponent } from '../../shared/components/ui/loading-spinner/loading-spinner.component';
-import { StatusBadgeComponent } from '../../common/components/status-badge/status-badge.component';
+import { DataTableComponent, DataTableColumn, DataTableAction, DataTableFilter, DataTablePagination, DataTableFilterState, DataTableRowActionEvent } from '../../shared/components/ui/data-table/data-table.component';
+import { ConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/confirm-dialog.component';
+import { TextInputComponent } from '../../shared/components/ui/text-input/text-input.component';
+import { TextAreaComponent } from '../../shared/components/ui/text-area/text-area.component';
+import { CheckboxComponent } from '../../shared/components/ui/checkbox/checkbox.component';
+import { DropdownComponent, DropdownOption } from '../../shared/components/ui/dropdown/dropdown.component';
+import { ButtonComponent } from '../../shared/components/ui/button/button.component';
+
+// Extended interface for display purposes
+interface ModuleDisplay extends Module {
+  category_name?: string;
+}
 
 @Component({
   selector: 'app-modules',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ConfirmDialogComponent, TextInputComponent, TextAreaComponent, CheckboxComponent, DropdownComponent, ButtonComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -23,163 +33,28 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
           <h1 class="text-3xl font-bold text-gray-900">Module Management</h1>
           <p class="mt-1 text-sm text-gray-600">System modules and their configurations</p>
         </div>
-        <button 
-          (click)="openCreateModal()"
-          class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1e3c72] hover:bg-[#2a5298] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1e3c72]">
-          <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
+        <app-button
+          variant="primary"
+          size="md"
+          iconLeft="fas fa-plus"
+          (click)="openCreateModal()">
           Create Module
-        </button>
+        </app-button>
       </div>
 
-      <!-- Filters -->
-      <div class="mb-6 rounded-lg bg-white p-4 shadow">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <!-- Search -->
-          <div class="md:col-span-2">
-            <label class="mb-1 block text-sm font-medium text-gray-700">Search</label>
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="applyFilters()"
-              placeholder="Search by module name or code"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            />
-          </div>
-
-          <!-- Category Filter -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Category</label>
-            <select
-              [(ngModel)]="categoryFilter"
-              (ngModelChange)="applyFilters()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="null">All Categories</option>
-              <option [ngValue]="0">Uncategorized</option>
-              <option *ngFor="let category of categories; trackBy: trackByCategoryId" [ngValue]="category.category_id">
-                {{ category.category_name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Status Filter -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Status</label>
-            <select
-              [(ngModel)]="statusFilter"
-              (ngModelChange)="applyFilters()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="null">All Modules</option>
-              <option [ngValue]="true">Active Only</option>
-              <option [ngValue]="false">Inactive Only</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <app-loading-spinner *ngIf="loading" message="Loading modules..."></app-loading-spinner>
-
-      <!-- Success Message -->
-      <div *ngIf="successMessage" class="mb-4 rounded-md bg-green-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-          </svg>
-          <p class="ml-3 text-sm text-green-800">{{ successMessage }}</p>
-        </div>
-      </div>
-
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="mb-4 rounded-md bg-red-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-          </svg>
-          <p class="ml-3 text-sm text-red-800">{{ errorMessage }}</p>
-        </div>
-      </div>
-
-      <!-- Modules Table -->
-      <div *ngIf="!loading" class="rounded-lg bg-white shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Module</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Icon</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let module of filteredModules; trackBy: trackByModuleId" class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900">{{ module.module_name }}</div>
-                  <div *ngIf="module.description" class="text-sm text-gray-500">{{ module.description }}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="inline-flex rounded-full bg-blue-100 px-2 text-xs font-semibold leading-5 text-blue-800">
-                    {{ module.module_code }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span *ngIf="module.category_id" class="inline-flex rounded-full bg-purple-100 px-2 text-xs font-semibold leading-5 text-purple-800">
-                    {{ getCategoryName(module.category_id) }}
-                  </span>
-                  <span *ngIf="!module.category_id" class="text-gray-400 italic">Uncategorized</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ module.route || '-' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ module.icon || '-' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ module.display_order || '-' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <app-status-badge [active]="module.is_active"></app-status-badge>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button (click)="openEditModal(module)" class="text-indigo-600 hover:text-indigo-900 mr-3" data-testid="edit-module-button" aria-label="Edit">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                  </button>
-                  <button (click)="confirmDelete(module)" class="text-red-600 hover:text-red-900" data-testid="delete-module-button" aria-label="Delete">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="filteredModules.length === 0">
-                <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">
-                  {{ searchTerm || statusFilter !== null ? 'No modules found matching your filters' : 'No modules found' }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Module Count -->
-      <div *ngIf="!loading" class="mt-4 text-sm text-gray-600">
-        <span *ngIf="searchTerm || statusFilter !== null">
-          Showing {{ filteredModules.length }} of {{ modules.length }} module{{ modules.length !== 1 ? 's' : '' }}
-        </span>
-        <span *ngIf="!searchTerm && statusFilter === null">
-          Total: {{ modules.length }} module{{ modules.length !== 1 ? 's' : '' }}
-        </span>
-      </div>
+      <!-- Data Table -->
+      <app-data-table
+        [rows]="getPaginatedData()"
+        [columns]="columns"
+        [rowActions]="rowActions"
+        [filters]="tableFilters"
+        [pagination]="pagination"
+        [loading]="loading"
+        emptyMessage="No modules found"
+        (filterChange)="onFilterChange($event)"
+        (rowAction)="onRowAction($event)"
+        (cellToggle)="onToggleStatus($event)"
+      ></app-data-table>
     </div>
 
     <!-- Create/Edit Modal -->
@@ -196,59 +71,69 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
           <div class="flex-1 overflow-y-auto px-6 py-4">
             <form id="moduleForm" #moduleFormRef="ngForm" (ngSubmit)="saveModule()">
               <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Module Name <span class="text-red-500">*</span></label>
-                  <input type="text" [(ngModel)]="formData.moduleName" name="name" required
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-                </div>
+                <app-text-input
+                  label="Module Name"
+                  [(ngModel)]="formData.moduleName"
+                  name="name"
+                  [required]="true"
+                  placeholder="Enter module name">
+                </app-text-input>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Module Code <span class="text-red-500">*</span></label>
-                  <input type="text" [(ngModel)]="formData.moduleCode" name="code" required
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-                </div>
+                <app-text-input
+                  label="Module Code"
+                  [(ngModel)]="formData.moduleCode"
+                  name="code"
+                  [required]="true"
+                  placeholder="e.g., USER_MANAGEMENT">
+                </app-text-input>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea [(ngModel)]="formData.description" name="description" rows="2"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2"></textarea>
-                </div>
+                <app-text-area
+                  label="Description"
+                  [(ngModel)]="formData.description"
+                  name="description"
+                  [rows]="2"
+                  placeholder="Optional module description">
+                </app-text-area>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Category</label>
-                  <select [(ngModel)]="formData.categoryId" name="category"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-                    <option [ngValue]="null">-- No Category (Uncategorized) --</option>
-                  <option *ngFor="let category of categories; trackBy: trackByCategoryId" [ngValue]="category.category_id">
-                    {{ category.category_name }}
-                  </option>
-                </select>
-                <p class="mt-1 text-xs text-gray-500">Select a category to organize this module in the menu</p>
-              </div>
+                <app-dropdown
+                  label="Category"
+                  [(ngModel)]="formData.categoryId"
+                  name="category"
+                  [options]="categoryOptions"
+                  placeholder="-- No Category (Uncategorized) --"
+                  [clearable]="true"
+                  hint="Select a category to organize this module in the menu">
+                </app-dropdown>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Route</label>
-                <input type="text" [(ngModel)]="formData.route" name="route"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-              </div>
+              <app-text-input
+                label="Route"
+                [(ngModel)]="formData.route"
+                name="route"
+                placeholder="/module-path">
+              </app-text-input>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Icon</label>
-                <input type="text" [(ngModel)]="formData.icon" name="icon"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-              </div>
+              <app-text-input
+                label="Icon"
+                [(ngModel)]="formData.icon"
+                name="icon"
+                placeholder="e.g., th-list">
+              </app-text-input>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Display Order</label>
-                <input type="number" [(ngModel)]="formData.displayOrder" name="order"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-              </div>
+              <app-text-input
+                label="Display Order"
+                inputType="integer"
+                [(ngModel)]="formData.displayOrder"
+                name="order"
+                placeholder="e.g., 100">
+              </app-text-input>
 
-              <div *ngIf="editingModule" class="flex items-center">
-                <input type="checkbox" [(ngModel)]="formData.isActive" name="active" id="isActive"
-                  class="h-4 w-4 text-[#1e3c72] focus:ring-[#1e3c72] border-gray-300 rounded">
-                <label for="isActive" class="ml-2 block text-sm text-gray-900">Active</label>
-              </div>
+              <app-checkbox
+                *ngIf="editingModule"
+                label="Active"
+                [(ngModel)]="formData.isActive"
+                name="active"
+                labelSize="sm">
+              </app-checkbox>
             </div>
           </form>
           </div>
@@ -256,69 +141,66 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
         <!-- Modal Footer -->
         <div class="flex-shrink-0 border-t border-gray-200 px-6 py-4">
           <div class="flex gap-3 justify-end">
-            <button type="button" (click)="closeModal()" [disabled]="saving"
-              class="rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <app-button
+              variant="secondary"
+              size="md"
+              type="button"
+              [disabled]="saving"
+              (click)="closeModal()">
               Cancel
-            </button>
-            <button type="submit" form="moduleForm" [disabled]="saving || !moduleFormRef.valid"
-              class="rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#1e3c72] text-sm font-medium text-white hover:bg-[#2a5298] disabled:opacity-50">
-              {{ saving ? 'Saving...' : 'Save' }}
-            </button>
+            </app-button>
+            <app-button
+              variant="primary"
+              size="md"
+              type="submit"
+              form="moduleForm"
+              [disabled]="saving || !moduleFormRef.valid"
+              [loading]="saving">
+              Save
+            </app-button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div *ngIf="showDeleteConfirm" class="fixed z-[9999] inset-0 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen px-4 text-center">
-        <div class="fixed inset-0 transition-opacity" (click)="showDeleteConfirm = false">
-          <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
+    <app-confirm-dialog
+      [isOpen]="showDeleteConfirm"
+      title="Delete Module"
+      [message]="'Are you sure you want to delete module &quot;' + (moduleToDelete?.module_name || '') + '&quot;? This action cannot be undone.'"
+      variant="danger"
+      (confirmed)="deleteModule()"
+      (cancelled)="cancelDelete()"
+    ></app-confirm-dialog>
 
-        <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
-          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
-              </div>
-              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Delete Module</h3>
-                <div class="mt-2">
-                  <p class="text-sm text-gray-500">
-                    Are you sure you want to delete module "{{ moduleToDelete?.module_name }}"? This action cannot be undone.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button type="button" (click)="deleteModule()" [disabled]="saving"
-              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
-              {{ saving ? 'Deleting...' : 'Delete' }}
-            </button>
-            <button type="button" (click)="showDeleteConfirm = false" [disabled]="saving"
-              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Status Toggle Confirmation Dialog -->
+    <app-confirm-dialog
+      [isOpen]="showToggleConfirm"
+      [title]="pendingToggle?.newValue ? 'Activate Module' : 'Deactivate Module'"
+      [message]="pendingToggle?.newValue
+        ? 'Are you sure you want to activate &quot;' + pendingToggle?.module?.module_name + '&quot;?'
+        : 'Are you sure you want to deactivate &quot;' + pendingToggle?.module?.module_name + '&quot;?'"
+      [variant]="pendingToggle?.newValue ? 'primary' : 'warn'"
+      [confirmLabel]="pendingToggle?.newValue ? 'Yes, Activate' : 'Yes, Deactivate'"
+      cancelLabel="Cancel"
+      (confirmed)="confirmToggleStatus()"
+      (cancelled)="cancelToggleStatus()"
+    ></app-confirm-dialog>
   `
 })
 export class ModulesComponent implements OnInit, OnDestroy {
   modules: Module[] = [];
-  filteredModules: Module[] = [];
+  filteredModules: ModuleDisplay[] = [];
   categories: Category[] = [];
+  categoryOptions: DropdownOption[] = [];
   loading = true;
   saving = false;
   showModal = false;
   showDeleteConfirm = false;
+  showToggleConfirm = false;
   editingModule: Module | null = null;
   moduleToDelete: Module | null = null;
+  pendingToggle: { module: Module; newValue: boolean } | null = null;
   successMessage = '';
   errorMessage = '';
 
@@ -339,6 +221,99 @@ export class ModulesComponent implements OnInit, OnDestroy {
   };
 
   private destroy$ = new Subject<void>();
+
+  // DataTable configuration
+  pagination: DataTablePagination = {
+    total: 0,
+    page: 1,
+    limit: 25,
+    totalPages: 0
+  };
+
+  tableFilters: DataTableFilter[] = [
+    { 
+      key: 'search', 
+      label: 'Search',
+      type: 'search', 
+      placeholder: 'Search by module name or code', 
+      inputType: 'string' 
+    },
+    {
+      key: 'category_id',
+      label: 'Category',
+      type: 'select',
+      placeholder: 'Filter by category',
+      options: [] // Will be populated dynamically from categories
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'select',
+      placeholder: 'Filter by status',
+      options: [
+        { value: '', label: 'All Modules' },
+        { value: 'true', label: 'Active Only' },
+        { value: 'false', label: 'Inactive Only' }
+      ]
+    }
+  ];
+
+  columns: DataTableColumn[] = [
+    { 
+      key: 'module_name', 
+      label: 'Module', 
+      type: 'avatar', 
+      sortable: true,
+      avatarSubKey: 'module_code'
+    },
+    { 
+      key: 'category_name', 
+      label: 'Category', 
+      type: 'text',
+      sortable: true
+    },
+    { 
+      key: 'route', 
+      label: 'Route', 
+      type: 'text',
+      sortable: true
+    },
+    { 
+      key: 'icon', 
+      label: 'Icon', 
+      type: 'text',
+      sortable: false
+    },
+    { 
+      key: 'display_order', 
+      label: 'Order', 
+      type: 'number',
+      sortable: true
+    },
+    { 
+      key: 'is_active', 
+      label: 'Status', 
+      type: 'toggle',
+      sortable: true
+    }
+  ];
+
+  rowActions: DataTableAction[] = [
+    {
+      id: 'edit',
+      title: 'Edit',
+      iconPath: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+      color: 'indigo',
+      permission: 'MODULE_MANAGEMENT.UPDATE'
+    },
+    {
+      id: 'delete',
+      title: 'Delete',
+      iconPath: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+      color: 'red',
+      permission: 'MODULE_MANAGEMENT.DELETE'
+    }
+  ];
 
   constructor(
     private permissionService: PermissionService,
@@ -362,7 +337,28 @@ export class ModulesComponent implements OnInit, OnDestroy {
         next: (data) => {
           this.modules = data.modules;
           this.categories = data.categories;
+          
+          // Populate dropdown options
+          this.categoryOptions = this.categories.map(c => ({
+            value: c.category_id,
+            label: c.category_name
+          }));
+          
+          // Populate category filter options
+          const categoryFilter = this.tableFilters.find(f => f.key === 'category_id');
+          if (categoryFilter) {
+            categoryFilter.options = [
+              { value: '', label: 'All Categories' },
+              { value: '0', label: 'Uncategorized' },
+              ...this.categories.map(c => ({
+                value: c.category_id.toString(),
+                label: c.category_name
+              }))
+            ];
+          }
+          
           this.applyFilters();
+          this.updatePagination();
           this.loading = false;
         },
         error: (error: HttpErrorResponse) => {
@@ -380,43 +376,159 @@ export class ModulesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-
+  updatePagination(): void {
+    this.pagination = {
+      ...this.pagination,
+      total: this.filteredModules.length,
+      totalPages: Math.ceil(this.filteredModules.length / this.pagination.limit)
+    };
+  }
 
   applyFilters(): void {
-    this.filteredModules = this.modules.filter(module => {
-      // Search filter
-      if (this.searchTerm) {
-        const search = this.searchTerm.toLowerCase();
-        const matchesSearch = 
-          module.module_name.toLowerCase().includes(search) ||
-          module.module_code.toLowerCase().includes(search) ||
-          (module.description && module.description.toLowerCase().includes(search));
-        if (!matchesSearch) return false;
-      }
-
-      // Category filter
-      if (this.categoryFilter !== null) {
-        if (this.categoryFilter === 0) {
-          // Filter for uncategorized modules
-          if (module.category_id !== null) return false;
-        } else {
-          // Filter for specific category
-          if (module.category_id !== this.categoryFilter) return false;
+    this.filteredModules = this.modules
+      .filter(module => {
+        // Search filter
+        if (this.searchTerm) {
+          const search = this.searchTerm.toLowerCase();
+          const matchesSearch = 
+            module.module_name.toLowerCase().includes(search) ||
+            module.module_code.toLowerCase().includes(search) ||
+            (module.description && module.description.toLowerCase().includes(search));
+          if (!matchesSearch) return false;
         }
-      }
 
-      // Status filter
-      if (this.statusFilter !== null && module.is_active !== this.statusFilter) {
-        return false;
-      }
+        // Category filter
+        if (this.categoryFilter !== null) {
+          if (this.categoryFilter === 0) {
+            // Filter for uncategorized modules
+            if (module.category_id !== null) return false;
+          } else {
+            // Filter for specific category
+            // Handle both string and number comparison
+            const moduleCategory = typeof module.category_id === 'string' ? parseInt(module.category_id, 10) : module.category_id;
+            if (moduleCategory !== this.categoryFilter) return false;
+          }
+        }
 
-      return true;
-    });
+        // Status filter
+        if (this.statusFilter !== null && module.is_active !== this.statusFilter) {
+          return false;
+        }
+
+        return true;
+      })
+      .map(module => ({
+        ...module,
+        category_name: module.category_id 
+          ? this.getCategoryName(module.category_id)
+          : '—'
+      }));
   }
 
   getCategoryName(categoryId: number): string {
     const category = this.categories.find(c => c.category_id === categoryId);
     return category ? category.category_name : 'Unknown';
+  }
+
+  // DataTable event handlers
+  onFilterChange(filters: DataTableFilterState): void {
+    // Extract search filter
+    this.searchTerm = filters['search'] || '';
+    
+    // Extract category filter
+    const categoryValue = filters['category_id'];
+    if (categoryValue !== undefined && categoryValue !== null && categoryValue !== '') {
+      this.categoryFilter = parseInt(categoryValue, 10);
+      // Check if parseInt returned NaN
+      if (isNaN(this.categoryFilter)) {
+        this.categoryFilter = null;
+      }
+    } else {
+      this.categoryFilter = null;
+    }
+    
+    // Extract status filter
+    if (filters['is_active'] === 'true') {
+      this.statusFilter = true;
+    } else if (filters['is_active'] === 'false') {
+      this.statusFilter = false;
+    } else {
+      this.statusFilter = null;
+    }
+    
+    // Update pagination from filters
+    this.pagination = {
+      ...this.pagination,
+      page: filters.page,
+      limit: filters.limit
+    };
+    
+    // Apply filters and recalculate pagination
+    this.applyFilters();
+    this.updatePagination();
+  }
+
+  getPaginatedData(): ModuleDisplay[] {
+    const startIndex = (this.pagination.page - 1) * this.pagination.limit;
+    const endIndex = startIndex + this.pagination.limit;
+    return this.filteredModules.slice(startIndex, endIndex);
+  }
+
+  onToggleStatus(event: { row: any; column: any; newValue: boolean }): void {
+    const module = event.row as Module;
+    const newValue = event.newValue;
+    // Store pending action and open confirm dialog
+    this.pendingToggle = { module, newValue };
+    this.showToggleConfirm = true;
+  }
+
+  /** Called when user confirms the status toggle */
+  confirmToggleStatus(): void {
+    if (!this.pendingToggle) return;
+    const { module, newValue } = this.pendingToggle;
+    this.showToggleConfirm = false;
+    this.pendingToggle = null;
+    
+    this.logger.debug(`Toggling module ${module.module_id} status to: ${newValue}`);
+    
+    this.permissionService.updateModule(module.module_id, {
+      is_active: newValue
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          module.is_active = newValue;
+          const label = newValue ? 'activated' : 'deactivated';
+          this.toast.success(`Module "${module.module_name}" has been ${label} successfully.`);
+          this.logger.info(`Module ${module.module_id} status updated to: ${newValue}`);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.logger.error('Error updating module status:', error);
+          this.toast.error('Failed to update module status. Please try again.');
+          // Reload to revert the optimistic update
+          this.loadData();
+        }
+      });
+  }
+
+  /** Called when user cancels the status toggle */
+  cancelToggleStatus(): void {
+    this.showToggleConfirm = false;
+    this.pendingToggle = null;
+    // Reload to revert the optimistic chip state
+    this.loadData();
+  }
+
+  onRowAction(event: DataTableRowActionEvent): void {
+    const module = event.row as Module;
+    switch (event.action) {
+      case 'edit':
+        this.openEditModal(module);
+        break;
+      case 'delete':
+        this.confirmDelete(module);
+        break;
+    }
   }
 
   openCreateModal(): void {
@@ -550,6 +662,11 @@ export class ModulesComponent implements OnInit, OnDestroy {
           this.clearMessages();
         }
       });
+  }
+
+  cancelDelete(): void {
+    this.showDeleteConfirm = false;
+    this.moduleToDelete = null;
   }
 
   private clearMessages(): void {

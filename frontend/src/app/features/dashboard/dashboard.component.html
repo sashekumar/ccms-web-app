@@ -1,50 +1,1163 @@
-<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
-  <div class="max-w-2xl w-full">
-    <!-- Main Card -->
-    <div class="bg-white rounded-2xl shadow-lg p-12 text-center border border-gray-100">
-      <!-- Icon -->
-      <div class="mb-6">
-        <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full shadow-lg">
-          <i class="fas fa-chart-line text-white text-4xl"></i>
+﻿<div class="min-h-screen bg-gray-50 px-6 py-8">
+  <div class="max-w-5xl mx-auto space-y-8">
+
+    <!-- â”€â”€ Page header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div class="flex items-center gap-3">
+      <div class="inline-flex items-center justify-center w-10 h-10 bg-primary-700 rounded-lg shadow">
+        <i class="fas fa-puzzle-piece text-white text-base"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-800 leading-tight">Shared Component Library</h1>
+        <p class="text-xs text-gray-400">Complete showcase â€” <span class="font-medium text-primary-700">14 reusable UI components</span></p>
+      </div>
+    </div>
+
+    <!-- â”€â”€ Demo grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Card 1 Â· Basic dropdown (5 items Â· no search) -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-700">Basic Dropdown</h2>
+            <p class="text-xs text-gray-400 mt-0.5">5 options Â· search bar hidden</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+            â‰¤ 10 items
+          </span>
+        </div>
+
+        <app-dropdown
+          [options]="statusOptions"
+          label="Claim Status"
+          placeholder="Select a status"
+          hint="Choose the current status of the claim"
+          (selectionChange)="onStatusChange($event)"
+          (opened)="onDropdownOpened()"
+          (closed)="onDropdownClosed()"
+        ></app-dropdown>
+
+        <div *ngIf="selectedStatus" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+          <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+          </svg>
+          Selected: <strong class="text-gray-700">{{ selectedStatus.label }}</strong>
+          <span class="text-gray-300">|</span> value: <code class="bg-gray-100 px-1 rounded text-primary-700">{{ selectedStatus.value }}</code>
         </div>
       </div>
 
-      <!-- Title -->
-      <h1 class="text-3xl font-bold text-gray-800 mb-3">Dashboard</h1>
-      
-      <!-- Description -->
-      <p class="text-gray-500 text-lg mb-6">
-        Your comprehensive overview will be available here soon
+      <!-- Card 2 Â· Large dropdown (16 items Â· search enabled) -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-700">Searchable Dropdown</h2>
+            <p class="text-xs text-gray-400 mt-0.5">16 options Â· search bar auto-enabled</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
+            &gt; 10 items
+          </span>
+        </div>
+
+        <app-dropdown
+          [options]="hospitalOptions"
+          label="Panel Hospital"
+          placeholder="Select a hospital"
+          [searchThreshold]="10"
+          searchPlaceholder="Type to search hospitalsâ€¦"
+          hint="Start typing to narrow down the list"
+          (selectionChange)="onHospitalChange($event)"
+          (searchChanged)="onSearchChanged($event)"
+        ></app-dropdown>
+
+        <div *ngIf="selectedHospital" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+          <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+          </svg>
+          Selected: <strong class="text-gray-700 truncate">{{ selectedHospital.label }}</strong>
+        </div>
+      </div>
+
+      <!-- Card 3 Â· Clearable with disabled option -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-700">Clearable + Disabled Option</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Allows deselect Â· one option disabled</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600">
+            clearable
+          </span>
+        </div>
+
+        <app-dropdown
+          [options]="roleOptions"
+          label="User Role"
+          placeholder="Assign a role"
+          [clearable]="true"
+          hint="The 'Read-only Viewer' option is disabled"
+          (selectionChange)="onRoleChange($event)"
+        ></app-dropdown>
+
+        <div *ngIf="selectedRole" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+          <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+          </svg>
+          Selected: <strong class="text-gray-700">{{ selectedRole.label }}</strong>
+        </div>
+      </div>
+
+      <!-- Card 4 Â· Disabled & Error states -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-700">Disabled &amp; Error States</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Visual feedback for form validation</p>
+        </div>
+
+        <app-dropdown
+          [options]="statusOptions"
+          label="Locked Field"
+          placeholder="Approved"
+          [disabled]="true"
+          hint="This field is locked for editing"
+        ></app-dropdown>
+
+        <app-dropdown
+          [options]="statusOptions"
+          label="Required Field"
+          placeholder="Select a status"
+          [required]="true"
+          error="This field is required"
+        ></app-dropdown>
+      </div>
+    </div>
+
+    <!-- â”€â”€ Date Picker Demo Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.3A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Date Picker Modes</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Card 1 Â· Date mode -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">Date Only</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Simple date picker Â· no time</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+              mode="date"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="date"
+            label="Admission Date"
+            placeholder="Pick admission date"
+            [minDate]="minDate"
+            [maxDate]="maxDate"
+            hint="Select from the last 30 days to next 30 days"
+            (dateChange)="onAdmissionDateChange($event)"
+            (opened)="onDatePickerOpened()"
+            (closed)="onDatePickerClosed()"
+          ></app-date-picker>
+
+          <div *ngIf="admissionDate" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected: <strong class="text-gray-700">{{ admissionDate }}</strong>
+          </div>
+        </div>
+
+        <!-- Card 2 Â· Date-time mode -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">Date + Time</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Date picker + HH:MM controls</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700">
+              mode="date-time"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="date-time"
+            label="Incident DateTime"
+            placeholder="Pick date and time"
+            [minDate]="minDate"
+            [maxDate]="maxDate"
+            hint="Precise timestamp for incident reporting"
+            (dateChange)="onIncidentDateTimeChange($event)"
+          ></app-date-picker>
+
+          <div *ngIf="incidentDateTime" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected: <strong class="text-gray-700 font-mono text-xs">{{ incidentDateTime }}</strong>
+          </div>
+        </div>
+
+        <!-- Card 3 Â· Month mode -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">Month Selector</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Month & year Â· no specific day</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+              mode="month"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="month"
+            label="Claim Month"
+            placeholder="Select month"
+            hint="Select the billing/claim month"
+            (dateChange)="onClaimMonthChange($event)"
+          ></app-date-picker>
+
+          <div *ngIf="claimMonth" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected: <strong class="text-gray-700">{{ claimMonth }}</strong>
+          </div>
+        </div>
+
+        <!-- Card 4 Â· Time mode -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">Time Only</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Time picker Â· no date</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
+              mode="time"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="time"
+            label="Reminder Time"
+            placeholder="Pick time"
+            hint="What time should the reminder be sent?"
+            (dateChange)="onTimeChange($event)"
+          ></app-date-picker>
+
+          <div *ngIf="currentTime" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected: <strong class="text-gray-700 font-mono">{{ currentTime }}</strong>
+          </div>
+        </div>
+
+        <!-- Card 5 Â· Date range mode -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">Date Range Selector</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Select start and end date</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+              mode="range"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="range"
+            label="Service Period"
+            placeholder="Select date range"
+            [minDate]="minDate"
+            [maxDate]="maxDate"
+            hint="Click first date then end date (e.g., Oct 1 to Nov 10)"
+            (dateChange)="onDateRangeChange($event)"
+          ></app-date-picker>
+
+          <div *ngIf="dateRange" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected: <strong class="text-gray-700 font-mono text-xs">{{ dateRange }}</strong>
+          </div>
+        </div>
+
+        <!-- Card 7 Â· 24-hour time format -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">24-Hour Time Format</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Default format Â· HH:MM</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700">
+              timeFormat="24h"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="time"
+            timeFormat="24h"
+            label="Check-in Time (24h)"
+            placeholder="Pick time (24-hour)"
+            hint="Uses 24-hour clock, e.g., 14:30"
+            (dateChange)="onTime24Change($event)"
+          ></app-date-picker>
+
+          <div *ngIf="time24" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected: <strong class="text-gray-700 font-mono">{{ time24 }}</strong>
+          </div>
+        </div>
+
+        <!-- Card 8 Â· 12-hour time format -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">12-Hour Time Format</h3>
+              <p class="text-xs text-gray-400 mt-0.5">AM/PM format Â· h:MM AM/PM</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700">
+              timeFormat="12h"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="date-time"
+            timeFormat="12h"
+            label="Appointment DateTime (12h)"
+            placeholder="Pick date and time"
+            hint="Uses 12-hour clock with AM/PM selector"
+            (dateChange)="onTime12Change($event)"
+          ></app-date-picker>
+
+          <div *ngIf="time12" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected (ISO 24h internally): <strong class="text-gray-700 font-mono">{{ time12 }}</strong>
+          </div>
+        </div>
+
+        <!-- Card 6 Â· Date range time mode -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">Date Range + Time</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Range with time controls</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700">
+              mode="range-time"
+            </span>
+          </div>
+
+          <app-date-picker
+            mode="range-time"
+            label="Date of Birth Range"
+            placeholder="Select birth year range (e.g., 1990-2005)"
+            hint="For filtering users within an age range"
+            (dateChange)="onDateOfBirthRangeChange($event)"
+          ></app-date-picker>
+
+          <div *ngIf="dateOfBirthRange" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <svg class="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+            </svg>
+            Selected: <strong class="text-gray-700 font-mono text-xs">{{ dateOfBirthRange }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Upload Components Demo -->
+    <div class="space-y-6">
+
+      <!-- File Upload 1: Claim Documents -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold text-gray-700">File Upload: Claim Documents</h2>
+          <p class="text-xs text-gray-400 mt-1">Multiple PDF, DOC, DOCX files | folder: claim-documents</p>
+        </div>
+        <app-file-upload
+          folder="claim-documents"
+          label="Claim Supporting Documents"
+          hint="Upload claim forms, receipts, medical reports (PDF, DOC, DOCX only)"
+          [allowedExtensions]="['pdf', 'doc', 'docx']"
+          [multiple]="true"
+          [required]="true"
+          (uploadComplete)="onFileUploadComplete($event, 'Claim Document')"
+          (uploadError)="onFileUploadError($event, 'Claim Document')"
+        ></app-file-upload>
+      </div>
+
+      <!-- File Upload 2: Admission MQ Responses -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold text-gray-700">File Upload: MQ Responses</h2>
+          <p class="text-xs text-gray-400 mt-1">Multiple PDF and image files | folder: mq-responses</p>
+        </div>
+        <app-file-upload
+          folder="mq-responses"
+          label="MQ Response Files"
+          hint="Upload pre-approval documents from MQ system (PDF, JPG, PNG only)"
+          [allowedExtensions]="['pdf', 'jpg', 'jpeg', 'png']"
+          [multiple]="true"
+          (uploadComplete)="onFileUploadComplete($event, 'MQ Response')"
+          (uploadError)="onFileUploadError($event, 'MQ Response')"
+        ></app-file-upload>
+      </div>
+
+      <!-- File Upload 3: Member Profile Photo -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold text-gray-700">File Upload: Member Photo</h2>
+          <p class="text-xs text-gray-400 mt-1">Single image file (5MB max) with preview | folder: member-photos</p>
+        </div>
+        <app-file-upload
+          folder="member-photos"
+          label="Member Profile Photo"
+          hint="Upload a clear profile photo (JPG, PNG only, max 5 MB)"
+          [allowedExtensions]="['jpg', 'jpeg', 'png']"
+          [multiple]="false"
+          [maxFileSize]="5242880"
+          [showPreview]="true"
+          (uploadComplete)="onFileUploadComplete($event, 'Member Photo')"
+          (uploadError)="onFileUploadError($event, 'Member Photo')"
+        ></app-file-upload>
+      </div>
+
+      <!-- File Upload 4: Investigation Files -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold text-gray-700">File Upload: Investigation Files</h2>
+          <p class="text-xs text-gray-400 mt-1">Mixed document and image files | folder: investigation-files</p>
+        </div>
+        <app-file-upload
+          folder="investigation-files"
+          label="Investigation Documents & Photos"
+          hint="Upload investigation reports, notes, and supporting photos (PDF, DOC, PNG, JPG only)"
+          [allowedExtensions]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
+          [multiple]="true"
+          [showPreview]="true"
+          (uploadComplete)="onFileUploadComplete($event, 'Investigation File')"
+          (uploadError)="onFileUploadError($event, 'Investigation File')"
+        ></app-file-upload>
+      </div>
+
+      <!-- File Upload 5: Generic Document Upload -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold text-gray-700">File Upload: Generic Documents</h2>
+          <p class="text-xs text-gray-400 mt-1">General-purpose document upload | folder: uploads</p>
+        </div>
+        <app-file-upload
+          folder="uploads"
+          label="Upload Document"
+          hint="Upload any document file (PDF, Word, Excel files only)"
+          [allowedExtensions]="['pdf', 'doc', 'docx', 'xls', 'xlsx']"
+          [multiple]="true"
+          (uploadComplete)="onFileUploadComplete($event, 'Document')"
+          (uploadError)="onFileUploadError($event, 'Document')"
+        ></app-file-upload>
+      </div>
+
+    </div>
+
+    <!-- â”€â”€ Event log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z" clip-rule="evenodd"/>
+          </svg>
+          <h2 class="text-sm font-semibold text-gray-700">Output Event Log</h2>
+        </div>
+        <span class="text-xs text-gray-400">last {{ eventLog.length }} events</span>
+      </div>
+
+      <ul *ngIf="eventLog.length > 0; else emptyLog" class="space-y-1">
+        <li
+          *ngFor="let entry of eventLog; let i = index"
+          class="flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-lg"
+          [class.bg-primary-50]="i === 0"
+          [class.text-primary-700]="i === 0"
+          [class.bg-gray-50]="i !== 0"
+          [class.text-gray-500]="i !== 0"
+        >
+          <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            [class.bg-primary-500]="i === 0"
+            [class.bg-gray-300]="i !== 0"
+          ></span>
+          {{ entry }}
+        </li>
+      </ul>
+
+      <ng-template #emptyLog>
+        <div class="text-xs text-gray-400 text-center py-4">
+          Interact with the components above to see events here.
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- â”€â”€ API Reference â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <h2 class="text-sm font-semibold text-gray-700 mb-4">Component API Reference</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Dropdown Inputs -->
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Dropdown â€“ Inputs</p>
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="text-left text-gray-400 border-b border-gray-100">
+                <th class="pb-1.5 font-medium pr-3">&#64;Input()</th>
+                <th class="pb-1.5 font-medium">Type</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">options</td><td>DropdownOption[]</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">label</td><td>string</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">placeholder</td><td>string</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">searchThreshold</td><td>number (default: 10)</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">clearable</td><td>boolean</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">disabled</td><td>boolean</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- DatePicker Inputs -->
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">DatePicker â€“ Inputs</p>
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="text-left text-gray-400 border-b border-gray-100">
+                <th class="pb-1.5 font-medium pr-3">&#64;Input()</th>
+                <th class="pb-1.5 font-medium">Type</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">mode</td><td>'date' | 'date-time' | 'month' | 'time' | 'range' | 'range-time'</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">timeFormat</td><td>'24h' (default) | '12h'</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">label</td><td>string</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">minDate</td><td>Date | null</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">maxDate</td><td>Date | null</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">showSeconds</td><td>boolean</td></tr>
+              <tr class="text-gray-600"><td class="py-1.5 pr-3 font-mono text-primary-700">disabled</td><td>boolean</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Outputs -->
+        <div class="md:col-span-2">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Valid TypeScript Interfaces</p>
+          <pre class="text-xs bg-gray-50 rounded-lg p-3 text-gray-600 leading-relaxed overflow-auto"><code>// DropdownOption
+interface DropdownOption &#123;
+  value   : string | number;
+  label   : string;
+  disabled?: boolean;
+&#125;
+
+// DatePickerMode
+type DatePickerMode = 'date' | 'date-time' | 'month' | 'time' | 'range' | 'range-time';
+
+// TimeFormat (applies to modes with time controls)
+type TimeFormat = '24h' | '12h';  // default: '24h'
+
+// DateChange output always emits ISO 24h strings:
+// mode="date"       â†’ "2026-03-25"
+// mode="date-time"  â†’ "2026-03-25T14:30"
+// mode="month"      â†’ "2026-03"
+// mode="time"       â†’ "14:30"
+// mode="range"      â†’ "2026-03-01/2026-03-25"
+// timeFormat="12h"  â†’ display shows "2:30 PM", emits "14:30"</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- â”€â”€ Data Table Demo Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <svg class="w-4 h-4 text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Data Table Component</h2>
+      </div>
+      <p class="text-xs text-gray-400 mb-6">
+        Fully configurable table with filters, pagination, stats cards, and row actions.
+        Outputs <code class="bg-gray-100 px-1 rounded text-primary-700">(filterChange)</code>
+        and <code class="bg-gray-100 px-1 rounded text-primary-700">(rowAction)</code> â€” wire them to your API.
       </p>
 
-      <!-- Coming Soon Badge -->
-      <div class="inline-flex items-center gap-2 px-6 py-3 bg-blue-50 rounded-full border border-blue-200">
-        <i class="fas fa-clock text-blue-600"></i>
-        <span class="text-blue-700 font-semibold text-sm">Coming Soon</span>
+      <div class="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden shadow-sm p-6">
+
+        <!-- Page header (owned by the parent â€” not the table component) -->
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900">User Management</h2>
+            <p class="mt-1 text-sm text-gray-600">Manage system users, roles, and permissions</p>
+          </div>
+          <button
+            type="button"
+            (click)="onTableCreate()"
+            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add User
+          </button>
+        </div>
+
+        <!-- Stats cards (owned by the parent) -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-5">
+          <div *ngFor="let stat of tableStats" class="rounded-lg bg-white p-5 shadow flex items-center gap-4">
+            <div [class]="'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ' + stat.iconBg">
+              <svg class="h-6 w-6" [class]="stat.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="stat.iconPath"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">{{ stat.label }}</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data table (focused: filters + table + pagination only) -->
+        <app-data-table
+          [columns]="tableColumns"
+          [filters]="tableFilters"
+          [rowActions]="tableActions"
+          [rows]="tableRows"
+          [pagination]="tablePagination"
+          [pageSizeOptions]="[5, 10, 25]"
+          emptyMessage="No users found"
+          emptySubMessage="Try adjusting your search or filter criteria."
+          (filterChange)="onTableFilterChange($event)"
+          (sortChange)="onTableSortChange($event)"
+          (rowAction)="onTableRowAction($event)"
+        ></app-data-table>
+      </div>
+    </div>
+
+    <!-- â”€â”€ TEXT INPUT Component Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M4 4a2 2 0 012-2h4.586a2 2 0 011.414.586l7.414 7.414a2 2 0 010 2.828l-7.414 7.414a2 2 0 01-2.828 0L6.586 13H4a2 2 0 01-2-2V4z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Text Input Component</h2>
       </div>
 
-      <!-- Additional Info -->
-      <div class="mt-10 pt-8 border-t border-gray-200">
-        <p class="text-gray-400 text-sm">
-          We're working on bringing you powerful analytics and insights
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- String input -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-700">String Input (Default)</h3>
+          <app-text-input
+            label="Full Name"
+            placeholder="Enter full name"
+            [value]="textStringValue"
+            inputType="string"
+            hint="Letters, numbers, spaces allowed"
+            (valueChange)="onTextInputChange($event, 'string')"
+          ></app-text-input>
+        </div>
+
+        <!-- Currency input -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-700">Currency Input (RM)</h3>
+          <app-text-input
+            label="Amount"
+            placeholder="0.00"
+            [value]="textCurrencyValue"
+            inputType="currency"
+            [decimalPlaces]="2"
+            hint="Malaysian Ringgit format with 2 decimals"
+            (valueChange)="onTextInputChange($event, 'currency')"
+          ></app-text-input>
+        </div>
+
+        <!-- Integer input -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-700">Integer Input</h3>
+          <app-text-input
+            label="Quantity"
+            placeholder="0"
+            [value]="textIntegerValue"
+            inputType="integer"
+            hint="Whole numbers only (no decimals)"
+            (valueChange)="onTextInputChange($event, 'integer')"
+          ></app-text-input>
+        </div>
+
+        <!-- Decimal input -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-700">Decimal Input</h3>
+          <app-text-input
+            label="Weight (kg)"
+            placeholder="0.00"
+            [value]="textDecimalValue"
+            inputType="decimal"
+            [decimalPlaces]="2"
+            hint="Numbers with up to 2 decimal places"
+            (valueChange)="onTextInputChange($event, 'decimal')"
+          ></app-text-input>
+        </div>
+
+        <!-- Number input -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-700">Number Input</h3>
+          <app-text-input
+            label="Price"
+            placeholder="0.00"
+            [value]="textNumberValue"
+            inputType="number"
+            hint="Positive and negative numbers allowed"
+            (valueChange)="onTextInputChange($event, 'number')"
+          ></app-text-input>
+        </div>
+      </div>
+    </div>
+
+    <!-- â”€â”€ BUTTON Component Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Button Component</h2>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-6">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">Variants</h3>
+          <div class="flex flex-wrap gap-3">
+            <app-button (click)="onButtonClick('primary')" variant="primary">Primary Button</app-button>
+            <app-button (click)="onButtonClick('secondary')" variant="secondary">Secondary Button</app-button>
+            <app-button (click)="onButtonClick('danger')" variant="danger">Danger Button</app-button>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">Sizes</h3>
+          <div class="flex flex-wrap gap-3 items-center">
+            <app-button size="sm" variant="primary">Small</app-button>
+            <app-button size="md" variant="primary">Medium</app-button>
+            <app-button size="lg" variant="primary">Large</app-button>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">States</h3>
+          <div class="flex flex-wrap gap-3">
+            <app-button [disabled]="true" variant="primary">Disabled</app-button>
+            <app-button [loading]="false" variant="primary">Normal</app-button>
+            <app-button [fullWidth]="true" variant="secondary">Full Width Button</app-button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- â”€â”€ ALERT Component Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2z" clip-rule="evenodd"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Alert Component</h2>
+      </div>
+
+      <div class="space-y-4">
+        <app-alert type="success" title="Success!" [dismissible]="true">
+          Your operation completed successfully. All changes have been saved.
+        </app-alert>
+
+        <app-alert type="error" title="Error" [dismissible]="true">
+          An error occurred while processing your request. Please try again later.
+        </app-alert>
+
+        <app-alert type="warning" title="Warning" [dismissible]="true">
+          Please review the information before proceeding with this action.
+        </app-alert>
+
+        <app-alert type="info" title="Information" [dismissible]="true">
+          This is informational content about the current operation.
+        </app-alert>
+      </div>
+    </div>
+
+    <!-- â”€â”€ PROGRESS BAR Component Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1H3zm0 4a1 1 0 011-1h12a1 1 0 011 1H3zm0 4a1 1 0 011-1h12a1 1 0 011 1H3z" clip-rule="evenodd"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Progress Bar Component</h2>
+      </div>
+
+      <div class="space-y-6">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-gray-700">Current Progress: {{ progress }}%</h3>
+            <div class="flex gap-2">
+              <app-button size="sm" variant="secondary" (click)="decreaseProgress()">âˆ’</app-button>
+              <app-button size="sm" variant="secondary" (click)="increaseProgress()">+</app-button>
+            </div>
+          </div>
+          <app-progress-bar [percentage]="progress"></app-progress-bar>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-3">Small Progress (25%)</p>
+            <app-progress-bar [percentage]="25"></app-progress-bar>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-3">Large Progress (75%)</p>
+            <app-progress-bar [percentage]="75"></app-progress-bar>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-3">Complete (100%)</p>
+            <app-progress-bar [percentage]="100"></app-progress-bar>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- â”€â”€ BADGE Component Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Badge Component</h2>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div class="flex flex-wrap gap-3">
+          <app-badge variant="success">Active</app-badge>
+          <app-badge variant="danger">Inactive</app-badge>
+          <app-badge variant="info">Processing</app-badge>
+          <app-badge variant="warning">Pending</app-badge>
+          <app-badge variant="primary">Custom</app-badge>
+          <app-badge variant="default">Archived</app-badge>
+        </div>
+      </div>
+    </div>
+
+    <!-- â”€â”€ TABS Component Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5 3a2 2 0 00-2 2v2c0 1.05-.85 2-2 2s2 .95 2 2v2a2 2 0 002 2h5l9.707-9.707a1 1 0 00-1.414-1.414L10.828 7.071V5a2 2 0 00-2-2H5z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Tabs Component</h2>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <app-tabs [activeTabIndex]="activeTab" [tabs]="tabItems"></app-tabs>
+      </div>
+    </div>
+
+    <!-- â”€â”€ LOADING SPINNER Component Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700 animate-spin" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 5.293a1 1 0 011.414 0A4 4 0 1014.707 9.293" clip-rule="evenodd"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Loading Spinner Component</h2>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div class="flex items-center gap-3 mb-4">
+          <app-button (click)="toggleLoading()" variant="secondary">
+            {{ isLoading ? 'Stop Loading' : 'Start Loading' }}
+          </app-button>
+          <span class="text-sm text-gray-600">Status: {{ isLoading ? 'Loading...' : 'Idle' }}</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="flex justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+            <app-loading-spinner *ngIf="isLoading" size="small"></app-loading-spinner>
+            <span *ngIf="!isLoading" class="text-xs text-gray-400">sm · idle</span>
+          </div>
+          <div class="flex justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+            <app-loading-spinner *ngIf="isLoading" size="medium"></app-loading-spinner>
+            <span *ngIf="!isLoading" class="text-xs text-gray-400">md · idle</span>
+          </div>
+          <div class="flex justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+            <app-loading-spinner *ngIf="isLoading" size="large"></app-loading-spinner>
+            <span *ngIf="!isLoading" class="text-xs text-gray-400">lg · idle</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MODAL Component Section ────────────────────────────────── -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12H4V4zm1 0h10v11H5V4z" clip-rule="evenodd"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Modal Component</h2>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <app-button (click)="onModalOpen()" variant="primary">Open Modal</app-button>
+
+        <app-modal
+          [isOpen]="isModalOpen"
+          title="Example Modal"
+          size="md"
+          [showFooter]="true"
+          (onClose)="onModalClose()"
+        >
+          <div class="space-y-4">
+            <p class="text-gray-700">This is a simple modal dialog component. It can contain any content you want to display.</p>
+            <p class="text-gray-700">Click the close button or outside the modal to dismiss it.</p>
+          </div>
+        </app-modal>
+      </div>
+    </div>
+
+    <!-- ── TOAST Component Section ────────────────────────────────── -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 2a6 6 0 100 12A6 6 0 0010 2zM9 7h2v5H9V7z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Toast Notifications</h2>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <p class="text-sm text-gray-600 mb-4">Click a button to trigger a notification (appears top-right):</p>
+        <div class="flex flex-wrap gap-3">
+          <app-button (click)="showSuccessToast()" variant="primary">Show Success</app-button>
+          <app-button (click)="showErrorToast()" variant="danger">Show Error</app-button>
+          <app-button (click)="showWarningToast()" variant="secondary">Show Warning</app-button>
+          <app-button (click)="showInfoToast()" variant="secondary">Show Info</app-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARD Component Section ────────────────────────────────── -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Card Component</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <app-card title="Card Title 1">
+          <p class="text-gray-700">Card content with basic information and styling.</p>
+        </app-card>
+
+        <app-card title="Card Title 2">
+          <p class="text-gray-700">Cards are reusable containers for organizing content.</p>
+        </app-card>
+
+        <app-card title="Card Title 3">
+          <p class="text-gray-700">Use cards to group related information together.</p>
+        </app-card>
+      </div>
+    </div>
+
+    <!-- ── STATUS BADGE Component Section ───────────────────────────── -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 14a6 6 0 110-12 6 6 0 010 12zm1-9a1 1 0 10-2 0v3a1 1 0 001 1h2a1 1 0 100-2h-1V7z" clip-rule="evenodd"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Status Badge Component</h2>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <p class="text-xs text-gray-400 mb-3">
+          Pass any CCMS status string — colour and label resolve automatically from the internal registry.
         </p>
+
+        <!-- All status grid -->
+        <div class="flex flex-wrap gap-2">
+          <app-status-badge *ngFor="let s of demoStatuses" [status]="s"></app-status-badge>
+        </div>
+
+        <!-- Sizes demo -->
+        <div class="pt-3 border-t border-gray-100">
+          <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Sizes</p>
+          <div class="flex items-center gap-3 flex-wrap">
+            <app-status-badge status="APPROVED" size="xs"></app-status-badge>
+            <app-status-badge status="APPROVED" size="sm"></app-status-badge>
+            <app-status-badge status="APPROVED" size="md"></app-status-badge>
+            <app-status-badge status="APPROVED" size="lg"></app-status-badge>
+          </div>
+        </div>
+
+        <!-- Label override demo -->
+        <div class="pt-3 border-t border-gray-100">
+          <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Label override</p>
+          <div class="flex items-center gap-3 flex-wrap">
+            <app-status-badge status="IN_PROGRESS" label="Under Assessment"></app-status-badge>
+            <app-status-badge status="PENDING" label="Awaiting Documents"></app-status-badge>
+            <app-status-badge status="REJECTED" label="Not Eligible"></app-status-badge>
+          </div>
+        </div>
+
+        <!-- Unknown status fallback -->
+        <div class="pt-3 border-t border-gray-100">
+          <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Unknown status fallback</p>
+          <div class="flex items-center gap-3 flex-wrap">
+            <app-status-badge status="CUSTOM_CODE"></app-status-badge>
+            <app-status-badge status=""></app-status-badge>
+            <app-status-badge [status]="null"></app-status-badge>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Feature Preview Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-      <div class="bg-white rounded-lg p-4 text-center border border-gray-100 shadow-sm">
-        <i class="fas fa-chart-bar text-blue-500 text-2xl mb-2"></i>
-        <p class="text-gray-600 text-sm font-medium">Analytics</p>
+    <!-- ── CONFIRM DIALOG Component Section ─────────────────────────── -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2z" clip-rule="evenodd"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Confirm Dialog Component</h2>
       </div>
-      <div class="bg-white rounded-lg p-4 text-center border border-gray-100 shadow-sm">
-        <i class="fas fa-bell text-blue-500 text-2xl mb-2"></i>
-        <p class="text-gray-600 text-sm font-medium">Notifications</p>
+
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <p class="text-xs text-gray-400 mb-3">
+          Three variants matching the action severity — danger (delete/reject), warn (override/caution), primary (approve/submit).
+        </p>
+
+        <!-- Trigger buttons -->
+        <div class="flex flex-wrap gap-3">
+          <app-button variant="danger"  iconLeft="fas fa-trash"   (click)="openConfirm('danger')">Danger Dialog</app-button>
+          <app-button variant="warn"    iconLeft="fas fa-exclamation-triangle" (click)="openConfirm('warn')">Warning Dialog</app-button>
+          <app-button variant="primary" iconLeft="fas fa-check"   (click)="openConfirm('primary')">Primary Dialog</app-button>
+        </div>
+
+        <!-- Result feedback -->
+        <div *ngIf="lastConfirmResult"
+          class="flex items-center gap-2 text-xs font-mono px-3 py-2 rounded-lg bg-gray-50 text-gray-600">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0"></span>
+          {{ lastConfirmResult }}
+        </div>
       </div>
-      <div class="bg-white rounded-lg p-4 text-center border border-gray-100 shadow-sm">
-        <i class="fas fa-tachometer-alt text-blue-500 text-2xl mb-2"></i>
-        <p class="text-gray-600 text-sm font-medium">Quick Actions</p>
+
+      <!-- The dialog itself (rendered as overlay) -->
+      <app-confirm-dialog
+        [isOpen]="confirmOpen"
+        [title]="confirmTitle"
+        [message]="confirmMessage"
+        [variant]="confirmVariant"
+        [confirmLabel]="confirmVariant === 'danger' ? 'Delete' : confirmVariant === 'warn' ? 'Override' : 'Approve'"
+        (confirmed)="onConfirmed()"
+        (cancelled)="onCancelled()"
+      ></app-confirm-dialog>
+    </div>
+
+    <!-- ── CUSTOM PIPES Section ──────────────────────────────────────── -->
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-4 h-4 text-primary-700" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+        </svg>
+        <h2 class="text-sm font-bold text-gray-800">Custom Pipes</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- currencyMyr pipe -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700">currencyMyr</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Formats numbers as Malaysian Ringgit</p>
+          </div>
+          <table class="w-full text-xs">
+            <thead><tr class="text-gray-400 border-b border-gray-100">
+              <th class="pb-1.5 text-left font-medium">Input</th>
+              <th class="pb-1.5 text-right font-medium">Output</th>
+            </tr></thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr *ngFor="let a of pipeDemoAmounts">
+                <td class="py-1.5 font-mono text-gray-500">{{ a === null ? 'null' : a }}</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ a | currencyMyr }}</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-mono text-gray-500">99 (0 decimals)</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ 99 | currencyMyr:0 }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- dateMalay pipe -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700">dateMalay</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Formats dates in Malaysian style</p>
+          </div>
+          <table class="w-full text-xs">
+            <thead><tr class="text-gray-400 border-b border-gray-100">
+              <th class="pb-1.5 text-left font-medium">Format</th>
+              <th class="pb-1.5 text-right font-medium">Output</th>
+            </tr></thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr>
+                <td class="py-1.5 font-mono text-gray-500">DD/MM/YYYY</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ pipeDemoDates[0] | dateMalay }}</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-mono text-gray-500">DD MMM YYYY</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ pipeDemoDates[0] | dateMalay:'DD MMM YYYY' }}</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-mono text-gray-500">DD/MM/YYYY HH:mm</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ pipeDemoDates[1] | dateMalay:'DD/MM/YYYY HH:mm' }}</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-mono text-gray-500">DD MMM YYYY HH:mm</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ pipeDemoDates[1] | dateMalay:'DD MMM YYYY HH:mm' }}</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-mono text-gray-500">null</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ pipeDemoDates[2] | dateMalay }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- statusLabel pipe -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700">statusLabel</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Converts SNAKE_CASE → Title Case</p>
+          </div>
+          <table class="w-full text-xs">
+            <thead><tr class="text-gray-400 border-b border-gray-100">
+              <th class="pb-1.5 text-left font-medium">Input</th>
+              <th class="pb-1.5 text-right font-medium">Output</th>
+            </tr></thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr *ngFor="let s of pipeDemoStatuses">
+                <td class="py-1.5 font-mono text-gray-500">{{ s || 'null' }}</td>
+                <td class="py-1.5 font-mono text-right text-gray-800">{{ s | statusLabel }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
+
   </div>
 </div>

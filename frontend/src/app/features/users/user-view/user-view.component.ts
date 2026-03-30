@@ -7,15 +7,32 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserDetail, UserDetailRole } from '../../../shared/models/user.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
+
+// Shared UI Components
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { CardComponent } from '../../../shared/components/ui/card/card.component';
+import { BadgeComponent } from '../../../shared/components/ui/badge/badge.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
+
+// Pipes
+import { DateMalayPipe } from '../../../shared/pipes/date-malay.pipe';
 
 import { APP_ROUTES } from '../../../core/constants/routes.constants'
 
 @Component({
   selector: 'app-user-view',
   standalone: true,
-  imports: [CommonModule, HasPermissionDirective, LoadingSpinnerComponent, StatusBadgeComponent],
+  imports: [
+    CommonModule, 
+    HasPermissionDirective, 
+    ButtonComponent,
+    CardComponent,
+    BadgeComponent,
+    LoadingSpinnerComponent,
+    StatusBadgeComponent,
+    DateMalayPipe
+  ],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -35,37 +52,39 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
             <p class="mt-1 text-sm text-gray-600">View user information and permissions</p>
           </div>
           <div class="flex gap-2">
-            <button
+            <app-button
               *hasPermission="'USER_MANAGEMENT.UPDATE'"
+              variant="outline"
+              size="md"
+              iconLeft="fas fa-edit"
               (click)="editUser()"
-              class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-              </svg>
               Edit User
-            </button>
-            <button
+            </app-button>
+            <app-button
               *hasPermission="'USER_ROLE_ASSIGNMENT.ATTACH_ROLE'"
+              variant="primary"
+              size="md"
+              iconLeft="fas fa-users"
               (click)="manageRoles()"
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-              </svg>
               Manage Roles
-            </button>
+            </app-button>
           </div>
         </div>
       </div>
 
       <!-- Loading State -->
-      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+      <app-loading-spinner
+        *ngIf="loading"
+        size="large"
+        message="Loading user details..."
+      ></app-loading-spinner>
 
       <!-- User Details -->
       <div *ngIf="!loading && userDetail" class="mx-auto max-w-4xl space-y-6">
         <!-- Basic Information Card -->
-        <div class="rounded-lg bg-white p-6 shadow">
+        <app-card>
           <div class="mb-4 flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Basic Information</h2>
             <app-status-badge [active]="userDetail.user.is_active"></app-status-badge>
@@ -87,7 +106,7 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
             <!-- Last Login -->
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-500">Last Login</label>
-              <p class="text-base text-gray-900">{{ userDetail.user.last_login ? (userDetail.user.last_login | date:'medium') : 'Never' }}</p>
+              <p class="text-base text-gray-900">{{ userDetail.user.last_login ? (userDetail.user.last_login | dateMalay:'DD MMM YYYY HH:mm') : 'Never' }}</p>
             </div>
 
             <!-- User ID -->
@@ -96,37 +115,38 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
               <p class="text-base font-mono text-gray-900">{{ userDetail.user.user_id }}</p>
             </div>
           </div>
-        </div>
+        </app-card>
 
         <!-- Roles Card -->
-        <div class="rounded-lg bg-white p-6 shadow">
+        <app-card>
           <div class="mb-4 flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Assigned Roles</h2>
-            <button
+            <app-button
               *hasPermission="'USER_ROLE_ASSIGNMENT.ATTACH_ROLE'"
+              variant="ghost"
+              size="sm"
               (click)="manageRoles()"
-              class="text-sm text-[#1e3c72] hover:text-[#2a5298]"
             >
               Manage Roles
-            </button>
+            </app-button>
           </div>
           <div *ngIf="userDetail.roles.length > 0" class="space-y-3">
             <div
               *ngFor="let role of userDetail.roles; trackBy: trackByRoleId"
-              class="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+              class="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
             >
               <div>
                 <div class="flex items-center gap-2">
                   <h3 class="font-medium text-gray-900">{{ role.role_name }}</h3>
-                  <span class="rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
+                  <app-badge variant="primary" size="sm">
                     {{ role.role_code }}
-                  </span>
+                  </app-badge>
                 </div>
                 <p class="mt-1 text-sm text-gray-500">
-                  Assigned {{ role.assigned_at | date:'short' }} by {{ role.assigned_by }}
+                  Assigned {{ role.assigned_at | dateMalay }} by {{ role.assigned_by }}
                 </p>
                 <p *ngIf="role.expires_at" class="mt-1 text-sm text-orange-600">
-                  Expires: {{ role.expires_at | date:'short' }}
+                  Expires: {{ role.expires_at | dateMalay:'DD MMM YYYY' }}
                 </p>
               </div>
               <div class="text-right">
@@ -144,18 +164,18 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">No roles assigned</h3>
             <p class="mt-1 text-sm text-gray-500">This user has no roles assigned yet.</p>
-            <button
+            <app-button
               *hasPermission="'USER_ROLE_ASSIGNMENT.ATTACH_ROLE'"
+              variant="primary"
+              size="md"
+              iconLeft="fas fa-plus"
               (click)="manageRoles()"
-              class="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              class="mt-4"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
               Assign Role
-            </button>
+            </app-button>
           </div>
-        </div>
+        </app-card>
       </div>
 
       <!-- Error State -->

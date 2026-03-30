@@ -7,18 +7,23 @@ import { PermissionService } from '../../../core/services/permission.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CreateRoleDto, UpdateRoleDto } from '../../../shared/models/permission.model';
+import { TextInputComponent } from '../../../shared/components/ui/text-input/text-input.component';
+import { CheckboxComponent } from '../../../shared/components/ui/checkbox/checkbox.component';
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { CardComponent } from '../../../shared/components/ui/card/card.component';
 
-import { APP_ROUTES } from '../../../core/constants/routes.constants'
+import { APP_ROUTES } from '../../../core/constants/routes.constants';
 
 @Component({
   selector: 'app-role-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TextInputComponent, CheckboxComponent, ButtonComponent, CardComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
       <div class="mb-6">
         <button
+          type="button"
           (click)="goBack()"
           class="mb-4 flex items-center text-sm text-gray-600 hover:text-gray-900"
         >
@@ -32,135 +37,92 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
       </div>
 
       <!-- Form Card -->
-      <div class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow">
-        <form [formGroup]="roleForm" (ngSubmit)="onSubmit()">
-          <!-- Role Name -->
-          <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-gray-700">
-              Role Name <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              formControlName="roleName"
-              [readonly]="isSystemRole"
-              [class.bg-gray-100]="isSystemRole"
-              [class.cursor-not-allowed]="isSystemRole"
-              class="w-full rounded-lg border px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              [class.border-red-500]="isFieldInvalid('roleName')"
-              placeholder="Enter role name"
-            />
-            <p *ngIf="isFieldInvalid('roleName')" class="mt-1 text-sm text-red-500">
-              <span *ngIf="roleForm.get('roleName')?.errors?.['required']">Role name is required</span>
-              <span *ngIf="roleForm.get('roleName')?.errors?.['maxlength']">Role name must not exceed 100 characters</span>
-            </p>
-          </div>
+      <div class="mx-auto max-w-2xl">
+        <app-card>
+          <form [formGroup]="roleForm" (ngSubmit)="onSubmit()">
 
-          <!-- Role Code -->
-          <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-gray-700">
-              Role Code <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              formControlName="roleCode"
-              [readonly]="isEditMode || isSystemRole"
-              [class.bg-gray-100]="isEditMode || isSystemRole"
-              [class.cursor-not-allowed]="isEditMode || isSystemRole"
-              class="w-full rounded-lg border px-3 py-2 font-mono text-sm focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              [class.border-red-500]="isFieldInvalid('roleCode')"
-              placeholder="Enter role code (e.g., ADMIN)"
-            />
-            <p *ngIf="!isFieldInvalid('roleCode')" class="mt-1 text-sm text-gray-500">
-              Role code is unique and cannot be changed after creation
-            </p>
-            <p *ngIf="isFieldInvalid('roleCode')" class="mt-1 text-sm text-red-500">
-              <span *ngIf="roleForm.get('roleCode')?.errors?.['required']">Role code is required</span>
-              <span *ngIf="roleForm.get('roleCode')?.errors?.['maxlength']">Role code must not exceed 50 characters</span>
-              <span *ngIf="roleForm.get('roleCode')?.errors?.['pattern']">Role code can only contain uppercase letters, numbers, and underscores</span>
-            </p>
-          </div>
-
-          <!-- Description -->
-          <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              formControlName="description"
-              [readonly]="isSystemRole"
-              [class.bg-gray-100]="isSystemRole"
-              [class.cursor-not-allowed]="isSystemRole"
-              rows="3"
-              class="w-full rounded-lg border px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              placeholder="Enter role description"
-            ></textarea>
-          </div>
-
-          <!-- Active Status -->
-          <div class="mb-6">
-            <label class="flex items-center">
-              <input
-                type="checkbox"
-                formControlName="isActive"
-                [disabled]="isSystemRole"
-                class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72] disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <span class="ml-2 text-sm font-medium text-gray-700">Active Role</span>
-            </label>
-            <p class="mt-1 text-sm text-gray-500">Inactive roles cannot be assigned to users</p>
-          </div>
-
-          <!-- System Role Warning -->
-          <div *ngIf="isSystemRole" class="mb-6 rounded-lg bg-yellow-50 p-4">
-            <div class="flex">
-              <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-              </svg>
-              <div class="ml-3">
-                <h3 class="text-sm font-medium text-yellow-800">System Role</h3>
-                <p class="mt-1 text-sm text-yellow-700">
-                  This is a system role. Most fields are read-only to prevent breaking system functionality.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Error Message -->
-          <div *ngIf="errorMessage" class="mb-4 rounded-lg bg-red-50 p-4">
-            <div class="flex">
-              <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-              </svg>
-              <div class="ml-3">
-                <p class="text-sm text-red-800">{{ errorMessage }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-end gap-3">
-            <button
-              type="button"
-              (click)="goBack()"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              *ngIf="!isSystemRole"
-              type="submit"
-              [disabled]="roleForm.invalid || loading"
-              class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span *ngIf="loading" class="flex items-center">
-                <svg class="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <!-- System Role Warning -->
+            <div *ngIf="isSystemRole" class="mb-6 rounded-lg bg-yellow-50 p-4">
+              <div class="flex">
+                <svg class="h-5 w-5 shrink-0 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                 </svg>
-                Saving...
-              </span>
-              <span *ngIf="!loading">{{ isEditMode ? 'Update Role' : 'Create Role' }}</span>
-            </button>
-          </div>
-        </form>
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-yellow-800">System Role</h3>
+                  <p class="mt-1 text-sm text-yellow-700">
+                    This is a system role. Fields are read-only to prevent breaking system functionality.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Role Name -->
+            <div class="mb-4">
+              <app-text-input
+                formControlName="roleName"
+                label="Role Name"
+                placeholder="Enter role name"
+                [required]="true"
+                [disabled]="isSystemRole"
+                [error]="getFieldError('roleName')"
+              ></app-text-input>
+            </div>
+
+            <!-- Role Code -->
+            <div class="mb-4">
+              <app-text-input
+                formControlName="roleCode"
+                label="Role Code"
+                placeholder="Enter role code (e.g., ADMIN)"
+                [required]="true"
+                [disabled]="isEditMode || isSystemRole"
+                [error]="getFieldError('roleCode')"
+                hint="Role code is unique and cannot be changed after creation"
+              ></app-text-input>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+              <label class="mb-1 block text-sm font-medium text-gray-700">Description</label>
+              <textarea
+                formControlName="description"
+                [attr.readonly]="isSystemRole || null"
+                [class.bg-gray-100]="isSystemRole"
+                [class.cursor-not-allowed]="isSystemRole"
+                rows="3"
+                placeholder="Enter role description"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+              ></textarea>
+            </div>
+
+            <!-- Active Status -->
+            <div class="mb-6">
+              <app-checkbox
+                formControlName="isActive"
+                label="Active Role"
+                [disabled]="isSystemRole"
+                labelSize="sm"
+                description="Inactive roles cannot be assigned to users"
+              ></app-checkbox>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-6 flex justify-end gap-3">
+              <app-button type="button" variant="outline" (click)="goBack()">
+                Cancel
+              </app-button>
+              <app-button
+                *ngIf="!isSystemRole"
+                type="submit"
+                variant="primary"
+                [loading]="loading"
+                [disabled]="roleForm.invalid || loading"
+              >
+                {{ isEditMode ? 'Update Role' : 'Create Role' }}
+              </app-button>
+            </div>
+          </form>
+        </app-card>
       </div>
     </div>
   `
@@ -173,7 +135,6 @@ export class RoleFormComponent implements OnInit, OnDestroy {
   isSystemRole = false;
   roleId?: number;
   loading = false;
-  errorMessage = '';
 
   constructor(
     private fb: FormBuilder,
@@ -246,7 +207,6 @@ export class RoleFormComponent implements OnInit, OnDestroy {
         error: (error) => {
           this.logger.error('Error loading role', error);
           this.toast.error('Failed to load role data');
-          this.errorMessage = 'Failed to load role data';
           this.loading = false;
         }
       });
@@ -261,7 +221,6 @@ export class RoleFormComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    this.errorMessage = '';
 
     if (this.isEditMode) {
       this.updateRole();
@@ -288,8 +247,7 @@ export class RoleFormComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.logger.error('Error creating role', error);
-          this.errorMessage = error.error?.message || 'Failed to create role';
-          this.toast.error(this.errorMessage);
+          this.toast.error(error.error?.message || 'Failed to create role');
           this.loading = false;
         }
       });
@@ -314,16 +272,19 @@ export class RoleFormComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.logger.error('Error updating role', error);
-          this.errorMessage = error.error?.message || 'Failed to update role';
-          this.toast.error(this.errorMessage);
+          this.toast.error(error.error?.message || 'Failed to update role');
           this.loading = false;
         }
       });
   }
 
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.roleForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched));
+  getFieldError(fieldName: string): string {
+    const control = this.roleForm.get(fieldName);
+    if (!control || !control.errors || !control.touched) return '';
+    if (control.errors['required'])    return 'This field is required';
+    if (control.errors['maxlength'])   return `Must not exceed ${control.errors['maxlength'].requiredLength} characters`;
+    if (control.errors['pattern'])     return 'Only uppercase letters, numbers, and underscores allowed';
+    return 'Invalid value';
   }
 
   goBack(): void {

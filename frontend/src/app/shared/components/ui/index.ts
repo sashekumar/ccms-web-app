@@ -27,6 +27,8 @@ export * from './progress-bar/progress-bar.component';
 export * from './dropdown/dropdown.component';
 export * from './date-picker/date-picker.component';
 export * from './text-input/text-input.component';
+export * from './text-area/text-area.component';
+export * from './checkbox/checkbox.component';
 export * from './file-upload/file-upload.component';
 
 // Data display

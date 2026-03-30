@@ -91,12 +91,15 @@ export type TextInputType = 'string' | 'number' | 'integer' | 'decimal' | 'curre
       <div class="relative flex items-center h-[36px]">
         <input
           [id]="inputId"
-          type="text"
+          [type]="inputType === 'currency' ? 'text' : (inputType === 'integer' || inputType === 'number' || inputType === 'decimal' ? 'number' : 'text')"
+          [attr.inputmode]="inputType === 'integer' ? 'numeric' : (inputType === 'number' || inputType === 'decimal' ? 'decimal' : null)"
+          [attr.pattern]="inputType === 'integer' ? '[0-9]*' : null"
+          [attr.step]="inputType === 'integer' ? '1' : (inputType === 'decimal' ? '0.01' : null)"
           [value]="inputType === 'currency' ? (currencyNumericValue | currencyMyr:decimalPlaces) : value"
           [placeholder]="placeholder || (inputType === 'currency' ? 'RM 0.00' : '')"
           [disabled]="disabled"
           [class]="inputClasses"
-          (keydown)="inputType === 'currency' ? onCurrencyKeydown($event) : null"
+          (keydown)="inputType === 'currency' ? onCurrencyKeydown($event) : (inputType === 'integer' ? onIntegerKeydown($event) : null)"
           (input)="inputType !== 'currency' ? onInput($event) : null"
           (blur)="onBlur()"
           (keydown.enter)="onEnter()"
@@ -234,13 +237,15 @@ export class TextInputComponent implements ControlValueAccessor, OnChanges {
    */
   private currencyCents = 0;
 
-  writeValue(value: string): void {
+  writeValue(value: any): void {
     if (this.inputType === 'currency') {
       const num = parseFloat(value ?? '');
       this.currencyCents = isNaN(num) ? 0 : Math.round(num * 100);
       this.value = this.currencyCents === 0 ? '' : (this.currencyCents / 100).toFixed(this.decimalPlaces);
     } else {
-      this.value = this.formatValue(value ?? '');
+      // Convert number to string for numeric input types
+      const stringValue = value !== null && value !== undefined ? String(value) : '';
+      this.value = this.formatValue(stringValue);
     }
   }
 
@@ -354,6 +359,38 @@ export class TextInputComponent implements ControlValueAccessor, OnChanges {
     this.value = this.currencyCents === 0 ? '' : (this.currencyCents / 100).toFixed(this.decimalPlaces);
     this.onChange(this.value);
     this.valueChange.emit(this.value);
+  }
+
+  /**
+   * Integer keydown handler to prevent invalid characters
+   * Only allows: digits, backspace, delete, arrow keys, tab, minus sign
+   */
+  onIntegerKeydown(event: KeyboardEvent): void {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+      'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'Home', 'End'
+    ];
+
+    // Allow: Ctrl/Cmd+A, Ctrl/Cmd+C, Ctrl/Cmd+V, Ctrl/Cmd+X
+    if ((event.ctrlKey || event.metaKey) && ['a', 'c', 'v', 'x'].includes(event.key.toLowerCase())) {
+      return;
+    }
+
+    // Allow: navigation keys
+    if (allowedKeys.includes(event.key)) {
+      return;
+    }
+
+    // Allow: minus sign at the beginning
+    if (event.key === '-' && (event.target as HTMLInputElement).selectionStart === 0) {
+      return;
+    }
+
+    // Prevent: anything that's not a digit
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+    }
   }
 
   onInput(event: Event): void {

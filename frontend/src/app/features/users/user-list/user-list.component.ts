@@ -1,8 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { LoggerService } from '../../../core/services/logger.service';
@@ -10,15 +9,29 @@ import { ToastService } from '../../../core/services/toast.service';
 import { User, UserFilters, UserRole } from '../../../shared/models/user.model';
 import { Role } from '../../../shared/models/permission.model';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
-import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+
+// Shared UI Components
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { DataTableComponent } from '../../../shared/components/ui/data-table/data-table.component';
+import { ConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/confirm-dialog.component';
+import { BadgeComponent } from '../../../shared/components/ui/badge/badge.component';
 import { StatusBadgeComponent } from '../../../common/components/status-badge/status-badge.component';
+
+// Data Table Types
+import type { DataTableColumn, DataTableAction, DataTableFilter, DataTableFilterState, DataTablePagination } from '../../../shared/components/ui/data-table/data-table.component';
 
 import { APP_ROUTES } from '../../../core/constants/routes.constants'
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, HasPermissionDirective, LoadingSpinnerComponent, StatusBadgeComponent],
+  imports: [
+    CommonModule, 
+    HasPermissionDirective, 
+    ButtonComponent,
+    DataTableComponent,
+    ConfirmDialogComponent
+  ],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -27,282 +40,67 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
           <p class="mt-1 text-sm text-gray-600">Manage user accounts and permissions</p>
         </div>
-        <button
+        <app-button
           *hasPermission="'USER_MANAGEMENT.CREATE'"
+          variant="primary"
+          size="md"
+          iconLeft="fas fa-plus"
           (click)="openCreateModal()"
-          class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90"
         >
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
           Create User
-        </button>
+        </app-button>
       </div>
 
-      <!-- Filters -->
-      <div class="mb-6 rounded-lg bg-white p-4 shadow">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <!-- Search -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Search</label>
-            <input
-              type="text"
-              [(ngModel)]="filters.search"
-              (ngModelChange)="onSearchChange($event)"
-              placeholder="Username or full name"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            />
-          </div>
+      <!-- Data Table with Built-in Filters -->
+      <app-data-table
+        [rows]="users"
+        [columns]="columns"
+        [rowActions]="rowActions"
+        [filters]="tableFilters"
+        [pagination]="pagination"
+        [loading]="loading"
+        (filterChange)="onFilterChange($event)"
+        (rowAction)="onRowAction($event)"
+        (cellToggle)="onToggleStatus($event)"
+      ></app-data-table>
 
-          <!-- Status Filter -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Status</label>
-            <select
-              [(ngModel)]="filters.is_active"
-              (ngModelChange)="onFilterChange()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="undefined">All Users</option>
-              <option [ngValue]="true">Active</option>
-              <option [ngValue]="false">Inactive</option>
-            </select>
-          </div>
+      <!-- Delete Confirmation Dialog -->
+      <app-confirm-dialog
+        [isOpen]="showDeleteConfirm"
+        title="Delete User"
+        [message]="'Are you sure you want to delete user &quot;' + userToDelete?.full_name + '&quot;? This action cannot be undone.'"
+        variant="danger"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        (confirmed)="confirmDelete()"
+        (cancelled)="showDeleteConfirm = false"
+      ></app-confirm-dialog>
 
-          <!-- Role Filter -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Role</label>
-            <select
-              [(ngModel)]="filters.role_id"
-              (ngModelChange)="onFilterChange()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="undefined">All Roles</option>
-              <option *ngFor="let role of roles; trackBy: trackByRoleId" [ngValue]="role.role_id">{{ role.role_name }}</option>
-            </select>
-          </div>
-
-          <!-- Items per page -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Items per page</label>
-            <select
-              [(ngModel)]="filters.limit"
-              (ngModelChange)="onFilterChange()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="10">10</option>
-              <option [ngValue]="25">25</option>
-              <option [ngValue]="50">50</option>
-              <option [ngValue]="100">100</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <app-loading-spinner *ngIf="loading" message="Loading users..."></app-loading-spinner>
-
-      <!-- Success Message -->
-      <div *ngIf="successMessage" class="mb-4 rounded-md bg-green-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-          </svg>
-          <p class="ml-3 text-sm text-green-800">{{ successMessage }}</p>
-        </div>
-      </div>
-
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="mb-4 rounded-md bg-red-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-          </svg>
-          <p class="ml-3 text-sm text-red-800">{{ errorMessage }}</p>
-        </div>
-      </div>
-
-      <!-- Users Table -->
-      <div *ngIf="!loading" class="overflow-hidden rounded-lg bg-white shadow">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">User</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Roles</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Last Login</th>
-                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let user of users; trackBy: trackByUserId" class="transition hover:bg-gray-50">
-                <td class="whitespace-nowrap px-6 py-4">
-                  <div class="flex items-center">
-                    <div class="h-10 w-10 flex-shrink-0">
-                      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-[#1e3c72] to-[#2a5298] text-white font-semibold">
-                        {{ user.full_name.charAt(0).toUpperCase() }}
-                      </div>
-                    </div>
-                    <div class="ml-4">
-                      <div class="text-sm font-medium text-gray-900">{{ user.full_name }}</div>
-                      <div class="text-sm text-gray-500">@{{ user.username }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="flex flex-wrap gap-1">
-                    <span *ngFor="let role of user.roles; trackBy: trackByUserRoleId" class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
-                      {{ role.role_name }}
-                    </span>
-                  </div>
-                </td>
-                <td class="whitespace-nowrap px-6 py-4">
-                  <app-status-badge [active]="user.is_active"></app-status-badge>
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                  {{ user.last_login ? (user.last_login | date:'short') : 'Never' }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                  <button
-                    *hasPermission="'USER_MANAGEMENT.VIEW'"
-                    (click)="viewUser(user)"
-                    class="mr-3 text-blue-600 hover:text-blue-900"
-                    title="View"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                    </svg>
-                  </button>
-                  <button
-                    *hasPermission="'USER_MANAGEMENT.UPDATE'"
-                    (click)="editUser(user)"
-                    class="mr-3 text-indigo-600 hover:text-indigo-900"
-                    title="Edit"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                  </button>
-                  <button
-                    *hasPermission="'USER_ROLE_ASSIGNMENT.ATTACH_ROLE'"
-                    (click)="manageRoles(user)"
-                    class="mr-3 text-purple-600 hover:text-purple-900"
-                    title="Manage Roles"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                    </svg>
-                  </button>
-                  <button
-                    *hasPermission="'USER_MANAGEMENT.DELETE'"
-                    (click)="deleteUser(user)"
-                    class="text-red-600 hover:text-red-900"
-                    title="Delete"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-          <div class="flex flex-1 justify-between sm:hidden">
-            <button
-              (click)="previousPage()"
-              [disabled]="pagination.page === 1"
-              [class.opacity-50]="pagination.page === 1"
-              [class.cursor-not-allowed]="pagination.page === 1"
-              class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <button
-              (click)="nextPage()"
-              [disabled]="pagination.page >= pagination.totalPages"
-              [class.opacity-50]="pagination.page >= pagination.totalPages"
-              [class.cursor-not-allowed]="pagination.page >= pagination.totalPages"
-              class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Next
-            </button>
-          </div>
-          <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p class="text-sm text-gray-700">
-                Showing
-                <span class="font-medium">{{ getStartItem() }}</span>
-                to
-                <span class="font-medium">{{ getEndItem() }}</span>
-                of
-                <span class="font-medium">{{ pagination.total }}</span>
-                results
-              </p>
-            </div>
-            <div>
-              <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                <button
-                  (click)="previousPage()"
-                  [disabled]="pagination.page === 1"
-                  class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span class="sr-only">Previous</span>
-                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-                <button
-                  *ngFor="let page of getPageNumbers(); trackBy: trackByPageNumber"
-                  (click)="goToPage(page)"
-                  [class.bg-[#1e3c72]]="page === pagination.page"
-                  [class.text-white]="page === pagination.page"
-                  [class.text-gray-900]="page !== pagination.page"
-                  [class.hover:bg-gray-50]="page !== pagination.page"
-                  class="relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0"
-                >
-                  {{ page }}
-                </button>
-                <button
-                  (click)="nextPage()"
-                  [disabled]="pagination.page >= pagination.totalPages"
-                  class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span class="sr-only">Next</span>
-                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Empty State -->
-      <div *ngIf="!loading && users.length === 0" class="rounded-lg bg-white p-12 text-center shadow">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No users found</h3>
-        <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
-      </div>
-    </div>
-  `
-})
+      <!-- Status Toggle Confirmation Dialog -->
+      <app-confirm-dialog
+        [isOpen]="showToggleConfirm"
+        [title]="pendingToggle?.newValue ? 'Activate User' : 'Deactivate User'"
+        [message]="pendingToggle?.newValue
+          ? 'Are you sure you want to activate &quot;' + pendingToggle?.user?.full_name + '&quot;? They will be able to log in to the system.'
+          : 'Are you sure you want to deactivate &quot;' + pendingToggle?.user?.full_name + '&quot;? They will no longer be able to log in.'"
+        [variant]="pendingToggle?.newValue ? 'primary' : 'warn'"
+        [confirmLabel]="pendingToggle?.newValue ? 'Yes, Activate' : 'Yes, Deactivate'"
+        cancelLabel="Cancel"
+        (confirmed)="confirmToggleStatus()"
+        (cancelled)="cancelToggleStatus()"
+      ></app-confirm-dialog>
+    `
+  })
 export class UserListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  private searchSubject$ = new Subject<string>();
 
   users: User[] = [];
   roles: Role[] = [];
   loading = false;
-  successMessage = '';
-  errorMessage = '';
+  showDeleteConfirm = false;
+  userToDelete: User | null = null;
+  showToggleConfirm = false;
+  pendingToggle: { user: User; newValue: boolean } | null = null;
 
   filters: UserFilters = {
     page: 1,
@@ -311,12 +109,100 @@ export class UserListComponent implements OnInit, OnDestroy {
     sort_order: 'DESC'
   };
 
-  pagination = {
+  pagination: DataTablePagination = {
     total: 0,
     page: 1,
     limit: 10,
     totalPages: 0
   };
+
+  // Table filter definitions for DataTableComponent
+  tableFilters: DataTableFilter[] = [
+    {
+      key: 'search',
+      label: 'Search',
+      type: 'search',
+      placeholder: 'Username or full name',
+      inputType: 'string'
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'select',
+      placeholder: 'All Users',
+      options: [
+        { value: '', label: 'All Users' },
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
+      ]
+    },
+    {
+      key: 'role_id',
+      label: 'Role',
+      type: 'select',
+      placeholder: 'All Roles',
+      options: [] // Will be populated by loadRoles()
+    }
+  ];
+
+  // Data table columns configuration
+  columns: DataTableColumn[] = [
+    { 
+      key: 'full_name', 
+      label: 'User', 
+      type: 'text'
+    },
+    { 
+      key: 'roles', 
+      label: 'Roles', 
+      type: 'tags',
+      tagLabelKey: 'role_name',
+      tagColor: 'blue'
+    },
+    { 
+      key: 'is_active', 
+      label: 'Status', 
+      type: 'toggle'
+    },
+    { 
+      key: 'last_login', 
+      label: 'Last Login', 
+      type: 'date',
+      dateFormat: 'dd MMM yyyy HH:mm'
+    }
+  ];
+
+  // Row actions
+  rowActions: DataTableAction[] = [
+    { 
+      id: 'view', 
+      title: 'View User', 
+      iconPath: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
+      color: 'blue',
+      permission: 'USER_MANAGEMENT.VIEW'
+    },
+    { 
+      id: 'edit', 
+      title: 'Edit User', 
+      iconPath: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+      color: 'indigo',
+      permission: 'USER_MANAGEMENT.UPDATE'
+    },
+    { 
+      id: 'roles', 
+      title: 'Manage Roles', 
+      iconPath: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+      color: 'purple',
+      permission: 'USER_MANAGEMENT.UPDATE'
+    },
+    { 
+      id: 'delete', 
+      title: 'Delete User', 
+      iconPath: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+      color: 'red',
+      permission: 'USER_MANAGEMENT.DELETE'
+    }
+  ];
 
   constructor(
     private userService: UserService,
@@ -324,19 +210,7 @@ export class UserListComponent implements OnInit, OnDestroy {
     private router: Router,
     private logger: LoggerService,
     private toast: ToastService
-  ) {
-    // Setup search debounce
-    this.searchSubject$
-      .pipe(
-        takeUntil(this.destroy$),
-        debounceTime(300),
-        distinctUntilChanged()
-      )
-      .subscribe(() => {
-        this.filters.page = 1;
-        this.loadUsers();
-      });
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers();
@@ -374,17 +248,119 @@ export class UserListComponent implements OnInit, OnDestroy {
   loadRoles(): void {
     this.permissionService.getAllRoles()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(roles => {
-        this.roles = roles;
+      .subscribe({
+        next: (roles) => {
+          this.roles = roles;
+          // Update role filter options
+          const roleFilter = this.tableFilters.find(f => f.key === 'role_id');
+          if (roleFilter) {
+            roleFilter.options = [
+              { value: '', label: 'All Roles' },
+              ...roles.map(r => ({ value: r.role_id, label: r.role_name }))
+            ];
+          }
+        },
+        error: (error) => {
+          this.logger.error('Error loading roles', error);
+        }
       });
   }
 
-  onSearchChange(search: string): void {
-    this.searchSubject$.next(search);
+  onFilterChange(filterState: DataTableFilterState): void {
+    // Convert filter values from string to proper types for the API
+    const currentIsActive = filterState['is_active'] as any;
+    if (currentIsActive !== undefined && currentIsActive !== null) {
+      if (currentIsActive === '') {
+        this.filters.is_active = undefined;
+      } else if (currentIsActive === 'true') {
+        this.filters.is_active = true;
+      } else if (currentIsActive === 'false') {
+        this.filters.is_active = false;
+      }
+    }
+    
+    // Convert role_id from string to number
+    const currentRoleId = filterState['role_id'] as any;
+    if (currentRoleId !== undefined && currentRoleId !== null) {
+      if (currentRoleId === '') {
+        this.filters.role_id = undefined;
+      } else if (typeof currentRoleId === 'string') {
+        this.filters.role_id = parseInt(currentRoleId);
+      } else {
+        this.filters.role_id = currentRoleId;
+      }
+    }
+
+    // Store search term
+    this.filters.search = filterState['search'] || '';
+
+    // Update pagination
+    this.filters.page = filterState.page;
+    this.filters.limit = filterState.limit;
+    
+    this.loadUsers();
   }
 
-  onFilterChange(): void {
-    this.filters.page = 1;
+  onRowAction(event: any): void {
+    const actionId = event.action;
+    const row = event.row;
+    
+    switch (actionId) {
+      case 'view':
+        this.viewUser(row);
+        break;
+      case 'edit':
+        this.editUser(row);
+        break;
+      case 'roles':
+        this.manageRoles(row);
+        break;
+      case 'delete':
+        this.deleteUser(row);
+        break;
+    }
+  }
+
+  /** Handle toggle status change from data-table — show confirmation first */
+  onToggleStatus(event: any): void {
+    const user: User = event.row;
+    const newValue: boolean = event.newValue;
+    // Store pending action and open confirm dialog
+    this.pendingToggle = { user, newValue };
+    this.showToggleConfirm = true;
+  }
+
+  /** Called when user confirms the status toggle */
+  confirmToggleStatus(): void {
+    if (!this.pendingToggle) return;
+    const { user, newValue } = this.pendingToggle;
+    this.showToggleConfirm = false;
+    this.pendingToggle = null;
+
+    this.logger.debug(`Toggling user ${user.user_id} status to: ${newValue}`);
+
+    this.userService.updateUser(user.user_id, { is_active: newValue })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          user.is_active = newValue;
+          const label = newValue ? 'activated' : 'deactivated';
+          this.toast.success(`User "${user.full_name}" has been ${label} successfully.`);
+          this.logger.info(`User ${user.user_id} status updated to: ${newValue}`);
+        },
+        error: (error) => {
+          this.toast.error(`Failed to update user status: ${error.message}`);
+          this.logger.error(`Error toggling user ${user.user_id} status:`, error);
+          this.loadUsers();
+        }
+      });
+  }
+
+  /** Called when user cancels the status toggle */
+  cancelToggleStatus(): void {
+    this.showToggleConfirm = false;
+    this.pendingToggle = null;
+    // Reload to revert the optimistic chip state
     this.loadUsers();
   }
 
@@ -468,45 +444,34 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   deleteUser(user: User): void {
-    if (confirm(`Are you sure you want to delete user "${user.full_name}"? This action cannot be undone.`)) {
-      this.errorMessage = '';
-      this.userService.deleteUser(user.user_id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.loadUsers();
-            this.toast.success('User deleted successfully.');
-            this.successMessage = 'User deleted successfully.';
-            this.clearMessages();
-          },
-          error: (error) => {
-            this.logger.error('Error deleting user', error);
-            
-            // Show user-friendly error message based on status code
-            let errorMsg = '';
-            if (error.status === 403) {
-              errorMsg = 'Access Denied: You do not have permission to delete this user.';
-            } else if (error.status === 404) {
-              errorMsg = 'User not found. It may have already been deleted.';
-            } else {
-              errorMsg = 'Failed to delete user. Please try again.';
-            }
-            this.toast.error(errorMsg);
-            this.errorMessage = errorMsg;
-            this.clearMessages();
-          }
-        });
-    }
+    this.userToDelete = user;
+    this.showDeleteConfirm = true;
   }
 
-  /**
-   * Clear success and error messages after a delay
-   */
-  private clearMessages(): void {
-    setTimeout(() => {
-      this.successMessage = '';
-      this.errorMessage = '';
-    }, 5000);
+  confirmDelete(): void {
+    if (!this.userToDelete) return;
+    
+    this.showDeleteConfirm = false;
+    this.userService.deleteUser(this.userToDelete.user_id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.loadUsers();
+          this.toast.success('User deleted successfully.');
+        },
+        error: (error) => {
+          this.logger.error('Error deleting user', error);
+          let errorMsg = '';
+          if (error.status === 403) {
+            errorMsg = 'Access Denied: You do not have permission to delete this user.';
+          } else if (error.status === 404) {
+            errorMsg = 'User not found. It may have already been deleted.';
+          } else {
+            errorMsg = 'Failed to delete user. Please try again.';
+          }
+          this.toast.error(errorMsg);
+        }
+      });
   }
 
   /**

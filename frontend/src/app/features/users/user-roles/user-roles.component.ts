@@ -10,17 +10,35 @@ import { ToastService } from '../../../core/services/toast.service';
 import { UserDetail, UserDetailRole } from '../../../shared/models/user.model';
 import { Role, AssignRoleDto } from '../../../shared/models/permission.model';
 
-interface RoleAssignment {
-  roleId: number;
-  expiresAt?: string;
-}
+// Shared UI Components
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { DropdownComponent, DropdownOption } from '../../../shared/components/ui/dropdown/dropdown.component';
+import { TextInputComponent } from '../../../shared/components/ui/text-input/text-input.component';
+import { ConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/confirm-dialog.component';
+import { BadgeComponent } from '../../../shared/components/ui/badge/badge.component';
+import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { CardComponent } from '../../../shared/components/ui/card/card.component';
+
+// Pipes
+import { DateMalayPipe } from '../../../shared/pipes/date-malay.pipe';
 
 import { APP_ROUTES } from '../../../core/constants/routes.constants'
 
 @Component({
   selector: 'app-user-roles',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    ButtonComponent,
+    DropdownComponent,
+    TextInputComponent,
+    ConfirmDialogComponent,
+    BadgeComponent,
+    LoadingSpinnerComponent,
+    CardComponent,
+    DateMalayPipe
+  ],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -41,92 +59,59 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="flex items-center justify-center py-12">
-        <div class="h-12 w-12 animate-spin rounded-full border-4 border-[#1e3c72] border-t-transparent"></div>
-      </div>
+      <app-loading-spinner
+        *ngIf="loading"
+        size="large"
+        message="Loading user roles..."
+      ></app-loading-spinner>
 
       <!-- Content -->
       <div *ngIf="!loading && userDetail" class="mx-auto max-w-4xl space-y-6">
         <!-- Assign New Role Card -->
-        <div class="rounded-lg bg-white p-6 shadow">
-          <h2 class="mb-4 text-xl font-semibold text-gray-900">Assign New Role</h2>
-          <div class="space-y-4">
-            <!-- Role Selection -->
-            <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">Select Role</label>
-              <select
-                [(ngModel)]="selectedRoleId"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              >
-                <option [value]="null">-- Select a role --</option>
-                <option
-                  *ngFor="let role of availableRoles; trackBy: trackByRoleId"
-                  [value]="role.role_id"
-                >
-                  {{ role.role_name }} ({{ role.role_code }})
-                </option>
-              </select>
+        <app-card title="Assign New Role">
+          <div class="space-y-6">
+            <!-- No roles available notice -->
+            <div *ngIf="roleDropdownOptions.length === 0 && !loading" class="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              All available roles have already been assigned to this user.
             </div>
+
+            <!-- Role Selection -->
+            <app-dropdown
+              *ngIf="roleDropdownOptions.length > 0"
+              [(ngModel)]="selectedRoleId"
+              label="Select Role"
+              placeholder="-- Select a role --"
+              [options]="roleDropdownOptions"
+              [disabled]="assigning"
+            ></app-dropdown>
 
             <!-- Expiration Date (Optional) -->
-            <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">
-                Expiration Date (Optional)
-              </label>
-              <input
-                type="datetime-local"
-                [(ngModel)]="expirationDate"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              />
-              <p class="mt-1 text-sm text-gray-500">Leave empty for permanent role assignment</p>
-            </div>
-
-            <!-- Error Message -->
-            <div *ngIf="errorMessage" class="rounded-lg bg-red-50 p-4">
-              <div class="flex">
-                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                </svg>
-                <div class="ml-3">
-                  <p class="text-sm text-red-800">{{ errorMessage }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Success Message -->
-            <div *ngIf="successMessage" class="rounded-lg bg-green-50 p-4">
-              <div class="flex">
-                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                </svg>
-                <div class="ml-3">
-                  <p class="text-sm text-green-800">{{ successMessage }}</p>
-                </div>
-              </div>
-            </div>
+            <app-text-input
+              [(ngModel)]="expirationDate"
+              label="Expiration Date (Optional)"
+              placeholder="Leave empty for permanent assignment"
+              inputType="string"
+              [disabled]="assigning"
+              hint="Enter date and time for role expiration (format: YYYY-MM-DDTHH:mm)"
+            ></app-text-input>
 
             <!-- Assign Button -->
-            <button
-              (click)="assignRole()"
-              [disabled]="!selectedRoleId || assigning"
-              class="w-full rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span *ngIf="assigning" class="flex items-center justify-center">
-                <svg class="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Assigning...
-              </span>
-              <span *ngIf="!assigning">Assign Role</span>
-            </button>
+            <div class="mt-6">
+              <app-button
+                variant="primary"
+                size="md"
+                (click)="assignRole()"
+                [disabled]="!selectedRoleId || assigning"
+                [loading]="assigning"
+              >
+                Assign Role
+              </app-button>
+            </div>
           </div>
-        </div>
+        </app-card>
 
         <!-- Currently Assigned Roles Card -->
-        <div class="rounded-lg bg-white p-6 shadow">
-          <h2 class="mb-4 text-xl font-semibold text-gray-900">Currently Assigned Roles</h2>
-          
+        <app-card title="Currently Assigned Roles">
           <div *ngIf="userDetail.roles.length > 0" class="space-y-3">
             <div
               *ngFor="let role of userDetail.roles; trackBy: trackByRoleId"
@@ -135,31 +120,26 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
               <div class="flex-1">
                 <div class="flex items-center gap-2">
                   <h3 class="font-medium text-gray-900">{{ role.role_name }}</h3>
-                  <span class="rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
+                  <app-badge variant="primary" size="sm">
                     {{ role.role_code }}
-                  </span>
+                  </app-badge>
                 </div>
                 <p class="mt-1 text-sm text-gray-500">
-                  Assigned {{ role.assigned_at | date:'short' }} by {{ role.assigned_by }}
+                  Assigned {{ role.assigned_at | dateMalay }} by {{ role.assigned_by }}
                 </p>
                 <p *ngIf="role.expires_at" class="mt-1 text-sm" [class.text-red-600]="isExpired(role.expires_at)" [class.text-orange-600]="!isExpired(role.expires_at)">
-                  {{ isExpired(role.expires_at) ? 'Expired' : 'Expires' }}: {{ role.expires_at | date:'short' }}
+                  {{ isExpired(role.expires_at) ? 'Expired' : 'Expires' }}: {{ role.expires_at | dateMalay:'DD MMM YYYY HH:mm' }}
                 </p>
               </div>
-              <button
+              <app-button
+                variant="danger"
+                size="sm"
                 (click)="confirmDetachRole(role.role_id, role.role_name)"
                 [disabled]="detachingRoleId === role.role_id"
-                class="ml-4 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                [loading]="detachingRoleId === role.role_id"
               >
-                <span *ngIf="detachingRoleId === role.role_id" class="flex items-center">
-                  <svg class="mr-1 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Removing...
-                </span>
-                <span *ngIf="detachingRoleId !== role.role_id">Remove</span>
-              </button>
+                {{ detachingRoleId === role.role_id ? 'Removing...' : 'Remove' }}
+              </app-button>
             </div>
           </div>
 
@@ -170,47 +150,20 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
             <h3 class="mt-2 text-sm font-medium text-gray-900">No roles assigned</h3>
             <p class="mt-1 text-sm text-gray-500">This user has no roles assigned yet.</p>
           </div>
-        </div>
+        </app-card>
       </div>
 
-      <!-- Confirmation Modal -->
-      <div
-        *ngIf="showConfirmModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50"
-        (click)="cancelDetach()"
-      >
-        <div
-          class="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
-          (click)="$event.stopPropagation()"
-        >
-          <div class="mb-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-            </div>
-          </div>
-          <h3 class="mb-2 text-lg font-medium text-gray-900">Confirm Role Removal</h3>
-          <p class="mb-6 text-sm text-gray-500">
-            Are you sure you want to remove the role "{{ roleToDetachName }}" from this user?
-            This action cannot be undone.
-          </p>
-          <div class="flex gap-3">
-            <button
-              (click)="cancelDetach()"
-              class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              (click)="detachRole()"
-              class="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-            >
-              Remove Role
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Confirmation Dialog -->
+      <app-confirm-dialog
+        [isOpen]="showConfirmModal"
+        title="Remove Role"
+        [message]="'Are you sure you want to remove the role &quot;' + roleToDetachName + '&quot; from this user? This action cannot be undone.'"
+        variant="danger"
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        (confirmed)="detachRole()"
+        (cancelled)="cancelDetach()"
+      ></app-confirm-dialog>
     </div>
   `
 })
@@ -234,6 +187,9 @@ export class UserRolesComponent implements OnInit, OnDestroy {
   showConfirmModal = false;
   roleToDetach: number | null = null;
   roleToDetachName = '';
+
+  // Dropdown options
+  roleDropdownOptions: DropdownOption[] = [];
 
   constructor(
     private userService: UserService,
@@ -291,14 +247,17 @@ export class UserRolesComponent implements OnInit, OnDestroy {
     this.availableRoles = this.allRoles.filter(role => 
       !assignedRoleIds.includes(role.role_id) && role.is_active
     );
+
+    // Update dropdown options (no placeholder item — handled by dropdown's placeholder input)
+    this.roleDropdownOptions = this.availableRoles.map(r => (
+      { value: r.role_id, label: `${r.role_name} (${r.role_code})` }
+    ));
   }
 
   assignRole(): void {
     if (!this.userId || !this.selectedRoleId) return;
 
     this.assigning = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     const dto: AssignRoleDto = {
       user_id: this.userId,
@@ -310,7 +269,7 @@ export class UserRolesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.successMessage = 'Role assigned successfully';
+          this.toast.success('Role assigned successfully');
           this.selectedRoleId = null;
           this.expirationDate = '';
           this.assigning = false;
@@ -330,15 +289,11 @@ export class UserRolesComponent implements OnInit, OnDestroy {
               });
           }
           
-          // Clear success message after 3 seconds
-          setTimeout(() => {
-            this.successMessage = '';
-          }, 3000);
+          // Remove stale timeout from assign
         },
         error: (error) => {
           this.logger.error('Error assigning role', error);
           this.toast.error(error.error?.message || 'Failed to assign role');
-          this.errorMessage = error.error?.message || 'Failed to assign role';
           this.assigning = false;
         }
       });
@@ -360,18 +315,16 @@ export class UserRolesComponent implements OnInit, OnDestroy {
     if (!this.userId || !this.roleToDetach) return;
 
     this.detachingRoleId = this.roleToDetach;
-    this.showConfirmModal = false;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.permissionService.detachRole(this.userId, this.roleToDetach)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.successMessage = 'Role removed successfully';
+          this.toast.success('Role removed successfully');
           this.detachingRoleId = null;
           this.roleToDetach = null;
           this.roleToDetachName = '';
+          this.showConfirmModal = false;
           
           // Reload user data
           if (this.userId) {
@@ -387,17 +340,12 @@ export class UserRolesComponent implements OnInit, OnDestroy {
                 }
               });
           }
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => {
-            this.successMessage = '';
-          }, 3000);
         },
         error: (error) => {
           this.logger.error('Error detaching role', error);
           this.toast.error(error.error?.message || 'Failed to remove role');
-          this.errorMessage = error.error?.message || 'Failed to remove role';
           this.detachingRoleId = null;
+          this.showConfirmModal = false;
         }
       });
   }

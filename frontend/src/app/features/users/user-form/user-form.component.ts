@@ -8,12 +8,18 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CreateUserDto, UpdateUserDto } from '../../../shared/models/user.model';
 
+// Shared UI Components
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { TextInputComponent } from '../../../shared/components/ui/text-input/text-input.component';
+import { CheckboxComponent } from '../../../shared/components/ui/checkbox/checkbox.component';
+import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+
 import { APP_ROUTES } from '../../../core/constants/routes.constants'
 
 @Component({
   selector: 'app-user-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ButtonComponent, TextInputComponent, CheckboxComponent, LoadingSpinnerComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -31,135 +37,102 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
         <p class="mt-1 text-sm text-gray-600">{{ isEditMode ? 'Update user information' : 'Add a new user to the system' }}</p>
       </div>
 
+      <!-- Loading State -->
+      <app-loading-spinner
+        *ngIf="loading && isEditMode"
+        size="large"
+        message="Loading user data..."
+      ></app-loading-spinner>
+
       <!-- Form Card -->
-      <div class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow">
+      <div *ngIf="!loading || !isEditMode" class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow">
         <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
           <!-- Username -->
           <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-gray-700">
-              Username <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
+            <app-text-input
               formControlName="username"
-              [readonly]="isEditMode"
-              [class.bg-gray-100]="isEditMode"
-              [class.cursor-not-allowed]="isEditMode"
-              class="w-full rounded-lg border px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              [class.border-red-500]="isFieldInvalid('username')"
+              label="Username"
               placeholder="Enter username"
-            />
-            <p *ngIf="isFieldInvalid('username')" class="mt-1 text-sm text-red-500">
-              <span *ngIf="userForm.get('username')?.errors?.['required']">Username is required</span>
-              <span *ngIf="userForm.get('username')?.errors?.['minlength']">Username must be at least 3 characters</span>
-              <span *ngIf="userForm.get('username')?.errors?.['maxlength']">Username must not exceed 50 characters</span>
-              <span *ngIf="userForm.get('username')?.errors?.['pattern']">Username can only contain letters, numbers, and underscores</span>
-            </p>
+              inputType="string"
+              [error]="getFieldError('username')"
+              [required]="true"
+              [disabled]="loading || isEditMode"
+              hint="Username can only contain letters, numbers, and underscores (3-50 characters)"
+            ></app-text-input>
           </div>
 
           <!-- Full Name -->
           <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-gray-700">
-              Full Name <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
+            <app-text-input
               formControlName="full_name"
-              class="w-full rounded-lg border px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              [class.border-red-500]="isFieldInvalid('full_name')"
+              label="Full Name"
               placeholder="Enter full name"
-            />
-            <p *ngIf="isFieldInvalid('full_name')" class="mt-1 text-sm text-red-500">
-              <span *ngIf="userForm.get('full_name')?.errors?.['required']">Full name is required</span>
-              <span *ngIf="userForm.get('full_name')?.errors?.['maxlength']">Full name must not exceed 100 characters</span>
-            </p>
+              inputType="string"
+              [error]="getFieldError('full_name')"
+              [required]="true"
+              [disabled]="loading"
+              [maxLength]="100"
+            ></app-text-input>
           </div>
 
           <!-- Password -->
           <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-gray-700">
-              Password <span *ngIf="!isEditMode" class="text-red-500">*</span>
-              <span *ngIf="isEditMode" class="text-sm font-normal text-gray-500">(Leave blank to keep current)</span>
-            </label>
-            <input
-              type="password"
+            <app-text-input
               formControlName="password"
-              class="w-full rounded-lg border px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              [class.border-red-500]="isFieldInvalid('password')"
+              label="Password"
               placeholder="Enter password"
-            />
-            <p *ngIf="isFieldInvalid('password')" class="mt-1 text-sm text-red-500">
-              <span *ngIf="userForm.get('password')?.errors?.['required']">Password is required</span>
-              <span *ngIf="userForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</span>
-            </p>
+              inputType="string"
+              [error]="getFieldError('password')"
+              [required]="!isEditMode"
+              [disabled]="loading"
+              [hint]="isEditMode ? 'Leave blank to keep current password' : 'Minimum 8 characters required'"
+            ></app-text-input>
           </div>
 
           <!-- Confirm Password -->
           <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-gray-700">
-              Confirm Password <span *ngIf="!isEditMode" class="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
+            <app-text-input
               formControlName="confirmPassword"
-              class="w-full rounded-lg border px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              [class.border-red-500]="isFieldInvalid('confirmPassword') || userForm.errors?.['passwordMismatch']"
+              label="Confirm Password"
               placeholder="Confirm password"
-            />
-            <p *ngIf="isFieldInvalid('confirmPassword') || userForm.errors?.['passwordMismatch']" class="mt-1 text-sm text-red-500">
-              <span *ngIf="userForm.get('confirmPassword')?.errors?.['required']">Password confirmation is required</span>
-              <span *ngIf="userForm.errors?.['passwordMismatch']">Passwords do not match</span>
-            </p>
+              inputType="string"
+              [error]="getPasswordConfirmError()"
+              [required]="!isEditMode"
+              [disabled]="loading"
+            ></app-text-input>
           </div>
 
           <!-- Active Status -->
           <div class="mb-6">
-            <label class="flex items-center">
-              <input
-                type="checkbox"
-                formControlName="is_active"
-                class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72]"
-              />
-              <span class="ml-2 text-sm font-medium text-gray-700">Active User</span>
-            </label>
-            <p class="mt-1 text-sm text-gray-500">Inactive users cannot log in to the system</p>
-          </div>
-
-          <!-- Error Message -->
-          <div *ngIf="errorMessage" class="mb-4 rounded-lg bg-red-50 p-4">
-            <div class="flex">
-              <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-              </svg>
-              <div class="ml-3">
-                <p class="text-sm text-red-800">{{ errorMessage }}</p>
-              </div>
-            </div>
+            <app-checkbox
+              formControlName="is_active"
+              label="Active User"
+              [disabled]="loading"
+              labelSize="sm"
+              description="Inactive users cannot log in to the system"
+            ></app-checkbox>
           </div>
 
           <!-- Actions -->
-          <div class="flex justify-end gap-3">
-            <button
+          <div class="mt-6 flex justify-end gap-3">
+            <app-button
               type="button"
+              variant="outline"
+              size="md"
               (click)="goBack()"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              [disabled]="loading"
             >
               Cancel
-            </button>
-            <button
+            </app-button>
+            <app-button
               type="submit"
+              variant="primary"
+              size="md"
+              [loading]="loading"
               [disabled]="userForm.invalid || loading"
-              class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span *ngIf="loading" class="flex items-center">
-                <svg class="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </span>
-              <span *ngIf="!loading">{{ isEditMode ? 'Update User' : 'Create User' }}</span>
-            </button>
+              {{ isEditMode ? 'Update User' : 'Create User' }}
+            </app-button>
           </div>
         </form>
       </div>
@@ -173,7 +146,6 @@ export class UserFormComponent implements OnInit, OnDestroy {
   isEditMode = false;
   userId?: number;
   loading = false;
-  errorMessage = '';
 
   constructor(
     private fb: FormBuilder,
@@ -259,7 +231,6 @@ export class UserFormComponent implements OnInit, OnDestroy {
         error: (error) => {
           this.logger.error('Error loading user', error);
           this.toast.error('Failed to load user data');
-          this.errorMessage = 'Failed to load user data';
           this.loading = false;
         }
       });
@@ -274,7 +245,6 @@ export class UserFormComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    this.errorMessage = '';
 
     if (this.isEditMode) {
       this.updateUser();
@@ -286,11 +256,10 @@ export class UserFormComponent implements OnInit, OnDestroy {
   private createUser(): void {
     if (this.userForm.invalid) {
       this.loading = false;
-      // Mark all fields as touched to show validation errors
       Object.keys(this.userForm.controls).forEach(key => {
         this.userForm.get(key)?.markAsTouched();
       });
-      this.errorMessage = 'Please fill in all required fields correctly';
+      this.toast.warning('Please fill in all required fields correctly');
       return;
     }
 
@@ -311,8 +280,7 @@ export class UserFormComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.logger.error('Error creating user', error);
-          this.errorMessage = error.error?.message || 'Failed to create user';
-          this.toast.error(this.errorMessage);
+          this.toast.error(error.error?.message || 'Failed to create user');
           this.loading = false;
         }
       });
@@ -341,16 +309,40 @@ export class UserFormComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.logger.error('Error updating user', error);
-          this.errorMessage = error.error?.message || 'Failed to update user';
-          this.toast.error(this.errorMessage);
+          this.toast.error(error.error?.message || 'Failed to update user');
           this.loading = false;
         }
       });
   }
 
-  isFieldInvalid(fieldName: string): boolean {
+  getFieldError(fieldName: string): string {
     const field = this.userForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched));
+    if (!field || !field.invalid || (!field.dirty && !field.touched)) {
+      return '';
+    }
+
+    if (field.errors?.['required']) return `${fieldName.replace(/_/g, ' ')} is required`;
+    if (field.errors?.['minlength']) return `Minimum ${field.errors['minlength'].requiredLength} characters required`;
+    if (field.errors?.['maxlength']) return `Maximum ${field.errors['maxlength'].requiredLength} characters allowed`;
+    if (field.errors?.['pattern']) return `${fieldName.replace(/_/g, ' ')} format is invalid`;
+    return 'Invalid input';
+  }
+
+  getPasswordConfirmError(): string {
+    const field = this.userForm.get('confirmPassword');
+    if (!field || (!field.dirty && !field.touched)) {
+      return '';
+    }
+
+    if (this.userForm.errors?.['passwordMismatch']) {
+      return 'Passwords do not match';
+    }
+
+    if (field.errors?.['required']) {
+      return 'Password confirmation is required';
+    }
+
+    return '';
   }
 
   goBack(): void {

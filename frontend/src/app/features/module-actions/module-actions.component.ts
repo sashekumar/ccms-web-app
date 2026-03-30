@@ -1,19 +1,24 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { Subject, takeUntil, forkJoin, filter } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PermissionService } from '../../core/services/permission.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Module, Action, ModuleAction } from '../../shared/models/permission.model';
 import { LoadingSpinnerComponent } from '../../shared/components/ui/loading-spinner/loading-spinner.component';
-import { StatusBadgeComponent } from '../../common/components/status-badge/status-badge.component';
+import { DataTableComponent, DataTableColumn, DataTableAction, DataTableFilter, DataTablePagination, DataTableFilterState, DataTableRowActionEvent } from '../../shared/components/ui/data-table/data-table.component';
+import { ConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/confirm-dialog.component';
+import { TextInputComponent } from '../../shared/components/ui/text-input/text-input.component';
+import { CheckboxComponent } from '../../shared/components/ui/checkbox/checkbox.component';
+import { DropdownComponent, DropdownOption } from '../../shared/components/ui/dropdown/dropdown.component';
+import { ButtonComponent } from '../../shared/components/ui/button/button.component';
 
 @Component({
   selector: 'app-module-actions',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, DataTableComponent, ConfirmDialogComponent, TextInputComponent, CheckboxComponent, DropdownComponent, ButtonComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -22,71 +27,13 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
           <h1 class="text-3xl font-bold text-gray-900">Module-Action Management</h1>
           <p class="mt-1 text-sm text-gray-600">Link actions to modules for permission control</p>
         </div>
-        <button 
-          (click)="openCreateModal()"
-          class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1e3c72] hover:bg-[#2a5298] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1e3c72]">
-          <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
+        <app-button
+          variant="primary"
+          size="md"
+          iconLeft="fas fa-plus"
+          (click)="openCreateModal()">
           Attach Actions to Module
-        </button>
-      </div>
-
-      <!-- Filters -->
-      <div class="mb-6 rounded-lg bg-white p-4 shadow">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <!-- Search -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Search</label>
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="applyFilters()"
-              placeholder="Module or action name"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            />
-          </div>
-
-          <!-- Module Filter -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Module</label>
-            <select
-              [(ngModel)]="moduleFilter"
-              (ngModelChange)="applyFilters()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="null">All Modules</option>
-              <option *ngFor="let module of modules; trackBy: trackByModuleId" [ngValue]="module.module_id">{{ module.module_name }}</option>
-            </select>
-          </div>
-
-          <!-- Action Filter -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Action</label>
-            <select
-              [(ngModel)]="actionFilter"
-              (ngModelChange)="applyFilters()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="null">All Actions</option>
-              <option *ngFor="let action of actions; trackBy: trackByActionId" [ngValue]="action.action_id">{{ action.action_name }}</option>
-            </select>
-          </div>
-
-          <!-- Status Filter -->
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Status</label>
-            <select
-              [(ngModel)]="statusFilter"
-              (ngModelChange)="applyFilters()"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-            >
-              <option [ngValue]="null">All Status</option>
-              <option [ngValue]="true">Active Only</option>
-              <option [ngValue]="false">Inactive Only</option>
-            </select>
-          </div>
-        </div>
+        </app-button>
       </div>
 
       <!-- Loading State -->
@@ -113,60 +60,18 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
       </div>
 
       <!-- Module-Actions Table -->
-      <div *ngIf="!loading" class="rounded-lg bg-white shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Module</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Custom Label</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
-              <tr *ngFor="let item of filteredModuleActions; trackBy: trackByModuleActionId" class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900">{{ item.module_name }}</div>
-                  <div class="text-sm text-gray-500">{{ item.module_code }}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900">{{ item.action_name }}</div>
-                  <div class="text-sm text-gray-500">{{ item.action_code }}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ item.action_label || '-' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <app-status-badge [active]="item.is_active"></app-status-badge>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button (click)="openEditModal(item)" class="text-indigo-600 hover:text-indigo-900 mr-3" data-testid="edit-module-action-button" aria-label="Edit">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                  </button>
-                  <button (click)="confirmDelete(item)" class="text-red-600 hover:text-red-900" data-testid="delete-module-action-button" aria-label="Delete">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="filteredModuleActions.length === 0">
-                <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">
-                  {{ searchTerm || moduleFilter || actionFilter || statusFilter !== null ? 'No module-actions found matching your filters' : 'No module-actions found. Start by attaching actions to modules.' }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Count -->
-      <div *ngIf="!loading" class="mt-4 text-sm text-gray-600">
-        Total: {{ moduleActions.length }} module-action{{ moduleActions.length !== 1 ? 's' : '' }}
+      <div *ngIf="!loading">
+        <app-data-table
+          [columns]="columns"
+          [rows]="getPaginatedData()"
+          [filters]="tableFilters"
+          [pagination]="pagination"
+          [loading]="loading"
+          [rowActions]="rowActions"
+          (filterChange)="onFilterChange($event)"
+          (rowAction)="onRowAction($event)"
+          (cellToggle)="onToggleStatus($event)"
+        ></app-data-table>
       </div>
     </div>
 
@@ -185,31 +90,29 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
             <form id="moduleActionForm" #moduleActionFormRef="ngForm" (ngSubmit)="saveModuleAction()">
               <div class="space-y-4">
                 <div *ngIf="!editingItem">
-                  <label class="block text-sm font-medium text-gray-700">Module <span class="text-red-500">*</span></label>
-                  <select [(ngModel)]="formData.moduleId" name="module" required
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-                    <option value="">Select Module</option>
-                    <option *ngFor="let module of modules; trackBy: trackByModuleId" [value]="module.module_id">
-                      {{ module.module_name }} ({{ module.module_code }})
-                    </option>
-                  </select>
+                  <app-dropdown
+                    label="Module"
+                    [(ngModel)]="formData.moduleId"
+                    name="module"
+                    [options]="moduleOptions"
+                    [required]="true"
+                    placeholder="Select Module">
+                  </app-dropdown>
                 </div>
 
               <div *ngIf="!editingItem">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Actions <span class="text-red-500">*</span> (Select Multiple)</label>
                 <div class="max-h-60 overflow-y-auto border rounded-md p-3 space-y-2">
-                  <div *ngFor="let action of actions; trackBy: trackByActionId" class="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      [id]="'action-' + action.action_id"
-                      [value]="action.action_id"
-                      (change)="toggleAction(action.action_id, $event)"
-                      class="h-4 w-4 text-[#1e3c72] focus:ring-[#1e3c72] border-gray-300 rounded">
-                    <label [for]="'action-' + action.action_id" class="ml-2 block text-sm text-gray-900 flex-1">
-                      <span class="font-medium">{{ action.action_name }}</span>
-                      <span class="text-gray-500 ml-1">({{ action.action_code }})</span>
-                    </label>
-                  </div>
+                  <app-checkbox
+                    *ngFor="let action of actions; trackBy: trackByActionId"
+                    [id]="'action-' + action.action_id"
+                    [value]="isActionSelected(action.action_id)"
+                    (valueChange)="toggleActionSelection(action.action_id, $event)"
+                    [label]="action.action_name"
+                    [secondaryLabel]="'(' + action.action_code + ')'"
+                    labelSize="sm"
+                    labelWeight="medium"
+                  ></app-checkbox>
                 </div>
                 <p class="mt-1 text-xs text-gray-500">Selected: {{ formData.actionIds.length }} action{{ formData.actionIds.length !== 1 ? 's' : '' }}</p>
               </div>
@@ -227,18 +130,22 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700">Custom Action Label</label>
-                <input type="text" [(ngModel)]="formData.actionLabel" name="label"
+                <app-text-input
+                  label="Custom Action Label"
+                  [(ngModel)]="formData.actionLabel"
+                  name="label"
                   placeholder="e.g., 'View Details' or leave empty for default"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#1e3c72] focus:ring-[#1e3c72] sm:text-sm border px-3 py-2">
-                <p class="mt-1 text-xs text-gray-500">Optional: Override the default action name</p>
+                  hint="Optional: Override the default action name">
+                </app-text-input>
               </div>
 
-              <div *ngIf="editingItem" class="flex items-center">
-                <input type="checkbox" [(ngModel)]="formData.isActive" name="active" id="isActive"
-                  class="h-4 w-4 text-[#1e3c72] focus:ring-[#1e3c72] border-gray-300 rounded">
-                <label for="isActive" class="ml-2 block text-sm text-gray-900">Active</label>
-              </div>
+              <app-checkbox
+                *ngIf="editingItem"
+                label="Active"
+                [(ngModel)]="formData.isActive"
+                name="active"
+                labelSize="sm">
+              </app-checkbox>
             </div>
           </form>
           </div>
@@ -246,14 +153,23 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
         <!-- Modal Footer -->
         <div class="flex-shrink-0 border-t border-gray-200 px-6 py-4">
           <div class="flex gap-3 justify-end">
-            <button type="button" (click)="closeModal()" [disabled]="saving"
-              class="rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <app-button
+              variant="secondary"
+              size="md"
+              type="button"
+              [disabled]="saving"
+              (click)="closeModal()">
               Cancel
-            </button>
-            <button type="submit" form="moduleActionForm" [disabled]="saving || !moduleActionFormRef.valid"
-              class="rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#1e3c72] text-sm font-medium text-white hover:bg-[#2a5298] disabled:opacity-50">
-              {{ saving ? 'Saving...' : 'Save' }}
-            </button>
+            </app-button>
+            <app-button
+              variant="primary"
+              size="md"
+              type="submit"
+              form="moduleActionForm"
+              [disabled]="saving || !moduleActionFormRef.valid"
+              [loading]="saving">
+              Save
+            </app-button>
           </div>
         </div>
       </div>
@@ -297,19 +213,36 @@ import { StatusBadgeComponent } from '../../common/components/status-badge/statu
         </div>
       </div>
     </div>
+
+    <!-- Toggle Status Confirmation Dialog -->
+    <app-confirm-dialog
+      [isOpen]="showToggleConfirm"
+      [title]="pendingToggle?.newValue ? 'Activate Module-Action' : 'Deactivate Module-Action'"
+      [message]="pendingToggle?.newValue
+        ? 'Are you sure you want to activate &quot;' + pendingToggle?.item?.action_name + '&quot; for &quot;' + pendingToggle?.item?.module_name + '&quot;?'
+        : 'Are you sure you want to deactivate &quot;' + pendingToggle?.item?.action_name + '&quot; for &quot;' + pendingToggle?.item?.module_name + '&quot;?'"
+      [variant]="pendingToggle?.newValue ? 'primary' : 'warn'"
+      [confirmLabel]="pendingToggle?.newValue ? 'Yes, Activate' : 'Yes, Deactivate'"
+      cancelLabel="Cancel"
+      (confirmed)="confirmToggleStatus()"
+      (cancelled)="cancelToggleStatus()"
+    ></app-confirm-dialog>
   `
 })
 export class ModuleActionsComponent implements OnInit, OnDestroy {
   moduleActions: ModuleAction[] = [];
   filteredModuleActions: ModuleAction[] = [];
   modules: Module[] = [];
+  moduleOptions: DropdownOption[] = [];
   actions: Action[] = [];
   loading = true;
   saving = false;
   showModal = false;
   showDeleteConfirm = false;
+  showToggleConfirm = false;
   editingItem: ModuleAction | null = null;
   itemToDelete: ModuleAction | null = null;
+  pendingToggle: { item: ModuleAction; newValue: boolean } | null = null;
   successMessage = '';
   errorMessage = '';
 
@@ -325,6 +258,95 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
     actionLabel: '',
     isActive: true
   };
+
+  // DataTable Configuration
+  pagination: DataTablePagination = {
+    total: 0,
+    page: 1,
+    limit: 25,
+    totalPages: 0
+  };
+
+  tableFilters: DataTableFilter[] = [
+    {
+      key: 'search',
+      label: 'Search',
+      type: 'search',
+      placeholder: 'Search module or action name',
+      inputType: 'string'
+    },
+    {
+      key: 'module_id',
+      label: 'Module',
+      type: 'select',
+      placeholder: 'Filter by module',
+      options: [] // Will be populated dynamically from modules
+    },
+    {
+      key: 'action_id',
+      label: 'Action',
+      type: 'select',
+      placeholder: 'Filter by action',
+      options: [] // Will be populated dynamically from actions
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'select',
+      placeholder: 'Filter by status',
+      options: [
+        { value: null, label: 'All Status' },
+        { value: true, label: 'Active Only' },
+        { value: false, label: 'Inactive Only' }
+      ]
+    }
+  ];
+
+  columns: DataTableColumn[] = [
+    {
+      key: 'module_name',
+      label: 'Module',
+      type: 'avatar',
+      sortable: true,
+      avatarSubKey: 'module_code'
+    },
+    {
+      key: 'action_name',
+      label: 'Action',
+      type: 'avatar',
+      sortable: true,
+      avatarSubKey: 'action_code'
+    },
+    {
+      key: 'action_label',
+      label: 'Custom Label',
+      type: 'text',
+      sortable: true
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'toggle',
+      sortable: true
+    }
+  ];
+
+  rowActions: DataTableAction[] = [
+    {
+      id: 'edit',
+      title: 'Edit',
+      color: 'indigo',
+      permission: 'MODULE_ACTION_MANAGEMENT.UPDATE',
+      iconPath: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+    },
+    {
+      id: 'delete',
+      title: 'Delete',
+      color: 'red',
+      permission: 'MODULE_ACTION_MANAGEMENT.DELETE',
+      iconPath: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+    }
+  ];
 
   private destroy$ = new Subject<void>();
 
@@ -356,7 +378,12 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
           this.moduleActions = data.moduleActions;
           this.modules = data.modules;
           this.actions = data.actions;
+          
+          // Populate filter options
+          this.updateFilterOptions();
+          
           this.applyFilters();
+          this.updatePagination();
           this.loading = false;
         },
         error: (error: HttpErrorResponse) => {
@@ -367,6 +394,40 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
           this.clearMessages();
         }
       });
+  }
+
+  private updateFilterOptions(): void {
+    // Update module filter options
+    const moduleFilter = this.tableFilters.find(f => f.key === 'module_id');
+    if (moduleFilter) {
+      moduleFilter.options = [
+        { value: null, label: 'All Modules' },
+        ...this.modules.map(m => ({ value: m.module_id, label: m.module_name }))
+      ];
+    }
+
+    // Update action filter options
+    const actionFilter = this.tableFilters.find(f => f.key === 'action_id');
+    if (actionFilter) {
+      actionFilter.options = [
+        { value: null, label: 'All Actions' },
+        ...this.actions.map(a => ({ value: a.action_id, label: a.action_name }))
+      ];
+    }
+    
+    // Populate dropdown options for form
+    this.moduleOptions = this.modules.map(m => ({
+      value: m.module_id,
+      label: `${m.module_name} (${m.module_code})`
+    }));
+  }
+
+  private updatePagination(): void {
+    this.pagination = {
+      ...this.pagination,
+      total: this.filteredModuleActions.length,
+      totalPages: Math.ceil(this.filteredModuleActions.length / this.pagination.limit)
+    };
   }
 
   applyFilters(): void {
@@ -398,6 +459,10 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
 
       return true;
     });
+
+    // Reset to first page when filters change
+    this.pagination.page = 1;
+    this.updatePagination();
   }
 
   openCreateModal(): void {
@@ -410,10 +475,15 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
     };
     this.showModal = true;
   }
-  toggleAction(actionId: number, event: Event): void {
-    const checkbox = event.target as HTMLInputElement;
-    if (checkbox.checked) {
-      this.formData.actionIds.push(actionId);
+  isActionSelected(actionId: number): boolean {
+    return this.formData.actionIds.includes(actionId);
+  }
+
+  toggleActionSelection(actionId: number, isSelected: boolean): void {
+    if (isSelected) {
+      if (!this.formData.actionIds.includes(actionId)) {
+        this.formData.actionIds.push(actionId);
+      }
     } else {
       const index = this.formData.actionIds.indexOf(actionId);
       if (index > -1) {
@@ -561,6 +631,81 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
       this.successMessage = '';
       this.errorMessage = '';
     }, 5000);
+  }
+
+  /**
+   * DataTable Methods
+   */
+  getPaginatedData(): ModuleAction[] {
+    const start = (this.pagination.page - 1) * this.pagination.limit;
+    const end = start + this.pagination.limit;
+    return this.filteredModuleActions.slice(start, end);
+  }
+
+  onFilterChange(filters: DataTableFilterState): void {
+    // Update pagination
+    this.pagination = { ...this.pagination, page: filters.page, limit: filters.limit };
+
+    // Update filter values
+    this.searchTerm = filters['search'] || '';
+    this.moduleFilter = filters['module_id'] ?? null;
+    this.actionFilter = filters['action_id'] ?? null;
+    this.statusFilter = filters['is_active'] ?? null;
+
+    // Apply filters
+    this.applyFilters();
+  }
+
+  onToggleStatus(event: { row: any; column: any; newValue: boolean }): void {
+    this.pendingToggle = {
+      item: event.row as ModuleAction,
+      newValue: event.newValue
+    };
+    this.showToggleConfirm = true;
+  }
+
+  confirmToggleStatus(): void {
+    if (!this.pendingToggle) return;
+
+    const { item, newValue } = this.pendingToggle;
+    const moduleActionId = item.module_action_id;
+
+    this.permissionService.updateModuleAction(moduleActionId, { is_active: newValue })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          item.is_active = newValue;
+          this.toast.success(`Module-Action ${newValue ? 'activated' : 'deactivated'} successfully`);
+          this.showToggleConfirm = false;
+          this.pendingToggle = null;
+        },
+        error: (error: HttpErrorResponse) => {
+          this.logger.error('Error updating module-action status', error);
+          this.toast.error('Error updating status');
+          this.showToggleConfirm = false;
+          this.pendingToggle = null;
+          this.loadData(); // Reload to revert UI state
+        }
+      });
+  }
+
+  cancelToggleStatus(): void {
+    this.showToggleConfirm = false;
+    this.pendingToggle = null;
+    this.loadData(); // Reload data to revert the optimistic UI update
+  }
+
+  onRowAction(event: DataTableRowActionEvent): void {
+    const item = event.row as ModuleAction;
+    
+    switch (event.action) {
+      case 'edit':
+        this.openEditModal(item);
+        break;
+      case 'delete':
+        this.confirmDelete(item);
+        break;
+    }
   }
 
   /**

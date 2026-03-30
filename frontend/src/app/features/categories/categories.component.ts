@@ -7,13 +7,17 @@ import { CategoryService } from '../../core/services/category.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Category } from '../../shared/models/permission.model';
-import { LoadingSpinnerComponent } from '../../shared/components/ui/loading-spinner/loading-spinner.component';
-import { StatusBadgeComponent } from '../../common/components/status-badge/status-badge.component';
+import { DataTableComponent, DataTableColumn, DataTableAction, DataTableFilter, DataTablePagination, DataTableFilterState, DataTableRowActionEvent } from '../../shared/components/ui/data-table/data-table.component';
+import { ConfirmDialogComponent } from '../../shared/components/ui/confirm-dialog/confirm-dialog.component';
+import { TextInputComponent } from '../../shared/components/ui/text-input/text-input.component';
+import { TextAreaComponent } from '../../shared/components/ui/text-area/text-area.component';
+import { CheckboxComponent } from '../../shared/components/ui/checkbox/checkbox.component';
+import { ButtonComponent } from '../../shared/components/ui/button/button.component';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ConfirmDialogComponent, TextInputComponent, TextAreaComponent, CheckboxComponent, ButtonComponent],
   templateUrl: './categories.component.html',
   styles: []
 })
@@ -24,8 +28,10 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   saving = false;
   showModal = false;
   showDeleteConfirm = false;
+  showToggleConfirm = false;
   editingCategory: Category | null = null;
   categoryToDelete: Category | null = null;
+  pendingToggle: { category: Category; newValue: boolean } | null = null;
   successMessage = '';
   errorMessage = '';
 
@@ -44,6 +50,81 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   };
 
   private destroy$ = new Subject<void>();
+
+  // DataTable Configuration
+  pagination: DataTablePagination = {
+    total: 0,
+    page: 1,
+    limit: 25,
+    totalPages: 0
+  };
+
+  tableFilters: DataTableFilter[] = [
+    {
+      key: 'search',
+      label: 'Search',
+      type: 'search',
+      placeholder: 'Search by name, code, or description...',
+      inputType: 'string'
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'select',
+      placeholder: 'All Statuses',
+      options: [
+        { value: '', label: 'All Statuses' },
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
+      ]
+    }
+  ];
+
+  columns: DataTableColumn[] = [
+    {
+      key: 'category_name',
+      label: 'Category Name',
+      type: 'avatar',
+      sortable: true,
+      avatarSubKey: 'category_code',
+      avatarSubPrefix: 'Code: '
+    },
+    {
+      key: 'description',
+      label: 'Description',
+      type: 'text',
+      sortable: false
+    },
+    {
+      key: 'display_order',
+      label: 'Display Order',
+      type: 'number',
+      sortable: true
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      type: 'toggle',
+      sortable: true
+    }
+  ];
+
+  rowActions: DataTableAction[] = [
+    {
+      id: 'edit',
+      title: 'Edit Category',
+      iconPath: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+      color: 'indigo',
+      permission: 'CATEGORY_MANAGEMENT.UPDATE'
+    },
+    {
+      id: 'delete',
+      title: 'Delete Category',
+      iconPath: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+      color: 'red',
+      permission: 'CATEGORY_MANAGEMENT.DELETE'
+    }
+  ];
 
   constructor(
     private categoryService: CategoryService,
@@ -68,6 +149,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         next: (categories) => {
           this.categories = categories;
           this.applyFilters();
+          this.updatePagination();
           this.loading = false;
         },
         error: (error: HttpErrorResponse) => {
@@ -78,6 +160,14 @@ export class CategoriesComponent implements OnInit, OnDestroy {
           this.clearMessages();
         }
       });
+  }
+
+  updatePagination(): void {
+    this.pagination = {
+      ...this.pagination,
+      total: this.filteredCategories.length,
+      totalPages: Math.ceil(this.filteredCategories.length / this.pagination.limit)
+    };
   }
 
   applyFilters(): void {
@@ -101,6 +191,96 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     });
   }
 
+  onFilterChange(filters: DataTableFilterState): void {
+    this.logger.debug('Filter changed:', filters);
+    
+    // Extract search filter
+    this.searchTerm = filters['search'] || '';
+    
+    // Extract status filter
+    if (filters['is_active'] === 'true') {
+      this.statusFilter = true;
+    } else if (filters['is_active'] === 'false') {
+      this.statusFilter = false;
+    } else {
+      this.statusFilter = null;
+    }
+    
+    // Update pagination from filters
+    this.pagination = {
+      ...this.pagination,
+      page: filters.page,
+      limit: filters.limit
+    };
+    
+    // Apply filters and recalculate pagination
+    this.applyFilters();
+    this.updatePagination();
+  }
+
+  getPaginatedData(): Category[] {
+    const startIndex = (this.pagination.page - 1) * this.pagination.limit;
+    const endIndex = startIndex + this.pagination.limit;
+    return this.filteredCategories.slice(startIndex, endIndex);
+  }
+
+  onToggleStatus(event: { row: any; column: any; newValue: boolean }): void {
+    const category = event.row as Category;
+    const newValue = event.newValue;
+    // Store pending action and open confirm dialog
+    this.pendingToggle = { category, newValue };
+    this.showToggleConfirm = true;
+  }
+
+  /** Called when user confirms the status toggle */
+  confirmToggleStatus(): void {
+    if (!this.pendingToggle) return;
+    const { category, newValue } = this.pendingToggle;
+    this.showToggleConfirm = false;
+    this.pendingToggle = null;
+    
+    this.logger.debug(`Toggling category ${category.category_id} status to: ${newValue}`);
+    
+    this.categoryService.updateCategory(category.category_id, {
+      is_active: newValue
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          category.is_active = newValue;
+          const label = newValue ? 'activated' : 'deactivated';
+          this.toast.success(`Category "${category.category_name}" has been ${label} successfully.`);
+          this.logger.info(`Category ${category.category_id} status updated to: ${newValue}`);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.logger.error('Error updating category status:', error);
+          this.toast.error('Failed to update category status. Please try again.');
+          // Reload to revert the optimistic update
+          this.loadCategories();
+        }
+      });
+  }
+
+  /** Called when user cancels the status toggle */
+  cancelToggleStatus(): void {
+    this.showToggleConfirm = false;
+    this.pendingToggle = null;
+    // Reload to revert the optimistic chip state
+    this.loadCategories();
+  }
+
+  onRowAction(event: DataTableRowActionEvent): void {
+    const category = event.row as Category;
+    switch (event.action) {
+      case 'edit':
+        this.openEditModal(category);
+        break;
+      case 'delete':
+        this.confirmDelete(category);
+        break;
+    }
+  }
+
   openCreateModal(): void {
     this.editingCategory = null;
     this.formData = {
@@ -121,7 +301,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
       categoryCode: category.category_code,
       description: category.description || '',
       icon: category.icon || '',
-      displayOrder: category.display_order,
+      displayOrder: category.display_order || 0,
       isActive: category.is_active
     };
     this.showModal = true;

@@ -7,6 +7,7 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Role, Module, Action, RolePermissionSummary, PermissionMatrixItem } from '../../../shared/models/permission.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
 
 interface PermissionMatrixRow {
   module: Module;
@@ -22,11 +23,11 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
 @Component({
   selector: 'app-role-permissions',
   standalone: true,
-  imports: [CommonModule, LoadingSpinnerComponent],
+  imports: [CommonModule, LoadingSpinnerComponent, ButtonComponent],
   template: `
-    <div class="min-h-screen bg-gray-50 p-6">
-      <!-- Header -->
-      <div class="mb-6">
+    <div class="flex h-screen flex-col bg-gray-50">
+      <!-- PAGE HEADER (Fixed at top) -->
+      <div class="flex-shrink-0 border-b border-gray-200 bg-white p-6">
         <button
           (click)="goBack()"
           class="mb-4 flex items-center text-sm text-gray-600 hover:text-gray-900"
@@ -44,58 +45,42 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
                 Manage permissions for role: <span class="font-medium">{{ role.role_name }}</span>
               </p>
             </div>
-            <button
-              (click)="saveChanges()"
-              [disabled]="!hasChanges || saving"
-              class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-6 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span *ngIf="saving" class="flex items-center">
-                <svg class="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </span>
-              <span *ngIf="!saving">Save Changes</span>
-            </button>
+            <div>
+              <app-button
+                variant="primary"
+                [loading]="saving"
+                [disabled]="!hasChanges || saving"
+                (click)="saveChanges()"
+              >
+                Save Changes
+              </app-button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Loading State -->
-      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+      <!-- LOADING STATE -->
+      <app-loading-spinner *ngIf="loading" class="m-6"></app-loading-spinner>
 
-      <!-- Success Message -->
-      <div *ngIf="successMessage" class="mb-6 rounded-lg bg-green-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <div class="ml-3">
-            <p class="text-sm text-green-800">{{ successMessage }}</p>
-          </div>
-        </div>
+      <!-- EMPTY STATE -->
+      <div *ngIf="!loading && permissionMatrix.length === 0" class="m-6 flex-1 rounded-lg bg-white p-12 text-center shadow">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No permissions available</h3>
+        <p class="mt-1 text-sm text-gray-500">There are no modules or actions defined in the system.</p>
       </div>
 
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="mb-6 rounded-lg bg-red-50 p-4">
-        <div class="flex">
-          <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-          </svg>
-          <div class="ml-3">
-            <p class="text-sm text-red-800">{{ errorMessage }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Permissions Matrix -->
-      <div *ngIf="!loading && permissionMatrix.length > 0" class="overflow-hidden rounded-lg bg-white shadow">
-        <div class="overflow-x-auto">
+      <!-- PERMISSIONS CARD (Fixed with internal scrolling) -->
+      <div *ngIf="!loading && permissionMatrix.length > 0" class="m-6 flex flex-1 flex-col overflow-hidden rounded-lg bg-white shadow">
+        
+        <!-- CARD BODY (Scrollable - Columns and Checkboxes in sync) -->
+        <div class="flex-1 overflow-x-auto overflow-y-auto">
           <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+            <!-- HEADER (Sticky - Column names) -->
+            <thead class="sticky top-0 z-20 bg-gray-50 divide-y divide-gray-200">
               <tr>
-                <th class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th class="sticky left-0 z-30 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Module
                 </th>
                 <th
@@ -109,6 +94,8 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
                 </th>
               </tr>
             </thead>
+
+            <!-- BODY (Scrollable - Checkbox rows) -->
             <tbody class="divide-y divide-gray-200 bg-white">
               <tr *ngFor="let row of permissionMatrix; trackBy: trackByModuleId" class="hover:bg-gray-50">
                 <!-- Module Name -->
@@ -143,38 +130,23 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           </table>
         </div>
 
-        <!-- Summary -->
-        <div class="border-t border-gray-200 bg-gray-50 px-6 py-4">
+        <!-- CARD FOOTER (Fixed - Permission count + buttons) -->
+        <div class="flex-shrink-0 border-t border-gray-200 bg-gray-50 px-6 py-4">
           <div class="flex items-center justify-between">
             <div class="text-sm text-gray-600">
               <span class="font-medium">{{ getGrantedCount() }}</span> of 
               <span class="font-medium">{{ getTotalCount() }}</span> permissions granted
             </div>
             <div class="flex gap-2">
-              <button
-                (click)="selectAll()"
-                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Select All
-              </button>
-              <button
-                (click)="clearAll()"
-                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Clear All
-              </button>
+              <div>
+                <app-button variant="outline" size="sm" (click)="selectAll()">Select All</app-button>
+              </div>
+              <div>
+                <app-button variant="outline" size="sm" (click)="clearAll()">Clear All</app-button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Empty State -->
-      <div *ngIf="!loading && permissionMatrix.length === 0" class="rounded-lg bg-white p-12 text-center shadow">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No permissions available</h3>
-        <p class="mt-1 text-sm text-gray-500">There are no modules or actions defined in the system.</p>
       </div>
     </div>
   `
@@ -191,9 +163,6 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
   loading = false;
   saving = false;
   hasChanges = false;
-  
-  successMessage = '';
-  errorMessage = '';
   
   roleId?: number;
   
@@ -242,7 +211,6 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
         error: (error) => {
           this.logger.error('Error loading role permissions data', error);
           this.toast.error('Failed to load role permissions');
-          this.errorMessage = 'Failed to load role permissions';
           this.loading = false;
         }
       });
@@ -436,8 +404,6 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
     if (!this.roleId || !this.hasChanges) return;
 
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     // Collect permissions to grant and revoke
     const toGrant: { module_action_id: number }[] = [];
@@ -474,7 +440,7 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
 
     if (operations.length === 0) {
       this.saving = false;
-      this.successMessage = 'No changes to save';
+      this.toast.info('No changes to save');
       return;
     }
 
@@ -483,22 +449,13 @@ export class RolePermissionsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toast.success('Permissions updated successfully');
-          this.successMessage = 'Permissions updated successfully';
           this.saving = false;
           this.hasChanges = false;
-          
-          // Reload data to get updated state
           this.loadData();
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => {
-            this.successMessage = '';
-          }, 3000);
         },
         error: (error) => {
           this.logger.error('Error saving permissions', error);
-          this.errorMessage = error.error?.message || 'Failed to save permissions';
-          this.toast.error(this.errorMessage);
+          this.toast.error(error.error?.message || 'Failed to save permissions');
           this.saving = false;
         }
       });

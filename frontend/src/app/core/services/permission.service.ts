@@ -475,7 +475,7 @@ export class PermissionService {
   updateModule(moduleId: number, data: UpdateModuleDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.MODULES.UPDATE,
-      { module_id: moduleId, ...data }
+      { moduleId: moduleId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -491,7 +491,7 @@ export class PermissionService {
   deleteModule(moduleId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.MODULES.DELETE,
-      { module_id: moduleId }
+      { moduleId: moduleId }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -523,7 +523,7 @@ export class PermissionService {
   updateAction(actionId: number, data: UpdateActionDto): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.ACTIONS.UPDATE,
-      { action_id: actionId, ...data }
+      { actionId: actionId, ...data }
     ).pipe(
       map(() => undefined),
       catchError(error => {
@@ -539,7 +539,7 @@ export class PermissionService {
   deleteAction(actionId: number): Observable<void> {
     return this.api.post<ApiResponse<void>>(
       API_ENDPOINTS.PERMISSIONS.ACTIONS.DELETE,
-      { action_id: actionId }
+      { actionId: actionId }
     ).pipe(
       map(() => undefined),
       catchError(error => {

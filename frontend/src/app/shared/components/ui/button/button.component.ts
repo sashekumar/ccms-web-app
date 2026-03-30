@@ -45,6 +45,7 @@ export type ButtonRounded = 'sm' | 'md' | 'lg' | 'full';
     <button
       [type]="type"
       [disabled]="disabled || loading"
+      [attr.form]="form"
       [class]="buttonClasses"
       [ngStyle]="buttonStyle"
     >
@@ -79,6 +80,9 @@ export class ButtonComponent {
 
   /** HTML button type */
   @Input() type: 'button' | 'submit' | 'reset' = 'button';
+
+  /** HTML form attribute - associates button with a form by id */
+  @Input() form?: string;
 
   /**
    * Visual style preset.
