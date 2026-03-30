@@ -335,19 +335,19 @@ describe('ProductListComponent', () => {
     it('should navigate to create product page', () => {
       component.createProduct();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/products/create']);
+      expect(router.navigate).toHaveBeenCalledWith(['products/create']);
     });
 
     it('should navigate to view product page', () => {
       component.viewProduct('1');
 
-      expect(router.navigate).toHaveBeenCalledWith(['/products/view', '1']);
+      expect(router.navigate).toHaveBeenCalledWith(['products/view/1']);
     });
 
     it('should navigate to edit product page', () => {
       component.editProduct('1');
 
-      expect(router.navigate).toHaveBeenCalledWith(['/products/edit', '1']);
+      expect(router.navigate).toHaveBeenCalledWith(['products/edit/1']);
     });
   });
 

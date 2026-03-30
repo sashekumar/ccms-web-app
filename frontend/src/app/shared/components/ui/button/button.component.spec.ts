@@ -92,18 +92,19 @@ describe('ButtonComponent', () => {
       component.variant = 'primary';
       fixture.detectChanges();
       const classes = component.buttonClasses;
-      expect(classes).toContain('bg-blue-600');
+      expect(classes).toContain('bg-gradient-to-r');
+      expect(classes).toContain('from-primary-800');
       expect(classes).toContain('text-white');
-      expect(classes).toContain('hover:bg-blue-700');
+      expect(classes).toContain('hover:opacity-90');
     });
 
     it('should apply secondary variant classes', () => {
       component.variant = 'secondary';
       fixture.detectChanges();
       const classes = component.buttonClasses;
-      expect(classes).toContain('bg-gray-200');
-      expect(classes).toContain('text-gray-800');
-      expect(classes).toContain('hover:bg-gray-300');
+      expect(classes).toContain('bg-white');
+      expect(classes).toContain('text-gray-700');
+      expect(classes).toContain('hover:bg-gray-50');
     });
 
     it('should apply danger variant classes', () => {
@@ -123,7 +124,7 @@ describe('ButtonComponent', () => {
       const classes = component.buttonClasses;
       expect(classes).toContain('px-3');
       expect(classes).toContain('py-1.5');
-      expect(classes).toContain('text-sm');
+      expect(classes).toContain('text-xs');
     });
 
     it('should apply medium size classes', () => {
@@ -132,16 +133,16 @@ describe('ButtonComponent', () => {
       const classes = component.buttonClasses;
       expect(classes).toContain('px-4');
       expect(classes).toContain('py-2');
-      expect(classes).toContain('text-base');
+      expect(classes).toContain('text-sm');
     });
 
     it('should apply large size classes', () => {
       component.size = 'lg';
       fixture.detectChanges();
       const classes = component.buttonClasses;
-      expect(classes).toContain('px-6');
-      expect(classes).toContain('py-3');
-      expect(classes).toContain('text-lg');
+      expect(classes).toContain('px-5');
+      expect(classes).toContain('py-2.5');
+      expect(classes).toContain('text-sm');
     });
   });
 
@@ -213,7 +214,7 @@ describe('ButtonComponent', () => {
       const classes = component.buttonClasses;
       expect(classes).toContain('rounded-lg');
       expect(classes).toContain('font-medium');
-      expect(classes).toContain('transition-colors');
+      expect(classes).toContain('transition-all');
       expect(classes).toContain('focus:outline-none');
       expect(classes).toContain('focus:ring-2');
     });
@@ -224,52 +225,37 @@ describe('ButtonComponent', () => {
       fixture.detectChanges();
       
       const classes = component.buttonClasses;
-      expect(classes).toContain('bg-blue-600');
+      expect(classes).toContain('bg-gradient-to-r');
       expect(classes).toContain('px-4');
       expect(classes).toContain('w-full');
       expect(classes).toContain('cursor-not-allowed');
     });
   });
 
-  describe('Click Handler', () => {
-    it('should not prevent event when not disabled', () => {
+  describe('Disabled State Behavior', () => {
+    it('should have disabled attribute when disabled', () => {
+      component.disabled = true;
+      fixture.detectChanges();
+      
+      const button = fixture.nativeElement.querySelector('button');
+      expect(button.disabled).toBe(true);
+    });
+
+    it('should have disabled attribute when loading', () => {
+      component.loading = true;
+      fixture.detectChanges();
+      
+      const button = fixture.nativeElement.querySelector('button');
+      expect(button.disabled).toBe(true);
+    });
+
+    it('should not be disabled when both disabled and loading are false', () => {
       component.disabled = false;
       component.loading = false;
+      fixture.detectChanges();
       
-      const event = new MouseEvent('click');
-      const preventSpy = vi.spyOn(event, 'preventDefault');
-      const stopSpy = vi.spyOn(event, 'stopPropagation');
-      
-      component.onClick(event);
-      
-      expect(preventSpy).not.toHaveBeenCalled();
-      expect(stopSpy).not.toHaveBeenCalled();
-    });
-
-    it('should prevent event when disabled', () => {
-      component.disabled = true;
-      
-      const event = new MouseEvent('click');
-      const preventSpy = vi.spyOn(event, 'preventDefault');
-      const stopSpy = vi.spyOn(event, 'stopPropagation');
-      
-      component.onClick(event);
-      
-      expect(preventSpy).toHaveBeenCalled();
-      expect(stopSpy).toHaveBeenCalled();
-    });
-
-    it('should prevent event when loading', () => {
-      component.loading = true;
-      
-      const event = new MouseEvent('click');
-      const preventSpy = vi.spyOn(event, 'preventDefault');
-      const stopSpy = vi.spyOn(event, 'stopPropagation');
-      
-      component.onClick(event);
-      
-      expect(preventSpy).toHaveBeenCalled();
-      expect(stopSpy).toHaveBeenCalled();
+      const button = fixture.nativeElement.querySelector('button');
+      expect(button.disabled).toBe(false);
     });
   });
 

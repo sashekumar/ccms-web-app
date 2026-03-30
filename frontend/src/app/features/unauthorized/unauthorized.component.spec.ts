@@ -45,7 +45,7 @@ describe('UnauthorizedComponent', () => {
     it('should navigate to dashboard', () => {
       component.goToDashboard();
 
-      expect(routerMock.navigate).toHaveBeenCalledWith(['/dashboard']);
+      expect(routerMock.navigate).toHaveBeenCalledWith(['dashboard']);
     });
 
     it('should call navigate exactly once', () => {
@@ -93,7 +93,7 @@ describe('UnauthorizedComponent', () => {
     it('should navigate to dashboard in SSR mode', () => {
       component.goBack();
 
-      expect(routerMock.navigate).toHaveBeenCalledWith(['/dashboard']);
+      expect(routerMock.navigate).toHaveBeenCalledWith(['dashboard']);
     });
 
     it('should not call window.history.back in SSR mode', () => {

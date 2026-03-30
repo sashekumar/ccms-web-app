@@ -236,7 +236,7 @@ describe('HospitalFormComponent', () => {
 
       expect(hospitalService.createHospital).toHaveBeenCalledWith(component.formData);
       expect(toastService.success).toHaveBeenCalledWith('Hospital created successfully');
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals']);
     });
 
     it('should set saving state during submission', () => {
@@ -292,7 +292,7 @@ describe('HospitalFormComponent', () => {
         expect.objectContaining({ hospital_code: 'TH001' })
       );
       expect(toastService.success).toHaveBeenCalledWith('Hospital updated successfully');
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals']);
     });
 
     it('should handle update errors', () => {
@@ -309,7 +309,7 @@ describe('HospitalFormComponent', () => {
     it('should navigate back to hospital list', () => {
       component.goBack();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals']);
     });
 
     it('should not save changes when cancelled', () => {
@@ -449,7 +449,7 @@ describe('HospitalFormComponent', () => {
 
       component.save();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals']);
     });
 
     it('should navigate to list after successful update', () => {
@@ -459,7 +459,7 @@ describe('HospitalFormComponent', () => {
 
       component.save();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals']);
     });
 
     it('should stay on form after error', () => {

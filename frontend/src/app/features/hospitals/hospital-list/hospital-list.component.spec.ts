@@ -289,19 +289,19 @@ describe('HospitalListComponent', () => {
     it('should navigate to create hospital page', () => {
       component.createHospital();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals/create']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals/create']);
     });
 
     it('should navigate to view hospital page', () => {
       component.viewHospital('1');
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals/view', '1']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals/view/1']);
     });
 
     it('should navigate to edit hospital page', () => {
       component.editHospital('1');
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals/edit', '1']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals/edit/1']);
     });
   });
 

@@ -137,7 +137,7 @@ describe('ProductViewComponent', () => {
       component.ngOnInit();
       
       expect(toastService.error).toHaveBeenCalledWith('Invalid product ID');
-      expect(router.navigate).toHaveBeenCalledWith(['/products']);
+      expect(router.navigate).toHaveBeenCalledWith(['products']);
     });
 
     it('should initialize with default tab', () => {
@@ -163,20 +163,20 @@ describe('ProductViewComponent', () => {
       expect(component.loading).toBe(false);
       expect(loggerService.error).toHaveBeenCalled();
       expect(toastService.error).toHaveBeenCalledWith('Failed to load product');
-      expect(router.navigate).toHaveBeenCalledWith(['/products']);
+      expect(router.navigate).toHaveBeenCalledWith(['products']);
     });
   });
 
   describe('Navigation', () => {
     it('should navigate back to list', () => {
       component.goBack();
-      expect(router.navigate).toHaveBeenCalledWith(['/products']);
+      expect(router.navigate).toHaveBeenCalledWith(['products']);
     });
 
     it('should navigate to edit page', () => {
       component.product = mockProduct;
       component.editProduct();
-      expect(router.navigate).toHaveBeenCalledWith(['/products/edit', '1']);
+      expect(router.navigate).toHaveBeenCalledWith(['products/edit/1']);
     });
 
     it('should not navigate to edit if no product loaded', () => {

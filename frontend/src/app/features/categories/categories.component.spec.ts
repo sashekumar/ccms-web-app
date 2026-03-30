@@ -478,7 +478,7 @@ describe('CategoriesComponent', () => {
     it('should render page header', () => {
       fixture.detectChanges();
       const compiled: HTMLElement = fixture.nativeElement;
-      expect(compiled.textContent).toContain('Categories');
+      expect(compiled.textContent).toContain('Category Management');
     });
 
     it('should render categories in table after load', () => {

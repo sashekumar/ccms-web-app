@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
-import { PermissionService, ApiResponse } from './permission.service';
+import { PermissionService } from './permission.service';
+import { ApiResponse } from './base-api.service';
 import { ApiService } from './api.service';
 import { LoggerService } from './logger.service';
 import { API_ENDPOINTS } from '../constants';

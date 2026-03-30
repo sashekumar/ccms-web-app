@@ -186,14 +186,14 @@ describe('HospitalViewComponent', () => {
     it('should navigateback to hospital list', () => {
       component.goBack();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals']);
     });
 
     it('should navigate to edit page', () => {
       component.hospital = mockHospital;
       component.editHospital();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals/edit', '1']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals/edit/1']);
     });
   });
 
@@ -566,7 +566,7 @@ describe('HospitalViewComponent', () => {
       component.ngOnInit();
 
       expect(toastService.error).toHaveBeenCalledWith('Invalid hospital ID');
-      expect(router.navigate).toHaveBeenCalledWith(['/hospitals']);
+      expect(router.navigate).toHaveBeenCalledWith(['hospitals']);
     });
   });
 

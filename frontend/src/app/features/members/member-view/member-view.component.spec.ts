@@ -117,7 +117,7 @@ describe('MemberViewComponent', () => {
       component.ngOnInit();
 
       expect(mockToast.error).toHaveBeenCalledWith('Invalid member ID');
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members']);
     });
 
     it('should handle load error', () => {
@@ -128,7 +128,7 @@ describe('MemberViewComponent', () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith('Error loading member:', error);
       expect(mockToast.error).toHaveBeenCalledWith('Failed to load member');
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members']);
     });
   });
 
@@ -140,13 +140,13 @@ describe('MemberViewComponent', () => {
     it('should navigate back to list', () => {
       component.goBack();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members']);
     });
 
     it('should navigate to edit page', () => {
       component.editMember();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', '1', 'edit']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members/1/edit']);
     });
   });
 

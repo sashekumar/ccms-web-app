@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ClauseService, ApiResponse } from './clause.service';
+import { ClauseService } from './clause.service';
+import { ApiResponse } from './base-api.service';
 import { Clause, ClauseFilters, PaginatedClauses, CreateClauseDto, UpdateClauseDto } from '../../shared/models/clause.model';
 import { environment } from '../../../environments/environment';
 

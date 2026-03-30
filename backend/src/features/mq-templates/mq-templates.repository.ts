@@ -241,7 +241,7 @@ export class MqTemplatesRepository {
       .input('templateId', sql.BigInt, templateId)
       .query(`
         SELECT * FROM ${DB_TABLES.MQ_TEMPLATE_QUESTIONS}
-        WHERE template_id = @templateId
+        WHERE template_id = @templateId AND is_active = 1
         ORDER BY sort_order ASC
       `);
     return result.recordset as MqTemplateQuestion[];

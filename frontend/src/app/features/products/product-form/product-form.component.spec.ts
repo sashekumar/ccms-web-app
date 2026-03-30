@@ -137,7 +137,7 @@ describe('ProductFormComponent', () => {
       expect(component.loading).toBe(false);
       expect(loggerService.error).toHaveBeenCalled();
       expect(toastService.error).toHaveBeenCalledWith('Failed to load product');
-      expect(router.navigate).toHaveBeenCalledWith(['/products']);
+      expect(router.navigate).toHaveBeenCalledWith(['products']);
     });
   });
 
@@ -215,7 +215,7 @@ describe('ProductFormComponent', () => {
       expect(productService.createProduct).toHaveBeenCalledWith(component.formData);
       expect(toastService.success).toHaveBeenCalledWith('Product created successfully');
       expect(component.saving).toBe(false);
-      expect(router.navigate).toHaveBeenCalledWith(['/products']);
+      expect(router.navigate).toHaveBeenCalledWith(['products']);
     });
 
     it('should handle create errors', () => {
@@ -270,7 +270,7 @@ describe('ProductFormComponent', () => {
       });
       expect(toastService.success).toHaveBeenCalledWith('Product updated successfully');
       expect(component.saving).toBe(false);
-      expect(router.navigate).toHaveBeenCalledWith(['/products']);
+      expect(router.navigate).toHaveBeenCalledWith(['products']);
     });
 
     it('should handle update errors', () => {
@@ -296,7 +296,7 @@ describe('ProductFormComponent', () => {
   describe('Navigation', () => {
     it('should navigate back to list', () => {
       component.goBack();
-      expect(router.navigate).toHaveBeenCalledWith(['/products']);
+      expect(router.navigate).toHaveBeenCalledWith(['products']);
     });
   });
 

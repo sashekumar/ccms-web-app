@@ -25,19 +25,18 @@ import { CommonModule } from '@angular/common';
     <!-- Backdrop -->
     <div 
       *ngIf="isOpen" 
-      class="fixed inset-0 z-40 bg-black opacity-50 cursor-pointer"
+      class="fixed inset-0 z-[10000] bg-black opacity-50 cursor-pointer"
       (click)="close()">
     </div>
 
     <!-- Modal Container (full screen flex center) -->
     <div 
       *ngIf="isOpen" 
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      (click)="$event.stopPropagation()">
+      class="fixed inset-0 z-[10001] flex items-center justify-center p-4 pointer-events-none">
       
       <!-- Modal Content Box (gets the size classes) -->
       <div 
-        [class]="'bg-white rounded-lg shadow-xl max-w-full ' + getModalClass()"
+        [class]="'bg-white rounded-lg shadow-xl max-w-full pointer-events-auto ' + getModalClass()"
         (click)="$event.stopPropagation()">
         
         <!-- Header -->

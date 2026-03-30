@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { BankService, ApiResponse } from './bank.service';
+import { BankService } from './bank.service';
+import { ApiResponse } from './base-api.service';
 import { Bank, BankFilters, PaginatedBanks, CreateBankDto, UpdateBankDto } from '../../shared/models/bank.model';
 import { environment } from '../../../environments/environment';
 

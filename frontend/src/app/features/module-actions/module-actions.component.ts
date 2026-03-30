@@ -460,8 +460,6 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
       return true;
     });
 
-    // Reset to first page when filters change
-    this.pagination.page = 1;
     this.updatePagination();
   }
 
@@ -648,8 +646,8 @@ export class ModuleActionsComponent implements OnInit, OnDestroy {
 
     // Update filter values
     this.searchTerm = filters['search'] || '';
-    this.moduleFilter = filters['module_id'] ?? null;
-    this.actionFilter = filters['action_id'] ?? null;
+    this.moduleFilter = filters['module_id'] != null ? Number(filters['module_id']) : null;
+    this.actionFilter = filters['action_id'] != null ? Number(filters['action_id']) : null;
     this.statusFilter = filters['is_active'] ?? null;
 
     // Apply filters

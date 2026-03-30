@@ -182,19 +182,19 @@ describe('MemberListComponent', () => {
     it('should navigate to create member page', () => {
       component.createMember();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members/create']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members/create']);
     });
 
     it('should navigate to view member page', () => {
       component.viewMember('1');
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', '1']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members/1']);
     });
 
     it('should navigate to edit member page', () => {
       component.editMember('1');
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', '1', 'edit']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members/1/edit']);
     });
   });
 

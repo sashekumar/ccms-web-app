@@ -717,16 +717,14 @@ export class LookupsRepository {
   }
 
   /**
-   * Delete lookup metadata (soft delete)
+   * Delete lookup metadata (hard delete)
    */
   public async deleteLookupMetadata(metadataId: number, deletedBy: string): Promise<void> {
     const pool = await connectionManager.getPool();
     await pool.request()
       .input('metadataId', sql.BigInt, metadataId)
-      .input('deletedBy', sql.VarChar(50), deletedBy)
       .query(`
-        UPDATE ${DB_TABLES.LOOKUP_METADATA}
-        SET is_active = 0, updated_by = @deletedBy, updated_at = GETDATE()
+        DELETE FROM ${DB_TABLES.LOOKUP_METADATA}
         WHERE metadata_id = @metadataId
       `);
   }

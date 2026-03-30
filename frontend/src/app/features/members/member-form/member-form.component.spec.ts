@@ -148,7 +148,7 @@ describe('MemberFormComponent', () => {
       component.memberForm.markAsDirty();
       component.onCancel();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members']);
     });
   });
 
@@ -183,7 +183,7 @@ describe('MemberFormComponent', () => {
     it('should navigate to member detail on cancel', () => {
       component.onCancel();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', '1']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members/1']);
     });
 
     it('should handle load error', () => {
@@ -192,7 +192,7 @@ describe('MemberFormComponent', () => {
       component.ngOnInit();
 
       expect(mockToast.error).toHaveBeenCalledWith('Failed to load member');
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members']);
     });
   });
 
@@ -790,7 +790,7 @@ it('should reset loading state after loading member', () => {
     it('should navigate without prompt if form is pristine', () => {
       component.onCancel();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members']);
     });
 
     it('should not navigate if user cancels confirmation', () => {
@@ -809,7 +809,7 @@ it('should reset loading state after loading member', () => {
       component.memberForm.markAsDirty();
       component.onCancel();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members']);
     });
 
     it('should navigate to detail after successful create', () => {
@@ -823,7 +823,7 @@ it('should reset loading state after loading member', () => {
 
       component.onSubmit();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', 'new-id-123']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members/new-id-123']);
     });
 
     it('should navigate to detail after successful update', () => {
@@ -832,7 +832,7 @@ it('should reset loading state after loading member', () => {
 
       component.onSubmit();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/members', '1']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['members/1']);
     });
   });
 
