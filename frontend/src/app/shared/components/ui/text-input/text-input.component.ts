@@ -91,6 +91,7 @@ export type TextInputType = 'string' | 'number' | 'integer' | 'decimal' | 'curre
       <div class="relative flex items-center h-[36px]">
         <input
           [id]="inputId"
+          [attr.name]="name"
           [type]="inputType === 'currency' ? 'text' : (inputType === 'integer' || inputType === 'number' || inputType === 'decimal' ? 'number' : 'text')"
           [attr.inputmode]="inputType === 'integer' ? 'numeric' : (inputType === 'number' || inputType === 'decimal' ? 'decimal' : null)"
           [attr.pattern]="inputType === 'integer' ? '[0-9]*' : null"
@@ -156,6 +157,9 @@ export class TextInputComponent implements ControlValueAccessor, OnChanges {
   /** HTML id forwarded to the input. Auto-generated when omitted */
   @Input() id = '';
 
+  /** HTML name attribute forwarded to the native input (useful for E2E selectors) */
+  @Input() name?: string;
+
   /** Debounce time in milliseconds for input events (optional) */
   @Input() debounceMs = 0;
 
@@ -204,9 +208,10 @@ export class TextInputComponent implements ControlValueAccessor, OnChanges {
   /**
    * Returns numeric value for currency pipe formatting
    * Converts cents to decimal number (e.g., 12345 cents → 123.45)
+   * Returns 0 when currencyCents is 0 to display "RM 0.00" instead of null/dash
    */
-  get currencyNumericValue(): number | null {
-    if (this.inputType !== 'currency' || this.currencyCents === 0) return null;
+  get currencyNumericValue(): number {
+    if (this.inputType !== 'currency') return 0;
     return this.currencyCents / 100;
   }
 

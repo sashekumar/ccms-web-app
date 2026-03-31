@@ -47,6 +47,12 @@ export class ToggleComponent {
   /** Disable toggle interaction */
   @Input() disabled = false;
 
+  /** Custom label for active state (default: 'Active') */
+  @Input() activeLabel = 'Active';
+
+  /** Custom label for inactive state (default: 'Inactive') */
+  @Input() inactiveLabel = 'Inactive';
+
   // ── Outputs ───────────────────────────────────────────────────────────────
 
   /** Emits new boolean state when toggle is clicked */

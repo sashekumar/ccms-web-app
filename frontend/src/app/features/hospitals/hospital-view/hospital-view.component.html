@@ -6,25 +6,21 @@
       <p class="mt-1 text-sm text-gray-600">View hospital information and related data</p>
     </div>
     <div class="flex gap-3">
-      <button
+      <app-button
+        variant="secondary"
+        iconLeft="fas fa-arrow-left"
         (click)="goBack()"
-        class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
         Back to List
-      </button>
-      <button
+      </app-button>
+      <app-button
         *hasPermission="PERMISSIONS.UPDATE"
+        variant="primary"
+        iconLeft="fas fa-edit"
         (click)="editHospital()"
-        class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-        </svg>
         Edit
-      </button>
+      </app-button>
     </div>
   </div>
 
@@ -83,13 +79,15 @@
           <div>
             <label class="block text-sm font-medium text-gray-500">Panel Status</label>
             <div class="mt-1">
-              <span *ngIf="hospital.is_panel === true" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                Panel
-              </span>
-              <span *ngIf="hospital.is_panel === false" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
-                Non-Panel
-              </span>
-              <span *ngIf="hospital.is_panel === null" class="text-sm text-gray-400">Not Specified</span>
+              <app-toggle
+                *ngIf="hospital.is_panel !== null && hospital.is_panel !== undefined"
+                [isActive]="hospital.is_panel"
+                [activeLabel]="'Panel'"
+                [inactiveLabel]="'Non-Panel'"
+                [disabled]="false"
+                (toggle)="onTogglePanelStatus($event)"
+              ></app-toggle>
+              <span *ngIf="hospital.is_panel === null || hospital.is_panel === undefined" class="text-sm text-gray-400">Not Specified</span>
             </div>
           </div>
 
@@ -176,16 +174,14 @@
           <!-- Header with Add Button -->
           <div *ngIf="!showAddressForm" class="mb-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Hospital Addresses</h3>
-            <button
+            <app-button
               *hasPermission="PERMISSIONS.MANAGE_ADDRESS"
               (click)="showAddAddressForm()"
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+              variant="primary"
+              iconLeft="fa-plus"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
               Add Address
-            </button>
+            </app-button>
           </div>
 
           <!-- Loading -->
@@ -211,123 +207,107 @@
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <!-- Address Type -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Address Type <span class="text-red-500">*</span></label>
-                  <select
+                  <app-dropdown
+                    label="Address Type"
                     name="address_type"
                     [(ngModel)]="addressFormData.address_type"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  >
-                    <option value="">-- Select Address Type --</option>
-                    <option *ngFor="let type of addressTypes$ | async" [value]="type.lookup_code">
-                      {{ type.lookup_value }}
-                    </option>
-                  </select>
+                    [options]="(addressTypeOptions$ | async) || []"
+                    placeholder="Select Address Type"
+                    [required]="true"
+                  ></app-dropdown>
                 </div>
 
                 <!-- Is Primary -->
                 <div class="flex items-end">
-                  <label class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="is_primary"
-                      [(ngModel)]="addressFormData.is_primary"
-                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Set as primary address</span>
-                  </label>
+                  <app-checkbox
+                    label="Set as primary address"
+                    name="is_primary"
+                    [(ngModel)]="addressFormData.is_primary"
+                  ></app-checkbox>
                 </div>
 
                 <!-- Street Line 1 -->
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Street Line 1 <span class="text-red-500">*</span></label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Street Line 1"
                     name="street_line1"
                     [(ngModel)]="addressFormData.street_line1"
                     placeholder="Enter street address"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                    [required]="true"
+                  ></app-text-input>
                 </div>
 
                 <!-- Street Line 2 -->
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Street Line 2</label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Street Line 2"
                     name="street_line2"
                     [(ngModel)]="addressFormData.street_line2"
                     placeholder="Apartment, suite, unit, building, floor, etc."
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                  ></app-text-input>
                 </div>
 
                 <!-- Postal Code -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Postal Code</label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Postal Code"
                     name="postal_code"
                     [(ngModel)]="addressFormData.postal_code"
                     placeholder="e.g., 47000"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                  ></app-text-input>
                 </div>
 
                 <!-- City -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">City</label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="City"
                     name="city"
                     [(ngModel)]="addressFormData.city"
                     placeholder="e.g., Kuala Lumpur"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                  ></app-text-input>
                 </div>
 
                 <!-- State -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">State</label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="State"
                     name="state"
                     [(ngModel)]="addressFormData.state"
                     placeholder="e.g., Selangor"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                  ></app-text-input>
                 </div>
 
                 <!-- Country -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Country</label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Country"
                     name="country"
                     [(ngModel)]="addressFormData.country"
                     placeholder="e.g., Malaysia"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                  ></app-text-input>
                 </div>
               </div>
 
               <!-- Form Actions -->
               <div class="mt-6 flex gap-3">
-                <button
+                <app-button
                   type="button"
+                  variant="secondary"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                   (click)="cancelAddressForm()"
-                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
                   type="submit"
-                  [disabled]="addressForm.invalid"
-                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  variant="primary"
+                  [disabled]="!!addressForm.invalid"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                 >
                   {{ editingAddress ? 'Update' : 'Save' }} Address
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
@@ -336,19 +316,25 @@
           <div *ngIf="!loadingAddresses && addresses.length > 0 && !showAddressForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div *ngFor="let address of addresses" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
               <div class="flex flex-col h-full">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                    [ngClass]="{
-                      'bg-blue-100 text-blue-800': address.address_type === 'PRIMARY',
-                      'bg-green-100 text-green-800': address.address_type === 'BILLING',
-                      'bg-purple-100 text-purple-800': address.address_type === 'SHIPPING'
-                    }">
-                    {{ address.address_type }}
-                  </span>
-                  <span *ngIf="address.is_primary" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                    Primary
-                  </span>
+                <!-- Header: Address Type Badge and Primary Toggle on the right -->
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <app-status-badge 
+                    [status]="address.address_type" 
+                    size="xs"
+                  ></app-status-badge>
+                  
+                  <div class="flex items-center gap-2">
+                    <app-toggle
+                      [isActive]="address.is_primary"
+                      [activeLabel]="'Primary'"
+                      [inactiveLabel]="'Non-Primary'"
+                      [disabled]="false"
+                      (toggle)="onToggleAddressPrimary(address)"
+                    ></app-toggle>
+                  </div>
                 </div>
+                
+                <!-- Address Details -->
                 <div class="flex-1 text-sm text-gray-900 mb-3">
                   <p *ngIf="address.street_line1">{{ address.street_line1 }}</p>
                   <p *ngIf="address.street_line2">{{ address.street_line2 }}</p>
@@ -359,6 +345,8 @@
                     {{ address.state }}{{ address.state && address.country ? ', ' : '' }}{{ address.country }}
                   </p>
                 </div>
+                
+                <!-- Action Buttons -->
                 <div class="flex gap-2 justify-end" *hasPermission="PERMISSIONS.MANAGE_ADDRESS">
                   <button
                     (click)="editAddress(address)"
@@ -391,16 +379,14 @@
           <!-- Header with Add Button -->
           <div *ngIf="!showCodeForm" class="mb-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Hospital Codes</h3>
-            <button
+            <app-button
               *hasPermission="PERMISSIONS.MANAGE_CODES"
               (click)="showAddCodeForm()"
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+              variant="primary"
+              iconLeft="fa-plus"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
               Add Code
-            </button>
+            </app-button>
           </div>
 
           <!-- Loading -->
@@ -425,61 +411,57 @@
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <!-- Code Type -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Code Type <span class="text-red-500">*</span></label>
-                  <select
+                  <app-dropdown
+                    label="Code Type"
                     name="code_type"
                     [(ngModel)]="codeFormData.code_type"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  >
-                    <option value="">Select code type</option>
-                    <option *ngFor="let type of codeTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
-                  </select>
+                    [options]="(codeTypeOptions$ | async) || []"
+                    placeholder="Select code type"
+                    [required]="true"
+                  ></app-dropdown>
                 </div>
 
                 <!-- Is Active -->
                 <div class="flex items-end">
-                  <label class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      [(ngModel)]="codeFormData.is_active"
-                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Active</span>
-                  </label>
+                  <app-checkbox
+                    label="Active"
+                    name="is_active"
+                    [(ngModel)]="codeFormData.is_active"
+                  ></app-checkbox>
                 </div>
 
                 <!-- Code Value -->
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Code Value <span class="text-red-500">*</span></label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Code Value"
                     name="code_value"
                     [(ngModel)]="codeFormData.code_value"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="Enter code value"
-                  />
+                    [required]="true"
+                  ></app-text-input>
                 </div>
               </div>
 
               <!-- Form Actions -->
               <div class="mt-6 flex gap-3">
-                <button
+                <app-button
                   type="button"
+                  variant="secondary"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                   (click)="cancelCodeForm()"
-                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
                   type="submit"
-                  [disabled]="codeForm.invalid"
-                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  variant="primary"
+                  [disabled]="!!codeForm.invalid"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                 >
                   {{ editingCode ? 'Update' : 'Save' }} Code
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
@@ -488,15 +470,21 @@
           <div *ngIf="!loadingCodes && codes.length > 0 && !showCodeForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div *ngFor="let code of codes" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
               <div class="flex flex-col h-full">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                <!-- Header: Code Type Badge and Active Toggle -->
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <app-badge variant="info" size="xs">
                     {{ code.code_type }}
-                  </span>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                    [ngClass]="code.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                    {{ code.is_active ? 'Active' : 'Inactive' }}
-                  </span>
+                  </app-badge>
+                  
+                  <app-toggle
+                    [isActive]="code.is_active"
+                    [activeLabel]="'Active'"
+                    [inactiveLabel]="'Inactive'"
+                    [disabled]="false"
+                    (toggle)="onToggleCodeActive(code)"
+                  ></app-toggle>
                 </div>
+                
                 <div class="flex-1 mb-3">
                   <p class="text-sm font-medium text-gray-900">{{ code.code_value }}</p>
                 </div>
@@ -532,16 +520,14 @@
           <!-- Header with Add Button -->
           <div *ngIf="!showStaffForm" class="mb-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Hospital Staff</h3>
-            <button
+            <app-button
               *hasPermission="PERMISSIONS.MANAGE_STAFF"
               (click)="showAddStaffForm()"
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+              variant="primary"
+              iconLeft="fa-plus"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
               Add Staff
-            </button>
+            </app-button>
           </div>
 
           <!-- Loading -->
@@ -566,72 +552,67 @@
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <!-- Staff Name -->
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Staff Name <span class="text-red-500">*</span></label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Staff Name"
                     name="staff_name"
                     [(ngModel)]="staffFormData.staff_name"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="Enter staff name"
-                  />
+                    [required]="true"
+                  ></app-text-input>
                 </div>
 
                 <!-- Staff Type -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Staff Type</label>
-                  <select
+                  <app-dropdown
+                    label="Staff Type"
                     name="staff_type"
                     [(ngModel)]="staffFormData.staff_type"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  >
-                    <option value="">Select staff type</option>
-                    <option *ngFor="let type of staffTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
-                  </select>
+                    [options]="(staffTypeOptions$ | async) || []"
+                    placeholder="Select staff type"
+                    [clearable]="true"
+                  ></app-dropdown>
                 </div>
 
                 <!-- Is Active -->
                 <div class="flex items-end">
-                  <label class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      [(ngModel)]="staffFormData.is_active"
-                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Active</span>
-                  </label>
+                  <app-checkbox
+                    label="Active"
+                    name="is_active"
+                    [(ngModel)]="staffFormData.is_active"
+                  ></app-checkbox>
                 </div>
 
                 <!-- Specialty -->
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Specialty</label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Specialty"
                     name="specialty"
                     [(ngModel)]="staffFormData.specialty"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="Enter specialty (e.g., Cardiology, Orthopedics)"
-                  />
+                  ></app-text-input>
                 </div>
               </div>
 
               <!-- Form Actions -->
               <div class="mt-6 flex gap-3">
-                <button
+                <app-button
                   type="button"
+                  variant="secondary"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                   (click)="cancelStaffForm()"
-                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
                   type="submit"
-                  [disabled]="staffForm.invalid"
-                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  variant="primary"
+                  [disabled]="!!staffForm.invalid"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                 >
                   {{ editingStaff ? 'Update' : 'Save' }} Staff
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
@@ -641,14 +622,19 @@
             <div *ngFor="let staffMember of staff" class="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
               <!-- Staff Card Header -->
               <div class="p-4">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                <!-- Header: Staff Type Badge and Active Toggle -->
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <app-badge variant="info" size="xs">
                     {{ staffMember.staff_type || 'N/A' }}
-                  </span>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                    [ngClass]="staffMember.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                    {{ staffMember.is_active ? 'Active' : 'Inactive' }}
-                  </span>
+                  </app-badge>
+                  
+                  <app-toggle
+                    [isActive]="staffMember.is_active"
+                    [activeLabel]="'Active'"
+                    [inactiveLabel]="'Inactive'"
+                    [disabled]="false"
+                    (toggle)="onToggleStaffActive(staffMember)"
+                  ></app-toggle>
                 </div>
                 <div class="mb-3">
                   <p class="text-sm font-medium text-gray-900 mb-1">{{ staffMember.staff_name }}</p>
@@ -717,55 +703,54 @@
                   <form #contactForm="ngForm" (ngSubmit)="saveContact(staffMember.staff_id, contactForm)">
                     <div class="grid grid-cols-1 gap-2">
                       <div>
-                        <label class="block text-xs font-medium text-gray-700">Type <span class="text-red-500">*</span></label>
-                        <select
+                        <app-dropdown
+                          label="Type"
                           name="contact_type"
                           [(ngModel)]="contactFormData[staffMember.staff_id].contact_type"
-                          required
-                          class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
-                        >
-                          <option value="">Select type</option>
-                          <option *ngFor="let type of contactTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
-                        </select>
+                          [options]="(contactTypeOptions$ | async) || []"
+                          placeholder="Select type"
+                          [required]="true"
+                        ></app-dropdown>
                       </div>
                       <div>
-                        <label class="block text-xs font-medium text-gray-700">Value <span class="text-red-500">*</span></label>
-                        <input
-                          type="text"
+                        <app-text-input
+                          label="Value"
                           name="contact_value"
                           [(ngModel)]="contactFormData[staffMember.staff_id].contact_value"
-                          required
-                          class="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
                           placeholder="Enter contact value"
-                        />
+                          [required]="true"
+                        ></app-text-input>
                       </div>
                       <div>
-                        <label class="flex items-center">
-                          <input
-                            type="checkbox"
-                            name="is_primary"
-                            [(ngModel)]="contactFormData[staffMember.staff_id].is_primary"
-                            class="h-3 w-3 rounded border-gray-300 text-[#1e3c72]"
-                          />
-                          <span class="ml-2 text-xs text-gray-700">Primary Contact</span>
-                        </label>
+                        <app-checkbox
+                          label="Primary Contact"
+                          name="is_primary"
+                          [(ngModel)]="contactFormData[staffMember.staff_id].is_primary"
+                          labelSize="xs"
+                        ></app-checkbox>
                       </div>
                     </div>
                     <div class="mt-2 flex gap-2">
-                      <button
+                      <app-button
                         type="button"
+                        variant="secondary"
+                        size="xs"
+                        [fullWidth]="false"
+                        customClass="flex-1"
                         (click)="cancelContactForm(staffMember.staff_id)"
-                        class="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
                       >
                         Cancel
-                      </button>
-                      <button
+                      </app-button>
+                      <app-button
                         type="submit"
-                        [disabled]="contactForm.invalid"
-                        class="flex-1 rounded bg-[#1e3c72] px-2 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+                        variant="primary"
+                        size="xs"
+                        [disabled]="!!contactForm.invalid"
+                        [fullWidth]="false"
+                        customClass="flex-1"
                       >
                         {{ editingContact[staffMember.staff_id] ? 'Update' : 'Add' }}
-                      </button>
+                      </app-button>
                     </div>
                   </form>
                 </div>
@@ -774,20 +759,28 @@
                 <div *ngIf="!loadingContacts[staffMember.staff_id] && !showContactForm[staffMember.staff_id]" class="space-y-2">
                   <div
                     *ngFor="let contact of staffContactsMap[staffMember.staff_id] || []"
-                    class="flex items-center justify-between rounded border border-gray-200 bg-white px-2 py-1.5"
+                    class="flex flex-col rounded border border-gray-200 bg-white px-2 py-2"
                   >
-                    <div class="flex-1">
-                      <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
-                          {{ contact.contact_type }}
-                        </span>
-                        <span *ngIf="contact.is_primary" class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                          Primary
-                        </span>
-                      </div>
-                      <p class="text-xs text-gray-900 mt-1">{{ contact.contact_value }}</p>
+                    <!-- Top row: Contact type badge and Primary toggle -->
+                    <div class="flex items-start justify-between mb-1.5">
+                      <app-badge variant="default" size="xs">
+                        {{ contact.contact_type }}
+                      </app-badge>
+                      
+                      <app-toggle
+                        [isActive]="contact.is_primary"
+                        [activeLabel]="'Primary'"
+                        [inactiveLabel]="'Non-Primary'"
+                        [disabled]="false"
+                        (toggle)="onToggleContactPrimary(staffMember.staff_id, contact)"
+                      ></app-toggle>
                     </div>
-                    <div class="flex gap-1" *hasPermission="PERMISSIONS.MANAGE_CONTACT">
+                    
+                    <!-- Contact value -->
+                    <p class="text-xs text-gray-900 mb-2">{{ contact.contact_value }}</p>
+                    
+                    <!-- Bottom row: Edit and delete buttons -->
+                    <div class="flex gap-1 justify-end" *hasPermission="PERMISSIONS.MANAGE_CONTACT">
                       <button
                         (click)="editContact(staffMember.staff_id, contact)"
                         class="text-indigo-600 hover:text-indigo-900"
@@ -824,16 +817,14 @@
           <!-- Header with Add Button -->
           <div *ngIf="!showFeeForm" class="mb-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Fee Schedules</h3>
-            <button
+            <app-button
               *hasPermission="PERMISSIONS.MANAGE_FEES"
               (click)="showAddFeeForm()"
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
+              variant="primary"
+              iconLeft="fa-plus"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
               Add Fee Schedule
-            </button>
+            </app-button>
           </div>
 
           <!-- Loading -->
@@ -858,109 +849,103 @@
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <!-- Fee Type -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Fee Type <span class="text-red-500">*</span></label>
-                  <select
+                  <app-dropdown
+                    label="Fee Type"
                     name="fee_type"
                     [(ngModel)]="feeFormData.fee_type"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  >
-                    <option value="">Select Fee Type</option>
-                    <option *ngFor="let type of feeTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
-                  </select>
+                    [options]="(feeTypeOptions$ | async) || []"
+                    placeholder="Select Fee Type"
+                    [required]="true"
+                  ></app-dropdown>
                 </div>
 
                 <!-- Item Code -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Item Code</label>
-                  <input
-                    type="text"
+                  <app-text-input
+                    label="Item Code"
                     name="item_code"
                     [(ngModel)]="feeFormData.item_code"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="Enter item/service code"
-                  />
+                  ></app-text-input>
                 </div>
 
                 <!-- Description -->
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
+                  <app-text-area
+                    label="Description"
                     name="description"
                     [(ngModel)]="feeFormData.description"
-                    rows="2"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="Enter fee description"
-                  ></textarea>
+                    [rows]="2"
+                  ></app-text-area>
                 </div>
 
                 <!-- Amount -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Amount <span class="text-red-500">*</span></label>
-                  <input
-                    type="number"
+                  <app-text-input
+                    label="Amount"
                     name="amount"
+                    inputType="currency"
                     [(ngModel)]="feeFormData.amount"
-                    required
-                    min="0"
-                    step="0.01"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="0.00"
-                  />
+                    [required]="true"
+                  ></app-text-input>
                 </div>
 
                 <!-- Is Active -->
                 <div class="flex items-end">
-                  <label class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      [(ngModel)]="feeFormData.is_active"
-                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Active</span>
-                  </label>
+                  <app-checkbox
+                    label="Active"
+                    name="is_active"
+                    [(ngModel)]="feeFormData.is_active"
+                  ></app-checkbox>
                 </div>
 
                 <!-- Effective Date -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Effective Date</label>
-                  <input
-                    type="date"
+                  <app-date-picker
+                    label="Effective Date"
                     name="effective_date"
+                    mode="date"
                     [(ngModel)]="feeFormData.effective_date"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                    placeholder="Select effective date"
+                    [minDate]="today"
+                  ></app-date-picker>
                 </div>
 
                 <!-- Expiry Date -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
-                  <input
-                    type="date"
+                  <app-date-picker
+                    label="Expiry Date"
                     name="expiry_date"
+                    mode="date"
                     [(ngModel)]="feeFormData.expiry_date"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
+                    placeholder="Select expiry date"
+                    [minDate]="effectiveDateForExpiry"
+                  ></app-date-picker>
                 </div>
               </div>
 
               <!-- Form Actions -->
               <div class="mt-6 flex gap-3">
-                <button
+                <app-button
                   type="button"
+                  variant="secondary"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                   (click)="cancelFeeForm()"
-                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
                   type="submit"
-                  [disabled]="feeForm.invalid"
-                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  variant="primary"
+                  [disabled]="!!feeForm.invalid"
+                  [fullWidth]="false"
+                  customClass="flex-1"
                 >
                   {{ editingFee ? 'Update' : 'Save' }} Fee
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
@@ -969,19 +954,25 @@
           <div *ngIf="!loadingFees && fees.length > 0 && !showFeeForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div *ngFor="let fee of fees" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
               <div class="flex flex-col h-full">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800">
+                <!-- Header: Fee Type Badge and Active Toggle -->
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <app-badge variant="info" size="xs">
                     {{ fee.fee_type }}
-                  </span>
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                    [ngClass]="fee.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                    {{ fee.is_active ? 'Active' : 'Inactive' }}
-                  </span>
+                  </app-badge>
+                  
+                  <app-toggle
+                    [isActive]="fee.is_active"
+                    [activeLabel]="'Active'"
+                    [inactiveLabel]="'Inactive'"
+                    [disabled]="false"
+                    (toggle)="onToggleFeeActive(fee)"
+                  ></app-toggle>
                 </div>
+                
                 <div class="flex-1 mb-3">
                   <p class="text-sm font-medium text-gray-900 mb-1">{{ fee.item_code || 'No code' }}</p>
                   <p class="text-xs text-gray-500 mb-2">{{ fee.description || 'No description' }}</p>
-                  <p class="text-lg font-bold text-[#1e3c72]">RM {{ fee.amount?.toFixed(2) || '0.00' }}</p>
+                  <p class="text-lg font-bold text-[#1e3c72]">{{ fee.amount | currencyMyr }}</p>
                   <div class="mt-2 text-xs text-gray-400">
                     <span *ngIf="fee.effective_date">From: {{ fee.effective_date | date:'dd/MM/yyyy' }}</span>
                     <span *ngIf="fee.expiry_date" class="ml-2">To: {{ fee.expiry_date | date:'dd/MM/yyyy' }}</span>
@@ -1023,4 +1014,147 @@
     <h3 class="mt-2 text-sm font-medium text-gray-900">Hospital not found</h3>
     <p class="mt-1 text-sm text-gray-500">The requested hospital could not be loaded</p>
   </div>
+
+  <!-- Panel Status Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showPanelToggleConfirm"
+    [isOpen]="showPanelToggleConfirm"
+    title="Confirm Panel Status Change"
+    [message]="'Are you sure you want to change the panel status of ' + (hospital?.hospital_name || 'this hospital') + ' to ' + (pendingPanelStatus ? 'Panel' : 'Non-Panel') + '?'"
+    confirmLabel="Confirm"
+    cancelLabel="Cancel"
+    variant="warn"
+    (confirmed)="confirmPanelToggle()"
+    (cancelled)="cancelPanelToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Address Primary Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showAddressPrimaryConfirm"
+    [isOpen]="showAddressPrimaryConfirm"
+    title="Confirm Primary Address Change"
+    [message]="'Are you sure you want to ' + (addressToToggle?.is_primary ? 'remove Primary status from' : 'set as Primary') + ' this address?'"
+    confirmLabel="Confirm"
+    cancelLabel="Cancel"
+    variant="warn"
+    (confirmed)="confirmAddressPrimaryToggle()"
+    (cancelled)="cancelAddressPrimaryToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Address Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showAddressDeleteConfirm"
+    [isOpen]="showAddressDeleteConfirm"
+    title="Confirm Address Delete"
+    message="Are you sure you want to delete this address? This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmAddressDelete()"
+    (cancelled)="cancelAddressDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Code Active Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showCodeActiveConfirm"
+    [isOpen]="showCodeActiveConfirm"
+    title="Confirm Code Status Change"
+    [message]="'Are you sure you want to change the status of this code to ' + (codeToToggle?.is_active ? 'Inactive' : 'Active') + '?'"
+    confirmLabel="Confirm"
+    cancelLabel="Cancel"
+    variant="warn"
+    (confirmed)="confirmCodeActiveToggle()"
+    (cancelled)="cancelCodeActiveToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Code Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showCodeDeleteConfirm"
+    [isOpen]="showCodeDeleteConfirm"
+    title="Confirm Code Delete"
+    message="Are you sure you want to delete this code? This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmCodeDelete()"
+    (cancelled)="cancelCodeDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Staff Active Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showStaffActiveConfirm"
+    [isOpen]="showStaffActiveConfirm"
+    title="Confirm Staff Status Change"
+    [message]="'Are you sure you want to change the status of ' + (staffToToggle?.staff_name || 'this staff member') + ' to ' + (staffToToggle?.is_active ? 'Inactive' : 'Active') + '?'"
+    confirmLabel="Confirm"
+    cancelLabel="Cancel"
+    variant="warn"
+    (confirmed)="confirmStaffActiveToggle()"
+    (cancelled)="cancelStaffActiveToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Staff Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showStaffDeleteConfirm"
+    [isOpen]="showStaffDeleteConfirm"
+    title="Confirm Staff Delete"
+    message="Are you sure you want to delete this staff member? This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmStaffDelete()"
+    (cancelled)="cancelStaffDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Contact Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showContactDeleteConfirm"
+    [isOpen]="showContactDeleteConfirm"
+    title="Confirm Contact Delete"
+    message="Are you sure you want to delete this contact? This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmContactDelete()"
+    (cancelled)="cancelContactDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Contact Primary Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showContactPrimaryConfirm"
+    [isOpen]="showContactPrimaryConfirm"
+    title="Confirm Primary Contact Change"
+    [message]="'Are you sure you want to ' + (contactToTogglePrimary?.contact?.is_primary ? 'remove Primary status from' : 'set as Primary') + ' this contact?'"
+    confirmLabel="Confirm"
+    cancelLabel="Cancel"
+    variant="warn"
+    (confirmed)="confirmContactPrimaryToggle()"
+    (cancelled)="cancelContactPrimaryToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Fee Active Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showFeeActiveConfirm"
+    [isOpen]="showFeeActiveConfirm"
+    title="Confirm Fee Schedule Status Change"
+    [message]="'Are you sure you want to change the status of this fee schedule to ' + (feeToToggle?.is_active ? 'Inactive' : 'Active') + '?'"
+    confirmLabel="Confirm"
+    cancelLabel="Cancel"
+    variant="warn"
+    (confirmed)="confirmFeeActiveToggle()"
+    (cancelled)="cancelFeeActiveToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Fee Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showFeeDeleteConfirm"
+    [isOpen]="showFeeDeleteConfirm"
+    title="Confirm Fee Schedule Delete"
+    message="Are you sure you want to delete this fee schedule? This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmFeeDelete()"
+    (cancelled)="cancelFeeDelete()"
+  ></app-confirm-dialog>
 </div>

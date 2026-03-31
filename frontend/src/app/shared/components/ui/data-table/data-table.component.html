@@ -9,6 +9,7 @@
         <div *ngIf="filter.type === 'search'">
           <app-text-input
             [label]="filter.label"
+            [name]="filter.key"
             [placeholder]="filter.placeholder || 'Search…'"
             [inputType]="filter.inputType || 'string'"
             [decimalPlaces]="filter.decimalPlaces || 2"
@@ -169,6 +170,8 @@
                   [isActive]="getCellValue(row, col.key)"
                   [disabled]="false"
                   [loading]="false"
+                  [activeLabel]="col.toggleActiveLabel || 'Active'"
+                  [inactiveLabel]="col.toggleInactiveLabel || 'Inactive'"
                   (toggle)="onToggleCellValue($event, row, col)"
                 ></app-toggle>
               </ng-container>
@@ -232,6 +235,7 @@
                   *ngIf="!action.permission"
                   type="button"
                   [title]="action.title"
+                  [attr.data-testid]="action.testId"
                   (click)="rowAction.emit({ action: action.id, row: row })"
                   [class]="getActionButtonClasses(action.color, last)"
                 >
@@ -245,6 +249,7 @@
                     *hasPermission="action.permission!"
                     type="button"
                     [title]="action.title"
+                    [attr.data-testid]="action.testId"
                     (click)="rowAction.emit({ action: action.id, row: row })"
                     [class]="getActionButtonClasses(action.color, last)"
                   >

@@ -80,6 +80,11 @@ export interface DataTableColumn {
   tagLabelKey?: string;
   /** BadgeColor for all tags in this column (default: 'blue') */
   tagColor?: BadgeColor;
+  // ── toggle options ──
+  /** Custom label for toggle active state (default: 'Active') */
+  toggleActiveLabel?: string;
+  /** Custom label for toggle inactive state (default: 'Inactive') */
+  toggleInactiveLabel?: string;
   // ── date options ──
   /** Angular DatePipe format string (default: 'dd MMM yyyy') */
   dateFormat?: string;
@@ -104,6 +109,8 @@ export interface DataTableAction {
   color: 'blue' | 'indigo' | 'red' | 'purple' | 'green' | 'gray' | 'yellow';
   /** Optional permission required to show this action (e.g., 'USER_MANAGEMENT.UPDATE') */
   permission?: string;
+  /** Optional data-testid attribute for E2E testing */
+  testId?: string;
 }
 
 /** A configurable filter control rendered above the table */

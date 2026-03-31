@@ -60,6 +60,7 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants';
             <div class="mb-4">
               <app-text-input
                 formControlName="roleName"
+                name="roleName"
                 label="Role Name"
                 placeholder="Enter role name"
                 [required]="true"
@@ -72,6 +73,7 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants';
             <div class="mb-4">
               <app-text-input
                 formControlName="roleCode"
+                name="roleCode"
                 label="Role Code"
                 placeholder="Enter role code (e.g., ADMIN)"
                 [required]="true"

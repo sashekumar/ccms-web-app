@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { HospitalService } from '../../../core/services/hospital.service';
 import { BankService } from '../../../core/services/bank.service';
 import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
@@ -10,13 +11,17 @@ import { CreateHospitalDto, UpdateHospitalDto, Hospital } from '../../../shared/
 import { Bank } from '../../../shared/models/bank.model';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { DropdownComponent, DropdownOption } from '../../../shared/components/ui/dropdown/dropdown.component';
+import { DatePickerComponent } from '../../../shared/components/ui/date-picker/date-picker.component';
+import { TextInputComponent } from '../../../shared/components/ui/text-input/text-input.component';
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
 
 import { APP_ROUTES } from '../../../core/constants/routes.constants'
 
 @Component({
   selector: 'app-hospital-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DropdownComponent, DatePickerComponent, TextInputComponent, ButtonComponent],
   template: `
     <div class="min-h-screen bg-gray-50 p-6">
       <!-- Header -->
@@ -25,15 +30,13 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           <h1 class="text-3xl font-bold text-gray-900">{{ isEditMode ? 'Edit Hospital' : 'Create Hospital' }}</h1>
           <p class="mt-1 text-sm text-gray-600">{{ isEditMode ? 'Update hospital information' : 'Add a new hospital to the system' }}</p>
         </div>
-        <button
+        <app-button
+          variant="secondary"
+          iconLeft="fas fa-arrow-left"
           (click)="goBack()"
-          class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
         >
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-          </svg>
           Back to List
-        </button>
+        </app-button>
       </div>
 
       <!-- Loading State -->
@@ -48,19 +51,15 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <!-- Hospital Name -->
             <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Hospital Name <span class="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
+              <app-text-input
+                label="Hospital Name"
                 name="hospital_name"
                 [(ngModel)]="formData.hospital_name"
-                required
-                maxlength="255"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                [required]="true"
+                [maxLength]="255"
                 placeholder="Enter hospital name"
                 #hospitalNameInput="ngModel"
-              />
+              ></app-text-input>
               <p *ngIf="hospitalNameInput.invalid && hospitalNameInput.touched" class="mt-1 text-sm text-red-600">
                 Hospital name is required (max 255 characters)
               </p>
@@ -68,153 +67,143 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
 
             <!-- Hospital Code -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Hospital Code</label>
-              <input
-                type="text"
+              <app-text-input
+                label="Hospital Code"
                 name="hospital_code"
                 [(ngModel)]="formData.hospital_code"
-                maxlength="50"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                [maxLength]="50"
                 placeholder="e.g., H001"
-              />
+              ></app-text-input>
             </div>
 
             <!-- Hospital Type -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Hospital Type</label>
-              <select
+              <app-dropdown
+                label="Hospital Type"
                 name="hospital_type"
                 [(ngModel)]="formData.hospital_type"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              >
-                <option [ngValue]="null">Select Type</option>
-                <option *ngFor="let type of hospitalTypes$ | async" [value]="type.lookup_code">
-                  {{ type.lookup_value }}
-                </option>
-              </select>
+                [options]="(hospitalTypeOptions$ | async) || []"
+                placeholder="Select Type"
+                [clearable]="true"
+              ></app-dropdown>
             </div>
 
             <!-- Registration Number -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Registration Number</label>
-              <input
-                type="text"
+              <app-text-input
+                label="Registration Number"
                 name="reg_no"
                 [(ngModel)]="formData.reg_no"
-                maxlength="100"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                [maxLength]="100"
                 placeholder="Hospital registration number"
-              />
+              ></app-text-input>
             </div>
 
             <!-- Is Panel -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Panel Status</label>
-              <select
+              <app-dropdown
+                label="Panel Status"
                 name="is_panel"
-                [(ngModel)]="formData.is_panel"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              >
-                <option [ngValue]="null">Not Specified</option>
-                <option [ngValue]="true">Panel</option>
-                <option [ngValue]="false">Non-Panel</option>
-              </select>
+                [(ngModel)]="panelStatusValue"
+                [options]="panelStatusOptions"
+                placeholder="Not Specified"
+                [clearable]="true"
+              ></app-dropdown>
             </div>
 
             <!-- Panel Status Details -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Panel Status Details</label>
-              <input
-                type="text"
+              <app-text-input
+                label="Panel Status Details"
                 name="panel_status"
                 [(ngModel)]="formData.panel_status"
-                maxlength="50"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                [maxLength]="50"
                 placeholder="e.g., Active, Suspended"
-              />
+              ></app-text-input>
             </div>
 
             <!-- Panel Effective Date -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Panel Effective Date</label>
-              <input
-                type="date"
+              <app-date-picker
+                label="Panel Effective Date"
                 name="panel_effective_date"
+                mode="date"
                 [(ngModel)]="formData.panel_effective_date"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              />
+                placeholder="Select panel effective date"
+                [minDate]="today"
+              ></app-date-picker>
             </div>
 
             <!-- Bank -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Bank</label>
-              <select
+              <app-dropdown
+                label="Bank"
                 name="bank_id"
                 [(ngModel)]="formData.bank_id"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              >
-                <option [ngValue]="null">Select Bank</option>
-                <option *ngFor="let bank of banks" [ngValue]="bank.bank_id">{{ bank.bank_name }}</option>
-              </select>
+                [options]="bankOptions"
+                placeholder="Select Bank"
+                [clearable]="true"
+              ></app-dropdown>
             </div>
 
             <!-- Bank Account Number -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Bank Account Number</label>
-              <input
-                type="text"
+              <app-text-input
+                label="Bank Account Number"
                 name="bank_acc_no"
                 [(ngModel)]="formData.bank_acc_no"
-                maxlength="50"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
+                [maxLength]="50"
                 placeholder="Bank account number"
-              />
+              ></app-text-input>
             </div>
 
             <!-- Accreditation Status -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Accreditation Status</label>
-              <select
+              <app-dropdown
+                label="Accreditation Status"
                 name="accreditation_status"
                 [(ngModel)]="formData.accreditation_status"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              >
-                <option [ngValue]="null">Not Specified</option>
-                <option *ngFor="let status of accreditationStatuses$ | async" [value]="status.lookup_code">
-                  {{ status.lookup_value }}
-                </option>
-              </select>
+                [options]="(accreditationStatusOptions$ | async) || []"
+                placeholder="Not Specified"
+                [clearable]="true"
+              ></app-dropdown>
             </div>
 
             <!-- Accreditation Expiry -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Accreditation Expiry</label>
-              <input
-                type="date"
+              <app-date-picker
+                label="Accreditation Expiry"
                 name="accreditation_expiry"
+                mode="date"
                 [(ngModel)]="formData.accreditation_expiry"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-              />
+                placeholder="Select accreditation expiry date"
+                [minDate]="today"
+              ></app-date-picker>
             </div>
           </div>
 
           <!-- Form Actions -->
           <div class="mt-6 flex gap-3 border-t pt-6">
-            <button
+            <app-button
               type="button"
-              (click)="goBack()"
+              variant="secondary"
               [disabled]="saving"
-              class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:flex-none md:px-6"
+              [fullWidth]="false"
+              customClass="flex-1 md:flex-none md:px-6"
+              (click)="goBack()"
             >
               Cancel
-            </button>
-            <button
+            </app-button>
+            <app-button
               type="submit"
+              variant="primary"
               [disabled]="hospitalForm.invalid || saving"
-              class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 md:flex-none md:px-6"
+              [loading]="saving"
+              [fullWidth]="false"
+              customClass="flex-1 md:flex-none md:px-6"
             >
-              {{ saving ? 'Saving...' : (isEditMode ? 'Update Hospital' : 'Create Hospital') }}
-            </button>
+              {{ isEditMode ? 'Update Hospital' : 'Create Hospital' }}
+            </app-button>
           </div>
         </form>
       </div>
@@ -230,9 +219,33 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
   banks: Bank[] = [];
   loadingBanks = false;
 
+  // Date restrictions
+  today = new Date();
+
   // Dynamic lookups from database
   hospitalTypes$: Observable<LookupItem[]>;
   accreditationStatuses$: Observable<LookupItem[]>;
+
+  // Dropdown options for custom components
+  hospitalTypeOptions$: Observable<DropdownOption[]>;
+  accreditationStatusOptions$: Observable<DropdownOption[]>;
+  bankOptions: DropdownOption[] = [];
+  panelStatusOptions: DropdownOption[] = [
+    { value: 1, label: 'Panel' },
+    { value: 0, label: 'Non-Panel' }
+  ];
+
+  // Converted panel status for dropdown (boolean -> number)
+  get panelStatusValue(): number | null {
+    if (this.formData.is_panel === true) return 1;
+    if (this.formData.is_panel === false) return 0;
+    return null;
+  }
+  set panelStatusValue(value: number | string | null) {
+    if (value === 1 || value === '1') this.formData.is_panel = true;
+    else if (value === 0 || value === '0') this.formData.is_panel = false;
+    else this.formData.is_panel = null;
+  }
 
   formData: CreateHospitalDto | UpdateHospitalDto = {
     hospital_name: '',
@@ -262,6 +275,21 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
     // Initialize dynamic lookups
     this.hospitalTypes$ = this.lookupService.getHospitalTypes();
     this.accreditationStatuses$ = this.lookupService.getAccreditationStatuses();
+
+    // Map lookups to dropdown options
+    this.hospitalTypeOptions$ = this.hospitalTypes$.pipe(
+      map(items => items.map(item => ({
+        value: item.lookup_code,
+        label: item.lookup_value
+      })))
+    );
+
+    this.accreditationStatusOptions$ = this.accreditationStatuses$.pipe(
+      map(items => items.map(item => ({
+        value: item.lookup_code,
+        label: item.lookup_value
+      })))
+    );
   }
 
   ngOnInit(): void {
@@ -292,6 +320,11 @@ export class HospitalFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           this.banks = result.banks;
+          // Map banks to dropdown options
+          this.bankOptions = result.banks.map(bank => ({
+            value: bank.bank_id,
+            label: bank.bank_name
+          }));
           this.loadingBanks = false;
         },
         error: (error) => {

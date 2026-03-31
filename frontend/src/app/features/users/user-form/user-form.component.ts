@@ -51,6 +51,7 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           <div class="mb-4">
             <app-text-input
               formControlName="username"
+              name="username"
               label="Username"
               placeholder="Enter username"
               inputType="string"
@@ -65,6 +66,7 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           <div class="mb-4">
             <app-text-input
               formControlName="full_name"
+              name="full_name"
               label="Full Name"
               placeholder="Enter full name"
               inputType="string"
@@ -79,6 +81,7 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           <div class="mb-4">
             <app-text-input
               formControlName="password"
+              name="password"
               label="Password"
               placeholder="Enter password"
               inputType="string"
@@ -93,6 +96,7 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants'
           <div class="mb-4">
             <app-text-input
               formControlName="confirmPassword"
+              name="confirmPassword"
               label="Confirm Password"
               placeholder="Confirm password"
               inputType="string"

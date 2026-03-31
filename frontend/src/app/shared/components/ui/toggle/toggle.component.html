@@ -1,7 +1,7 @@
 <div
   role="switch"
   [attr.aria-checked]="isActive"
-  [attr.aria-label]="isActive ? 'Status Active' : 'Status Inactive'"
+  [attr.aria-label]="isActive ? ('Status ' + activeLabel) : ('Status ' + inactiveLabel)"
   [attr.tabindex]="disabled || loading ? -1 : 0"
   (click)="!disabled && !loading && onToggle()"
   (keydown.space)="$event.preventDefault(); !disabled && !loading && onToggle()"
@@ -14,12 +14,12 @@
   <!-- Inactive: dot LEFT, text RIGHT -->
   <ng-container *ngIf="!isActive">
     <span class="toggle-dot"></span>
-    <span>Inactive</span>
+    <span>{{ inactiveLabel }}</span>
   </ng-container>
 
   <!-- Active: text LEFT, dot RIGHT -->
   <ng-container *ngIf="isActive">
-    <span>Active</span>
+    <span>{{ activeLabel }}</span>
     <span class="toggle-dot"></span>
   </ng-container>
 </div>

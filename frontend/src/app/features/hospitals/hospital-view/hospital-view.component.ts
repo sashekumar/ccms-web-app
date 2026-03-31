@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { HospitalService } from '../../../core/services/hospital.service';
 import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 import { Hospital, HospitalAddress, HospitalCode, HospitalStaff, HospitalStaffContact, FeeSchedule } from '../../../shared/models/hospital.model';
@@ -12,11 +13,22 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { DropdownComponent, DropdownOption } from '../../../shared/components/ui/dropdown/dropdown.component';
+import { DatePickerComponent } from '../../../shared/components/ui/date-picker/date-picker.component';
+import { TextInputComponent } from '../../../shared/components/ui/text-input/text-input.component';
+import { ToggleComponent } from '../../../shared/components/ui/toggle/toggle.component';
+import { ConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/confirm-dialog.component';
+import { StatusBadgeComponent } from '../../../shared/components/ui/status-badge/status-badge.component';
+import { CheckboxComponent } from '../../../shared/components/ui/checkbox/checkbox.component';
+import { BadgeComponent } from '../../../shared/components/ui/badge/badge.component';
+import { TextAreaComponent } from '../../../shared/components/ui/text-area/text-area.component';
+import { CurrencyMyrPipe } from '../../../shared/pipes/currency-myr.pipe';
 
 @Component({
   selector: 'app-hospital-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, HasPermissionDirective, LoadingSpinnerComponent],
+  imports: [CommonModule, FormsModule, HasPermissionDirective, LoadingSpinnerComponent, ButtonComponent, DropdownComponent, DatePickerComponent, TextInputComponent, ToggleComponent, ConfirmDialogComponent, StatusBadgeComponent, CheckboxComponent, BadgeComponent, TextAreaComponent, CurrencyMyrPipe],
   templateUrl: './hospital-view.component.html',
   styles: []
 })
@@ -24,6 +36,21 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   hospital: Hospital | null = null;
   loading = false;
   activeTab = 'overview';
+
+  // Date restrictions
+  today = new Date();
+
+  // Panel toggle confirmation dialog
+  showPanelToggleConfirm = false;
+  pendingPanelStatus: boolean | null = null;
+
+  // Address primary toggle confirmation dialog
+  showAddressPrimaryConfirm = false;
+  addressToToggle: HospitalAddress | null = null;
+
+  // Address delete confirmation dialog
+  showAddressDeleteConfirm = false;
+  addressIdToDelete: string | null = null;
 
   // Permission constants (exposed to template)
   readonly PERMISSIONS = PERMISSIONS.HOSPITAL_MANAGEMENT;
@@ -47,6 +74,9 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   // Dynamic lookups from database
   addressTypes$: Observable<LookupItem[]>;
   
+  // Dropdown options for custom components
+  addressTypeOptions$: Observable<DropdownOption[]>;
+  
   // Codes
   codes: HospitalCode[] = [];
   loadingCodes = false;
@@ -58,8 +88,43 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     is_active: true
   };
 
+  // Code active toggle confirmation dialog
+  showCodeActiveConfirm = false;
+  codeToToggle: HospitalCode | null = null;
+
+  // Code delete confirmation dialog
+  showCodeDeleteConfirm = false;
+  codeIdToDelete: string | null = null;
+
+  // Staff active toggle confirmation dialog
+  showStaffActiveConfirm = false;
+  staffToToggle: HospitalStaff | null = null;
+
+  // Staff delete confirmation dialog
+  showStaffDeleteConfirm = false;
+  staffIdToDelete: string | null = null;
+
+  // Contact delete confirmation dialog
+  showContactDeleteConfirm = false;
+  contactToDelete: { staffId: string; contactId: string } | null = null;
+
+  // Contact primary toggle confirmation dialog
+  showContactPrimaryConfirm = false;
+  contactToTogglePrimary: { staffId: string; contact: HospitalStaffContact } | null = null;
+
+  // Fee active toggle confirmation dialog
+  showFeeActiveConfirm = false;
+  feeToToggle: FeeSchedule | null = null;
+
+  // Fee delete confirmation dialog
+  showFeeDeleteConfirm = false;
+  feeIdToDelete: string | null = null;
+
   // Dynamic lookups from database
   codeTypes$: Observable<LookupItem[]>;
+  
+  // Dropdown options for custom components
+  codeTypeOptions$: Observable<DropdownOption[]>;
   
   // Staff
   staff: HospitalStaff[] = [];
@@ -76,6 +141,9 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
   // Dynamic lookups from database
   staffTypes$: Observable<LookupItem[]>;
 
+  // Dropdown options for custom components
+  staffTypeOptions$: Observable<DropdownOption[]>;
+
   // Staff Contacts
   staffContactsMap: { [staffId: string]: HospitalStaffContact[] } = {};
   expandedStaffId: string | null = null;
@@ -86,6 +154,9 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
 
   // Dynamic lookups from database
   contactTypes$: Observable<LookupItem[]>;
+
+  // Dropdown options for custom components
+  contactTypeOptions$: Observable<DropdownOption[]>;
 
   // Fees
   fees: FeeSchedule[] = [];
@@ -104,6 +175,22 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
 
   // Dynamic lookups from database
   feeTypes$: Observable<LookupItem[]>;
+
+  // Dropdown options for custom components
+  feeTypeOptions$: Observable<DropdownOption[]>;
+
+  /**
+   * Computed minDate for expiry date based on effective date
+   * Returns effective_date if set and >= today, otherwise returns today
+   */
+  get effectiveDateForExpiry(): Date {
+    if (this.feeFormData.effective_date) {
+      const effectiveDate = new Date(this.feeFormData.effective_date);
+      // If effective date is >= today, use it; otherwise use today
+      return effectiveDate >= this.today ? effectiveDate : this.today;
+    }
+    return this.today;
+  }
 
   tabs = [
     { id: 'overview', label: 'Overview' },
@@ -129,6 +216,42 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     this.staffTypes$ = this.lookupService.getHospitalStaffTypes();
     this.contactTypes$ = this.lookupService.getHospitalContactTypes();
     this.feeTypes$ = this.lookupService.getHospitalFeeTypes();
+
+    // Map lookups to dropdown options
+    this.addressTypeOptions$ = this.addressTypes$.pipe(
+      map(items => items.map(item => ({
+        value: item.lookup_code,
+        label: item.lookup_value
+      })))
+    );
+
+    this.codeTypeOptions$ = this.codeTypes$.pipe(
+      map(items => items.map(item => ({
+        value: item.lookup_code,
+        label: item.lookup_value
+      })))
+    );
+
+    this.staffTypeOptions$ = this.staffTypes$.pipe(
+      map(items => items.map(item => ({
+        value: item.lookup_code,
+        label: item.lookup_value
+      })))
+    );
+
+    this.contactTypeOptions$ = this.contactTypes$.pipe(
+      map(items => items.map(item => ({
+        value: item.lookup_code,
+        label: item.lookup_value
+      })))
+    );
+
+    this.feeTypeOptions$ = this.feeTypes$.pipe(
+      map(items => items.map(item => ({
+        value: item.lookup_code,
+        label: item.lookup_value
+      })))
+    );
   }
 
   ngOnInit(): void {
@@ -174,6 +297,505 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
     if (this.hospital) {
       this.router.navigate([APP_ROUTES.HOSPITALS.EDIT(this.hospital.hospital_id)]);
     }
+  }
+
+  /**
+   * Handle panel status toggle - show confirmation first
+   */
+  onTogglePanelStatus(newStatus: boolean): void {
+    if (!this.hospital) return;
+    
+    this.pendingPanelStatus = newStatus;
+    this.showPanelToggleConfirm = true;
+  }
+
+  /**
+   * Confirm panel status change
+   */
+  confirmPanelToggle(): void {
+    if (!this.hospital || this.pendingPanelStatus === null) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const newStatus = this.pendingPanelStatus;
+
+    this.hospitalService.updateHospital(hospitalId, { is_panel: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          if (this.hospital) {
+            this.hospital.is_panel = newStatus;
+          }
+          this.toast.success(`Hospital panel status updated to ${newStatus ? 'Panel' : 'Non-Panel'}`);
+          this.showPanelToggleConfirm = false;
+          this.pendingPanelStatus = null;
+        },
+        error: (error) => {
+          this.logger.error('Error updating panel status:', error);
+          this.toast.error('Failed to update panel status');
+          this.showPanelToggleConfirm = false;
+          this.pendingPanelStatus = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel panel status change
+   */
+  cancelPanelToggle(): void {
+    this.showPanelToggleConfirm = false;
+    this.pendingPanelStatus = null;
+  }
+
+  /**
+   * Handle address primary status toggle - show confirmation first
+   */
+  onToggleAddressPrimary(address: HospitalAddress): void {
+    if (!this.hospital) return;
+    
+    this.addressToToggle = address;
+    this.showAddressPrimaryConfirm = true;
+  }
+
+  /**
+   * Confirm address primary status change
+   */
+  confirmAddressPrimaryToggle(): void {
+    if (!this.hospital || !this.addressToToggle) return;
+
+    const addressId = this.addressToToggle.address_id;
+    const newStatus = !this.addressToToggle.is_primary;
+
+    this.hospitalService.updateHospitalAddress(this.hospital.hospital_id, addressId, { is_primary: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          if (this.addressToToggle) {
+            this.addressToToggle.is_primary = newStatus;
+          }
+          this.toast.success(`Address primary status updated to ${newStatus ? 'Primary' : 'Non-Primary'}`);
+          this.showAddressPrimaryConfirm = false;
+          this.addressToToggle = null;
+          // Reload addresses to ensure consistency
+          this.loadAddresses();
+        },
+        error: (error) => {
+          this.logger.error('Error updating address primary status:', error);
+          this.toast.error('Failed to update address primary status');
+          this.showAddressPrimaryConfirm = false;
+          this.addressToToggle = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel address primary status change
+   */
+  cancelAddressPrimaryToggle(): void {
+    this.showAddressPrimaryConfirm = false;
+    this.addressToToggle = null;
+  }
+
+  /**
+   * Show confirmation dialog for address deletion
+   */
+  onDeleteAddress(addressId: string): void {
+    this.addressIdToDelete = addressId;
+    this.showAddressDeleteConfirm = true;
+  }
+
+  /**
+   * Confirm and delete address
+   */
+  confirmAddressDelete(): void {
+    if (!this.hospital || !this.addressIdToDelete) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const addressId = this.addressIdToDelete;
+
+    this.hospitalService.deleteHospitalAddress(hospitalId, addressId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Address deleted successfully');
+          this.loadAddresses();
+          this.showAddressDeleteConfirm = false;
+          this.addressIdToDelete = null;
+        },
+        error: (error) => {
+          this.logger.error('Error deleting address:', error);
+          this.toast.error('Failed to delete address');
+          this.showAddressDeleteConfirm = false;
+          this.addressIdToDelete = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel address deletion
+   */
+  cancelAddressDelete(): void {
+    this.showAddressDeleteConfirm = false;
+    this.addressIdToDelete = null;
+  }
+
+  /**
+   * Show confirmation dialog for code active toggle
+   */
+  onToggleCodeActive(code: HospitalCode): void {
+    this.codeToToggle = code;
+    this.showCodeActiveConfirm = true;
+  }
+
+  /**
+   * Confirm and toggle code active status
+   */
+  confirmCodeActiveToggle(): void {
+    if (!this.hospital || !this.codeToToggle) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const codeId = this.codeToToggle.code_id;
+    const newStatus = !this.codeToToggle.is_active;
+
+    this.hospitalService.updateHospitalCode(hospitalId, codeId, { is_active: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Code status updated successfully');
+          if (this.codeToToggle) {
+            this.codeToToggle.is_active = newStatus;
+          }
+          this.loadCodes();
+          this.showCodeActiveConfirm = false;
+          this.codeToToggle = null;
+        },
+        error: (error) => {
+          this.logger.error('Error updating code status:', error);
+          this.toast.error('Failed to update code status');
+          this.showCodeActiveConfirm = false;
+          this.codeToToggle = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel code active status toggle
+   */
+  cancelCodeActiveToggle(): void {
+    this.showCodeActiveConfirm = false;
+    this.codeToToggle = null;
+  }
+
+  /**
+   * Show confirmation dialog for code deletion
+   */
+  onDeleteCode(codeId: string): void {
+    this.codeIdToDelete = codeId;
+    this.showCodeDeleteConfirm = true;
+  }
+
+  /**
+   * Confirm and delete code
+   */
+  confirmCodeDelete(): void {
+    if (!this.hospital || !this.codeIdToDelete) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const codeId = this.codeIdToDelete;
+
+    this.hospitalService.deleteHospitalCode(hospitalId, codeId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Code deleted successfully');
+          this.loadCodes();
+          this.showCodeDeleteConfirm = false;
+          this.codeIdToDelete = null;
+        },
+        error: (error) => {
+          this.logger.error('Error deleting code:', error);
+          this.toast.error('Failed to delete code');
+          this.showCodeDeleteConfirm = false;
+          this.codeIdToDelete = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel code deletion
+   */
+  cancelCodeDelete(): void {
+    this.showCodeDeleteConfirm = false;
+    this.codeIdToDelete = null;
+  }
+
+  /**
+   * Show confirmation dialog for staff active toggle
+   */
+  onToggleStaffActive(staff: HospitalStaff): void {
+    this.staffToToggle = staff;
+    this.showStaffActiveConfirm = true;
+  }
+
+  /**
+   * Confirm and toggle staff active status
+   */
+  confirmStaffActiveToggle(): void {
+    if (!this.hospital || !this.staffToToggle) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const staffId = this.staffToToggle.staff_id;
+    const newStatus = !this.staffToToggle.is_active;
+
+    this.hospitalService.updateHospitalStaff(hospitalId, staffId, { is_active: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Staff status updated successfully');
+          if (this.staffToToggle) {
+            this.staffToToggle.is_active = newStatus;
+          }
+          this.loadStaff();
+          this.showStaffActiveConfirm = false;
+          this.staffToToggle = null;
+        },
+        error: (error) => {
+          this.logger.error('Error updating staff status:', error);
+          this.toast.error('Failed to update staff status');
+          this.showStaffActiveConfirm = false;
+          this.staffToToggle = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel staff active status toggle
+   */
+  cancelStaffActiveToggle(): void {
+    this.showStaffActiveConfirm = false;
+    this.staffToToggle = null;
+  }
+
+  /**
+   * Show confirmation dialog for staff deletion
+   */
+  onDeleteStaff(staffId: string): void {
+    this.staffIdToDelete = staffId;
+    this.showStaffDeleteConfirm = true;
+  }
+
+  /**
+   * Confirm and delete staff
+   */
+  confirmStaffDelete(): void {
+    if (!this.hospital || !this.staffIdToDelete) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const staffId = this.staffIdToDelete;
+
+    this.hospitalService.deleteHospitalStaff(hospitalId, staffId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Staff deleted successfully');
+          this.loadStaff();
+          this.showStaffDeleteConfirm = false;
+          this.staffIdToDelete = null;
+        },
+        error: (error) => {
+          this.logger.error('Error deleting staff:', error);
+          this.toast.error('Failed to delete staff');
+          this.showStaffDeleteConfirm = false;
+          this.staffIdToDelete = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel staff deletion
+   */
+  cancelStaffDelete(): void {
+    this.showStaffDeleteConfirm = false;
+    this.staffIdToDelete = null;
+  }
+
+  /**
+   * Show confirmation dialog for contact deletion
+   */
+  onDeleteContact(staffId: string, contactId: string): void {
+    this.contactToDelete = { staffId, contactId };
+    this.showContactDeleteConfirm = true;
+  }
+
+  /**
+   * Confirm and delete contact
+   */
+  confirmContactDelete(): void {
+    if (!this.hospital || !this.contactToDelete) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const { staffId, contactId } = this.contactToDelete;
+
+    this.hospitalService.deleteStaffContact(hospitalId, staffId, contactId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Contact deleted successfully');
+          this.loadStaffContacts(staffId);
+          this.showContactDeleteConfirm = false;
+          this.contactToDelete = null;
+        },
+        error: (error) => {
+          this.logger.error('Error deleting contact:', error);
+          this.toast.error('Failed to delete contact');
+          this.showContactDeleteConfirm = false;
+          this.contactToDelete = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel contact deletion
+   */
+  cancelContactDelete(): void {
+    this.showContactDeleteConfirm = false;
+    this.contactToDelete = null;
+  }
+
+  /**
+   * Show confirmation dialog for contact primary toggle
+   */
+  onToggleContactPrimary(staffId: string, contact: HospitalStaffContact): void {
+    this.contactToTogglePrimary = { staffId, contact };
+    this.showContactPrimaryConfirm = true;
+  }
+
+  /**
+   * Confirm and toggle contact primary status
+   */
+  confirmContactPrimaryToggle(): void {
+    if (!this.hospital || !this.contactToTogglePrimary) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const { staffId, contact } = this.contactToTogglePrimary;
+    const newStatus = !contact.is_primary;
+
+    this.hospitalService.updateStaffContact(hospitalId, staffId, contact.contact_id, { is_primary: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Contact primary status updated successfully');
+          if (this.contactToTogglePrimary) {
+            this.contactToTogglePrimary.contact.is_primary = newStatus;
+          }
+          this.loadStaffContacts(staffId);
+          this.showContactPrimaryConfirm = false;
+          this.contactToTogglePrimary = null;
+        },
+        error: (error) => {
+          this.logger.error('Error updating contact primary status:', error);
+          this.toast.error('Failed to update contact primary status');
+          this.showContactPrimaryConfirm = false;
+          this.contactToTogglePrimary = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel contact primary status toggle
+   */
+  cancelContactPrimaryToggle(): void {
+    this.showContactPrimaryConfirm = false;
+    this.contactToTogglePrimary = null;
+  }
+
+  /**
+   * Show confirmation dialog for fee active toggle
+   */
+  onToggleFeeActive(fee: FeeSchedule): void {
+    this.feeToToggle = fee;
+    this.showFeeActiveConfirm = true;
+  }
+
+  /**
+   * Confirm and toggle fee active status
+   */
+  confirmFeeActiveToggle(): void {
+    if (!this.hospital || !this.feeToToggle) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const feeId = this.feeToToggle.fee_id;
+    const newStatus = !this.feeToToggle.is_active;
+
+    this.hospitalService.updateHospitalFee(hospitalId, feeId, { is_active: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Fee schedule status updated successfully');
+          if (this.feeToToggle) {
+            this.feeToToggle.is_active = newStatus;
+          }
+          this.loadFees();
+          this.showFeeActiveConfirm = false;
+          this.feeToToggle = null;
+        },
+        error: (error) => {
+          this.logger.error('Error updating fee schedule status:', error);
+          this.toast.error('Failed to update fee schedule status');
+          this.showFeeActiveConfirm = false;
+          this.feeToToggle = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel fee active status toggle
+   */
+  cancelFeeActiveToggle(): void {
+    this.showFeeActiveConfirm = false;
+    this.feeToToggle = null;
+  }
+
+  /**
+   * Show confirmation dialog for fee deletion
+   */
+  onDeleteFee(feeId: string): void {
+    this.feeIdToDelete = feeId;
+    this.showFeeDeleteConfirm = true;
+  }
+
+  /**
+   * Confirm and delete fee
+   */
+  confirmFeeDelete(): void {
+    if (!this.hospital || !this.feeIdToDelete) return;
+
+    const hospitalId = this.hospital.hospital_id;
+    const feeId = this.feeIdToDelete;
+
+    this.hospitalService.deleteHospitalFee(hospitalId, feeId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Fee schedule deleted successfully');
+          this.loadFees();
+          this.showFeeDeleteConfirm = false;
+          this.feeIdToDelete = null;
+        },
+        error: (error) => {
+          this.logger.error('Error deleting fee schedule:', error);
+          this.toast.error('Failed to delete fee schedule');
+          this.showFeeDeleteConfirm = false;
+          this.feeIdToDelete = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel fee deletion
+   */
+  cancelFeeDelete(): void {
+    this.showFeeDeleteConfirm = false;
+    this.feeIdToDelete = null;
   }
 
   // ============================================================================
@@ -252,26 +874,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    * Delete address
    */
   deleteAddress(addressId: string): void {
-    if (!this.hospital) return;
-
-    if (!confirm('Are you sure you want to delete this address?')) {
-      return;
-    }
-
-    const hospitalId = this.hospital.hospital_id;
-
-    this.hospitalService.deleteHospitalAddress(hospitalId, addressId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Address deleted successfully');
-          this.loadAddresses();
-        },
-        error: (error) => {
-          this.logger.error('Error deleting address:', error);
-          this.toast.error('Failed to delete address');
-        }
-      });
+    // Redirect to the new confirmation dialog method
+    this.onDeleteAddress(addressId);
   }
 
   /**
@@ -402,26 +1006,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    * Delete code
    */
   deleteCode(codeId: string): void {
-    if (!this.hospital) return;
-
-    if (!confirm('Are you sure you want to delete this code?')) {
-      return;
-    }
-
-    const hospitalId = this.hospital.hospital_id;
-
-    this.hospitalService.deleteHospitalCode(hospitalId, codeId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Code deleted successfully');
-          this.loadCodes();
-        },
-        error: (error) => {
-          this.logger.error('Error deleting code:', error);
-          this.toast.error('Failed to delete code');
-        }
-      });
+    // Redirect to the new confirmation dialog method
+    this.onDeleteCode(codeId);
   }
 
   /**
@@ -542,26 +1128,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    * Delete staff
    */
   deleteStaff(staffId: string): void {
-    if (!this.hospital) return;
-
-    if (!confirm('Are you sure you want to delete this staff member?')) {
-      return;
-    }
-
-    const hospitalId = this.hospital.hospital_id;
-
-    this.hospitalService.deleteHospitalStaff(hospitalId, staffId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Staff deleted successfully');
-          this.loadStaff();
-        },
-        error: (error) => {
-          this.logger.error('Error deleting staff:', error);
-          this.toast.error('Failed to delete staff');
-        }
-      });
+    // Redirect to the new confirmation dialog method
+    this.onDeleteStaff(staffId);
   }
 
   /**
@@ -719,26 +1287,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    * Delete contact
    */
   deleteContact(staffId: string, contactId: string): void {
-    if (!this.hospital) return;
-
-    if (!confirm('Are you sure you want to delete this contact?')) {
-      return;
-    }
-
-    const hospitalId = this.hospital.hospital_id;
-
-    this.hospitalService.deleteStaffContact(hospitalId, staffId, contactId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Contact deleted successfully');
-          this.loadStaffContacts(staffId);
-        },
-        error: (error) => {
-          this.logger.error('Error deleting contact:', error);
-          this.toast.error('Failed to delete contact');
-        }
-      });
+    // Redirect to the new confirmation dialog method
+    this.onDeleteContact(staffId, contactId);
   }
 
   /**
@@ -838,26 +1388,8 @@ export class HospitalViewComponent implements OnInit, OnDestroy {
    * Delete fee schedule
    */
   deleteFee(feeId: string): void {
-    if (!this.hospital) return;
-
-    if (!confirm('Are you sure you want to delete this fee schedule?')) {
-      return;
-    }
-
-    const hospitalId = this.hospital.hospital_id;
-
-    this.hospitalService.deleteHospitalFee(hospitalId, feeId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Fee schedule deleted successfully');
-          this.loadFees();
-        },
-        error: (error) => {
-          this.logger.error('Error deleting fee schedule:', error);
-          this.toast.error('Failed to delete fee schedule');
-        }
-      });
+    // Redirect to the new confirmation dialog method
+    this.onDeleteFee(feeId);
   }
 
   /**
