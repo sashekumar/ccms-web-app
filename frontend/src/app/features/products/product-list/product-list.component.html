@@ -1,0 +1,104 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Policy Management</h1>
+      <p class="mt-1 text-sm text-gray-600">Manage insurance products and policies</p>
+    </div>
+    <app-button
+      *hasPermission="PERMISSIONS.CREATE"
+      (click)="createProduct()"
+      variant="primary"
+      iconLeft="fas fa-plus"
+    >
+      Create Product
+    </app-button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+    <!-- Total Products -->
+    <div class="rounded-lg bg-white p-6 shadow-md transition hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-600">Total Products</p>
+          <p class="mt-2 text-3xl font-bold text-gray-900">{{ stats.total }}</p>
+        </div>
+        <div class="rounded-full bg-gradient-to-br from-[#1e3c72] to-[#2a5298] p-3">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Products -->
+    <div class="rounded-lg bg-white p-6 shadow-md transition hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-600">Active Products</p>
+          <p class="mt-2 text-3xl font-bold text-green-600">{{ stats.active }}</p>
+        </div>
+        <div class="rounded-full bg-gradient-to-br from-green-500 to-green-600 p-3">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inactive Products -->
+    <div class="rounded-lg bg-white p-6 shadow-md transition hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-600">Inactive Products</p>
+          <p class="mt-2 text-3xl font-bold text-gray-600">{{ stats.inactive }}</p>
+        </div>
+        <div class="rounded-full bg-gradient-to-br from-gray-500 to-gray-600 p-3">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <app-data-table
+    [columns]="columns"
+    [rows]="products"
+    [loading]="loading"
+    [pagination]="pagination"
+    [filters]="tableFilters"
+    [rowActions]="rowActions"
+    (filterChange)="onTableFilterChange($event)"
+    (rowAction)="onRowAction($event)"
+    (cellToggle)="onToggleActiveStatus($event)"
+  ></app-data-table>
+
+  <!-- Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showDeleteConfirm"
+    [isOpen]="showDeleteConfirm"
+    title="Confirm Product Delete"
+    [message]="'Are you sure you want to delete ' + (productToDelete?.plan_code || 'this product') + '? This action cannot be undone.'"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Status Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showStatusToggleConfirm"
+    [isOpen]="showStatusToggleConfirm"
+    title="Confirm Status Change"
+    [message]="'Are you sure you want to change ' + (productToToggle?.product?.plan_code || '') + ' to ' + (productToToggle?.newValue ? 'Active' : 'Inactive') + ' status?'"
+    confirmLabel="Yes, Change Status"
+    cancelLabel="Cancel"
+    variant="warn"
+    (confirmed)="performStatusToggle()"
+    (cancelled)="cancelStatusToggle()"
+  ></app-confirm-dialog>
+</div>

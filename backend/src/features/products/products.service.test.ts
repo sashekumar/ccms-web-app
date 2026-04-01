@@ -101,7 +101,8 @@ describe('ProductsService', () => {
       const filters: ProductFilters = { page: 1, limit: 10 };
       const mockResult = {
         data: [{ product_id: 1, plan_code: 'PLN001', plan_name: 'Test Plan', is_active: true }],
-        pagination: { total: 1, page: 1, limit: 10, totalPages: 1 }
+        pagination: { total: 1, page: 1, limit: 10, totalPages: 1 },
+        stats: { total: 10, active: 8, inactive: 2 }
       };
 
       mockRepository.getProducts.mockResolvedValue(mockResult);

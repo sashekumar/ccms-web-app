@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+﻿import { test, expect, Page } from '@playwright/test';
 import { TIMEOUTS } from '../../constants/timeouts';
 
 /**
@@ -51,8 +51,8 @@ test.describe('Permission System - Complete E2E Flow', () => {
     await adminPage.waitForLoadState('networkidle');
     
     // Fill in role details
-    await adminPage.locator('input[formControlName="roleCode"]').fill(testRoleCode);
-    await adminPage.locator('input[formControlName="roleName"]').fill(testRoleName);
+    await adminPage.locator('input[name="roleCode"]').fill(testRoleCode);
+    await adminPage.locator('input[name="roleName"]').fill(testRoleName);
     await adminPage.locator('textarea[formControlName="description"]').fill('Limited viewer role for E2E testing');
     
     // Submit form
@@ -64,14 +64,14 @@ test.describe('Permission System - Complete E2E Flow', () => {
     await adminPage.waitForLoadState('networkidle');
     
     // Search for the created role
-    const searchInput = adminPage.locator('input[placeholder*="Search"]').first();
+    const searchInput = adminPage.locator('input[name="search"]').first();
     await searchInput.fill(testRoleCode);
     await adminPage.waitForTimeout(1000);
     
     // Verify role appears in table
     await expect(adminPage.locator(`td:has-text("${testRoleCode}")`)).toBeVisible({ timeout: 10000 });
     
-    console.log(`✅ Created role: ${testRoleCode}`);
+    console.log(`âœ… Created role: ${testRoleCode}`);
   });
   
   test('Step 2: Assign permissions to the role', async () => {
@@ -80,7 +80,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
     await adminPage.waitForLoadState('networkidle');
     
     // Search for the test role
-    const searchInput = adminPage.locator('input[placeholder*="Search"]').first();
+    const searchInput = adminPage.locator('input[name="search"]').first();
     await searchInput.fill(testRoleCode);
     await adminPage.waitForTimeout(1000);
     
@@ -109,7 +109,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
       await adminPage.waitForLoadState('networkidle');
     }
     
-    console.log(`✅ Assigned limited permissions to role: ${testRoleCode}`);
+    console.log(`âœ… Assigned limited permissions to role: ${testRoleCode}`);
   });
   
   test('Step 3: Create a user and assign to the role', async () => {
@@ -122,10 +122,10 @@ test.describe('Permission System - Complete E2E Flow', () => {
     await adminPage.waitForLoadState('networkidle');
     
     // Fill in user details
-    await adminPage.locator('input[formControlName="username"]').fill(testUsername);
-    await adminPage.locator('input[formControlName="full_name"]').fill(`Viewer User ${timestamp}`);
-    await adminPage.locator('input[formControlName="password"]').fill(testPassword);
-    await adminPage.locator('input[formControlName="confirmPassword"]').fill(testPassword);
+    await adminPage.locator('input[name="username"]').fill(testUsername);
+    await adminPage.locator('input[name="full_name"]').fill(`Viewer User ${timestamp}`);
+    await adminPage.locator('input[name="password"]').fill(testPassword);
+    await adminPage.locator('input[name="confirmPassword"]').fill(testPassword);
     
     // Submit form
     await adminPage.locator('button[type="submit"]').click();
@@ -135,14 +135,14 @@ test.describe('Permission System - Complete E2E Flow', () => {
     await adminPage.goto('http://localhost:4200/admin/users');
     await adminPage.waitForLoadState('networkidle');
     
-    // Verify user was created (user list has different placeholder)
-    const searchInput = adminPage.locator('input[placeholder*="Username"]').first();
+    // Verify user was created - search by name
+    const searchInput = adminPage.locator('input[name="search"]').first();
     await searchInput.fill(testUsername);
     await adminPage.waitForTimeout(1000);
     
     await expect(adminPage.locator(`td:has-text("${testUsername}")`)).toBeVisible({ timeout: 10000 });
     
-    console.log(`✅ Created user: ${testUsername}`);
+    console.log(`âœ… Created user: ${testUsername}`);
   });
   
   test('Step 4: Login as the new user and verify permissions', async ({ browser }) => {
@@ -163,7 +163,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
       await userPage.waitForURL(/\/dashboard/, { timeout: 10000 });
       await userPage.waitForLoadState('networkidle');
       
-      console.log(`✅ Successfully logged in as: ${testUsername}`);
+      console.log(`âœ… Successfully logged in as: ${testUsername}`);
       
       // Verify dashboard is visible
       await expect(userPage.locator('h1, h2, h4')).toBeVisible({ timeout: TIMEOUTS.ELEMENT_VISIBLE });
@@ -177,7 +177,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
         claims: await userPage.locator('a:has-text("Claim"), a[routerLink*="claims"]').isVisible(),
       };
       
-      console.log('📋 Visible menu items for test user:', menuItems);
+      console.log('ðŸ“‹ Visible menu items for test user:', menuItems);
       
       // Verify limited permissions - user should NOT see admin features
       // This depends on what permissions were assigned to the role
@@ -195,9 +195,9 @@ test.describe('Permission System - Complete E2E Flow', () => {
       const hasAccessDenied = await userPage.locator('text=/access denied|unauthorized|forbidden/i').isVisible().catch(() => false);
       
       if (currentUrl.includes('/admin/roles') && !hasAccessDenied) {
-        console.log('⚠️  User has access to roles page (check permission configuration)');
+        console.log('âš ï¸  User has access to roles page (check permission configuration)');
       } else {
-        console.log('✅ User correctly restricted from roles page');
+        console.log('âœ… User correctly restricted from roles page');
       }
       
       // Logout
@@ -205,7 +205,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
       if (await logoutButton.isVisible()) {
         await logoutButton.click();
         await userPage.waitForURL(/\/auth\/login/, { timeout: 10000 });
-        console.log('✅ Successfully logged out');
+        console.log('âœ… Successfully logged out');
       }
       
     } finally {
@@ -234,7 +234,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
         permissions: await adminTestPage.locator('a:has-text("Permission")').isVisible(),
       };
       
-      console.log('👑 Admin user menu items:', adminMenuItems);
+      console.log('ðŸ‘‘ Admin user menu items:', adminMenuItems);
       
       // Admin should have access to all admin features
       expect(adminMenuItems.users).toBe(true);
@@ -249,8 +249,8 @@ test.describe('Permission System - Complete E2E Flow', () => {
     await adminPage.goto('http://localhost:4200/admin/users');
     await adminPage.waitForLoadState('networkidle');
     
-    // Search for the test user (user list has different placeholder)
-    const searchInput = adminPage.locator('input[placeholder*="Username"]').first();
+    // Search for the test user
+    const searchInput = adminPage.locator('input[name="search"]').first();
     await searchInput.fill(testUsername);
     await adminPage.waitForTimeout(1000);
     
@@ -265,7 +265,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
       await confirmButton.click();
       await adminPage.waitForLoadState('networkidle');
       
-      console.log(`🗑️  Deleted test user: ${testUsername}`);
+      console.log(`ðŸ—‘ï¸  Deleted test user: ${testUsername}`);
     }
   });
   
@@ -274,7 +274,7 @@ test.describe('Permission System - Complete E2E Flow', () => {
     await adminPage.waitForLoadState('networkidle');
     
     // Search for the test role
-    const searchInput = adminPage.locator('input[placeholder*="Search"]').first();
+    const searchInput = adminPage.locator('input[name="search"]').first();
     await searchInput.fill(testRoleCode);
     await adminPage.waitForTimeout(1000);
     
@@ -289,7 +289,9 @@ test.describe('Permission System - Complete E2E Flow', () => {
       await confirmButton.click();
       await adminPage.waitForLoadState('networkidle');
       
-      console.log(`🗑️  Deleted test role: ${testRoleCode}`);
+      console.log(`ðŸ—‘ï¸  Deleted test role: ${testRoleCode}`);
     }
   });
 });
+
+

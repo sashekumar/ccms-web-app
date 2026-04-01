@@ -21,7 +21,7 @@ export class RoleListPage extends BasePage {
     createButton: 'button:has-text("Create Role")',
     
     // Filters
-    searchInput: 'input[placeholder*="role name or code"]',
+    searchInput: 'input[name="searchTerm"]',
     statusFilter: 'select:near(label:has-text("Status"))',
     
     // Table
@@ -89,7 +89,7 @@ export class RoleListPage extends BasePage {
    */
   async search(searchTerm: string): Promise<void> {
     await this.fill(this.selectors.searchInput, searchTerm);
-    await this.wait(TIMEOUTS.CHANGE_DETECTION);
+    await this.wait(800); // debounce(300ms) + Angular change detection
     await this.waitForNetworkIdle();
   }
 

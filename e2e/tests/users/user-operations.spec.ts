@@ -52,8 +52,8 @@ test.describe.serial('User Operations - CRUD', () => {
     await userListPage.search(testUsername);
     await authenticatedPage.waitForTimeout(500); // Wait for search results
     
-    // Verify user appears in table
-    await userListPage.expectUserVisible(testUsername);
+    // Verify user appears in table (table shows full_name, not username)
+    await userListPage.expectUserVisible(testFullName);
   });
   
   test('VALIDATION: should validate required fields on user creation', async ({ authenticatedPage }) => {
@@ -103,8 +103,8 @@ test.describe.serial('User Operations - CRUD', () => {
     await userListPage.search(testUsername);
     await authenticatedPage.waitForTimeout(500);
     
-    // Click edit button for the user
-    await userListPage.editUser(testUsername);
+    // Click edit button for the user (table shows full_name, not username)
+    await userListPage.editUser(testFullName);
     await userFormPage.waitForPageLoad();
     
     // Update full name
@@ -131,8 +131,8 @@ test.describe.serial('User Operations - CRUD', () => {
     await userListPage.search(testUsername);
     await authenticatedPage.waitForTimeout(500);
     
-    // Verify test user is visible
-    const isVisible = await userListPage.isUserVisible(testUsername);
+    // Verify test user is visible (table shows full_name, not username)
+    const isVisible = await userListPage.isUserVisible(testFullName);
     expect(isVisible).toBe(true);
     
     // Clear search
@@ -169,11 +169,10 @@ test.describe.serial('User Operations - CRUD', () => {
     await userListPage.search(testUsername);
     await authenticatedPage.waitForTimeout(500);
     
-    // Set up dialog handler for delete confirmation
-    authenticatedPage.on('dialog', dialog => dialog.accept());
-    
-    // Click delete button
-    await userListPage.deleteUser(testUsername);
+    // Click delete button (table shows full_name, not username)
+    await userListPage.deleteUser(testFullName);
+    // Click Delete in the Angular confirm modal (app uses app-confirm-dialog, not browser dialog)
+    await authenticatedPage.locator('app-confirm-dialog button:has-text("Delete")').click();
     await authenticatedPage.waitForLoadState('networkidle');
     await authenticatedPage.waitForTimeout(1000);
     
@@ -187,7 +186,7 @@ test.describe.serial('User Operations - CRUD', () => {
     await userListPage.search(testUsername);
     await authenticatedPage.waitForTimeout(500);
     
-    const isVisible = await userListPage.isUserVisible(testUsername);
+    const isVisible = await userListPage.isUserVisible(testFullName);
     expect(isVisible).toBe(false);
   });
 });

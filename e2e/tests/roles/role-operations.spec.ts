@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures/auth.fixture';
+﻿import { test, expect } from '../../fixtures/auth.fixture';
 import { RoleListPage } from '../../page-objects/role-list.page';
 import { RoleFormPage } from '../../page-objects/role-form.page';
 
@@ -24,33 +24,31 @@ test.describe.serial('Role Operations - CRUD', () => {
   const testRoleName = `Test Role ${timestamp}`;
   
   test('CREATE: should create a new role successfully', async ({ authenticatedPage }) => {
-    // Navigate to roles page directly
-    await authenticatedPage.goto('/admin/roles');
+    const roleListPage = new RoleListPage(authenticatedPage);
+    const roleFormPage = new RoleFormPage(authenticatedPage);
+    
+    // Navigate to roles page and create
+    await roleListPage.goto();
+    await roleListPage.clickCreateRole();
+    await roleFormPage.waitForPageLoad();
+    
+    // Fill in role details using page object
+    await roleFormPage.fillRoleCode(testRoleCode);
+    await roleFormPage.fillRoleName(testRoleName);
+    await roleFormPage.fillDescription('Test role for E2E testing');
+    await roleFormPage.setActive(true);
+    await roleFormPage.submitForm();
     await authenticatedPage.waitForLoadState('networkidle');
     
-    // Click create button
-    await authenticatedPage.locator('button:has-text("Create Role")').click();
-    await authenticatedPage.waitForLoadState('networkidle');
-    
-    // Fill in role details
-    await authenticatedPage.locator('input[formControlName="roleCode"]').fill(testRoleCode);
-    await authenticatedPage.locator('input[formControlName="roleName"]').fill(testRoleName);
-    await authenticatedPage.locator('textarea[formControlName="description"]').fill('Test role for E2E testing');
-    
-    // Submit form
-    await authenticatedPage.locator('button[type="submit"]').click();
-    await authenticatedPage.waitForLoadState('networkidle');
-    
-    // After creation, app navigates to permissions page - go back to list
+    // Back to roles list
     await authenticatedPage.locator('button:has-text("Back to Roles")').click();
+    await authenticatedPage.waitForURL('**/admin/roles', { timeout: 10000 });
     await authenticatedPage.waitForLoadState('networkidle');
-    
-    // Search for the created role
-    const searchInput = authenticatedPage.locator('input[placeholder*="Search"]').first();
-    await searchInput.fill(testRoleCode);
-    await authenticatedPage.waitForTimeout(1000);
-    
+    // Extra pause to allow loadRoles() async response to populate the table
+    await authenticatedPage.waitForTimeout(500);
+
     // Verify role appears in table
+    await roleListPage.search(testRoleCode);
     await expect(authenticatedPage.locator(`td:has-text("${testRoleCode}")`)).toBeVisible({ timeout: 10000 });
     
     console.log(`✅ CREATE: Successfully created role: ${testRoleCode}`);
@@ -71,7 +69,7 @@ test.describe.serial('Role Operations - CRUD', () => {
     
     expect(isDisabled).toBe(true);
     
-    console.log('✅ VALIDATION: Required fields validation working');
+    console.log('âœ… VALIDATION: Required fields validation working');
   });
   
   test('VALIDATION: should validate role code format', async ({ authenticatedPage }) => {
@@ -84,8 +82,8 @@ test.describe.serial('Role Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Fill with invalid role code (lowercase and special characters)
-    await authenticatedPage.locator('input[formControlName="roleCode"]').fill('test-role!@#');
-    await authenticatedPage.locator('input[formControlName="roleName"]').fill('Test Role');
+    await authenticatedPage.locator('input[name="roleCode"]').fill('test-role!@#');
+    await authenticatedPage.locator('input[name="roleName"]').fill('Test Role');
     
     // Submit button should remain disabled due to validation
     const submitBtn = authenticatedPage.locator('button[type="submit"]');
@@ -93,7 +91,7 @@ test.describe.serial('Role Operations - CRUD', () => {
     
     expect(isDisabled).toBe(true);
     
-    console.log('✅ VALIDATION: Code format validation working');
+    console.log('âœ… VALIDATION: Code format validation working');
   });
   
   test('UPDATE: should update an existing role', async ({ authenticatedPage }) => {
@@ -102,7 +100,7 @@ test.describe.serial('Role Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for the test role
-    const searchInput = authenticatedPage.locator('input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="searchTerm"]').first();
     await searchInput.fill(testRoleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -114,23 +112,28 @@ test.describe.serial('Role Operations - CRUD', () => {
     const editButton = row.locator('[data-testid="edit-role-button"]');
     await expect(editButton).toBeVisible({ timeout: 5000 });
     await editButton.click();
+    // Wait for edit form to load AND for getRoleById to populate the form
     await authenticatedPage.waitForLoadState('networkidle');
+    await expect(authenticatedPage.locator('input[name="roleName"]')).not.toHaveValue('', { timeout: 10000 });
     
     // Update role name and description
     const updatedName = `${testRoleName} Updated`;
-    await authenticatedPage.locator('input[formControlName="roleName"]').fill(updatedName);
-    await authenticatedPage.locator('textarea[formControlName="description"]').fill('Updated description for testing');
+    await authenticatedPage.locator('input[name="roleName"]').fill(updatedName);
+    await authenticatedPage.locator('textarea[placeholder*="description"]').fill('Updated description for testing');
     
     // Submit changes
     await authenticatedPage.locator('button[type="submit"]').click();
+    await authenticatedPage.waitForURL('**/admin/roles', { timeout: 10000 });
     await authenticatedPage.waitForLoadState('networkidle');
-    
+    // Extra pause to allow loadRoles() async response to populate the table
+    await authenticatedPage.waitForTimeout(500);
+
     // Verify updated name appears in table
     await searchInput.fill(testRoleCode);
-    await authenticatedPage.waitForTimeout(1000);
+    await authenticatedPage.waitForTimeout(800);
     await expect(authenticatedPage.locator(`td:has-text("${updatedName}")`)).toBeVisible({ timeout: 10000 });
     
-    console.log('✅ UPDATE: Successfully updated role');
+    console.log('âœ… UPDATE: Successfully updated role');
   });
   
   test('READ: should search and filter roles', async ({ authenticatedPage }) => {
@@ -139,7 +142,7 @@ test.describe.serial('Role Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for test role
-    const searchInput = authenticatedPage.locator('input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="searchTerm"]').first();
     await searchInput.fill(testRoleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -156,7 +159,7 @@ test.describe.serial('Role Operations - CRUD', () => {
     const count = await rows.count();
     expect(count).toBeGreaterThanOrEqual(1);
     
-    console.log('✅ READ: Search and filter working');
+    console.log('âœ… READ: Search and filter working');
   });
   
   // SAFETY: DELETE test disabled to prevent accidental deletion of system roles
@@ -167,7 +170,7 @@ test.describe.serial('Role Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for the test role
-    const searchInput = authenticatedPage.locator('input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="searchTerm"]').first();
     await searchInput.fill(testRoleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -198,7 +201,8 @@ test.describe.serial('Role Operations - CRUD', () => {
     
     expect(isGone).toBe(true);
     
-    console.log('✅ DELETE: Successfully deleted role');
+    console.log('âœ… DELETE: Successfully deleted role');
   });
 });
+
 

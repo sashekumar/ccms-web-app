@@ -21,7 +21,7 @@ export class MqTemplateListPage extends BasePage {
     super(page);
     this.pageTitle = page.locator('h1').filter({ hasText: /mq templates/i });
     this.createButton = page.getByRole('button', { name: /new template/i });
-    this.searchInput = page.getByPlaceholder(/search/i);
+    this.searchInput = page.getByPlaceholder('Template code or category');
     this.dataTable = page.locator('app-data-table').first();
     this.noDataMessage = page.getByText(/no.*template.*found/i);
     this.recipientTypeFilter = page.locator('select, [role="combobox"]').filter({ hasText: /recipient/i });
@@ -32,7 +32,7 @@ export class MqTemplateListPage extends BasePage {
   }
 
   async goto(): Promise<void> {
-    await super.goto('/mq-templates');
+    await super.goto('/master/mq-templates');
   }
 
   async waitForPageLoad(): Promise<void> {

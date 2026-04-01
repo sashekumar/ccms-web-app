@@ -26,7 +26,7 @@ export class BankListPage extends BasePage {
    * Navigate to banks page
    */
   async goto(): Promise<void> {
-    await super.goto('/banks');
+    await super.goto('/master/banks');
   }
 
   /**

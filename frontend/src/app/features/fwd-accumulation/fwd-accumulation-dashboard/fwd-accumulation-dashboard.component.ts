@@ -194,7 +194,11 @@ export class FwdAccumulationDashboardComponent implements OnInit, OnDestroy {
 
   formatCurrency(value: number | undefined): string {
     if (value == null) return '-';
-    return new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(value);
+    const formatted = new Intl.NumberFormat('en-MY', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    }).format(value);
+    return 'RM ' + formatted;
   }
 
   formatDate(dateStr: string | undefined): string {

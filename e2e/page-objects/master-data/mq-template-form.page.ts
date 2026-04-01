@@ -28,8 +28,9 @@ export class MqTemplateFormPage extends BasePage {
     
     // Template form fields
     this.templateCodeInput = page.locator('app-text-input').filter({ hasText: /template code/i }).locator('input');
-    this.recipientTypeSelect = page.locator('app-dropdown').filter({ hasText: /recipient/i }).locator('select, button');
-    this.categorySelect = page.locator('app-dropdown').filter({ hasText: /category/i }).locator('select, button');
+    // Scope form dropdowns to the modal overlay to avoid matching table filter dropdowns
+    this.recipientTypeSelect = page.locator('.fixed app-dropdown').filter({ hasText: /recipient/i }).locator('button').first();
+    this.categorySelect = page.locator('.fixed app-dropdown').filter({ hasText: /category/i }).locator('button').first();
     this.emailSubjectInput = page.locator('app-text-input').filter({ hasText: /email subject/i }).locator('input');
     this.reminderDaysInput = page.locator('app-text-input').filter({ hasText: /reminder days/i }).locator('input').first();
     this.autoReminderDaysInput = page.locator('app-text-input').filter({ hasText: /auto-reminder/i }).locator('input');
@@ -63,26 +64,17 @@ export class MqTemplateFormPage extends BasePage {
     }
 
     if (data.recipientType !== undefined) {
-      // Check if it's a select or custom dropdown
-      const isSelect = await this.recipientTypeSelect.evaluate(el => el.tagName === 'SELECT');
-      if (isSelect) {
-        await this.recipientTypeSelect.selectOption({ label: data.recipientType });
-      } else {
-        // Custom dropdown - click and select
-        await this.recipientTypeSelect.click();
-        await this.page.locator(`[role="option"], li`).filter({ hasText: data.recipientType }).click();
-      }
+      // Custom app-dropdown — click trigger then select option
+      await this.recipientTypeSelect.click();
+      await this.page.locator(`[role="option"], li`).filter({ hasText: data.recipientType }).click();
       await this.page.waitForTimeout(100);
     }
 
     if (data.category !== undefined) {
-      const isSelect = await this.categorySelect.evaluate(el => el.tagName === 'SELECT');
-      if (isSelect) {
-        await this.categorySelect.selectOption({ label: data.category });
-      } else {
-        await this.categorySelect.click();
-        await this.page.locator(`[role="option"], li`).filter({ hasText: data.category }).click();
-      }
+      // Custom app-dropdown — click trigger then select first available option (loaded from DB)
+      await this.categorySelect.click();
+      await this.page.locator('[role="option"], li[role="option"]').first().waitFor({ state: 'visible', timeout: 5000 });
+      await this.page.locator('[role="option"], li[role="option"]').first().click();
       await this.page.waitForTimeout(100);
     }
 

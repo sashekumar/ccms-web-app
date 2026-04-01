@@ -9,18 +9,16 @@ export class ClauseFormPage extends BasePage {
   readonly modalTitle: Locator;
   readonly clauseCodeInput: Locator;
   readonly clauseTextInput: Locator;
-  readonly clauseCategoryInput: Locator;
   readonly isActiveCheckbox: Locator;
   readonly saveButton: Locator;
   readonly cancelButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.modalTitle = page.locator('[role="dialog"] h3, .modal-title').filter({ hasText: /clause/i });
+    this.modalTitle = page.locator('h3').filter({ hasText: /clause/i });
     this.clauseCodeInput = page.getByLabel(/clause code/i);
     this.clauseTextInput = page.getByLabel(/clause text/i);
-    this.clauseCategoryInput = page.getByLabel(/category/i);
-    this.isActiveCheckbox = page.getByLabel(/active/i);
+    this.isActiveCheckbox = page.locator('.fixed app-checkbox input[type="checkbox"]');
     this.saveButton = page.getByRole('button', { name: /save|submit/i });
     this.cancelButton = page.getByRole('button', { name: /cancel/i });
   }
@@ -32,7 +30,7 @@ export class ClauseFormPage extends BasePage {
   async fillClauseForm(data: {
     clauseCode?: string;
     clauseText?: string;
-    clauseCategory?: string;
+    clauseCategory?: string;  // Ignored — clause form has no category field
     isActive?: boolean;
   }): Promise<void> {
     if (data.clauseCode !== undefined) {
@@ -41,10 +39,6 @@ export class ClauseFormPage extends BasePage {
     
     if (data.clauseText !== undefined) {
       await this.clauseTextInput.fill(data.clauseText);
-    }
-    
-    if (data.clauseCategory !== undefined) {
-      await this.clauseCategoryInput.fill(data.clauseCategory);
     }
     
     if (data.isActive !== undefined) {

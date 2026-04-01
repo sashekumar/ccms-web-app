@@ -22,7 +22,7 @@ export class ClauseListPage extends BasePage {
   }
 
   async goto(): Promise<void> {
-    await super.goto('/clauses');
+    await super.goto('/master/clauses');
   }
 
   async waitForPageLoad(): Promise<void> {

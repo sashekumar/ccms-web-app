@@ -31,33 +31,32 @@ test.describe('Module Actions Management (ACL)', () => {
     await expect(authenticatedPage.locator('table')).toBeVisible();
   });
 
-  test('should display table headers: Module, Action, Custom Label, Status', async ({ authenticatedPage }) => {
+  test('should display table headers: Module, Action Name, Custom Label, Status', async ({ authenticatedPage }) => {
     const headers = authenticatedPage.locator('thead th');
     await expect(headers.filter({ hasText: 'Module' })).toBeVisible();
-    await expect(headers.filter({ hasText: 'Action' })).toBeVisible();
+    await expect(headers.filter({ hasText: /^Action Name$/ })).toBeVisible();
     await expect(headers.filter({ hasText: 'Custom Label' })).toBeVisible();
     await expect(headers.filter({ hasText: 'Status' })).toBeVisible();
   });
 
   test('should show search input', async ({ authenticatedPage }) => {
-    await expect(authenticatedPage.locator('input[placeholder*="Module or action name"]')).toBeVisible();
+    await expect(authenticatedPage.locator('input[name="search"]')).toBeVisible();
   });
 
   test('should show Module filter dropdown', async ({ authenticatedPage }) => {
-    const selects = authenticatedPage.locator('select');
-    await expect(selects.first()).toBeVisible();
+    const dropdowns = authenticatedPage.locator('app-dropdown');
+    await expect(dropdowns.first()).toBeVisible();
   });
 
-  test('should show Action filter dropdown', async ({ authenticatedPage }) => {
-    const selects = authenticatedPage.locator('select');
-    const count = await selects.count();
+  test('should show Action filter dropdown', async ({ authenticatedPage }) => { 
+    const dropdowns = authenticatedPage.locator('app-dropdown');
+    const count = await dropdowns.count();
     expect(count).toBeGreaterThanOrEqual(2);
   });
 
-  test('should show Status filter dropdown', async ({ authenticatedPage }) => {
-    const selects = authenticatedPage.locator('select');
-    const count = await selects.count();
-    expect(count).toBeGreaterThanOrEqual(3);
+  test('should show Status filter dropdown', async ({ authenticatedPage }) => { 
+    const dropdowns = authenticatedPage.locator('app-dropdown');
+    const count = await dropdowns.count();
   });
 
   test('should display total count footer', async ({ authenticatedPage }) => {
@@ -67,13 +66,13 @@ test.describe('Module Actions Management (ACL)', () => {
   test('should open create modal when Attach button is clicked', async ({ authenticatedPage }) => {
     await authenticatedPage.locator('button:has-text("Attach Actions to Module")').click();
     await expect(authenticatedPage.locator('text=Attach Actions to Module').last()).toBeVisible();
-    await expect(authenticatedPage.locator('select[name="module"]')).toBeVisible();
+    await expect(authenticatedPage.locator('[name="module"]')).toBeVisible();
   });
 
   test('should close modal when Cancel is clicked', async ({ authenticatedPage }) => {
     await authenticatedPage.locator('button:has-text("Attach Actions to Module")').click();
     await authenticatedPage.locator('button:has-text("Cancel")').click();
-    await expect(authenticatedPage.locator('select[name="module"]')).not.toBeVisible();
+    await expect(authenticatedPage.locator('[name="module"]')).not.toBeVisible();
   });
 
   test('should have disabled submit button on empty create form', async ({ authenticatedPage }) => {
@@ -83,7 +82,7 @@ test.describe('Module Actions Management (ACL)', () => {
   });
 
   test('should filter results when search term is entered', async ({ authenticatedPage }) => {
-    const searchInput = authenticatedPage.locator('input[placeholder*="Module or action name"]');
+    const searchInput = authenticatedPage.locator('input[name="search"]');
     await searchInput.fill('nonexistent_xyz_term_12345');
     await authenticatedPage.waitForTimeout(500);
     await expect(authenticatedPage.locator('td:has-text("No module-actions found")')).toBeVisible();

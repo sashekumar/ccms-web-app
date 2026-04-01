@@ -243,7 +243,11 @@ export class FinancialsDashboardComponent implements OnInit, OnDestroy {
 
   formatCurrency(amount?: number): string {
     if (amount == null) return '—';
-    return new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(amount);
+    const formatted = new Intl.NumberFormat('en-MY', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    }).format(amount);
+    return 'RM ' + formatted;
   }
 
   formatDate(dateStr?: string | null): string {

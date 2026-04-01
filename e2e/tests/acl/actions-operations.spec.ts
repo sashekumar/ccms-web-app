@@ -39,7 +39,7 @@ test.describe.serial('ACL Actions Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Verify creation (modal closes, action appears in list)
-    const searchInput = authenticatedPage.locator('input[placeholder*="action name or code"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testActionCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -67,7 +67,7 @@ test.describe.serial('ACL Actions Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/actions');
     await authenticatedPage.waitForLoadState('networkidle');
     
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testActionCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -80,7 +80,7 @@ test.describe.serial('ACL Actions Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/actions');
     await authenticatedPage.waitForLoadState('networkidle');
     
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testActionCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -117,7 +117,7 @@ test.describe.serial('ACL Actions Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for test action
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testActionCode);
     await authenticatedPage.waitForTimeout(1000);
     

@@ -1,0 +1,109 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">{{ isEditMode ? 'Edit Product' : 'Create Product' }}</h1>
+      <p class="mt-1 text-sm text-gray-600">
+        {{ isEditMode ? 'Update product information' : 'Add a new insurance product to the system' }}
+      </p>
+    </div>
+    <app-button
+      variant="secondary"
+      iconLeft="fas fa-arrow-left"
+      (click)="goBack()"
+    >
+      Back to List
+    </app-button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="rounded-lg bg-white p-12 text-center shadow">
+    <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+    <p class="mt-4 text-gray-600">{{ isEditMode ? 'Loading product...' : 'Saving...' }}</p>
+  </div>
+
+  <!-- Form -->
+  <div *ngIf="!loading" class="rounded-lg bg-white p-6 shadow">
+    <form (ngSubmit)="save()" #productForm="ngForm">
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <!-- Plan Code -->
+        <app-text-input
+          label="Plan Code"
+          name="plan_code"
+          [(ngModel)]="formData.plan_code"
+          (ngModelChange)="onPlanCodeChange($event)"
+          [required]="true"
+          [maxLength]="50"
+          placeholder="e.g., PLAN001"
+          [disabled]="isEditMode"
+          [error]="planCodeInvalid ? 'This plan code is already in use' : ''"
+          hint="Plan code cannot be changed after creation"
+        ></app-text-input>
+
+        <!-- Plan Name -->
+        <app-text-input
+          label="Plan Name"
+          name="plan_name"
+          [(ngModel)]="formData.plan_name"
+          [maxLength]="255"
+          placeholder="Descriptive plan name"
+        ></app-text-input>
+
+        <!-- Insurer Name -->
+        <app-text-input
+          label="Insurer Name"
+          name="insurer_name"
+          [(ngModel)]="formData.insurer_name"
+          [maxLength]="255"
+          placeholder="Insurance company name"
+        ></app-text-input>
+
+        <!-- Is Active -->
+        <div class="md:col-span-2">
+          <app-checkbox
+            name="is_active"
+            label="Active (product is available for use)"
+            [(ngModel)]="formData.is_active"
+          ></app-checkbox>
+        </div>
+      </div>
+
+      <!-- Help Text -->
+      <div class="mt-6 rounded-lg bg-blue-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">Note</h3>
+            <div class="mt-2 text-sm text-blue-700">
+              <p>After creating the product, you can configure limits and copay settings from the product view page.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <app-button
+          variant="secondary"
+          type="button"
+          (click)="goBack()"
+          [disabled]="saving"
+        >
+          Cancel
+        </app-button>
+        <app-button
+          variant="primary"
+          type="submit"
+          [disabled]="productForm.invalid || saving || planCodeInvalid || checkingPlanCode"
+          [loading]="saving"
+        >
+          {{ isEditMode ? 'Update Product' : 'Create Product' }}
+        </app-button>
+      </div>
+    </form>
+  </div>
+</div>

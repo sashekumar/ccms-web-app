@@ -30,17 +30,15 @@ export class ProductsRepository extends BaseRepository<Product> {
     }
 
     if (filters.insurer_name) {
-      whereClauses.push('insurer_name = @insurerName');
-      request.input('insurerName', sql.NVarChar(255), filters.insurer_name);
+      whereClauses.push('insurer_name LIKE @insurerName');
+      request.input('insurerName', sql.NVarChar(255), `%${filters.insurer_name}%`);
     }
 
     if (filters.is_active !== undefined) {
       whereClauses.push('is_active = @isActive');
       request.input('isActive', sql.Bit, filters.is_active);
-    } else {
-      // By default, show only active products
-      whereClauses.push('is_active = 1');
     }
+    // No default filter - show all products by default
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
@@ -49,7 +47,16 @@ export class ProductsRepository extends BaseRepository<Product> {
     const sortOrder = filters.sort_order || 'DESC';
     const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
 
-    // Count query
+    // Overall stats query (not affected by filters)
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total_count,
+        SUM(CAST(is_active as INT)) as active_count,
+        SUM(CAST(CASE WHEN is_active = 0 THEN 1 ELSE 0 END as INT)) as inactive_count
+      FROM ${DB_TABLES.PRODUCTS}
+    `;
+
+    // Filtered count query
     const countQuery = `
       SELECT COUNT(*) as total 
       FROM ${DB_TABLES.PRODUCTS}
@@ -75,11 +82,13 @@ export class ProductsRepository extends BaseRepository<Product> {
     request.input('offset', sql.Int, offset);
     request.input('limit', sql.Int, limit);
 
-    const [countResult, dataResult] = await Promise.all([
+    const [statsResult, countResult, dataResult] = await Promise.all([
+      request.query(statsQuery),
       request.query(countQuery),
       request.query(dataQuery)
     ]);
 
+    const stats = statsResult.recordset[0];
     const total = countResult.recordset[0].total;
     const totalPages = Math.ceil(total / limit);
 
@@ -90,6 +99,11 @@ export class ProductsRepository extends BaseRepository<Product> {
         page,
         limit,
         totalPages
+      },
+      stats: {
+        total: stats.total_count || 0,
+        active: stats.active_count || 0,
+        inactive: stats.inactive_count || 0
       }
     };
   }

@@ -6,25 +6,21 @@
       <p class="mt-1 text-sm text-gray-600">{{ product?.plan_name || 'View product information and settings' }}</p>
     </div>
     <div class="flex gap-3">
-      <button
+      <app-button
+        variant="secondary"
+        iconLeft="fas fa-arrow-left"
         (click)="goBack()"
-        class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
         Back to List
-      </button>
-      <button
+      </app-button>
+      <app-button
         *hasPermission="PERMISSIONS.UPDATE"
+        variant="primary"
+        iconLeft="fas fa-edit"
         (click)="editProduct()"
-        class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-        </svg>
         Edit
-      </button>
+      </app-button>
     </div>
   </div>
 
@@ -77,12 +73,12 @@
           <div>
             <label class="block text-sm font-medium text-gray-500">Status</label>
             <div class="mt-1">
-              <span *ngIf="product.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                Active
-              </span>
-              <span *ngIf="!product.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
-                Inactive
-              </span>
+              <app-toggle
+                [isActive]="product.is_active"
+                (toggle)="onStatusToggle($event)"
+                activeLabel="Active"
+                inactiveLabel="Inactive"
+              ></app-toggle>
             </div>
           </div>
 
@@ -112,16 +108,14 @@
       <div *ngIf="activeTab === 'limits'">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900">Product Limits</h3>
-          <button
+          <app-button
             *hasPermission="PERMISSIONS.MANAGE_LIMITS"
+            variant="primary"
+            iconLeft="fas fa-plus"
             (click)="showLimitFormDialog()"
-            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
             Add Limit
-          </button>
+          </app-button>
         </div>
 
         <!-- Loading -->
@@ -141,10 +135,14 @@
             <tbody class="divide-y divide-gray-200 bg-white">
               <tr *ngFor="let limit of limits" class="transition hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ limit.limit_type || '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ limit.limit_amount ? (limit.limit_amount | number:'1.2-2') : '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ limit.limit_amount ? (limit.limit_amount | currency:'MYR':'RM ':'1.2-2') : '-' }}</td>
                 <td class="px-6 py-4 text-sm text-gray-900">
-                  <span *ngIf="limit.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Active</span>
-                  <span *ngIf="!limit.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">Inactive</span>
+                  <app-toggle
+                    [isActive]="limit.is_active"
+                    (toggle)="onLimitStatusToggle(limit, $event)"
+                    activeLabel="Active"
+                    inactiveLabel="Inactive"
+                  ></app-toggle>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
@@ -159,7 +157,7 @@
                   </button>
                   <button
                     *hasPermission="PERMISSIONS.MANAGE_LIMITS"
-                    (click)="deleteLimit(limit)"
+                    (click)="promptDeleteLimit(limit)"
                     class="text-red-600 hover:text-red-900"
                     title="Delete"
                   >
@@ -188,61 +186,47 @@
             <h3 class="mb-4 text-lg font-semibold">{{ editingLimit ? 'Edit Limit' : 'Add Limit' }}</h3>
             <form #limitForm="ngForm" (ngSubmit)="saveLimit(limitForm)">
               <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Limit Type <span class="text-red-500">*</span></label>
-                  <select
-                    [(ngModel)]="limitFormData.limit_type"
-                    name="limit_type"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  >
-                    <option value="">-- Select Limit Type --</option>
-                    <option *ngFor="let type of limitTypes$ | async" [value]="type.lookup_code">
-                      {{ type.lookup_value }}
-                    </option>
-                  </select>
-                </div>
+                <app-dropdown
+                  label="Limit Type"
+                  name="limit_type"
+                  [(ngModel)]="limitFormData.limit_type"
+                  [options]="(limitTypes$ | async) || []"
+                  [required]="true"
+                  placeholder="-- Select Limit Type --"
+                ></app-dropdown>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Limit Amount <span class="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    [(ngModel)]="limitFormData.limit_amount"
-                    name="limit_amount"
-                    required
-                    step="0.01"
-                    placeholder="0"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  />
-                </div>
+                <app-text-input
+                  label="Limit Amount"
+                  name="limit_amount"
+                  inputType="currency"
+                  [(ngModel)]="limitFormData.limit_amount"
+                  [required]="true"
+                  [decimalPlaces]="2"
+                  placeholder="0.00"
+                ></app-text-input>
 
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="limitFormData.is_active"
-                    name="is_active"
-                    id="limit_is_active"
-                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72]"
-                  />
-                  <label for="limit_is_active" class="ml-2 block text-sm text-gray-700">Active</label>
-                </div>
+                <app-checkbox
+                  name="is_active"
+                  label="Active"
+                  [(ngModel)]="limitFormData.is_active"
+                ></app-checkbox>
               </div>
 
               <div class="mt-6 flex justify-end gap-3">
-                <button
+                <app-button
+                  variant="secondary"
                   type="button"
                   (click)="cancelLimitForm()"
-                  class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
+                  variant="primary"
                   type="submit"
-                  [disabled]="limitForm.invalid"
-                  class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+                  [disabled]="!!limitForm.invalid"
                 >
                   {{ editingLimit ? 'Update' : 'Create' }}
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
@@ -253,16 +237,14 @@
       <div *ngIf="activeTab === 'copay'">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900">Product Copay</h3>
-          <button
+          <app-button
             *hasPermission="PERMISSIONS.MANAGE_COPAY"
+            variant="primary"
+            iconLeft="fas fa-plus"
             (click)="showCopayFormDialog()"
-            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
             Add Copay
-          </button>
+          </app-button>
         </div>
 
         <!-- Loading -->
@@ -283,11 +265,15 @@
             <tbody class="divide-y divide-gray-200 bg-white">
               <tr *ngFor="let copay of copayList" class="transition hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ copay.copay_type || '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ copay.copay_value ? (copay.copay_value | number:'1.2-2') : '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatCopayValue(copay) }}</td>
                 <td class="px-6 py-4 text-sm text-gray-900">{{ copay.applies_to || '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <span *ngIf="copay.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Active</span>
-                  <span *ngIf="!copay.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">Inactive</span>
+                  <app-toggle
+                    [isActive]="copay.is_active"
+                    (toggle)="onCopayStatusToggle(copay, $event)"
+                    activeLabel="Active"
+                    inactiveLabel="Inactive"
+                  ></app-toggle>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
@@ -302,7 +288,7 @@
                   </button>
                   <button
                     *hasPermission="PERMISSIONS.MANAGE_COPAY"
-                    (click)="deleteCopay(copay)"
+                    (click)="promptDeleteCopay(copay)"
                     class="text-red-600 hover:text-red-900"
                     title="Delete"
                   >
@@ -331,93 +317,85 @@
             <h3 class="mb-4 text-lg font-semibold">{{ editingCopay ? 'Edit Copay' : 'Add Copay' }}</h3>
             <form #copayForm="ngForm" (ngSubmit)="saveCopay(copayForm)">
               <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Copay Type <span class="text-red-500">*</span></label>
-                  <select
-                    [(ngModel)]="copayFormData.copay_type"
-                    name="copay_type"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  >
-                    <option value="">-- Select Copay Type --</option>
-                    <option *ngFor="let type of copayTypes$ | async" [value]="type.lookup_code">
-                      {{ type.lookup_value }}
-                    </option>
-                  </select>
-                </div>
+                <app-dropdown
+                  label="Copay Type"
+                  name="copay_type"
+                  [(ngModel)]="copayFormData.copay_type"
+                  [options]="(copayTypes$ | async) || []"
+                  [required]="true"
+                  placeholder="-- Select Copay Type --"
+                ></app-dropdown>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Copay Value <span class="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    [(ngModel)]="copayFormData.copay_value"
-                    name="copay_value"
-                    required
-                    step="0.01"
-                    placeholder="0"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  />
-                </div>
+                <app-text-input
+                  *ngIf="!isCopayTypePercentage()"
+                  label="Copay Value"
+                  name="copay_value"
+                  inputType="currency"
+                  [(ngModel)]="copayFormData.copay_value"
+                  [required]="true"
+                  [decimalPlaces]="2"
+                  placeholder="0.00"
+                ></app-text-input>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Applies To</label>
-                  <select
-                    [(ngModel)]="copayFormData.applies_to"
-                    name="applies_to"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  >
-                    <option value="">-- Select Applies To --</option>
-                    <option *ngFor="let item of copayAppliesTo$ | async" [value]="item.lookup_code">
-                      {{ item.lookup_value }}
-                    </option>
-                  </select>
-                </div>
+                <app-text-input
+                  *ngIf="isCopayTypePercentage()"
+                  label="Copay Value (%)"
+                  name="copay_value_percentage"
+                  inputType="decimal"
+                  [(ngModel)]="copayFormData.copay_value"
+                  [required]="true"
+                  [decimalPlaces]="2"
+                  placeholder="0"
+                  hint="Enter percentage value (0-100)"
+                ></app-text-input>
 
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="copayFormData.is_active"
-                    name="copay_is_active"
-                    id="copay_is_active"
-                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72]"
-                  />
-                  <label for="copay_is_active" class="ml-2 block text-sm text-gray-700">Active</label>
-                </div>
+                <app-dropdown
+                  label="Applies To"
+                  name="applies_to"
+                  [(ngModel)]="copayFormData.applies_to"
+                  [options]="(copayAppliesTo$ | async) || []"
+                  placeholder="-- Select Applies To --"
+                ></app-dropdown>
+
+                <app-checkbox
+                  name="copay_is_active"
+                  label="Active"
+                  [(ngModel)]="copayFormData.is_active"
+                ></app-checkbox>
               </div>
 
               <div class="mt-6 flex justify-end gap-3">
-                <button
+                <app-button
+                  variant="secondary"
                   type="button"
                   (click)="cancelCopayForm()"
-                  class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
+                  variant="primary"
                   type="submit"
-                  [disabled]="copayForm.invalid"
-                  class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+                  [disabled]="!!copayForm.invalid"
                 >
                   {{ editingCopay ? 'Update' : 'Create' }}
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
         </div>
       </div>
+
       <!-- Thresholds Tab -->
       <div *ngIf="activeTab === 'thresholds'">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900">LOS Alert Thresholds</h3>
-          <button
+          <app-button
+            variant="primary"
+            iconLeft="fas fa-plus"
             (click)="showThresholdFormDialog()"
-            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
             Add Threshold
-          </button>
+          </app-button>
         </div>
 
         <!-- Loading -->
@@ -440,18 +418,19 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ threshold.diagnosis_category || '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ threshold.threshold_days }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                        [ngClass]="{
-                          'bg-yellow-100 text-yellow-800': threshold.alert_level === 1,
-                          'bg-orange-100 text-orange-800': threshold.alert_level === 2,
-                          'bg-red-100 text-red-800': threshold.alert_level === 3
-                        }">
+                  <app-badge 
+                    [variant]="threshold.alert_level === 1 ? 'warning' : threshold.alert_level === 2 ? 'warning' : 'danger'"
+                  >
                     Level {{ threshold.alert_level }}
-                  </span>
+                  </app-badge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <span *ngIf="threshold.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Active</span>
-                  <span *ngIf="!threshold.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">Inactive</span>
+                  <app-toggle
+                    [isActive]="threshold.is_active"
+                    (toggle)="onThresholdStatusToggle(threshold, $event)"
+                    activeLabel="Active"
+                    inactiveLabel="Inactive"
+                  ></app-toggle>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
@@ -464,7 +443,7 @@
                     </svg>
                   </button>
                   <button
-                    (click)="deleteThreshold(threshold)"
+                    (click)="promptDeleteThreshold(threshold)"
                     class="text-red-600 hover:text-red-900"
                     title="Delete"
                   >
@@ -493,76 +472,55 @@
             <h3 class="mb-4 text-lg font-semibold">{{ editingThreshold ? 'Edit Threshold' : 'Add Threshold' }}</h3>
             <form #thresholdForm="ngForm" (ngSubmit)="saveThreshold(thresholdForm)">
               <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Diagnosis Category</label>
-                  <select
-                    [(ngModel)]="thresholdFormData.diagnosis_category"
-                    name="diagnosis_category"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  >
-                    <option value="">-- All Categories (Default) --</option>
-                    <option *ngFor="let item of diagnosisCategories$ | async" [value]="item.lookup_code">
-                      {{ item.lookup_value }}
-                    </option>
-                  </select>
-                  <p class="text-xs text-gray-500 mt-1">Leave as default to apply to all categories.</p>
-                </div>
+                <app-dropdown
+                  label="Diagnosis Category"
+                  name="diagnosis_category"
+                  [(ngModel)]="thresholdFormData.diagnosis_category"
+                  [options]="(diagnosisCategories$ | async) || []"
+                  placeholder="-- All Categories (Default) --"
+                  helpText="Leave as default to apply to all categories."
+                ></app-dropdown>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Threshold (Days) <span class="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    [(ngModel)]="thresholdFormData.threshold_days"
-                    name="threshold_days"
-                    required
-                    min="1"
-                    placeholder="e.g., 5"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  />
-                </div>
+                <app-text-input
+                  label="Threshold (Days)"
+                  name="threshold_days"
+                  inputType="integer"
+                  [(ngModel)]="thresholdFormData.threshold_days"
+                  [required]="true"
+                  placeholder="e.g., 5"
+                ></app-text-input>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Alert Level <span class="text-red-500">*</span></label>
-                  <select
-                    [(ngModel)]="thresholdFormData.alert_level"
-                    name="alert_level"
-                    required
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#1e3c72] focus:outline-none focus:ring-1 focus:ring-[#1e3c72]"
-                  >
-                    <option [ngValue]="null">-- Select Alert Level --</option>
-                    <option *ngFor="let item of alertLevels$ | async" [ngValue]="+item.lookup_code">
-                      {{ item.lookup_value }}
-                    </option>
-                  </select>
-                </div>
+                <app-dropdown
+                  label="Alert Level"
+                  name="alert_level"
+                  [(ngModel)]="thresholdFormData.alert_level"
+                  [options]="(alertLevels$ | async) || []"
+                  [required]="true"
+                  placeholder="-- Select Alert Level --"
+                ></app-dropdown>
 
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="thresholdFormData.is_active"
-                    name="threshold_is_active"
-                    id="threshold_is_active"
-                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72] focus:ring-[#1e3c72]"
-                  />
-                  <label for="threshold_is_active" class="ml-2 block text-sm text-gray-700">Active</label>
-                </div>
+                <app-checkbox
+                  name="threshold_is_active"
+                  label="Active"
+                  [(ngModel)]="thresholdFormData.is_active"
+                ></app-checkbox>
               </div>
 
               <div class="mt-6 flex justify-end gap-3">
-                <button
+                <app-button
+                  variant="secondary"
                   type="button"
                   (click)="cancelThresholdForm()"
-                  class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
+                  variant="primary"
                   type="submit"
-                  [disabled]="thresholdForm.invalid"
-                  class="rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90 disabled:opacity-50"
+                  [disabled]="!!thresholdForm.invalid"
                 >
                   {{ editingThreshold ? 'Update' : 'Create' }}
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
@@ -570,4 +528,95 @@
       </div>
     </div>
   </div>
+
+  <!-- Delete Limit Confirmation -->
+  <app-confirm-dialog
+    *ngIf="showDeleteLimitConfirm"
+    [isOpen]="showDeleteLimitConfirm"
+    title="Delete Limit"
+    message="Are you sure you want to delete this limit? This action cannot be undone."
+    variant="danger"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    (confirmed)="confirmDeleteLimit()"
+    (cancelled)="cancelDeleteLimit()"
+  ></app-confirm-dialog>
+
+  <!-- Delete Copay Confirmation -->
+  <app-confirm-dialog
+    *ngIf="showDeleteCopayConfirm"
+    [isOpen]="showDeleteCopayConfirm"
+    title="Delete Copay"
+    message="Are you sure you want to delete this copay? This action cannot be undone."
+    variant="danger"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    (confirmed)="confirmDeleteCopay()"
+    (cancelled)="cancelDeleteCopay()"
+  ></app-confirm-dialog>
+
+  <!-- Delete Threshold Confirmation -->
+  <app-confirm-dialog
+    *ngIf="showDeleteThresholdConfirm"
+    [isOpen]="showDeleteThresholdConfirm"
+    title="Delete Threshold"
+    message="Are you sure you want to delete this LOS alert threshold? This action cannot be undone."
+    variant="danger"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    (confirmed)="confirmDeleteThreshold()"
+    (cancelled)="cancelDeleteThreshold()"
+  ></app-confirm-dialog>
+
+  <!-- Status Toggle Confirmation -->
+  <app-confirm-dialog
+    *ngIf="showStatusToggleConfirm"
+    [isOpen]="showStatusToggleConfirm"
+    title="Confirm Status Change"
+    [message]="'Are you sure you want to change this product to ' + (statusToToggle?.newValue ? 'Active' : 'Inactive') + ' status?'"
+    variant="warn"
+    confirmLabel="Yes, Change Status"
+    cancelLabel="Cancel"
+    (confirmed)="confirmStatusToggle()"
+    (cancelled)="cancelStatusToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Limit Status Toggle Confirmation -->
+  <app-confirm-dialog
+    *ngIf="showLimitStatusToggleConfirm"
+    [isOpen]="showLimitStatusToggleConfirm"
+    title="Confirm Limit Status Change"
+    [message]="'Are you sure you want to change this limit to ' + (limitStatusToToggle?.newValue ? 'Active' : 'Inactive') + ' status?'"
+    variant="warn"
+    confirmLabel="Yes, Change Status"
+    cancelLabel="Cancel"
+    (confirmed)="confirmLimitStatusToggle()"
+    (cancelled)="cancelLimitStatusToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Copay Status Toggle Confirmation -->
+  <app-confirm-dialog
+    *ngIf="showCopayStatusToggleConfirm"
+    [isOpen]="showCopayStatusToggleConfirm"
+    title="Confirm Copay Status Change"
+    [message]="'Are you sure you want to change this copay to ' + (copayStatusToToggle?.newValue ? 'Active' : 'Inactive') + ' status?'"
+    variant="warn"
+    confirmLabel="Yes, Change Status"
+    cancelLabel="Cancel"
+    (confirmed)="confirmCopayStatusToggle()"
+    (cancelled)="cancelCopayStatusToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Threshold Status Toggle Confirmation -->
+  <app-confirm-dialog
+    *ngIf="showThresholdStatusToggleConfirm"
+    [isOpen]="showThresholdStatusToggleConfirm"
+    title="Confirm Threshold Status Change"
+    [message]="'Are you sure you want to change this threshold to ' + (thresholdStatusToToggle?.newValue ? 'Active' : 'Inactive') + ' status?'"
+    variant="warn"
+    confirmLabel="Yes, Change Status"
+    cancelLabel="Cancel"
+    (confirmed)="confirmThresholdStatusToggle()"
+    (cancelled)="cancelThresholdStatusToggle()"
+  ></app-confirm-dialog>
 </div>

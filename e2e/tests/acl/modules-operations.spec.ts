@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures/auth.fixture';
+﻿import { test, expect } from '../../fixtures/auth.fixture';
 
 /**
  * ACL Modules - Data Operations E2E Tests
@@ -32,9 +32,12 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     await authenticatedPage.locator('input[formcontrolname*="name"], input[name*="name"]').first().fill(testModuleName);
     
     // Select category if dropdown exists
-    const categorySelect = authenticatedPage.locator('select[formcontrolname*="category"]').first();
-    if (await categorySelect.count() > 0) {
-      await categorySelect.selectOption({ index: 1 });
+    const categoryDropdown = authenticatedPage.locator('app-dropdown[name="category"]').first();
+    if (await categoryDropdown.count() > 0) {
+      await categoryDropdown.locator('button').first().click();
+      await authenticatedPage.waitForTimeout(200);
+      const firstOption = categoryDropdown.locator('li').nth(1);
+      if (await firstOption.count() > 0) await firstOption.click();
     }
     
     // Fill description
@@ -54,7 +57,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     expect(isOnListPage || hasSuccessMessage).toBeTruthy();
     
     // READ: Search for the created module
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testModuleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -62,7 +65,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     await expect(authenticatedPage.locator(`td:has-text("${testModuleCode}")`)).toBeVisible({ timeout: 10000 });
     await expect(authenticatedPage.locator(`td:has-text("${testModuleName}")`)).toBeVisible({ timeout: 10000 });
     
-    console.log(`✅ CREATE: Successfully created module: ${testModuleCode}`);
+    console.log(`âœ… CREATE: Successfully created module: ${testModuleCode}`);
   });
   
   test('VALIDATION: should validate required fields', async ({ authenticatedPage }) => {
@@ -79,7 +82,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     const isDisabled = await submitBtn.isDisabled();
     expect(isDisabled).toBe(true);
     
-    console.log('✅ VALIDATION: Required fields validation working');
+    console.log('âœ… VALIDATION: Required fields validation working');
   });
   
   test('VALIDATION: should validate unique module code', async ({ authenticatedPage }) => {
@@ -110,7 +113,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
       await cancelBtn.click();
     }
     
-    console.log('✅ VALIDATION: Duplicate code validation working');
+    console.log('âœ… VALIDATION: Duplicate code validation working');
   });
   
   test('READ: should search and filter modules', async ({ authenticatedPage }) => {
@@ -118,7 +121,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for test module
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testModuleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -138,7 +141,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     const allRowsCount = await rows.count();
     expect(allRowsCount).toBeGreaterThanOrEqual(count);
     
-    console.log('✅ READ: Search and filter working');
+    console.log('âœ… READ: Search and filter working');
   });
   
   test('READ: should filter by category', async ({ authenticatedPage }) => {
@@ -163,9 +166,9 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
       // Either count changed or stayed same (if all belong to that category)
       expect(filteredCount).toBeGreaterThanOrEqual(0);
       
-      console.log('✅ READ: Category filter working');
+      console.log('âœ… READ: Category filter working');
     } else {
-      console.log('ℹ️  No category filter found');
+      console.log('â„¹ï¸  No category filter found');
     }
   });
   
@@ -174,7 +177,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for the test module
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testModuleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -211,7 +214,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     
     await expect(authenticatedPage.locator(`td:has-text("${updatedName}")`)).toBeVisible({ timeout: 10000 });
     
-    console.log('✅ UPDATE: Successfully updated module');
+    console.log('âœ… UPDATE: Successfully updated module');
   });
   
   test('UPDATE: should persist changes after page reload', async ({ authenticatedPage }) => {
@@ -219,7 +222,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for the updated module
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testModuleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -238,7 +241,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     // Verify data persisted
     await expect(authenticatedPage.locator(`td:has-text("${updatedName}")`)).toBeVisible();
     
-    console.log('✅ UPDATE: Changes persisted after reload');
+    console.log('âœ… UPDATE: Changes persisted after reload');
   });
   
   // SAFETY: DELETE test disabled to prevent accidental deletion of system modules
@@ -248,7 +251,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Search for the test module
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testModuleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -279,7 +282,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     
     expect(isGone).toBe(true);
     
-    console.log('✅ DELETE: Successfully deleted module');
+    console.log('âœ… DELETE: Successfully deleted module');
   });
   
   // SAFETY: DELETE test disabled to prevent accidental deletion of system modules
@@ -292,7 +295,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     await authenticatedPage.reload();
     await authenticatedPage.waitForLoadState('networkidle');
     
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testModuleCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -302,6 +305,7 @@ test.describe.serial('ACL Modules Operations - CRUD', () => {
     
     expect(isGone).toBe(true);
     
-    console.log('✅ DELETE: Deletion is permanent');
+    console.log('âœ… DELETE: Deletion is permanent');
   });
 });
+

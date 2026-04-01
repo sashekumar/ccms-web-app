@@ -24,9 +24,14 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
     await authenticatedPage.waitForTimeout(500);
 
     // Select a module
-    const moduleSelect = authenticatedPage.locator('select[name="module"]');
-    await expect(moduleSelect).toBeVisible({ timeout: 5000 });
-    await moduleSelect.selectOption({ index: 1 });
+    const moduleDropdown = authenticatedPage.locator('app-dropdown[name="module"]');
+    await expect(moduleDropdown).toBeVisible({ timeout: 5000 });
+    await moduleDropdown.locator('button').first().click(); // Open dropdown
+    await authenticatedPage.waitForTimeout(200);
+    const firstOption = authenticatedPage.locator('app-dropdown[name="module"] li').nth(1);
+    if (await firstOption.count() > 0) {
+      await firstOption.click();
+    }
     await authenticatedPage.waitForTimeout(300);
 
     // Check first available action checkbox
@@ -46,7 +51,7 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
 
     // Verify success message OR modal closes
-    const modalGone = await authenticatedPage.locator('select[name="module"]').isVisible().then(v => !v).catch(() => true);
+    const modalGone = await authenticatedPage.locator('[name="module"]').isVisible().then(v => !v).catch(() => true);
     const successVisible = await authenticatedPage.locator('text=/success|saved|attached/i').isVisible().catch(() => false);
     expect(modalGone || successVisible).toBe(true);
 
@@ -103,7 +108,7 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/module-actions');
     await authenticatedPage.waitForLoadState('networkidle');
 
-    const searchInput = authenticatedPage.locator('input[placeholder*="Module or action name"]');
+    const searchInput = authenticatedPage.locator('input[name="search"]');
     await searchInput.fill('nonexistent_search_xyz_99999');
     await authenticatedPage.waitForTimeout(600);
 
@@ -123,12 +128,15 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/module-actions');
     await authenticatedPage.waitForLoadState('networkidle');
 
-    const moduleFilter = authenticatedPage.locator('select').nth(0);
-    const optionCount = await moduleFilter.locator('option').count();
+    const moduleFilter = authenticatedPage.locator('app-dropdown').nth(0);
+    const optionCount = await moduleFilter.locator('li').count();
 
     if (optionCount > 1) {
-      // Select first real module (index 1 skips "All Modules")
-      await moduleFilter.selectOption({ index: 1 });
+      // Open dropdown and select first real module (skip placeholder)
+      await moduleFilter.locator('button').first().click();
+      await authenticatedPage.waitForTimeout(200);
+      const firstOption = moduleFilter.locator('li').nth(1);
+      if (await firstOption.count() > 0) await firstOption.click();
       await authenticatedPage.waitForTimeout(600);
 
       // Verify filter applied (count should be >= 0)
@@ -137,7 +145,10 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
       expect(count).toBeGreaterThanOrEqual(0);
 
       // Reset filter
-      await moduleFilter.selectOption({ index: 0 });
+      await moduleFilter.locator('button').first().click();
+      await authenticatedPage.waitForTimeout(200);
+      const allOption = moduleFilter.locator('li').first();
+      if (await allOption.count() > 0) await allOption.click();
     }
 
     console.log('✅ READ: Module filter works correctly');
@@ -147,9 +158,12 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/module-actions');
     await authenticatedPage.waitForLoadState('networkidle');
 
-    // Status filter is the 3rd select (index 2): Module, Action, Status
-    const statusFilter = authenticatedPage.locator('select').nth(2);
-    await statusFilter.selectOption({ label: 'Active Only' });
+    // Status filter is the 3rd app-dropdown (index 2): Module, Action, Status
+    const statusFilter = authenticatedPage.locator('app-dropdown').nth(2);
+    await statusFilter.locator('button').first().click();
+    await authenticatedPage.waitForTimeout(200);
+    const activeOnlyOption = statusFilter.locator('li:has-text("Active Only")');
+    if (await activeOnlyOption.count() > 0) await activeOnlyOption.click();
     await authenticatedPage.waitForTimeout(600);
 
     const rows = authenticatedPage.locator('tbody tr');
@@ -157,7 +171,10 @@ test.describe.serial('ACL Module-Actions Operations - CRUD', () => {
     expect(count).toBeGreaterThanOrEqual(0);
 
     // Reset
-    await statusFilter.selectOption({ index: 0 });
+    await statusFilter.locator('button').first().click();
+    await authenticatedPage.waitForTimeout(200);
+    const allStatusOption = statusFilter.locator('li').first();
+    if (await allStatusOption.count() > 0) await allStatusOption.click();
 
     console.log('✅ READ: Status filter works correctly');
   });

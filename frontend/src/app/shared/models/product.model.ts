@@ -54,6 +54,11 @@ export interface PaginatedProducts {
   page: number;
   limit?: number;
   totalPages: number;
+  stats?: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
 }
 
 // ============================================================================

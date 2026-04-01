@@ -66,10 +66,10 @@ export default defineConfig({
     trace: 'on-first-retry',
     
     // Screenshot on failure
-    screenshot: 'only-on-failure',
+    screenshot: 'on',
     
     // Video on failure
-    video: 'retain-on-failure',
+    video: 'on',
     
     // Maximum time each action can take (10 seconds)
     actionTimeout: 10000,
@@ -83,9 +83,9 @@ export default defineConfig({
     },
   },
 
-  // Global setup and teardown
-  globalSetup: require.resolve('./global-setup'),
-  globalTeardown: require.resolve('./global-teardown'),
+  // Global setup and teardown  
+  // globalSetup: require.resolve('./global-setup'),
+  // globalTeardown: require.resolve('./global-teardown'),
 
   // Configure projects for major browsers
   projects: [

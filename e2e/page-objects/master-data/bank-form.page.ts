@@ -17,10 +17,10 @@ export class BankFormPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.modalTitle = page.locator('[role="dialog"] h3, .modal-title').filter({ hasText: /bank/i });
+    this.modalTitle = page.locator('h3').filter({ hasText: /bank/i });
     this.bankCodeInput = page.getByLabel(/bank code/i);
     this.bankNameInput = page.getByLabel(/bank name/i);
-    this.isActiveCheckbox = page.getByLabel(/active/i);
+    this.isActiveCheckbox = page.locator('.fixed app-checkbox input[type="checkbox"]');
     this.saveButton = page.getByRole('button', { name: /save|submit/i });
     this.cancelButton = page.getByRole('button', { name: /cancel/i });
     this.closeButton = page.locator('[role="dialog"] button[aria-label="Close"], .modal-header button.close');

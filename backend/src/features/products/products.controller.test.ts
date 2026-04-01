@@ -59,7 +59,8 @@ describe('ProductsController', () => {
         data: [
           { product_id: 1, plan_code: 'PLN001', plan_name: 'Test Plan', is_active: true }
         ],
-        pagination: { total: 1, page: 1, limit: 10, totalPages: 1 }
+        pagination: { total: 1, page: 1, limit: 10, totalPages: 1 },
+        stats: { total: 10, active: 8, inactive: 2 }
       };
 
       mockService.getProducts.mockResolvedValue(mockResult);
@@ -74,7 +75,11 @@ describe('ProductsController', () => {
     }, 30000);
 
     it('should apply search filter', async () => {
-      const mockResult = { data: [], pagination: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+      const mockResult = { 
+        data: [], 
+        pagination: { total: 0, page: 1, limit: 10, totalPages: 0 },
+        stats: { total: 0, active: 0, inactive: 0 }
+      };
       mockService.getProducts.mockResolvedValue(mockResult);
 
       await request(app)
@@ -87,7 +92,11 @@ describe('ProductsController', () => {
     });
 
     it('should apply insurer_name filter', async () => {
-      const mockResult = { data: [], pagination: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+      const mockResult = { 
+        data: [], 
+        pagination: { total: 0, page: 1, limit: 10, totalPages: 0 },
+        stats: { total: 0, active: 0, inactive: 0 }
+      };
       mockService.getProducts.mockResolvedValue(mockResult);
 
       await request(app)

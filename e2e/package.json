@@ -17,7 +17,7 @@
     "test:acl": "playwright test tests/acl",
     "test:permissions": "playwright test tests/permissions",
     "test:master-data": "playwright test tests/master-data",
-    "test:master-data:main": "playwright test tests/master-data/*-operations.spec.ts --project=chromium",
+    "test:master-data:main": "playwright test tests/master-data/banks-operations.spec.ts tests/master-data/clauses-operations.spec.ts tests/master-data/lookups-operations.spec.ts tests/master-data/mq-templates-operations.spec.ts --project=chromium",
     "test:master-data:subforms": "playwright test tests/master-data/member-*.spec.ts tests/master-data/hospital-*.spec.ts tests/master-data/product-*.spec.ts --project=chromium",
     "test:master-data:members": "playwright test tests/master-data/member-*.spec.ts --project=chromium",
     "test:master-data:hospitals": "playwright test tests/master-data/hospital-*.spec.ts --project=chromium",

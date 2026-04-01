@@ -21,7 +21,7 @@ export class UserListPage extends BasePage {
     createButton: 'button:has-text("Create User")',
     
     // Filters
-    searchInput: 'input[placeholder*="Username"]',
+    searchInput: 'input[name="search"]',
     statusFilter: 'div.grid select:near(label:has-text("Status"))',
     roleFilter: 'select:near(label:has-text("Role"))',
     itemsPerPageFilter: 'select:near(label:has-text("Items per page"))',
@@ -40,10 +40,10 @@ export class UserListPage extends BasePage {
     pageInfo: 'text=/Showing \\d+ to \\d+ of \\d+/',
     
     // User row actions
-    viewButton: (username: string) => `tr:has-text("${username}") button[title="View"]`,
-    editButton: (username: string) => `tr:has-text("${username}") button[title="Edit"]`,
-    manageRolesButton: (username: string) => `tr:has-text("${username}") button[title="Manage Roles"]`,
-    deleteButton: (username: string) => `tr:has-text("${username}") button[title="Delete"]`,
+    viewButton: (username: string) => `tr:has-text("${username}") [data-testid="view-user-button"]`,
+    editButton: (username: string) => `tr:has-text("${username}") [data-testid="edit-user-button"]`,
+    manageRolesButton: (username: string) => `tr:has-text("${username}") [data-testid="manage-roles-button"]`,
+    deleteButton: (username: string) => `tr:has-text("${username}") [data-testid="delete-user-button"]`,
     
     // Status badge
     activeBadge: 'text=Active',
@@ -111,17 +111,11 @@ export class UserListPage extends BasePage {
    * @param status - 'active', 'inactive', or 'all'
    */
   async filterByStatus(status: 'active' | 'inactive' | 'all'): Promise<void> {
-    // Use nth(0) to select the first Status filter (avoids matching multiple selects)
-    const statusFilter = this.page.locator(this.selectors.statusFilter).nth(0);
-    
-    if (status === 'active') {
-      await statusFilter.selectOption({ label: 'Active' });
-    } else if (status === 'inactive') {
-      await statusFilter.selectOption({ label: 'Inactive' });
-    } else {
-      await statusFilter.selectOption({ label: 'All Users' });
-    }
-    
+    const labelText = status === 'active' ? 'Active' : status === 'inactive' ? 'Inactive' : 'All Users';
+    // Status filter uses app-dropdown (custom component): click trigger then click option
+    const statusDropdown = this.page.locator('app-dropdown').filter({ has: this.page.locator('label:has-text("Status")') });
+    await statusDropdown.locator('button').first().click();
+    await this.page.locator('[role="option"]').filter({ hasText: labelText }).first().click();
     await this.waitForNetworkIdle();
   }
 
@@ -166,7 +160,7 @@ export class UserListPage extends BasePage {
    * @param username - Username to find
    */
   private getUserRow(username: string): Locator {
-    return this.page.locator(`tr:has-text("@${username}")`);
+    return this.page.locator(`tr:has-text("${username}")`);
   }
 
   /**

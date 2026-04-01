@@ -54,6 +54,11 @@ export interface PaginatedProducts {
     limit: number;
     totalPages: number;
   };
+  stats: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
 }
 
 export interface GetProductRequest {

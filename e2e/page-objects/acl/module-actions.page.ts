@@ -27,28 +27,28 @@ export class ModuleActionsPage extends AclBasePage {
    * Get module select in create form
    */
   getModuleSelect(): Locator {
-    return this.page.locator('select[name="module"]');
+    return this.page.locator('app-dropdown[name="module"]');
   }
 
   /**
-   * Get module filter dropdown (first select on page)
+   * Get module filter dropdown (first app-dropdown on page)
    */
   getModuleFilter(): Locator {
-    return this.page.locator('select').nth(0);
+    return this.page.locator('app-dropdown').nth(0);
   }
 
   /**
-   * Get action filter dropdown (second select on page)
+   * Get action filter dropdown (second app-dropdown on page)
    */
   getActionFilter(): Locator {
-    return this.page.locator('select').nth(1);
+    return this.page.locator('app-dropdown').nth(1);
   }
 
   /**
-   * Get status filter dropdown (third select on page)
+   * Get status filter dropdown (third app-dropdown on page)
    */
   getStatusFilter(): Locator {
-    return this.page.locator('select').nth(2);
+    return this.page.locator('app-dropdown').nth(2);
   }
 
   /**

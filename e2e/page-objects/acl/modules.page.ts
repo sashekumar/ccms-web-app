@@ -32,7 +32,11 @@ export class ModulesPage extends AclBasePage {
       await this.page.locator('input[formcontrolname*="name"], input[name*="name"]').first().fill(data.moduleName);
     }
     if (data.categoryId) {
-      await this.page.locator('select[formcontrolname*="category"]').selectOption(data.categoryId);
+      const categoryDropdown = this.page.locator('app-dropdown[name="category"]');
+      await categoryDropdown.locator('button').first().click();
+      await this.page.waitForTimeout(200);
+      const option = this.page.locator('app-dropdown[name="category"] li:has-text("' + data.categoryId + '")').first();
+      if (await option.count() > 0) await option.click();
     }
     if (data.description) {
       await this.page.locator('textarea, input[formcontrolname*="description"]').first().fill(data.description);

@@ -21,7 +21,8 @@ import { BankFormPage } from '../../page-objects/master-data/bank-form.page';
 
 test.describe.serial('Bank Management - CRUD Operations', () => {
   const timestamp = Date.now();
-  const testBankCode = `E2E_BNK_${timestamp}`;
+  const tsShort = timestamp.toString().slice(-12); // 12 digits keeps code ≤20 chars
+  const testBankCode = `E2E_BNK_${tsShort}`;
   const testBankName = `E2E Bank ${timestamp}`;
   const updatedBankName = `E2E Bank Updated ${timestamp}`;
 
@@ -67,9 +68,12 @@ test.describe.serial('Bank Management - CRUD Operations', () => {
     await bankListPage.clickCreateBank();
     await bankFormPage.waitForPageLoad();
 
-    // Try to submit without filling required fields
-    const isDisabled = await bankFormPage.isSubmitDisabled();
-    expect(isDisabled).toBe(true);
+    // Submit without filling required fields — save() returns early with toast error
+    await bankFormPage.submit();
+    await authenticatedPage.waitForTimeout(500);
+
+    // Modal should still be open (server-side / guard validation keeps it open)
+    await expect(bankFormPage.modalTitle).toBeVisible();
   });
 
   test('VALIDATION: should prevent duplicate bank codes', async ({ authenticatedPage }) => {

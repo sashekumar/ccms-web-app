@@ -21,7 +21,8 @@ import { MqTemplateFormPage } from '../../page-objects/master-data/mq-template-f
 
 test.describe.serial('MQ Template Management - CRUD Operations', () => {
   const timestamp = Date.now();
-  const testTemplateCode = `E2E_MQT_${timestamp}`;
+  const tsShort = timestamp.toString().slice(-12); // 12 digits keeps code ≤20 chars
+  const testTemplateCode = `E2E_MQT_${tsShort}`;
   const testCategory = 'E2E Test Category';
   const updatedCategory = `E2E Updated ${timestamp}`;
   const testQuestionText = `What is the patient's current condition? [E2E ${timestamp}]`;

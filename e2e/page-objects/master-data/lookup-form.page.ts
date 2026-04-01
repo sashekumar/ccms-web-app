@@ -9,20 +9,21 @@ export class LookupFormPage extends BasePage {
   readonly modalTitle: Locator;
   readonly lookupCodeInput: Locator;
   readonly lookupValueInput: Locator;
-  readonly categorySelect: Locator;
-  readonly displayOrderInput: Locator;
+  readonly categoryDropdownTrigger: Locator;
+  readonly newCategoryNameInput: Locator;
   readonly isActiveCheckbox: Locator;
   readonly saveButton: Locator;
   readonly cancelButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.modalTitle = page.locator('[role="dialog"] h3, .modal-title').filter({ hasText: /lookup/i });
+    this.modalTitle = page.locator('h3').filter({ hasText: /lookup/i });
     this.lookupCodeInput = page.getByLabel(/lookup code/i);
     this.lookupValueInput = page.getByLabel(/lookup value/i);
-    this.categorySelect = page.getByLabel(/category/i);
-    this.displayOrderInput = page.getByLabel(/order|display order/i);
-    this.isActiveCheckbox = page.getByLabel(/active/i);
+    // Category is an app-dropdown; scope to modal overlay to avoid matching table filter
+    this.categoryDropdownTrigger = page.locator('.fixed app-dropdown').filter({ hasText: /category/i }).locator('button').first();
+    this.newCategoryNameInput = page.getByLabel(/new category name/i);
+    this.isActiveCheckbox = page.locator('.fixed app-checkbox input[type="checkbox"]');
     this.saveButton = page.getByRole('button', { name: /save|submit/i });
     this.cancelButton = page.getByRole('button', { name: /cancel/i });
   }
@@ -34,8 +35,7 @@ export class LookupFormPage extends BasePage {
   async fillLookupForm(data: {
     lookupCode?: string;
     lookupValue?: string;
-    category?: string;
-    displayOrder?: string;
+    newCategoryName?: string; // Use "+ Add New Category" option and provide a name
     isActive?: boolean;
   }): Promise<void> {
     if (data.lookupCode !== undefined) {
@@ -45,13 +45,13 @@ export class LookupFormPage extends BasePage {
     if (data.lookupValue !== undefined) {
       await this.lookupValueInput.fill(data.lookupValue);
     }
-    
-    if (data.category !== undefined) {
-      await this.categorySelect.selectOption(data.category);
-    }
-    
-    if (data.displayOrder !== undefined) {
-      await this.displayOrderInput.fill(data.displayOrder);
+
+    if (data.newCategoryName !== undefined) {
+      // Open category dropdown and select "+ Add New Category"
+      await this.categoryDropdownTrigger.click();
+      await this.page.locator('[role="option"], li[role="option"]').filter({ hasText: 'Add New Category' }).click();
+      // Fill in the new category name
+      await this.newCategoryNameInput.fill(data.newCategoryName);
     }
     
     if (data.isActive !== undefined) {

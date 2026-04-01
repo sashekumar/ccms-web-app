@@ -21,11 +21,11 @@ export class UserFormPage extends BasePage {
     backButton: 'button:has-text("Back to Users")',
     
     // Form fields
-    usernameInput: 'input[formControlName="username"]',
-    fullNameInput: 'input[formControlName="full_name"]',
-    passwordInput: 'input[formControlName="password"]',
-    confirmPasswordInput: 'input[formControlName="confirmPassword"]',
-    isActiveCheckbox: 'input[formControlName="is_active"]',
+    usernameInput: 'input[name="username"]',
+    fullNameInput: 'input[name="full_name"]',
+    passwordInput: 'input[name="password"]',
+    confirmPasswordInput: 'input[name="confirmPassword"]',
+    isActiveCheckbox: 'input[type="checkbox"]',
     
     // Buttons
     cancelButton: 'button:has-text("Cancel")',
@@ -33,12 +33,12 @@ export class UserFormPage extends BasePage {
     
     // Error messages
     errorMessage: 'div.bg-red-50 p',
-    fieldError: (fieldName: string) => `input[formControlName="${fieldName}"] ~ p.text-red-500`,
+    fieldError: (fieldName: string) => `input[name="${fieldName}"] ~ p.text-red-500`,
     
     // Validation messages
     usernameRequired: 'text=Username is required',
     usernameMinLength: 'text=Username must be at least 3 characters',
-    usernamePattern: 'text=Username can only contain letters, numbers, and underscores',
+    usernamePattern: 'text=username format is invalid',
     fullNameRequired: 'text=Full name is required',
     passwordRequired: 'text=Password is required',
     passwordMinLength: 'text=Password must be at least 8 characters',

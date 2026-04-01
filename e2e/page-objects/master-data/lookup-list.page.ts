@@ -16,13 +16,13 @@ export class LookupListPage extends BasePage {
     super(page);
     this.pageTitle = page.locator('h1, h2').filter({ hasText: /lookup/i });
     this.createButton = page.getByRole('button', { name: /create|add.*lookup/i });
-    this.searchInput = page.getByPlaceholder(/search/i);
+    this.searchInput = page.getByPlaceholder('Lookup code or value');
     this.dataTable = page.locator('table').first();
     this.noDataMessage = page.getByText(/no.*lookup.*found/i);
   }
 
   async goto(): Promise<void> {
-    await super.goto('/lookups/values');
+    await super.goto('/master/lookups/values');
   }
 
   async waitForPageLoad(): Promise<void> {

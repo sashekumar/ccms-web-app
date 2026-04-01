@@ -21,10 +21,10 @@ export class RoleFormPage extends BasePage {
     backButton: 'button:has-text("Back to Roles")',
     
     // Form fields
-    roleNameInput: 'input[formControlName="roleName"]',
-    roleCodeInput: 'input[formControlName="roleCode"]',
-    descriptionTextarea: 'textarea[formControlName="description"]',
-    isActiveCheckbox: 'input[formControlName="isActive"]',
+    roleNameInput: 'input[name="roleName"]',
+    roleCodeInput: 'input[name="roleCode"]',
+    descriptionTextarea: 'textarea[placeholder*="description"]',
+    isActiveCheckbox: 'input[type="checkbox"]',
     
     // Buttons
     cancelButton: 'button:has-text("Cancel")',
@@ -32,7 +32,7 @@ export class RoleFormPage extends BasePage {
     
     // Error messages
     errorMessage: 'div.bg-red-50 p',
-    fieldError: (fieldName: string) => `input[formControlName="${fieldName}"] ~ p.text-red-500, textarea[formControlName="${fieldName}"] ~ p.text-red-500`,
+    fieldError: (fieldName: string) => `input[name="${fieldName}"] ~ p.text-red-500, textarea[formControlName="${fieldName}"] ~ p.text-red-500`,
     
     // Validation messages
     roleNameRequired: 'text=Role name is required',

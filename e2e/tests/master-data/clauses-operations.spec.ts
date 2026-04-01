@@ -14,7 +14,8 @@ import { ClauseFormPage } from '../../page-objects/master-data/clause-form.page'
 
 test.describe.serial('Clause Management - CRUD Operations', () => {
   const timestamp = Date.now();
-  const testClauseCode = `E2E_CLS_${timestamp}`;
+  const tsShort = timestamp.toString().slice(-12); // 12 digits keeps code ≤20 chars
+  const testClauseCode = `E2E_CLS_${tsShort}`;
   const testClauseText = `E2E Clause Text for testing ${timestamp}`;
   const updatedClauseText = `E2E Clause Updated Text ${timestamp}`;
 
@@ -54,8 +55,12 @@ test.describe.serial('Clause Management - CRUD Operations', () => {
     await clauseListPage.clickCreateClause();
     await clauseFormPage.waitForPageLoad();
 
-    const isDisabled = await clauseFormPage.isSubmitDisabled();
-    expect(isDisabled).toBe(true);
+    // Submit without filling required fields — save() returns early with toast error
+    await clauseFormPage.submit();
+    await authenticatedPage.waitForTimeout(500);
+
+    // Modal should still be open (guard validation keeps it open)
+    await expect(clauseFormPage.modalTitle).toBeVisible();
   });
 
   test('READ: should display clause details correctly', async ({ authenticatedPage }) => {

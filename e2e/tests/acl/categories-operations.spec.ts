@@ -38,7 +38,7 @@ test.describe.serial('ACL Categories Operations - CRUD', () => {
     await authenticatedPage.waitForLoadState('networkidle');
     
     // Verify creation
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testCategoryCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -66,7 +66,7 @@ test.describe.serial('ACL Categories Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/categories');
     await authenticatedPage.waitForLoadState('networkidle');
     
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testCategoryCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -79,7 +79,7 @@ test.describe.serial('ACL Categories Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/categories');
     await authenticatedPage.waitForLoadState('networkidle');
     
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testCategoryCode);
     await authenticatedPage.waitForTimeout(1000);
     
@@ -113,7 +113,7 @@ test.describe.serial('ACL Categories Operations - CRUD', () => {
     await authenticatedPage.goto('/admin/categories');
     await authenticatedPage.waitForLoadState('networkidle');
     
-    const searchInput = authenticatedPage.locator('input[type="search"], input[placeholder*="Search"]').first();
+    const searchInput = authenticatedPage.locator('input[name="search"]').first();
     await searchInput.fill(testCategoryCode);
     await authenticatedPage.waitForTimeout(1000);
     

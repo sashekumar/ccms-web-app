@@ -14,9 +14,11 @@ import { LookupFormPage } from '../../page-objects/master-data/lookup-form.page'
 
 test.describe.serial('Lookup Management - CRUD Operations', () => {
   const timestamp = Date.now();
-  const testLookupCode = `E2E_LKP_${timestamp}`;
+  const tsShort = timestamp.toString().slice(-12); // 12 digits keeps code ≤20 chars
+  const testLookupCode = `E2E_LKP_${tsShort}`;
   const testLookupValue = `E2E Lookup Value ${timestamp}`;
   const updatedLookupValue = `E2E Updated Lookup ${timestamp}`;
+  const testCategoryName = `E2E_CAT_${timestamp}`;
 
   test('CREATE: should create a new lookup value successfully', async ({ authenticatedPage }) => {
     const lookupListPage = new LookupListPage(authenticatedPage);
@@ -31,7 +33,7 @@ test.describe.serial('Lookup Management - CRUD Operations', () => {
     await lookupFormPage.fillLookupForm({
       lookupCode: testLookupCode,
       lookupValue: testLookupValue,
-      displayOrder: '100',
+      newCategoryName: testCategoryName,
       isActive: true
     });
 
@@ -55,8 +57,12 @@ test.describe.serial('Lookup Management - CRUD Operations', () => {
     await lookupListPage.clickCreateLookup();
     await lookupFormPage.waitForPageLoad();
 
-    const isDisabled = await lookupFormPage.isSubmitDisabled();
-    expect(isDisabled).toBe(true);
+    // Submit without filling required fields — save() returns early with toast error
+    await lookupFormPage.submit();
+    await authenticatedPage.waitForTimeout(500);
+
+    // Modal should still be open (guard validation in save() method)
+    await expect(lookupFormPage.modalTitle).toBeVisible();
   });
 
   test('READ: should display lookup details correctly', async ({ authenticatedPage }) => {
@@ -120,6 +126,9 @@ test.describe.serial('Lookup Management - CRUD Operations', () => {
 
     const deleteButton = row.locator('button:has-text("Delete"), button[title*="Delete"]').first();
     await deleteButton.click();
+
+    // Confirm in app-confirm-dialog (custom Angular modal, not browser dialog)
+    await authenticatedPage.locator('app-confirm-dialog button:has-text("Yes, Delete")').click();
 
     await authenticatedPage.waitForTimeout(1000);
 

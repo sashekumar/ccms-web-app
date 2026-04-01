@@ -39,18 +39,19 @@ export class ProductService {
    * Get paginated list of products with filters
    */
   getProducts(filters: ProductFilters = {}): Observable<PaginatedProducts> {
-    return this.api.post<ApiResponse<{ data: ProductListItem[]; pagination: any }>>(
+    return this.api.post<ApiResponse<{ data: ProductListItem[]; pagination: any; stats: any }>>(
       API_ENDPOINTS.PRODUCTS.LIST,
       filters
     ).pipe(
       map(response => {
-        const { data, pagination } = response.data;
+        const { data, pagination, stats } = response.data;
         return {
           products: data,
           total: pagination.total,
           page: pagination.page,
           limit: pagination.limit,
-          totalPages: pagination.totalPages
+          totalPages: pagination.totalPages,
+          stats: stats || undefined
         };
       }),
       catchError(error => {
