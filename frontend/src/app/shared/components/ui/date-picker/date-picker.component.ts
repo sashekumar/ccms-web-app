@@ -612,10 +612,42 @@ export class DatePickerComponent implements ControlValueAccessor, OnChanges {
   @Input() required = false;
 
   /** Minimum allowed date (dates before this are disabled). */
-  @Input() minDate: Date | null = null;
+  private _minDate: Date | null = null;
+  @Input()
+  set minDate(value: Date | string | null) {
+    if (!value) {
+      this._minDate = null;
+    } else if (value instanceof Date) {
+      this._minDate = value;
+    } else if (typeof value === 'string') {
+      const parsed = new Date(value);
+      this._minDate = isNaN(parsed.getTime()) ? null : parsed;
+    } else {
+      this._minDate = null;
+    }
+  }
+  get minDate(): Date | null {
+    return this._minDate;
+  }
 
   /** Maximum allowed date (dates after this are disabled). */
-  @Input() maxDate: Date | null = null;
+  private _maxDate: Date | null = null;
+  @Input()
+  set maxDate(value: Date | string | null) {
+    if (!value) {
+      this._maxDate = null;
+    } else if (value instanceof Date) {
+      this._maxDate = value;
+    } else if (typeof value === 'string') {
+      const parsed = new Date(value);
+      this._maxDate = isNaN(parsed.getTime()) ? null : parsed;
+    } else {
+      this._maxDate = null;
+    }
+  }
+  get maxDate(): Date | null {
+    return this._maxDate;
+  }
 
   /** When true, seconds column is shown in time picker. */
   @Input() showSeconds = false;
@@ -927,10 +959,10 @@ export class DatePickerComponent implements ControlValueAccessor, OnChanges {
     const checkYear = direction === 'prev' ? this.currentYear : this.currentYear;
     const checkMonth = direction === 'prev' ? this.currentMonth - 1 : this.currentMonth + 1;
 
-    if (checkMonth <= 0 && this.minDate && this.minDate.getFullYear() === checkYear - 1) {
+    if (checkMonth <= 0 && this.minDate instanceof Date && this.minDate.getFullYear() === checkYear - 1) {
       return true;
     }
-    if (checkMonth >= 11 && this.maxDate && this.maxDate.getFullYear() === checkYear + 1) {
+    if (checkMonth >= 11 && this.maxDate instanceof Date && this.maxDate.getFullYear() === checkYear + 1) {
       return true;
     }
     return false;
@@ -943,8 +975,8 @@ export class DatePickerComponent implements ControlValueAccessor, OnChanges {
     
     const testYear = direction === 'prev' ? this.currentYear - 1 : this.currentYear + 1;
     
-    if (this.minDate && testYear < this.minDate.getFullYear()) return true;
-    if (this.maxDate && testYear > this.maxDate.getFullYear()) return true;
+    if (this.minDate instanceof Date && testYear < this.minDate.getFullYear()) return true;
+    if (this.maxDate instanceof Date && testYear > this.maxDate.getFullYear()) return true;
     
     return false;
   }
@@ -952,7 +984,7 @@ export class DatePickerComponent implements ControlValueAccessor, OnChanges {
   // ── Month navigation constraints ────────────────────────────────────────
 
   isMonthAtMinBound(): boolean {
-    if (!this.minDate) return false;
+    if (!(this.minDate instanceof Date)) return false;
     
     const minYear = this.minDate.getFullYear();
     const minMonth = this.minDate.getMonth();
@@ -961,7 +993,7 @@ export class DatePickerComponent implements ControlValueAccessor, OnChanges {
   }
 
   isMonthAtMaxBound(): boolean {
-    if (!this.maxDate) return false;
+    if (!(this.maxDate instanceof Date)) return false;
     
     const maxYear = this.maxDate.getFullYear();
     const maxMonth = this.maxDate.getMonth();
@@ -1202,8 +1234,8 @@ export class DatePickerComponent implements ControlValueAccessor, OnChanges {
 
   getYearsRange(): number[] {
     const years: number[] = [];
-    const minY = this.minDate ? this.minDate.getFullYear() : this.currentYear - 50;
-    const maxY = this.maxDate ? this.maxDate.getFullYear() : this.currentYear + 50;
+    const minY = (this.minDate instanceof Date) ? this.minDate.getFullYear() : this.currentYear - 50;
+    const maxY = (this.maxDate instanceof Date) ? this.maxDate.getFullYear() : this.currentYear + 50;
     for (let y = Math.max(minY, 1900); y <= Math.min(maxY, 2100); y++) {
       years.push(y);
     }

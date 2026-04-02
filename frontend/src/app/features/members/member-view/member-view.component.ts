@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { MemberService } from '../../../core/services/member.service';
 import { ProductService } from '../../../core/services/product.service';
@@ -36,11 +37,32 @@ import { HasPermissionDirective } from '../../../shared/directives/permissions/h
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
 import { APP_ROUTES } from '../../../core/constants/routes.constants';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { ToggleComponent } from '../../../shared/components/ui/toggle/toggle.component';
+import { ConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/confirm-dialog.component';
+import { StatusBadgeComponent } from '../../../shared/components/ui/status-badge/status-badge.component';
+import { TextInputComponent } from '../../../shared/components/ui/text-input/text-input.component';
+import { DropdownComponent } from '../../../shared/components/ui/dropdown/dropdown.component';
+import { DatePickerComponent } from '../../../shared/components/ui/date-picker/date-picker.component';
+import { CheckboxComponent } from '../../../shared/components/ui/checkbox/checkbox.component';
 
 @Component({
   selector: 'app-member-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, HasPermissionDirective, LoadingSpinnerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    HasPermissionDirective,
+    LoadingSpinnerComponent,
+    ButtonComponent,
+    ToggleComponent,
+    ConfirmDialogComponent,
+    StatusBadgeComponent,
+    TextInputComponent,
+    DropdownComponent,
+    DatePickerComponent,
+    CheckboxComponent
+  ],
   templateUrl: './member-view.component.html',
   styles: []
 })
@@ -51,6 +73,43 @@ export class MemberViewComponent implements OnInit, OnDestroy {
 
   // Permission constants (exposed to template)
   readonly PERMISSIONS = PERMISSIONS.POLICY_HOLDERS;
+
+  // Confirmation dialogs
+  showAddressPrimaryConfirm = false;
+  addressToToggle: MemberAddress | null = null;
+
+  showAddressDeleteConfirm = false;
+  addressToDelete: MemberAddress | null = null;
+
+  showContactPrimaryConfirm = false;
+  contactToToggle: MemberContact | null = null;
+
+  showContactDeleteConfirm = false;
+  contactToDelete: MemberContact | null = null;
+
+  showDependentActiveConfirm = false;
+  dependentToToggle: MemberDependent | null = null;
+
+  showDependentDeleteConfirm = false;
+  dependentToDelete: MemberDependent | null = null;
+
+  showPolicyDeleteConfirm = false;
+  policyToDelete: MemberPolicy | null = null;
+
+  showPECToggleConfirm = false;
+  pecToToggle: MemberPEC | null = null;
+
+  showPECDeleteConfirm = false;
+  pecToDelete: MemberPEC | null = null;
+
+  // Status Change Dialog State
+  showStatusChangeDialog = false;
+  newMemberStatus: string = '';
+
+  // Policy Status Change Dialog State
+  showPolicyStatusChangeDialog = false;
+  policyToChangeStatus: MemberPolicy | null = null;
+  newPolicyStatus: string = '';
 
   // Addresses
   addresses: MemberAddress[] = [];
@@ -65,6 +124,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
   showContactForm = false;
   editingContact: MemberContact | null = null;
   contactFormData: Partial<CreateMemberContactDto> = {};
+  contactValueError: string = '';
 
   // Policies
   policies: MemberPolicy[] = [];
@@ -199,6 +259,92 @@ export class MemberViewComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Open status change dialog when clicking status badge
+   */
+  openStatusChangeDialog(): void {
+    if (!this.member || this.member.is_deleted) return;
+    this.newMemberStatus = this.member.member_status || 'ACTIVE';
+    this.showStatusChangeDialog = true;
+  }
+
+  /**
+   * Change member status
+   */
+  changeMemberStatus(newStatus: string): void {
+    if (!this.member) return;
+
+    const memberId = this.member.member_id;
+    
+    this.memberService.updateMember(memberId, { member_status: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success(`Member status updated to ${newStatus}`);
+          this.showStatusChangeDialog = false;
+          this.loadMember(memberId); // Reload member to get updated status
+        },
+        error: (error: any) => {
+          this.logger.error('Error updating member status:', error);
+          this.toast.error('Failed to update member status');
+          this.showStatusChangeDialog = false;
+        }
+      });
+  }
+
+  /**
+   * Cancel status change
+   */
+  cancelStatusChange(): void {
+    this.showStatusChangeDialog = false;
+    this.newMemberStatus = '';
+  }
+
+  /**
+   * Open policy status change dialog when clicking policy status badge
+   */
+  openPolicyStatusChangeDialog(policy: MemberPolicy): void {
+    if (!policy || policy.is_deleted) return;
+    this.policyToChangeStatus = policy;
+    this.newPolicyStatus = policy.status || 'ACTIVE';
+    this.showPolicyStatusChangeDialog = true;
+  }
+
+  /**
+   * Change policy status
+   */
+  changePolicyStatus(newStatus: string): void {
+    if (!this.policyToChangeStatus) return;
+
+    const policyId = this.policyToChangeStatus.policy_id;
+    
+    this.memberService.updatePolicy(policyId, { status: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success(`Policy status updated to ${newStatus}`);
+          this.showPolicyStatusChangeDialog = false;
+          this.policyToChangeStatus = null;
+          this.loadPolicies(); // Reload policies to get updated status
+        },
+        error: (error: any) => {
+          this.logger.error('Error updating policy status:', error);
+          this.toast.error('Failed to update policy status');
+          this.showPolicyStatusChangeDialog = false;
+          this.policyToChangeStatus = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel policy status change
+   */
+  cancelPolicyStatusChange(): void {
+    this.showPolicyStatusChangeDialog = false;
+    this.policyToChangeStatus = null;
+    this.newPolicyStatus = '';
+  }
+
+  /**
    * Handle tab change
    */
   onTabChange(tabId: 'details' | 'addresses' | 'contacts' | 'policies' | 'dependents'): void {
@@ -300,6 +446,53 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Handle address primary toggle
+   */
+  onToggleAddressPrimary(address: MemberAddress): void {
+    if (address.is_primary) {
+      // Cannot toggle off primary - user must set another as primary instead
+      this.toast.info('To change primary address, set another address as primary');
+      return;
+    }
+    this.addressToToggle = address;
+    this.showAddressPrimaryConfirm = true;
+  }
+
+  /**
+   * Confirm address primary toggle
+   */
+  confirmAddressPrimaryToggle(): void {
+    if (!this.member || !this.addressToToggle) return;
+
+    this.memberService.setPrimaryAddress(this.addressToToggle.address_id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Primary address updated');
+          this.showAddressPrimaryConfirm = false;
+          this.addressToToggle = null;
+          this.loadAddresses();
+        },
+        error: (error: any) => {
+          this.logger.error('Error setting primary address:', error);
+          this.toast.error('Failed to set primary address');
+          this.showAddressPrimaryConfirm = false;
+          this.addressToToggle = null;
+          this.loadAddresses();
+        }
+      });
+  }
+
+  /**
+   * Cancel address primary toggle
+   */
+  cancelAddressPrimaryToggle(): void {
+    this.showAddressPrimaryConfirm = false;
+    this.addressToToggle = null;
+    this.loadAddresses(); // Reload to reset toggle state
+  }
+
   setPrimaryAddress(address: MemberAddress): void {
     if (!this.member || address.is_primary) return;
 
@@ -319,22 +512,44 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Show confirmation dialog for address deletion
+   */
   deleteAddress(address: MemberAddress): void {
-    if (!this.member) return;
-    if (!confirm(`Delete this address?`)) return;
+    this.addressToDelete = address;
+    this.showAddressDeleteConfirm = true;
+  }
 
-    this.memberService.deleteAddress(address.address_id)
+  /**
+   * Confirm and delete address
+   */
+  confirmAddressDelete(): void {
+    if (!this.member || !this.addressToDelete) return;
+
+    this.memberService.deleteAddress(this.addressToDelete.address_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('Address deleted successfully');
+          this.showAddressDeleteConfirm = false;
+          this.addressToDelete = null;
           this.loadAddresses();
         },
         error: (error: any) => {
           this.logger.error('Error deleting address:', error);
           this.toast.error('Failed to delete address');
+          this.showAddressDeleteConfirm = false;
+          this.addressToDelete = null;
         }
       });
+  }
+
+  /**
+   * Cancel address deletion
+   */
+  cancelAddressDelete(): void {
+    this.showAddressDeleteConfirm = false;
+    this.addressToDelete = null;
   }
 
   cancelAddressForm(): void {
@@ -396,8 +611,71 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     this.showContactForm = true;
   }
 
+  /**
+   * Validate contact value based on contact type
+   */
+  validateContactValue(): boolean {
+    const { contact_type, contact_value } = this.contactFormData;
+    
+    if (!contact_value || !contact_type) {
+      this.contactValueError = '';
+      return true;
+    }
+
+    const value = contact_value.trim();
+    
+    switch (contact_type.toUpperCase()) {
+      case 'EMAIL':
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(value)) {
+          this.contactValueError = 'Please enter a valid email address';
+          return false;
+        }
+        break;
+      
+      case 'PHONE':
+      case 'MOBILE':
+      case 'FAX':
+      case 'WHATSAPP':
+        // Allow digits, spaces, hyphens, parentheses, and plus sign
+        const phonePattern = /^[0-9+\-\s()]+$/;
+        if (!phonePattern.test(value)) {
+          this.contactValueError = 'Please enter a valid phone number (digits, spaces, hyphens, parentheses, and + allowed)';
+          return false;
+        }
+        // Check minimum length (at least 7 digits)
+        const digitsOnly = value.replace(/[^0-9]/g, '');
+        if (digitsOnly.length < 7) {
+          this.contactValueError = 'Phone number must contain at least 7 digits';
+          return false;
+        }
+        break;
+      
+      case 'OTHER':
+      default:
+        // No specific validation for other types
+        break;
+    }
+    
+    this.contactValueError = '';
+    return true;
+  }
+
+  /**
+   * Handle contact value change to validate in real-time
+   */
+  onContactValueChange(): void {
+    this.validateContactValue();
+  }
+
   saveContact(form: any): void {
     if (!this.member || form.invalid) return;
+
+    // Validate contact value based on type
+    if (!this.validateContactValue()) {
+      this.toast.error(this.contactValueError);
+      return;
+    }
 
     if (this.editingContact) {
       // Update existing contact
@@ -436,6 +714,53 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Handle contact primary toggle
+   */
+  onToggleContactPrimary(contact: MemberContact): void {
+    if (contact.is_primary) {
+      // Cannot toggle off primary - user must set another as primary instead
+      this.toast.info('To change primary contact, set another contact as primary');
+      return;
+    }
+    this.contactToToggle = contact;
+    this.showContactPrimaryConfirm = true;
+  }
+
+  /**
+   * Confirm contact primary toggle
+   */
+  confirmContactPrimaryToggle(): void {
+    if (!this.member || !this.contactToToggle) return;
+
+    this.memberService.setPrimaryContact(this.contactToToggle.contact_id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Primary contact updated');
+          this.showContactPrimaryConfirm = false;
+          this.contactToToggle = null;
+          this.loadContacts();
+        },
+        error: (error: any) => {
+          this.logger.error('Error setting primary contact:', error);
+          this.toast.error('Failed to set primary contact');
+          this.showContactPrimaryConfirm = false;
+          this.contactToToggle = null;
+          this.loadContacts();
+        }
+      });
+  }
+
+  /**
+   * Cancel contact primary toggle
+   */
+  cancelContactPrimaryToggle(): void {
+    this.showContactPrimaryConfirm = false;
+    this.contactToToggle = null;
+    this.loadContacts(); // Reload to reset toggle state
+  }
+
   setPrimaryContact(contact: MemberContact): void {
     if (!this.member || contact.is_primary) return;
 
@@ -455,22 +780,44 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Show confirmation dialog for contact deletion
+   */
   deleteContact(contact: MemberContact): void {
-    if (!this.member) return;
-    if (!confirm(`Delete this contact?`)) return;
+    this.contactToDelete = contact;
+    this.showContactDeleteConfirm = true;
+  }
 
-    this.memberService.deleteContact(contact.contact_id)
+  /**
+   * Confirm and delete contact
+   */
+  confirmContactDelete(): void {
+    if (!this.member || !this.contactToDelete) return;
+
+    this.memberService.deleteContact(this.contactToDelete.contact_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('Contact deleted successfully');
+          this.showContactDeleteConfirm = false;
+          this.contactToDelete = null;
           this.loadContacts();
         },
         error: (error: any) => {
           this.logger.error('Error deleting contact:', error);
           this.toast.error('Failed to delete contact');
+          this.showContactDeleteConfirm = false;
+          this.contactToDelete = null;
         }
       });
+  }
+
+  /**
+   * Cancel contact deletion
+   */
+  cancelContactDelete(): void {
+    this.showContactDeleteConfirm = false;
+    this.contactToDelete = null;
   }
 
   cancelContactForm(): void {
@@ -486,6 +833,7 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       contact_value: '',
       is_primary: false
     };
+    this.contactValueError = '';
   }
 
   // ============================================================================
@@ -577,22 +925,44 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Show confirmation dialog for policy deletion
+   */
   deletePolicy(policy: MemberPolicy): void {
-    if (!this.member) return;
-    if (!confirm(`Delete this policy?`)) return;
+    this.policyToDelete = policy;
+    this.showPolicyDeleteConfirm = true;
+  }
 
-    this.memberService.deletePolicy(policy.policy_id)
+  /**
+   * Confirm and delete policy
+   */
+  confirmPolicyDelete(): void {
+    if (!this.member || !this.policyToDelete) return;
+
+    this.memberService.deletePolicy(this.policyToDelete.policy_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('Policy deleted successfully');
+          this.showPolicyDeleteConfirm = false;
+          this.policyToDelete = null;
           this.loadPolicies();
         },
         error: (error: any) => {
           this.logger.error('Error deleting policy:', error);
           this.toast.error('Failed to delete policy');
+          this.showPolicyDeleteConfirm = false;
+          this.policyToDelete = null;
         }
       });
+  }
+
+  /**
+   * Cancel policy deletion
+   */
+  cancelPolicyDelete(): void {
+    this.showPolicyDeleteConfirm = false;
+    this.policyToDelete = null;
   }
 
   cancelPolicyForm(): void {
@@ -620,6 +990,45 @@ export class MemberViewComponent implements OnInit, OnDestroy {
   getBankName(bankId: number): string {
     const bank = this.banks.find(b => b.bank_id === bankId);
     return bank?.bank_name || `Bank ID: ${bankId}`;
+  }
+
+  /**
+   * Helper methods to transform lookup observables into dropdown options
+   * These avoid complex inline template expressions that cause TypeScript issues
+   */
+  get addressTypeOptions$(): Observable<{ value: string; label: string }[]> {
+    return this.addressTypes$.pipe(
+      map(items => items.map(t => ({ value: t.lookup_code, label: t.lookup_value })))
+    );
+  }
+
+  get contactTypeOptions$(): Observable<{ value: string; label: string }[]> {
+    return this.contactTypes$.pipe(
+      map(items => items.map(t => ({ value: t.lookup_code, label: t.lookup_value })))
+    );
+  }
+
+  get policyStatusOptions$(): Observable<{ value: string; label: string }[]> {
+    return this.policyStatuses$.pipe(
+      map(items => items.map(s => ({ value: s.lookup_code, label: s.lookup_value })))
+    );
+  }
+
+  get relationshipOptions$(): Observable<{ value: string; label: string }[]> {
+    return this.relationships$.pipe(
+      map(items => items.map(r => ({ value: (r.lookup_id || 0).toString(), label: r.lookup_value })))
+    );
+  }
+
+  get productOptions(): { value: string; label: string }[] {
+    return this.products.map(p => ({ value: p.product_id, label: p.plan_name || p.plan_code }));
+  }
+
+  /**
+   * Get today's date for maxDate validation in date pickers
+   */
+  get todayDate(): Date {
+    return new Date();
   }
 
   // ============================================================================
@@ -709,6 +1118,54 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Handle dependent active toggle
+   */
+  onToggleDependentActive(event: boolean, dependent: MemberDependent): void {
+    this.dependentToToggle = { ...dependent, is_active: event }; // Store the new state
+    this.showDependentActiveConfirm = true;
+  }
+
+  /**
+   * Confirm dependent active toggle
+   */
+  confirmDependentActiveToggle(): void {
+    if (!this.member || !this.dependentToToggle) return;
+
+    const newActiveState = this.dependentToToggle.is_active ?? false;
+    const action = newActiveState ? 'activate' : 'deactivate';
+
+    this.memberService.toggleDependentActive(
+      this.dependentToToggle.dependent_id,
+      newActiveState
+    )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success(`Dependent ${action}d successfully`);
+          this.showDependentActiveConfirm = false;
+          this.dependentToToggle = null;
+          this.loadDependents();
+        },
+        error: (error: any) => {
+          this.logger.error(`Error ${action}ing dependent:`, error);
+          this.toast.error(`Failed to ${action} dependent`);
+          this.showDependentActiveConfirm = false;
+          this.dependentToToggle = null;
+          this.loadDependents();
+        }
+      });
+  }
+
+  /**
+   * Cancel dependent active toggle
+   */
+  cancelDependentActiveToggle(): void {
+    this.showDependentActiveConfirm = false;
+    this.dependentToToggle = null;
+    this.loadDependents(); // Reload to reset toggle state
+  }
+
   toggleDependentActive(dependent: MemberDependent): void {
     if (!this.member) return;
 
@@ -729,27 +1186,49 @@ export class MemberViewComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Show confirmation dialog for dependent deletion
+   */
   deleteDependent(dependent: MemberDependent): void {
-    if (!this.member) return;
-    if (!confirm(`Delete this dependent? This will also delete all associated PEC conditions.`)) return;
+    this.dependentToDelete = dependent;
+    this.showDependentDeleteConfirm = true;
+  }
 
-    this.memberService.deleteDependent(dependent.dependent_id)
+  /**
+   * Confirm and delete dependent
+   */
+  confirmDependentDelete(): void {
+    if (!this.member || !this.dependentToDelete) return;
+
+    this.memberService.deleteDependent(this.dependentToDelete.dependent_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('Dependent deleted successfully');
           // If we were viewing this dependent's PEC, clear it
-          if (this.selectedDependentForPEC?.dependent_id === dependent.dependent_id) {
+          if (this.selectedDependentForPEC?.dependent_id === this.dependentToDelete?.dependent_id) {
             this.selectedDependentForPEC = null;
             this.pecConditions = [];
           }
+          this.showDependentDeleteConfirm = false;
+          this.dependentToDelete = null;
           this.loadDependents();
         },
         error: (error: any) => {
           this.logger.error('Error deleting dependent:', error);
           this.toast.error('Failed to delete dependent');
+          this.showDependentDeleteConfirm = false;
+          this.dependentToDelete = null;
         }
       });
+  }
+
+  /**
+   * Cancel dependent deletion
+   */
+  cancelDependentDelete(): void {
+    this.showDependentDeleteConfirm = false;
+    this.dependentToDelete = null;
   }
 
   cancelDependentForm(): void {
@@ -862,42 +1341,86 @@ export class MemberViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Show confirmation dialog for PEC coverage toggle
+   */
   togglePECExcluded(pec: MemberPEC): void {
-    if (!this.member || !this.selectedDependentForPEC) return;
+    this.pecToToggle = pec;
+    this.showPECToggleConfirm = true;
+  }
 
-    const action = pec.is_excluded ? 'include' : 'exclude';
-    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this PEC condition?`)) return;
+  /**
+   * Confirm and toggle PEC excluded status
+   */
+  confirmPECToggle(): void {
+    if (!this.member || !this.selectedDependentForPEC || !this.pecToToggle) return;
 
-    this.memberService.togglePECExcluded(pec.pec_id, !pec.is_excluded)
+    const action = this.pecToToggle.is_excluded ? 'include' : 'exclude';
+
+    this.memberService.togglePECExcluded(this.pecToToggle.pec_id, !this.pecToToggle.is_excluded)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success(`PEC condition ${action}d successfully`);
+          this.showPECToggleConfirm = false;
+          this.pecToToggle = null;
           this.loadPECConditions();
         },
         error: (error: any) => {
           this.logger.error(`Error ${action}ing PEC:`, error);
           this.toast.error(`Failed to ${action} PEC condition`);
+          this.showPECToggleConfirm = false;
+          this.pecToToggle = null;
         }
       });
   }
 
-  deletePEC(pec: MemberPEC): void {
-    if (!this.member || !this.selectedDependentForPEC) return;
-    if (!confirm('Delete this PEC condition?')) return;
+  /**
+   * Cancel PEC toggle
+   */
+  cancelPECToggle(): void {
+    this.showPECToggleConfirm = false;
+    this.pecToToggle = null;
+  }
 
-    this.memberService.deletePEC(pec.pec_id)
+  /**
+   * Show confirmation dialog for PEC deletion
+   */
+  deletePEC(pec: MemberPEC): void {
+    this.pecToDelete = pec;
+    this.showPECDeleteConfirm = true;
+  }
+
+  /**
+   * Confirm and delete PEC
+   */
+  confirmPECDelete(): void {
+    if (!this.member || !this.selectedDependentForPEC || !this.pecToDelete) return;
+
+    this.memberService.deletePEC(this.pecToDelete.pec_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.toast.success('PEC condition deleted successfully');
+          this.showPECDeleteConfirm = false;
+          this.pecToDelete = null;
           this.loadPECConditions();
         },
         error: (error: any) => {
           this.logger.error('Error deleting PEC:', error);
           this.toast.error('Failed to delete PEC condition');
+          this.showPECDeleteConfirm = false;
+          this.pecToDelete = null;
         }
       });
+  }
+
+  /**
+   * Cancel PEC deletion
+   */
+  cancelPECDelete(): void {
+    this.showPECDeleteConfirm = false;
+    this.pecToDelete = null;
   }
 
   cancelPECForm(): void {

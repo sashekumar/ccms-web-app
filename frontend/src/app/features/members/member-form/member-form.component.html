@@ -1,302 +1,221 @@
-<!-- Header -->
-<div class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-  <div class="flex items-center justify-between">
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-semibold text-gray-900">
-        {{ isEditMode ? 'Edit Member' : 'Create New Member' }}
-      </h1>
+      <h1 class="text-3xl font-bold text-gray-900">{{ isEditMode ? 'Edit Member' : 'Create New Member' }}</h1>
       <p class="mt-1 text-sm text-gray-600">
         {{ isEditMode ? 'Update member information' : 'Add a new policy holder to the system' }}
       </p>
     </div>
-    <button
-      type="button"
+    <app-button
+      variant="secondary"
+      iconLeft="fas fa-arrow-left"
       (click)="onCancel()"
-      class="text-gray-600 hover:text-gray-900 transition-colors"
       [disabled]="submitting"
     >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
-    </button>
+      Back
+    </app-button>
   </div>
-</div>
 
-<!-- Loading State -->
-<div *ngIf="loading" class="flex items-center justify-center py-12">
-  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-</div>
+  <!-- Loading State -->
+  <div *ngIf="loading" class="rounded-lg bg-white p-12 text-center shadow">
+    <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+    <p class="mt-4 text-gray-600">Loading member...</p>
+  </div>
 
-<!-- Form -->
-<div *ngIf="!loading" class="max-w-4xl mx-auto px-6 py-8">
-  <form [formGroup]="memberForm" (ngSubmit)="onSubmit()" class="space-y-8">
-    
-    <!-- Basic Information Section -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-      <h2 class="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
+  <!-- Form -->
+  <div *ngIf="!loading" class="rounded-lg bg-white p-6 shadow">
+    <form [formGroup]="memberForm" (ngSubmit)="onSubmit()" class="space-y-8">
       
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Full Name -->
-        <div class="md:col-span-2">
-          <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">
-            Full Name <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="full_name"
-            formControlName="full_name"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('full_name')"
-            placeholder="Enter full name"
-          />
-          <p *ngIf="isFieldInvalid('full_name')" class="mt-1 text-sm text-red-600">
-            {{ getFieldError('full_name') }}
-          </p>
-        </div>
+      <!-- Basic Information Section -->
+      <div class="border-b border-gray-200 pb-6">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">Basic Information</h2>
+        
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <!-- Full Name -->
+          <div class="md:col-span-2">
+            <app-text-input
+              label="Full Name"
+              formControlName="full_name"
+              [required]="true"
+              [maxLength]="100"
+              placeholder="Enter full name"
+            ></app-text-input>
+          </div>
 
-        <!-- IC Number -->
-        <div>
-          <label for="ic_no" class="block text-sm font-medium text-gray-700 mb-1">
-            IC Number
-          </label>
-          <div class="relative">
-            <input
-              type="text"
-              id="ic_no"
+          <!-- IC Number -->
+          <div>
+            <app-text-input
+              label="IC Number"
               formControlName="ic_no"
-              class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              [class.border-red-500]="isFieldInvalid('ic_no')"
-              placeholder="e.g. 900101011234"
-            />
-            <div *ngIf="icCheckPending" class="absolute right-3 top-2.5">
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              [maxLength]="50"
+              placeholder="e.g., 900101011234"
+              [error]="icExists ? 'IC number already exists' : ''"
+            ></app-text-input>
+            <p *ngIf="icCheckPending" class="mt-1 text-sm text-blue-600">
+              <i class="fas fa-spinner fa-spin mr-1"></i> Checking IC number...
+            </p>
+          </div>
+
+          <!-- Member Type -->
+          <div>
+            <app-dropdown
+              label="Member Type"
+              formControlName="member_type"
+              [required]="true"
+              [options]="memberTypeOptions"
+              placeholder="Select Member Type"
+            ></app-dropdown>
+          </div>
+
+          <!-- Date of Birth -->
+          <div>
+            <app-date-picker
+              label="Date of Birth"
+              formControlName="dob"
+              [maxDate]="todayDate"
+            ></app-date-picker>
+          </div>
+
+          <!-- Gender -->
+          <div>
+            <app-dropdown
+              label="Gender"
+              formControlName="gender"
+              [options]="genderOptions"
+              placeholder="Select Gender"
+            ></app-dropdown>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enrollment Information Section -->
+      <div class="border-b border-gray-200 pb-6">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">Enrollment Information</h2>
+        
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <!-- Enrollment Date -->
+          <div>
+            <app-date-picker
+              label="Enrollment Date"
+              formControlName="enrollment_date"
+              [required]="true"
+              [maxDate]="todayDate"
+            ></app-date-picker>
+          </div>
+
+          <!-- Termination Date -->
+          <div>
+            <app-date-picker
+              label="Termination Date"
+              formControlName="termination_date"
+              [minDate]="memberForm.get('enrollment_date')?.value"
+              [maxDate]="todayDate"
+            ></app-date-picker>
+          </div>
+
+          <!-- FWD Member Number -->
+          <div>
+            <app-text-input
+              label="FWD Member Number"
+              formControlName="fwd_member_no"
+              [maxLength]="50"
+              placeholder="Enter FWD member number"
+              hint="External system reference"
+            ></app-text-input>
+          </div>
+
+          <!-- FWD Client Number -->
+          <div>
+            <app-text-input
+              label="FWD Client Number"
+              formControlName="fwd_client_no"
+              [maxLength]="50"
+              placeholder="Enter FWD client number"
+              hint="External system reference"
+            ></app-text-input>
+          </div>
+
+          <!-- Client ID -->
+          <div>
+            <app-text-input
+              label="Client ID"
+              formControlName="client_id"
+              [maxLength]="50"
+              placeholder="Enter client ID"
+            ></app-text-input>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banking Information Section -->
+      <div class="border-b border-gray-200 pb-6">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">Banking Information</h2>
+        
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <!-- Bank -->
+          <div>
+            <app-dropdown
+              label="Bank"
+              formControlName="bank_id"
+              [options]="bankOptions"
+              placeholder="Select Bank"
+            ></app-dropdown>
+          </div>
+
+          <!-- Bank Account Number -->
+          <div>
+            <app-text-input
+              label="Bank Account Number"
+              formControlName="bank_acc_no"
+              [maxLength]="50"
+              placeholder="Enter bank account number"
+            ></app-text-input>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help Text -->
+      <div class="rounded-lg bg-blue-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">Member Information</h3>
+            <div class="mt-2 text-sm text-blue-700">
+              <ul class="list-disc space-y-1 pl-5">
+                <li>Full name is required for all members</li>
+                <li>IC number will be validated for uniqueness</li>
+                <li>Enrollment date cannot be in the future</li>
+                <li>Termination date must be after enrollment date</li>
+              </ul>
             </div>
           </div>
-          <p *ngIf="isFieldInvalid('ic_no')" class="mt-1 text-sm text-red-600">
-            {{ getFieldError('ic_no') }}
-          </p>
-          <p *ngIf="icExists && !isFieldInvalid('ic_no')" class="mt-1 text-sm text-red-600">
-            This IC number is already registered
-          </p>
-        </div>
-
-        <!-- Member Type -->
-        <div>
-          <label for="member_type" class="block text-sm font-medium text-gray-700 mb-1">
-            Member Type <span class="text-red-500">*</span>
-          </label>
-          <select
-            id="member_type"
-            formControlName="member_type"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('member_type')"
-          >
-            <option value="">Select Member Type</option>
-            <option *ngFor="let type of memberTypes" [value]="type.lookup_code">
-              {{ type.lookup_value }}
-            </option>
-          </select>
-          <p *ngIf="isFieldInvalid('member_type')" class="mt-1 text-sm text-red-600">
-            {{ getFieldError('member_type') }}
-          </p>
-        </div>
-
-        <!-- Date of Birth -->
-        <div>
-          <label for="dob" class="block text-sm font-medium text-gray-700 mb-1">
-            Date of Birth
-          </label>
-          <input
-            type="date"
-            id="dob"
-            formControlName="dob"
-            [max]="todayDate"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('dob')"
-          />
-          <p *ngIf="isFieldInvalid('dob')" class="mt-1 text-sm text-red-600">
-            {{ getFieldError('dob') }}
-          </p>
-        </div>
-
-        <!-- Gender -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Gender
-          </label>
-          <div class="flex gap-4">
-            <label *ngFor="let gender of genders" class="flex items-center">
-              <input
-                type="radio"
-                formControlName="gender"
-                [value]="gender.lookup_code"
-                class="mr-2 text-blue-600 focus:ring-blue-500"
-              />
-              <span class="text-sm text-gray-700">{{ gender.lookup_value }}</span>
-            </label>
-          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Enrollment Information Section -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-      <h2 class="text-lg font-medium text-gray-900 mb-4">Enrollment Information</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Enrollment Date -->
-        <div>
-          <label for="enrollment_date" class="block text-sm font-medium text-gray-700 mb-1">
-            Enrollment Date <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            id="enrollment_date"
-            formControlName="enrollment_date"
-            [max]="todayDate"
-            (change)="validateEnrollmentDate(); validateTerminationDate()"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('enrollment_date')"
-          />
-          <p *ngIf="isFieldInvalid('enrollment_date')" class="mt-1 text-sm text-red-600">
-            {{ getEnrollmentDateError() }}
-          </p>
-        </div>
-
-        <!-- Termination Date -->
-        <div>
-          <label for="termination_date" class="block text-sm font-medium text-gray-700 mb-1">
-            Termination Date
-          </label>
-          <input
-            type="date"
-            id="termination_date"
-            formControlName="termination_date"
-            (change)="validateTerminationDate()"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('termination_date')"
-          />
-          <p *ngIf="isFieldInvalid('termination_date')" class="mt-1 text-sm text-red-600">
-            {{ getTerminationDateError() }}
-          </p>
-          <p class="mt-1 text-xs text-gray-500">
-            Leave empty if member is still active
-          </p>
-        </div>
+      <!-- Form Actions -->
+      <div class="flex justify-end space-x-3 pt-4">
+        <app-button
+          type="button"
+          variant="secondary"
+          (click)="onCancel()"
+          [disabled]="submitting"
+        >
+          Cancel
+        </app-button>
+        <app-button
+          type="submit"
+          variant="primary"
+          [loading]="submitting"
+          [disabled]="memberForm.invalid || icExists || icCheckPending"
+        >
+          {{ isEditMode ? 'Update Member' : 'Create Member' }}
+        </app-button>
       </div>
-    </div>
-
-    <!-- Forwarding Information Section -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-      <h2 class="text-lg font-medium text-gray-900 mb-4">Forwarding Information</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Forward Member No -->
-        <div>
-          <label for="fwd_member_no" class="block text-sm font-medium text-gray-700 mb-1">
-            Forward Member No.
-          </label>
-          <input
-            type="text"
-            id="fwd_member_no"
-            formControlName="fwd_member_no"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="e.g., 1234567890"
-          />
-        </div>
-
-        <!-- Forward Client No -->
-        <div>
-          <label for="fwd_client_no" class="block text-sm font-medium text-gray-700 mb-1">
-            Forward Client No.
-          </label>
-          <input
-            type="text"
-            id="fwd_client_no"
-            formControlName="fwd_client_no"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="e.g., FWD-C-001"
-          />
-        </div>
-
-        <!-- Client ID -->
-        <div>
-          <label for="client_id" class="block text-sm font-medium text-gray-700 mb-1">
-            Client ID
-          </label>
-          <input
-            type="text"
-            id="client_id"
-            formControlName="client_id"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="e.g., CLI-001"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Banking Information Section -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-      <h2 class="text-lg font-medium text-gray-900 mb-4">Banking Information</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Bank -->
-        <div>
-          <label for="bank_id" class="block text-sm font-medium text-gray-700 mb-1">
-            Bank
-          </label>
-          <select
-            id="bank_id"
-            formControlName="bank_id"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('bank_id')"
-          >
-            <option value="">Select Bank</option>
-            <option *ngFor="let bank of banks" [value]="bank.bank_id">{{ bank.bank_name }}</option>
-          </select>
-          <p *ngIf="isFieldInvalid('bank_id')" class="mt-1 text-sm text-red-600">
-            {{ getFieldError('bank_id') }}
-          </p>
-        </div>
-
-        <!-- Bank Account Number -->
-        <div>
-          <label for="bank_acc_no" class="block text-sm font-medium text-gray-700 mb-1">
-            Bank Account Number
-          </label>
-          <input
-            type="text"
-            id="bank_acc_no"
-            formControlName="bank_acc_no"
-            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('bank_acc_no')"
-            placeholder="Enter account number"
-          />
-          <p *ngIf="isFieldInvalid('bank_acc_no')" class="mt-1 text-sm text-red-600">
-            {{ getFieldError('bank_acc_no') }}
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Form Actions -->
-    <div class="flex items-center justify-end gap-4 pt-4">
-      <button
-        type="button"
-        (click)="onCancel()"
-        [disabled]="submitting"
-        class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        [disabled]="submitting || memberForm.invalid || icExists || icCheckPending"
-        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-      >
-        <span *ngIf="submitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-        <span>{{ submitting ? 'Saving...' : (isEditMode ? 'Update Member' : 'Create Member') }}</span>
-      </button>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>

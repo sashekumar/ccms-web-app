@@ -52,6 +52,48 @@ export class MembersController extends BaseController<Member> {
     this.service = service;
   }
 
+  /**
+   * Validate contact value based on contact type
+   * @param contactType - The type of contact (EMAIL, PHONE, etc.)
+   * @param contactValue - The value to validate
+   * @returns Error message if invalid, null if valid
+   */
+  private validateContactValue(contactType: string, contactValue: string): string | null {
+    const value = contactValue.trim();
+    
+    switch (contactType.toUpperCase()) {
+      case 'EMAIL':
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(value)) {
+          return 'Please enter a valid email address';
+        }
+        break;
+      
+      case 'PHONE':
+      case 'MOBILE':
+      case 'FAX':
+      case 'WHATSAPP':
+        // Allow digits, spaces, hyphens, parentheses, and plus sign
+        const phonePattern = /^[0-9+\-\s()]+$/;
+        if (!phonePattern.test(value)) {
+          return 'Please enter a valid phone number (digits, spaces, hyphens, parentheses, and + allowed)';
+        }
+        // Check minimum length (at least 7 digits)
+        const digitsOnly = value.replace(/[^0-9]/g, '');
+        if (digitsOnly.length < 7) {
+          return 'Phone number must contain at least 7 digits';
+        }
+        break;
+      
+      case 'OTHER':
+      default:
+        // No specific validation for other types
+        break;
+    }
+    
+    return null;
+  }
+
   // ============================================================================
   // MEMBERS
   // ============================================================================
@@ -517,6 +559,18 @@ export class MembersController extends BaseController<Member> {
         return;
       }
 
+      if (!dto.contact_value || dto.contact_value.trim() === '') {
+        ResponseUtil.error(res, 'Contact value is required', 400);
+        return;
+      }
+
+      // Validate contact value based on type
+      const validationError = this.validateContactValue(dto.contact_type, dto.contact_value);
+      if (validationError) {
+        ResponseUtil.error(res, validationError, 400);
+        return;
+      }
+
       // Check if member exists
       const member = await this.service.getMemberById(dto.member_id);
       if (!member) {
@@ -549,6 +603,15 @@ export class MembersController extends BaseController<Member> {
       }
 
       const dto: UpdateMemberContactDto = req.body;
+
+      // Validate contact value if both type and value are provided
+      if (dto.contact_type && dto.contact_value) {
+        const validationError = this.validateContactValue(dto.contact_type, dto.contact_value);
+        if (validationError) {
+          ResponseUtil.error(res, validationError, 400);
+          return;
+        }
+      }
 
       const updatedBy = (req as any).user?.userId?.toString();
       const success = await this.service.updateContact(contactId, dto, updatedBy);

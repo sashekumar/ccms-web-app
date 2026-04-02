@@ -11,13 +11,24 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CreateMemberDto, UpdateMemberDto, Member } from '../../../shared/models/member.model';
 import { Bank } from '../../../shared/models/bank.model';
+import { TextInputComponent } from '../../../shared/components/ui/text-input/text-input.component';
+import { DropdownComponent } from '../../../shared/components/ui/dropdown/dropdown.component';
+import { DatePickerComponent } from '../../../shared/components/ui/date-picker/date-picker.component';
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
 
 import { APP_ROUTES } from '../../../core/constants/routes.constants'
 
 @Component({
   selector: 'app-member-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    TextInputComponent,
+    DropdownComponent,
+    DatePickerComponent,
+    ButtonComponent
+  ],
   templateUrl: './member-form.component.html',
   styleUrls: ['./member-form.component.scss']
 })
@@ -35,9 +46,24 @@ export class MemberFormComponent implements OnInit, OnDestroy {
 
   // Lookup data (loaded from database)
   memberTypes: LookupItem[] = [];
-  genders: LookupItem[] = [];
   banks: Bank[] = [];
   loadingBanks = false;
+
+  // Computed options for dropdowns
+  get memberTypeOptions() {
+    return this.memberTypes.map(t => ({ value: t.lookup_code, label: t.lookup_value }));
+  }
+
+  get genderOptions() {
+    return [
+      { value: 'true', label: 'Male' },
+      { value: 'false', label: 'Female' }
+    ];
+  }
+
+  get bankOptions() {
+    return this.banks.map(b => ({ value: b.bank_id.toString(), label: b.bank_name }));
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -75,13 +101,11 @@ export class MemberFormComponent implements OnInit, OnDestroy {
    */
   private loadLookups(): void {
     forkJoin({
-      memberTypes: this.lookupService.getLookupByCategory('MEMBER_TYPE'),
-      genders: this.lookupService.getLookupByCategory('GENDER')
+      memberTypes: this.lookupService.getLookupByCategory('MEMBER_TYPE')
     }).pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (results) => {
           this.memberTypes = results.memberTypes;
-          this.genders = results.genders;
           // Manually trigger change detection to avoid NG0100 error
           this.cdr.detectChanges();
         },
@@ -203,7 +227,7 @@ export class MemberFormComponent implements OnInit, OnDestroy {
       ic_no: member.ic_no || '',
       member_type: member.member_type || '',
       dob: this.formatDateForInput(member.dob),
-      gender: member.gender === true ? 'Male' : member.gender === false ? 'Female' : '',
+      gender: member.gender === true ? 'true' : member.gender === false ? 'false' : '',
       enrollment_date: this.formatDateForInput(member.enrollment_date),
       termination_date: this.formatDateForInput(member.termination_date),
       fwd_member_no: member.fwd_member_no || '',
@@ -301,7 +325,7 @@ export class MemberFormComponent implements OnInit, OnDestroy {
       ic_no: formValue.ic_no || undefined,
       member_type: formValue.member_type,
       dob: formValue.dob || undefined,
-      gender: formValue.gender === 'Male' ? true : formValue.gender === 'Female' ? false : undefined,
+      gender: formValue.gender === 'true' ? true : formValue.gender === 'false' ? false : undefined,
       enrollment_date: formValue.enrollment_date,
       termination_date: formValue.termination_date || undefined,
       fwd_member_no: formValue.fwd_member_no || undefined,
@@ -320,7 +344,7 @@ export class MemberFormComponent implements OnInit, OnDestroy {
       ic_no: formValue.ic_no || undefined,
       member_type: formValue.member_type,
       dob: formValue.dob || undefined,
-      gender: formValue.gender === 'Male' ? true : formValue.gender === 'Female' ? false : undefined,
+      gender: formValue.gender === 'true' ? true : formValue.gender === 'false' ? false : undefined,
       enrollment_date: formValue.enrollment_date,
       termination_date: formValue.termination_date || undefined,
       fwd_member_no: formValue.fwd_member_no || undefined,
@@ -375,9 +399,9 @@ export class MemberFormComponent implements OnInit, OnDestroy {
     return 'Invalid value';
   }
 
-  // Get today's date in YYYY-MM-DD format for date input max
-  get todayDate(): string {
-    return new Date().toISOString().split('T')[0];
+  // Get today's date as Date object for date pickers
+  get todayDate(): Date {
+    return new Date();
   }
 
   // Check if enrollment date is valid (not in future)

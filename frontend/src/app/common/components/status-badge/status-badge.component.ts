@@ -99,7 +99,8 @@ export class StatusBadgeComponent {
     if (this.status) {
       const statusLower = this.status.toLowerCase();
       // Check negative statuses first to avoid false matches (e.g., "inactive" contains "active")
-      if (statusLower.includes('inactive') || statusLower.includes('rejected') || statusLower.includes('blocked')) {
+      if (statusLower.includes('inactive') || statusLower.includes('rejected') || statusLower.includes('blocked') || 
+          statusLower.includes('cancelled') || statusLower.includes('terminated')) {
         return 'danger';
       }
       if (statusLower.includes('active') || statusLower.includes('approved') || statusLower.includes('complete')) {
@@ -107,6 +108,9 @@ export class StatusBadgeComponent {
       }
       if (statusLower.includes('pending') || statusLower.includes('progress')) {
         return 'warning';
+      }
+      if (statusLower.includes('suspended') || statusLower.includes('expired')) {
+        return 'default';
       }
     }
 

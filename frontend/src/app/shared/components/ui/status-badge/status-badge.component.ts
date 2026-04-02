@@ -21,6 +21,7 @@ const STATUS_REGISTRY: Record<string, StatusConfig> = {
   'PAID':              { variant: 'success', label: 'Paid' },
   'ACTIVE':            { variant: 'success', label: 'Active' },
   'Active':            { variant: 'success', label: 'Active' },
+  'INFORCE':           { variant: 'success', label: 'In Force' },
   'COMPLETED':         { variant: 'success', label: 'Completed' },
   'RESOLVED':          { variant: 'success', label: 'Resolved' },
   'RECEIVED':          { variant: 'success', label: 'Received' },
@@ -61,6 +62,10 @@ const STATUS_REGISTRY: Record<string, StatusConfig> = {
   'NOT_APPLICABLE':    { variant: 'default', label: 'N/A' },
   'INACTIVE':          { variant: 'default', label: 'Inactive' },
   'Inactive':          { variant: 'default', label: 'Inactive' },
+  'SUSPENDED':         { variant: 'warning', label: 'Suspended' },
+  'TERMINATED':        { variant: 'danger', label: 'Terminated' },
+  'LAPSED':            { variant: 'default', label: 'Lapsed' },
+  'TRANSFERRED':       { variant: 'info', label: 'Transferred' },
 };
 
 /**

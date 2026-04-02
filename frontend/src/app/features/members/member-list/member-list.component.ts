@@ -8,9 +8,12 @@ import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MemberService } from '../../../core/services/member.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { LookupService, LookupItem } from '../../../shared/services/lookup.service';
 
 import { MemberListItem, MemberFilters } from '../../../shared/models/member.model';
-import { LoadingSpinnerComponent } from '../../../shared/components/ui/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '../../../shared/components/ui/button/button.component';
+import { DataTableComponent, DataTableColumn, DataTableFilter, DataTablePagination, DataTableAction } from '../../../shared/components/ui/data-table/data-table.component';
+import { ConfirmDialogComponent } from '../../../shared/components/ui/confirm-dialog/confirm-dialog.component';
 import { HasPermissionDirective } from '../../../shared/directives/permissions/has-permission.directive';
 import { PERMISSIONS } from '../../../core/constants/permissions.constants';
 import { APP_ROUTES } from '../../../core/constants/routes.constants';
@@ -21,366 +24,133 @@ import { APP_ROUTES } from '../../../core/constants/routes.constants';
   imports: [
     CommonModule,
     FormsModule,
-    LoadingSpinnerComponent,
+    ButtonComponent,
+    DataTableComponent,
+    ConfirmDialogComponent,
     HasPermissionDirective
   ],
-  template: `
-    <div class="min-h-screen bg-gray-50 p-6">
-      <!-- Header -->
-      <div class="mb-6 flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Policy Holders</h1>
-          <p class="mt-2 text-sm text-gray-600">Manage member information and policies</p>
-        </div>
-        <button 
-          *hasPermission="PERMISSIONS.CREATE"
-          (click)="createMember()"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#1e3c72] hover:bg-[#2a5298] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1e3c72] transition-colors duration-200">
-          <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Create Member
-        </button>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <!-- Total Members -->
-        <div class="bg-gradient-to-r from-[#1e3c72] to-[#2a5298] rounded-lg shadow-lg p-6 text-white">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-blue-100">Total Members</p>
-              <p class="text-3xl font-bold">{{ stats.total }}</p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-full p-3">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Active Members -->
-        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-green-100">Active Members</p>
-              <p class="text-3xl font-bold">{{ stats.active }}</p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-full p-3">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Deleted Members -->
-        <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-lg p-6 text-white">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-red-100">Deleted Members</p>
-              <p class="text-3xl font-bold">{{ stats.deleted }}</p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-full p-3">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filters -->
-      <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Search -->
-          <div class="md:col-span-1">
-            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <input
-              type="text"
-              id="search"
-              [(ngModel)]="filters.search"
-              (ngModelChange)="onSearchChange($event)"
-              placeholder="Name, IC number, or member number"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1e3c72] focus:border-[#1e3c72]"
-            />
-          </div>
-
-          <!-- Member Type Filter -->
-          <div class="md:col-span-1">
-            <label for="memberType" class="block text-sm font-medium text-gray-700 mb-2">Member Type</label>
-            <select
-              id="memberType"
-              [(ngModel)]="filters.member_type"
-              (ngModelChange)="onFilterChange()"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1e3c72] focus:border-[#1e3c72]"
-            >
-              <option value="">All Types</option>
-              <option value="Principal">Principal</option>
-              <option value="Dependent">Dependent</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <!-- Status Filter -->
-          <div class="md:col-span-1">
-            <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              id="status"
-              [(ngModel)]="filters.is_deleted"
-              (ngModelChange)="onFilterChange()"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1e3c72] focus:border-[#1e3c72]"
-            >
-              <option [ngValue]="undefined">All</option>
-              <option [ngValue]="false">Active</option>
-              <option [ngValue]="true">Deleted</option>
-            </select>
-          </div>
-
-          <!-- Items per page -->
-          <div class="md:col-span-1">
-            <label for="limit" class="block text-sm font-medium text-gray-700 mb-2">Items per page</label>
-            <select
-              id="limit"
-              [(ngModel)]="filters.limit"
-              (ngModelChange)="onFilterChange()"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1e3c72] focus:border-[#1e3c72]"
-            >
-              <option [ngValue]="10">10</option>
-              <option [ngValue]="25">25</option>
-              <option [ngValue]="50">50</option>
-              <option [ngValue]="100">100</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading Spinner -->
-      <app-loading-spinner *ngIf="loading"></app-loading-spinner>
-
-      <!-- Members Table -->
-      <div *ngIf="!loading" class="bg-white shadow overflow-hidden rounded-lg">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Member
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Member Type
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Enrollment Date
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let member of members" class="hover:bg-gray-50 transition-colors duration-150">
-              <!-- Member Info (Avatar + Name + IC) -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <div class="h-10 w-10 rounded-full bg-gradient-to-r from-[#1e3c72] to-[#2a5298] flex items-center justify-center text-white font-semibold">
-                      {{ getInitials(member.full_name) }}
-                    </div>
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ member.full_name }}</div>
-                    <div class="text-sm text-gray-500">IC: {{ member.ic_no }}</div>
-                  </div>
-                </div>
-              </td>
-
-              <!-- Member Type -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="text-sm text-gray-900">{{ member.member_type }}</span>
-              </td>
-
-              <!-- Enrollment Date -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="text-sm text-gray-900">{{ member.enrollment_date | date:'dd/MM/yyyy' }}</span>
-              </td>
-
-              <!-- Status -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span 
-                  *ngIf="!member.is_deleted"
-                  class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Active
-                </span>
-                <span 
-                  *ngIf="member.is_deleted"
-                  class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                  Deleted
-                </span>
-              </td>
-
-              <!-- Actions -->
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex justify-end space-x-2">
-                  <!-- View Button -->
-                  <button
-                    *hasPermission="PERMISSIONS.VIEW"
-                    (click)="viewMember(member.member_id)"
-                    class="text-blue-600 hover:text-blue-900 transition-colors duration-150"
-                    title="View Member">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-
-                  <!-- Edit Button (only if not deleted) -->
-                  <ng-container *hasPermission="PERMISSIONS.UPDATE">
-                    <button
-                      *ngIf="!member.is_deleted"
-                      [attr.disabled]="member.is_deleted ? true : null"
-                      (click)="editMember(member.member_id)"
-                      class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150"
-                      title="Edit Member">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                  </ng-container>
-
-                  <!-- Delete Button (only if not deleted) -->
-                  <ng-container *hasPermission="PERMISSIONS.DELETE">
-                    <button
-                      *ngIf="!member.is_deleted"
-                      [attr.disabled]="member.is_deleted ? true : null"
-                      (click)="deleteMember(member)"
-                      class="text-red-600 hover:text-red-900 transition-colors duration-150"
-                      title="Delete Member">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </ng-container>
-
-                  <!-- Restore Button (only if deleted) -->
-                  <ng-container *hasPermission="PERMISSIONS.DEACTIVATE">
-                    <button
-                      *ngIf="member.is_deleted"
-                      (click)="restoreMember(member)"
-                      class="text-green-600 hover:text-green-900 transition-colors duration-150"
-                      title="Restore Member">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    </button>
-                  </ng-container>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- Empty State -->
-        <div *ngIf="members.length === 0" class="text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No members found</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            {{ filters.search || filters.member_type || filters.is_deleted !== undefined ? 'Try adjusting your filters' : 'Get started by creating a new member' }}
-          </p>
-          <div class="mt-6" *hasPermission="PERMISSIONS.CREATE">
-            <button
-              (click)="createMember()"
-              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#1e3c72] hover:bg-[#2a5298] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1e3c72]">
-              <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Create Member
-            </button>
-          </div>
-        </div>
-
-        <!-- Pagination -->
-        <div *ngIf="members.length > 0" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-          <div class="flex-1 flex justify-between sm:hidden">
-            <button
-              (click)="previousPage()"
-              [disabled]="pagination.page === 1"
-              class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-              Previous
-            </button>
-            <button
-              (click)="nextPage()"
-              [disabled]="pagination.page === pagination.totalPages"
-              class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-              Next
-            </button>
-          </div>
-          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p class="text-sm text-gray-700">
-                Showing
-                <span class="font-medium">{{ getStartIndex() }}</span>
-                to
-                <span class="font-medium">{{ getEndIndex() }}</span>
-                of
-                <span class="font-medium">{{ pagination.total }}</span>
-                results
-              </p>
-            </div>
-            <div>
-              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button
-                  (click)="previousPage()"
-                  [disabled]="pagination.page === 1"
-                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <span class="sr-only">Previous</span>
-                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-                
-                <button
-                  *ngFor="let page of getPageNumbers()"
-                  (click)="goToPage(page)"
-                  [class.bg-[#1e3c72]]="page === pagination.page"
-                  [class.text-white]="page === pagination.page"
-                  [class.bg-white]="page !== pagination.page"
-                  [class.text-gray-700]="page !== pagination.page"
-                  class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium hover:bg-gray-50">
-                  {{ page }}
-                </button>
-                
-                <button
-                  (click)="nextPage()"
-                  [disabled]="pagination.page === pagination.totalPages"
-                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <span class="sr-only">Next</span>
-                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  templateUrl: './member-list.component.html',
+  styles: []
 })
 export class MemberListComponent implements OnInit, OnDestroy {
   readonly PERMISSIONS = PERMISSIONS.POLICY_HOLDERS;
+  protected readonly Math = Math;
 
+  // Data Table Configuration
+  columns: DataTableColumn[] = [
+    {
+      key: 'full_name',
+      label: 'Member',
+      type: 'avatar',
+      avatarSubKey: 'ic_no',
+      sortable: true
+    },
+    {
+      key: 'fwd_member_no',
+      label: 'Member Number',
+      type: 'text',
+      sortable: true,
+      emptyText: '-'
+    },
+    {
+      key: 'member_type',
+      label: 'Type',
+      type: 'text',
+      sortable: true,
+      emptyText: '-'
+    },
+    {
+      key: 'enrollment_date',
+      label: 'Enrollment Date',
+      type: 'date',
+      dateFormat: 'dd/MM/yyyy',
+      sortable: true
+    },
+    {
+      key: 'member_status',
+      label: 'Status',
+      type: 'badge',
+      sortable: true,
+      badgeClickable: true,
+      badgeMap: {
+        'ACTIVE': { label: 'Active', color: 'green' },
+        'INACTIVE': { label: 'Inactive', color: 'gray' },
+        'SUSPENDED': { label: 'Suspended', color: 'yellow' },
+        'TERMINATED': { label: 'Terminated', color: 'red' }
+      },
+      emptyText: '-'
+    }
+  ];
+
+  tableFilters: DataTableFilter[] = [
+    {
+      key: 'search',
+      label: 'Search',
+      type: 'search',
+      placeholder: 'Name, IC number, or member number'
+    },
+    {
+      key: 'member_type',
+      label: 'Member Type',
+      type: 'select',
+      placeholder: 'All Types',
+      options: [
+        { label: 'All Types', value: '' },
+        { label: 'Principal', value: 'Principal' },
+        { label: 'Dependent', value: 'Dependent' },
+        { label: 'Other', value: 'Other' }
+      ]
+    },
+    {
+      key: 'member_status',
+      label: 'Status',
+      type: 'select',
+      placeholder: 'All Statuses',
+      options: [
+        { label: 'All', value: '' },
+        { label: 'Active', value: 'ACTIVE' },
+        { label: 'Inactive', value: 'INACTIVE' },
+        { label: 'Suspended', value: 'SUSPENDED' },
+        { label: 'Terminated', value: 'TERMINATED' }
+      ]
+    }
+  ];
+
+  rowActions: DataTableAction[] = [
+    {
+      id: 'view',
+      title: 'View Member',
+      iconPath: 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
+      color: 'blue',
+      testId: 'view-member'
+    },
+    {
+      id: 'edit',
+      title: 'Edit Member',
+      iconPath: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+      color: 'blue',
+      permission: this.PERMISSIONS.UPDATE,
+      testId: 'edit-member'
+    },
+    {
+      id: 'delete',
+      title: 'Delete Member',
+      iconPath: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+      color: 'red',
+      permission: this.PERMISSIONS.DELETE,
+      testId: 'delete-member'
+    }
+  ];
+
+  // Component State
   members: MemberListItem[] = [];
   loading = false;
+  memberTypeLookups: LookupItem[] = [];
   stats = {
     total: 0,
     active: 0,
-    deleted: 0
+    suspended: 0,
+    terminated: 0
   };
 
   filters: MemberFilters = {
@@ -392,12 +162,21 @@ export class MemberListComponent implements OnInit, OnDestroy {
     limit: 25
   };
 
-  pagination = {
+  pagination: DataTablePagination = {
     page: 1,
     limit: 25,
     total: 0,
     totalPages: 0
   };
+
+  // Confirmation Dialog State
+  showDeleteConfirm = false;
+  memberToDelete: MemberListItem | null = null;
+
+  // Status Change Dialog State
+  showStatusChangeDialog = false;
+  memberToChangeStatus: MemberListItem | null = null;
+  newMemberStatus: string = '';
 
   private destroy$ = new Subject<void>();
   private searchSubject$ = new Subject<string>();
@@ -406,7 +185,8 @@ export class MemberListComponent implements OnInit, OnDestroy {
     private memberService: MemberService,
     private router: Router,
     private logger: LoggerService,
-    private toast: ToastService
+    private toast: ToastService,
+    private lookupService: LookupService
   ) {}
 
   ngOnInit(): void {
@@ -423,12 +203,39 @@ export class MemberListComponent implements OnInit, OnDestroy {
         this.loadMembers();
       });
 
+    // Load lookups for filter dropdowns
+    this.loadMemberTypeLookups();
     this.loadMembers();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Load member type lookups from database
+   */
+  private loadMemberTypeLookups(): void {
+    this.lookupService.getLookupByCategory('MEMBER_TYPE')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (lookups) => {
+          this.memberTypeLookups = lookups;
+          // Update filter options dynamically
+          const memberTypeFilter = this.tableFilters.find(f => f.key === 'member_type');
+          if (memberTypeFilter && memberTypeFilter.options) {
+            memberTypeFilter.options = [
+              { label: 'All Types', value: '' },
+              ...lookups.map(l => ({ label: l.lookup_value, value: l.lookup_code }))
+            ];
+          }
+        },
+        error: (error) => {
+          this.logger.error('Error loading member type lookups:', error);
+          // Keep hardcoded fallback options if lookup fails
+        }
+      });
   }
 
   /**
@@ -442,6 +249,7 @@ export class MemberListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
+          // No need to compute is_active - use member_status from backend
           this.members = result.members;
           this.pagination = {
             page: result.page,
@@ -453,8 +261,9 @@ export class MemberListComponent implements OnInit, OnDestroy {
           // Calculate stats from response
           this.stats = {
             total: result.stats?.total_members || result.total,
-            active: result.stats?.active_members || this.members.filter(m => !m.is_deleted).length,
-            deleted: result.stats?.deleted_members || this.members.filter(m => m.is_deleted).length
+            active: this.members.filter(m => m.member_status === 'ACTIVE').length,
+            suspended: this.members.filter(m => m.member_status === 'SUSPENDED').length,
+            terminated: this.members.filter(m => m.member_status === 'TERMINATED').length
           };
 
           this.loading = false;
@@ -469,18 +278,97 @@ export class MemberListComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle search input change
+   * Handle table filter change
    */
-  onSearchChange(searchTerm: string): void {
-    this.searchSubject$.next(searchTerm);
+  onTableFilterChange(filters: Record<string, any>): void {
+    this.logger.info('Table filter changed:', filters);
+    
+    // Map filter values to API filter format
+    this.filters = {
+      search: filters['search'] || '',
+      member_type: filters['member_type'] || '',
+      is_deleted: filters['is_deleted'] === null ? undefined : filters['is_deleted'],
+      member_status: undefined,
+      page: 1,
+      limit: filters['limit'] || 25
+    };
+    
+    this.loadMembers();
   }
 
   /**
-   * Handle filter change
+   * Handle table row action
    */
-  onFilterChange(): void {
-    this.filters.page = 1;
+  onRowAction(event: { action: string; row: any }): void {
+    const member = event.row as MemberListItem;
+    const actionId = event.action; // DataTable emits the 'id' as 'action'
+    
+    switch (actionId) {
+      case 'view':
+        this.viewMember(member.member_id);
+        break;
+      case 'edit':
+        this.editMember(member.member_id);
+        break;
+      case 'delete':
+        this.memberToDelete = member;
+        this.showDeleteConfirm = true;
+        break;
+    }
+  }
+
+  /**
+   * Handle page change
+   */
+  onPageChange(page: number): void {
+    this.filters.page = page;
     this.loadMembers();
+  }
+
+  /**
+   * Handle cell click (for status badge)
+   */
+  onCellClick(event: { row: any; column: any; value: any }): void {
+    if (event.column.key === 'member_status') {
+      this.memberToChangeStatus = event.row;
+      this.newMemberStatus = event.value || 'ACTIVE';
+      this.showStatusChangeDialog = true;
+    }
+  }
+
+  /**
+   * Change member status
+   */
+  changeMemberStatus(newStatus: string): void {
+    if (!this.memberToChangeStatus) return;
+
+    const memberId = this.memberToChangeStatus.member_id;
+    
+    this.memberService.updateMember(memberId, { member_status: newStatus })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success(`Member status updated to ${newStatus}`);
+          this.showStatusChangeDialog = false;
+          this.memberToChangeStatus = null;
+          this.loadMembers();
+        },
+        error: (error: any) => {
+          this.logger.error('Error updating member status:', error);
+          this.toast.error('Failed to update member status');
+          this.showStatusChangeDialog = false;
+          this.memberToChangeStatus = null;
+        }
+      });
+  }
+
+  /**
+   * Cancel status change
+   */
+  cancelStatusChange(): void {
+    this.showStatusChangeDialog = false;
+    this.memberToChangeStatus = null;
+    this.newMemberStatus = '';
   }
 
   /**
@@ -505,51 +393,37 @@ export class MemberListComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Delete member (soft delete)
+   * Confirm delete member
    */
-  deleteMember(member: MemberListItem): void {
-    if (!confirm(`Are you sure you want to delete ${member.full_name}?`)) {
-      return;
-    }
+  confirmDelete(): void {
+    if (!this.memberToDelete) return;
 
     this.loading = true;
-    this.memberService.deleteMember(member.member_id)
+    this.showDeleteConfirm = false;
+
+    this.memberService.deleteMember(this.memberToDelete.member_id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.toast.success('Member deleted successfully');
+          this.toast.success(`Member "${this.memberToDelete?.full_name}" deleted successfully`);
+          this.memberToDelete = null;
           this.loadMembers();
         },
         error: (error) => {
           this.loading = false;
           this.logger.error('Error deleting member:', error);
           this.toast.error('Failed to delete member');
+          this.memberToDelete = null;
         }
       });
   }
 
   /**
-   * Restore deleted member
+   * Cancel delete member
    */
-  restoreMember(member: MemberListItem): void {
-    if (!confirm(`Are you sure you want to restore ${member.full_name}?`)) {
-      return;
-    }
-
-    this.loading = true;
-    this.memberService.restoreMember(member.member_id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.toast.success('Member restored successfully');
-          this.loadMembers();
-        },
-        error: (error) => {
-          this.loading = false;
-          this.logger.error('Error restoring member:', error);
-          this.toast.error('Failed to restore member');
-        }
-      });
+  cancelDelete(): void {
+    this.showDeleteConfirm = false;
+    this.memberToDelete = null;
   }
 
   /**
@@ -565,57 +439,28 @@ export class MemberListComponent implements OnInit, OnDestroy {
     }
     // For multiple words, return first character of each word (up to 2)
     return words
+      .slice(0, 2)
       .map(word => word[0])
       .join('')
-      .toUpperCase()
-      .substring(0, 2);
+      .toUpperCase();
   }
 
   /**
-   * Pagination methods
+   * Get status badge configuration for member
    */
-  previousPage(): void {
-    if (this.pagination.page > 1) {
-      this.filters.page = this.pagination.page - 1;
-      this.loadMembers();
-    }
+  getStatusBadge(member: MemberListItem): { text: string; class: string } {
+    return member.is_deleted
+      ? { text: 'Deleted', class: 'bg-red-100 text-red-800' }
+      : { text: 'Active', class: 'bg-green-100 text-green-800' };
   }
 
-  nextPage(): void {
-    if (this.pagination.page < this.pagination.totalPages) {
-      this.filters.page = this.pagination.page + 1;
-      this.loadMembers();
-    }
-  }
-
-  goToPage(page: number): void {
-    this.filters.page = page;
-    this.loadMembers();
-  }
-
-  getPageNumbers(): number[] {
-    const maxPages = 5;
-    const pages: number[] = [];
-    let startPage = Math.max(1, this.pagination.page - Math.floor(maxPages / 2));
-    let endPage = Math.min(this.pagination.totalPages, startPage + maxPages - 1);
-
-    if (endPage - startPage < maxPages - 1) {
-      startPage = Math.max(1, endPage - maxPages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  }
-
-  getStartIndex(): number {
-    return (this.pagination.page - 1) * this.pagination.limit + 1;
-  }
-
-  getEndIndex(): number {
-    return Math.min(this.pagination.page * this.pagination.limit, this.pagination.total);
+  /**
+   * Format date to display format
+   */
+  formatDate(date: string | Date): string {
+    if (!date) return '-';
+    const d = new Date(date);
+    return d.toLocaleDateString('en-GB'); // Returns dd/MM/yyyy format
   }
 }
 

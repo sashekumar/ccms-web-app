@@ -1,0 +1,232 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Policy Holders</h1>
+      <p class="mt-1 text-sm text-gray-600">Manage member information and policies</p>
+    </div>
+    <app-button
+      *hasPermission="PERMISSIONS.CREATE"
+      variant="primary"
+      iconLeft="fas fa-plus"
+      (click)="createMember()"
+    >
+      Create Member
+    </app-button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <!-- Total Members -->
+    <div class="rounded-lg bg-white p-6 shadow-md transition hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-600">Total Members</p>
+          <p class="mt-2 text-3xl font-bold text-gray-900">{{ stats.total }}</p>
+        </div>
+        <div class="rounded-full bg-gradient-to-br from-[#1e3c72] to-[#2a5298] p-3">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Members -->
+    <div class="rounded-lg bg-white p-6 shadow-md transition hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-600">Active Members</p>
+          <p class="mt-2 text-3xl font-bold text-green-600">{{ stats.active }}</p>
+        </div>
+        <div class="rounded-full bg-gradient-to-br from-green-500 to-green-600 p-3">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suspended Members -->
+    <div class="rounded-lg bg-white p-6 shadow-md transition hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-600">Suspended Members</p>
+          <p class="mt-2 text-3xl font-bold text-yellow-600">{{ stats.suspended }}</p>
+        </div>
+        <div class="rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 p-3">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terminated Members -->
+    <div class="rounded-lg bg-white p-6 shadow-md transition hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-600">Terminated Members</p>
+          <p class="mt-2 text-3xl font-bold text-red-600">{{ stats.terminated }}</p>
+        </div>
+        <div class="rounded-full bg-gradient-to-br from-red-500 to-red-600 p-3">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <app-data-table
+    [columns]="columns"
+    [rows]="members"
+    [loading]="loading"
+    [pagination]="pagination"
+    [filters]="tableFilters"
+    [rowActions]="rowActions"
+    (filterChange)="onTableFilterChange($event)"
+    (rowAction)="onRowAction($event)"
+    (cellClick)="onCellClick($event)"
+  ></app-data-table>
+
+  <!-- Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showDeleteConfirm"
+    [isOpen]="showDeleteConfirm"
+    title="Confirm Member Deletion"
+    [message]="'Are you sure you want to delete ' + (memberToDelete?.full_name || 'this member') + '? This action marks the member as deleted.'"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Status Change Dialog -->
+  <div
+    *ngIf="showStatusChangeDialog"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    aria-labelledby="status-change-modal"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+      <!-- Background overlay -->
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        (click)="cancelStatusChange()"
+      ></div>
+
+      <!-- Center modal -->
+      <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <!-- Icon -->
+            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </div>
+            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
+              <h3 class="text-lg font-semibold leading-6 text-gray-900" id="status-change-modal">
+                Change Member Status
+              </h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500">
+                  Update status for <span class="font-medium text-gray-900">{{ memberToChangeStatus?.full_name }}</span>
+                </p>
+              </div>
+
+              <!-- Status Options -->
+              <div class="mt-4 space-y-2">
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-green-500]="newMemberStatus === 'ACTIVE'"
+                  [class.bg-green-50]="newMemberStatus === 'ACTIVE'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="ACTIVE"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Active</span>
+                    <span class="text-sm text-gray-600">Member is active</span>
+                  </span>
+                </label>
+
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-gray-500]="newMemberStatus === 'INACTIVE'"
+                  [class.bg-gray-50]="newMemberStatus === 'INACTIVE'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="INACTIVE"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800">Inactive</span>
+                    <span class="text-sm text-gray-600">Member is temporarily inactive</span>
+                  </span>
+                </label>
+
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-yellow-500]="newMemberStatus === 'SUSPENDED'"
+                  [class.bg-yellow-50]="newMemberStatus === 'SUSPENDED'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="SUSPENDED"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">Suspended</span>
+                    <span class="text-sm text-gray-600">Member account is suspended</span>
+                  </span>
+                </label>
+
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-red-500]="newMemberStatus === 'TERMINATED'"
+                  [class.bg-red-50]="newMemberStatus === 'TERMINATED'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="TERMINATED"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">Terminated</span>
+                    <span class="text-sm text-gray-600">Member account is terminated</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-3">
+          <button
+            type="button"
+            (click)="changeMemberStatus(newMemberStatus)"
+            class="inline-flex w-full justify-center rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 sm:w-auto"
+          >
+            Update Status
+          </button>
+          <button
+            type="button"
+            (click)="cancelStatusChange()"
+            class="mt-3 inline-flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

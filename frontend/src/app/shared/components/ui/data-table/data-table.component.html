@@ -144,7 +144,8 @@
               <ng-container *ngIf="col.type === 'badge'">
                 <span
                   *ngIf="getBadge(col, row) as badge"
-                  [class]="'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ' + getBadgeClasses(badge.color)"
+                  [class]="'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ' + getBadgeClasses(badge.color) + (col.badgeClickable ? ' cursor-pointer hover:opacity-80 transition-opacity' : '')"
+                  (click)="col.badgeClickable && onCellClick(row, col)"
                 >
                   {{ badge.label }}
                 </span>

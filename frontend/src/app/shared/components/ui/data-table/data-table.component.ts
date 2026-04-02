@@ -75,6 +75,8 @@ export interface DataTableColumn {
   // ── badge options ──
   /** Maps raw cell value (stringified) → display label + colour */
   badgeMap?: Record<string, BadgeConfig>;
+  /** Makes the badge clickable (emits cellClick event) */
+  badgeClickable?: boolean;
   // ── tags options ──
   /** Property of each tag object to use as its display label (default: 'label') */
   tagLabelKey?: string;
@@ -226,6 +228,8 @@ export class DataTableComponent implements OnInit, OnDestroy, OnChanges {
   @Output() rowAction = new EventEmitter<DataTableRowActionEvent>();
   /** Emits { row, column, newValue } when a toggle column is clicked */
   @Output() cellToggle = new EventEmitter<{ row: any; column: DataTableColumn; newValue: boolean }>();
+
+  @Output() cellClick = new EventEmitter<{ row: any; column: DataTableColumn; value: any }>();
 
   // ── Internal state ───────────────────────────────────────────────────────
 
@@ -423,6 +427,14 @@ export class DataTableComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   // ── Private ───────────────────────────────────────────────────────────────
+
+  /**
+   * Handle cell click (for clickable badges, etc.)
+   */
+  onCellClick(row: any, col: DataTableColumn): void {
+    const value = this.getCellValue(row, col.key);
+    this.cellClick.emit({ row, column: col, value });
+  }
 
   private emit(page: number): void {
     const state: DataTableFilterState = {

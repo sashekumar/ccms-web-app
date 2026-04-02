@@ -9,26 +9,22 @@
       </p>
     </div>
     <div class="flex gap-3">
-      <button
+      <app-button
+        variant="secondary"
+        iconLeft="fas fa-arrow-left"
         (click)="goBack()"
-        class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
         Back to List
-      </button>
-      <button
+      </app-button>
+      <app-button
         *hasPermission="PERMISSIONS.UPDATE"
+        variant="primary"
+        iconLeft="fas fa-edit"
         (click)="editMember()"
-        [disabled]="member?.is_deleted"
-        class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+        [disabled]="!!member?.is_deleted"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-        </svg>
         Edit
-      </button>
+      </app-button>
     </div>
   </div>
 
@@ -84,11 +80,23 @@
           <div>
             <label class="block text-sm font-medium text-gray-500">Member Status</label>
             <div class="mt-1">
-              <span *ngIf="!member.is_deleted" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                {{ member.member_status || 'Active' }}
+              <span 
+                *ngIf="!member.is_deleted" 
+                (click)="openStatusChangeDialog()"
+                class="cursor-pointer hover:opacity-80 transition inline-block"
+                title="Click to change status"
+              >
+                <app-status-badge 
+                  [status]="member.member_status || 'ACTIVE'" 
+                  size="sm"
+                ></app-status-badge>
               </span>
-              <span *ngIf="member.is_deleted" class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                Deleted
+              <span *ngIf="member.is_deleted">
+                <app-status-badge 
+                  status="CANCELLED" 
+                  label="Deleted"
+                  size="sm"
+                ></app-status-badge>
               </span>
             </div>
           </div>
@@ -185,16 +193,14 @@
       <div *ngIf="activeTab === 'addresses'">
         <div class="mb-4 flex justify-between items-center">
           <h3 class="text-lg font-semibold text-gray-900">Member Addresses</h3>
-          <button
+          <app-button
             *hasPermission="PERMISSIONS.MANAGE_ADDRESSES"
+            variant="primary"
+            iconLeft="fas fa-plus"
             (click)="showAddressFormDialog()"
-            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
             Add Address
-          </button>
+          </app-button>
         </div>
 
         <!-- Loading -->
@@ -217,20 +223,25 @@
         <div *ngIf="!loadingAddresses && addresses.length > 0 && !showAddressForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div *ngFor="let address of addresses" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex flex-col h-full">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  [ngClass]="{
-                    'bg-blue-100 text-blue-800': address.address_type === 'PRIMARY',
-                    'bg-green-100 text-green-800': address.address_type === 'BILLING',
-                    'bg-purple-100 text-purple-800': address.address_type === 'SHIPPING',
-                    'bg-gray-100 text-gray-800': !address.address_type || (address.address_type !== 'PRIMARY' && address.address_type !== 'BILLING' && address.address_type !== 'SHIPPING')
-                  }">
-                  {{ address.address_type || 'N/A' }}
-                </span>
-                <span *ngIf="address.is_primary" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                  Primary
-                </span>
+              <!-- Header: Address Type Badge and Primary Toggle -->
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <app-status-badge 
+                  [status]="address.address_type" 
+                  size="xs"
+                ></app-status-badge>
+                
+                <div class="flex items-center gap-2">
+                  <app-toggle
+                    [isActive]="!!address.is_primary"
+                    [activeLabel]="'Primary'"
+                    [inactiveLabel]="'Non-Primary'"
+                    [disabled]="false"
+                    (toggle)="onToggleAddressPrimary(address)"
+                  ></app-toggle>
+                </div>
               </div>
+              
+              <!-- Address Details -->
               <div class="flex-1 text-sm text-gray-900 mb-3">
                 <p *ngIf="address.street_line1">{{ address.street_line1 }}</p>
                 <p *ngIf="address.street_line2">{{ address.street_line2 }}</p>
@@ -241,37 +252,27 @@
                   {{ address.state }}{{ address.state && address.country ? ', ' : '' }}{{ address.country }}
                 </p>
               </div>
-              <div class="flex gap-2 pt-2 border-t border-gray-100">
-                <ng-container *hasPermission="PERMISSIONS.MANAGE_ADDRESSES">
-                  <button
-                    *ngIf="!address.is_primary"
-                    (click)="setPrimaryAddress(address)"
-                    class="text-xs text-blue-600 hover:text-blue-900"
-                    title="Set as Primary"
-                  >
-                    Set Primary
-                  </button>
-                </ng-container>
-                <div class="ml-auto flex gap-2" *hasPermission="PERMISSIONS.MANAGE_ADDRESSES">
-                  <button
-                    (click)="showAddressFormDialog(address)"
-                    class="text-indigo-600 hover:text-indigo-900"
-                    title="Edit"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                  </button>
-                  <button
-                    (click)="deleteAddress(address)"
-                    class="text-red-600 hover:text-red-900"
-                    title="Delete"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                  </button>
-                </div>
+              
+              <!-- Action Buttons -->
+              <div class="flex gap-2 justify-end" *hasPermission="PERMISSIONS.MANAGE_ADDRESSES">
+                <button
+                  (click)="showAddressFormDialog(address)"
+                  class="text-indigo-600 hover:text-indigo-900"
+                  title="Edit"
+                >
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button
+                  (click)="deleteAddress(address)"
+                  class="text-red-600 hover:text-red-900"
+                  title="Delete"
+                >
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -283,122 +284,96 @@
           <form #addressForm="ngForm" (ngSubmit)="saveAddress(addressForm)">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <!-- Address Type -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Address Type <span class="text-red-500">*</span></label>
-                <select
-                  name="address_type"
-                  [(ngModel)]="addressFormData.address_type"
-                  required
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                >
-                  <option value="">Select Address Type</option>
-                  <option *ngFor="let type of addressTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
-                </select>
-              </div>
+              <app-dropdown
+                label="Address Type"
+                name="address_type"
+                [(ngModel)]="addressFormData.address_type"
+                [options]="(addressTypeOptions$ | async) || []"
+                placeholder="Select Address Type"
+                [required]="true"
+              ></app-dropdown>
 
               <!-- Is Primary -->
-              <div class="flex items-end">
-                <label class="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="is_primary"
-                    [(ngModel)]="addressFormData.is_primary"
-                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Set as primary address</span>
-                </label>
+              <div class="flex items-end pb-2">
+                <app-checkbox
+                  label="Set as primary address"
+                  name="is_primary"
+                  [(ngModel)]="addressFormData.is_primary"
+                ></app-checkbox>
               </div>
 
               <!-- Street Line 1 -->
               <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Street Line 1 <span class="text-red-500">*</span></label>
-                <input
-                  type="text"
+                <app-text-input
+                  label="Street Line 1"
                   name="street_line1"
                   [(ngModel)]="addressFormData.street_line1"
-                  required
                   placeholder="e.g., 123 Jalan ABC"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
+                  [required]="true"
+                ></app-text-input>
               </div>
 
               <!-- Street Line 2 -->
               <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Street Line 2</label>
-                <input
-                  type="text"
+                <app-text-input
+                  label="Street Line 2"
                   name="street_line2"
                   [(ngModel)]="addressFormData.street_line2"
                   placeholder="e.g., Taman XYZ"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
+                ></app-text-input>
               </div>
 
               <!-- Postal Code -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Postal Code</label>
-                <input
-                  type="text"
-                  name="postal_code"
-                  [(ngModel)]="addressFormData.postal_code"
-                  placeholder="e.g., 50000"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
-              </div>
+              <app-text-input
+                label="Postal Code"
+                name="postal_code"
+                [(ngModel)]="addressFormData.postal_code"
+                placeholder="e.g., 50000"
+              ></app-text-input>
 
               <!-- City -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">City</label>
-                <input
-                  type="text"
-                  name="city"
-                  [(ngModel)]="addressFormData.city"
-                  placeholder="e.g., Kuala Lumpur"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
-              </div>
+              <app-text-input
+                label="City"
+                name="city"
+                [(ngModel)]="addressFormData.city"
+                placeholder="e.g., Kuala Lumpur"
+              ></app-text-input>
 
               <!-- State -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">State</label>
-                <input
-                  type="text"
-                  name="state"
-                  [(ngModel)]="addressFormData.state"
-                  placeholder="e.g., Wilayah Persekutuan"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
-              </div>
+              <app-text-input
+                label="State"
+                name="state"
+                [(ngModel)]="addressFormData.state"
+                placeholder="e.g., Wilayah Persekutuan"
+              ></app-text-input>
 
               <!-- Country -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Country</label>
-                <input
-                  type="text"
-                  name="country"
-                  [(ngModel)]="addressFormData.country"
-                  placeholder="e.g., Malaysia"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
-              </div>
+              <app-text-input
+                label="Country"
+                name="country"
+                [(ngModel)]="addressFormData.country"
+                placeholder="e.g., Malaysia"
+              ></app-text-input>
             </div>
 
             <!-- Form Actions -->
             <div class="mt-6 flex gap-3">
-              <button
+              <app-button
                 type="button"
+                variant="secondary"
                 (click)="cancelAddressForm()"
-                class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                class="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </app-button>
+              <app-button
                 type="submit"
-                [disabled]="addressForm.invalid"
-                class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                variant="primary"
+                [disabled]="!!addressForm.invalid"
+                class="flex-1"
               >
                 {{ editingAddress ? 'Update' : 'Save' }} Address
-              </button>
+              </app-button>
             </div>
           </form>
         </div>
@@ -410,16 +385,14 @@
       <div *ngIf="activeTab === 'contacts'">
         <div class="mb-4 flex justify-between items-center">
           <h3 class="text-lg font-semibold text-gray-900">Member Contacts</h3>
-          <button
+          <app-button
             *hasPermission="PERMISSIONS.MANAGE_CONTACTS"
+            variant="primary"
+            iconLeft="fas fa-plus"
             (click)="showContactFormDialog()"
-            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
             Add Contact
-          </button>
+          </app-button>
         </div>
 
         <!-- Loading -->
@@ -441,55 +414,49 @@
         <div *ngIf="!loadingContacts && contacts.length > 0 && !showContactForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div *ngFor="let contact of contacts" class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex flex-col h-full">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  [ngClass]="{
-                    'bg-blue-100 text-blue-800': contact.contact_type === 'EMAIL' || contact.contact_type === 'Email',
-                    'bg-green-100 text-green-800': contact.contact_type === 'MOBILE' || contact.contact_type === 'Mobile',
-                    'bg-purple-100 text-purple-800': contact.contact_type === 'PHONE' || contact.contact_type === 'Phone',
-                    'bg-orange-100 text-orange-800': contact.contact_type === 'FAX' || contact.contact_type === 'Fax',
-                    'bg-gray-100 text-gray-800': !contact.contact_type || (!['EMAIL', 'MOBILE', 'PHONE', 'FAX', 'Email', 'Mobile', 'Phone', 'Fax'].includes(contact.contact_type))
-                  }">
-                  {{ contact.contact_type || 'N/A' }}
-                </span>
-                <span *ngIf="contact.is_primary" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                  Primary
-                </span>
+              <!-- Header: Contact Type Badge and Primary Toggle -->
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <app-status-badge 
+                  [status]="contact.contact_type" 
+                  size="xs"
+                ></app-status-badge>
+                
+                <div class="flex items-center gap-2">
+                  <app-toggle
+                    [isActive]="!!contact.is_primary"
+                    [activeLabel]="'Primary'"
+                    [inactiveLabel]="'Non-Primary'"
+                    [disabled]="false"
+                    (toggle)="onToggleContactPrimary(contact)"
+                  ></app-toggle>
+                </div>
               </div>
+              
+              <!-- Contact Value -->
               <div class="flex-1 mb-3">
                 <p class="text-sm font-medium text-gray-900 break-all">{{ contact.contact_value }}</p>
               </div>
-              <div class="flex gap-2 pt-2 border-t border-gray-100">
-                <ng-container *hasPermission="PERMISSIONS.MANAGE_CONTACTS">
-                  <button
-                    *ngIf="!contact.is_primary"
-                    (click)="setPrimaryContact(contact)"
-                    class="text-xs text-blue-600 hover:text-blue-900"
-                    title="Set as Primary"
-                  >
-                    Set Primary
-                  </button>
-                </ng-container>
-                <div class="ml-auto flex gap-2" *hasPermission="PERMISSIONS.MANAGE_CONTACTS">
-                  <button
-                    (click)="showContactFormDialog(contact)"
-                    class="text-indigo-600 hover:text-indigo-900"
-                    title="Edit"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                  </button>
-                  <button
-                    (click)="deleteContact(contact)"
-                    class="text-red-600 hover:text-red-900"
-                    title="Delete"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                  </button>
-                </div>
+              
+              <!-- Action Buttons -->
+              <div class="flex gap-2 justify-end" *hasPermission="PERMISSIONS.MANAGE_CONTACTS">
+                <button
+                  (click)="showContactFormDialog(contact)"
+                  class="text-indigo-600 hover:text-indigo-900"
+                  title="Edit"
+                >
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button
+                  (click)="deleteContact(contact)"
+                  class="text-red-600 hover:text-red-900"
+                  title="Delete"
+                >
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -501,62 +468,54 @@
           <form #contactForm="ngForm" (ngSubmit)="saveContact(contactForm)">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <!-- Contact Type -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Contact Type <span class="text-red-500">*</span></label>
-                <select
-                  name="contact_type"
-                  [(ngModel)]="contactFormData.contact_type"
-                  required
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                >
-                  <option value="">Select Contact Type</option>
-                  <option *ngFor="let type of contactTypes$ | async" [value]="type.lookup_code">{{ type.lookup_value }}</option>
-                </select>
-              </div>
+              <app-dropdown
+                label="Contact Type"
+                name="contact_type"
+                [(ngModel)]="contactFormData.contact_type"
+                [options]="(contactTypeOptions$ | async) || []"
+                placeholder="Select Contact Type"
+                [required]="true"
+              ></app-dropdown>
 
               <!-- Contact Value -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Contact Value <span class="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  name="contact_value"
-                  [(ngModel)]="contactFormData.contact_value"
-                  required
-                  placeholder="e.g., email@example.com or 012-3456789"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
-              </div>
+              <app-text-input
+                label="Contact Value"
+                name="contact_value"
+                [(ngModel)]="contactFormData.contact_value"
+                (ngModelChange)="onContactValueChange()"
+                placeholder="e.g., email@example.com or 012-3456789"
+                [required]="true"
+                [error]="contactValueError"
+              ></app-text-input>
 
               <!-- Is Primary -->
-              <div class="flex items-end">
-                <label class="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="is_primary"
-                    [(ngModel)]="contactFormData.is_primary"
-                    class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Set as primary contact</span>
-                </label>
+              <div class="flex items-end pb-2">
+                <app-checkbox
+                  label="Set as primary contact"
+                  name="is_primary"
+                  [(ngModel)]="contactFormData.is_primary"
+                ></app-checkbox>
               </div>
             </div>
 
             <!-- Form Actions -->
             <div class="mt-6 flex gap-3">
-              <button
+              <app-button
                 type="button"
+                variant="secondary"
                 (click)="cancelContactForm()"
-                class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                class="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </app-button>
+              <app-button
                 type="submit"
-                [disabled]="contactForm.invalid"
-                class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                variant="primary"
+                [disabled]="!!contactForm.invalid"
+                class="flex-1"
               >
                 {{ editingContact ? 'Update' : 'Save' }} Contact
-              </button>
+              </app-button>
             </div>
           </form>
         </div>
@@ -573,16 +532,14 @@
       <div *ngIf="activeTab === 'policies'">
         <div class="mb-4 flex justify-between items-center">
           <h3 class="text-lg font-semibold text-gray-900">Member Policies</h3>
-          <button
+          <app-button
             *hasPermission="PERMISSIONS.MANAGE_POLICIES"
+            variant="primary"
+            iconLeft="fas fa-plus"
             (click)="showPolicyFormDialog()"
-            class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
             Add Policy
-          </button>
+          </app-button>
         </div>
 
         <!-- Loading -->
@@ -606,84 +563,68 @@
           <form #policyForm="ngForm" (ngSubmit)="savePolicy(policyForm)">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <!-- Policy Number -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Policy Number</label>
-                <input
-                  type="text"
-                  name="policy_no"
-                  [(ngModel)]="policyFormData.policy_no"
-                  placeholder="Auto-generated if left empty"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 bg-gray-50"
-                />
-                <p class="mt-1 text-xs text-gray-500">Leave empty to auto-generate</p>
-              </div>
+              <app-text-input
+                label="Policy Number"
+                name="policy_no"
+                [(ngModel)]="policyFormData.policy_no"
+                placeholder="Auto-generated if left empty"
+                hint="Leave empty to auto-generate"
+              ></app-text-input>
 
               <!-- Product -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Product <span class="text-red-500">*</span></label>
-                <select
-                  name="product_id"
-                  [(ngModel)]="policyFormData.product_id"
-                  required
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                >
-                  <option value="">Select Product</option>
-                  <option *ngFor="let product of products" [value]="product.product_id">{{ product.plan_name || product.plan_code }}</option>
-                </select>
-              </div>
+              <app-dropdown
+                label="Product"
+                name="product_id"
+                [(ngModel)]="policyFormData.product_id"
+                [options]="productOptions"
+                placeholder="Select Product"
+                [required]="true"
+              ></app-dropdown>
 
               <!-- Effective Date -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Effective Date</label>
-                <input
-                  type="date"
-                  name="effective_date"
-                  [(ngModel)]="policyFormData.effective_date"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
-              </div>
+              <app-date-picker
+                label="Effective Date"
+                name="effective_date"
+                [(ngModel)]="policyFormData.effective_date"
+                [maxDate]="todayDate"
+              ></app-date-picker>
 
               <!-- Expiry Date -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
-                <input
-                  type="date"
-                  name="expiry_date"
-                  [(ngModel)]="policyFormData.expiry_date"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                />
-              </div>
+              <app-date-picker
+                label="Expiry Date"
+                name="expiry_date"
+                [(ngModel)]="policyFormData.expiry_date"
+                [maxDate]="todayDate"
+              ></app-date-picker>
 
               <!-- Status -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Status</label>
-                <select
-                  name="status"
-                  [(ngModel)]="policyFormData.status"
-                  class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                >
-                  <option value="">Select Policy Status</option>
-                  <option *ngFor="let status of policyStatuses$ | async" [value]="status.lookup_code">{{ status.lookup_value }}</option>
-                </select>
-              </div>
+              <app-dropdown
+                label="Status"
+                name="status"
+                [(ngModel)]="policyFormData.status"
+                [options]="(policyStatusOptions$ | async) || []"
+                placeholder="Select Policy Status"
+              ></app-dropdown>
             </div>
 
             <!-- Form Actions -->
             <div class="mt-6 flex gap-3">
-              <button
+              <app-button
                 type="button"
+                variant="secondary"
                 (click)="cancelPolicyForm()"
-                class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                class="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </app-button>
+              <app-button
                 type="submit"
-                [disabled]="policyForm.invalid"
-                class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                variant="primary"
+                [disabled]="!!policyForm.invalid"
+                class="flex-1"
               >
                 {{ editingPolicy ? 'Update' : 'Save' }} Policy
-              </button>
+              </app-button>
             </div>
           </form>
         </div>
@@ -708,19 +649,23 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ policy.effective_date ? (policy.effective_date | date:'dd/MM/yyyy') : '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ policy.expiry_date ? (policy.expiry_date | date:'dd/MM/yyyy') : '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                  <span *ngIf="!policy.is_deleted && policy.status" class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                    [ngClass]="{
-                      'bg-green-100 text-green-800': policy.status === 'ACTIVE' || policy.status === 'Active',
-                      'bg-yellow-100 text-yellow-800': policy.status === 'PENDING' || policy.status === 'Pending',
-                      'bg-gray-100 text-gray-800': policy.status === 'EXPIRED' || policy.status === 'Expired'
-                    }">
-                    {{ policy.status }}
+                  <span 
+                    *ngIf="!policy.is_deleted"
+                    (click)="openPolicyStatusChangeDialog(policy)"
+                    class="cursor-pointer hover:opacity-80 transition inline-block"
+                    title="Click to change status"
+                  >
+                    <app-status-badge 
+                      [status]="policy.status || 'ACTIVE'" 
+                      size="sm"
+                    ></app-status-badge>
                   </span>
-                  <span *ngIf="policy.is_deleted" class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                    Deleted
-                  </span>
-                  <span *ngIf="!policy.status && !policy.is_deleted" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                    Active
+                  <span *ngIf="policy.is_deleted">
+                    <app-status-badge 
+                      status="CANCELLED" 
+                      label="Deleted"
+                      size="sm"
+                    ></app-status-badge>
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -755,16 +700,14 @@
         <div [class.hidden]="selectedDependentForPEC">
           <div class="mb-4 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-900">Dependents</h3>
-            <button
+            <app-button
               *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
+              variant="primary"
+              iconLeft="fas fa-plus"
               (click)="showDependentFormDialog()"
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
               Add Dependent
-            </button>
+            </app-button>
           </div>
 
           <!-- Loading -->
@@ -801,19 +744,21 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.relationship_name || '-' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ dependent.dob ? (dependent.dob | date:'dd/MM/yyyy') : '-' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <span *ngIf="dependent.is_active" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                      Active
-                    </span>
-                    <span *ngIf="!dependent.is_active" class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
-                      Inactive
-                    </span>
+                    <app-toggle
+                      [isActive]="!!dependent.is_active"
+                      [activeLabel]="'Active'"
+                      [inactiveLabel]="'Inactive'"
+                      [disabled]="false"
+                      (toggle)="onToggleDependentActive($event, dependent)"
+                    ></app-toggle>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       *hasPermission="PERMISSIONS.VIEW_PEC"
                       (click)="viewDependentPEC(dependent)"
                       class="text-blue-600 hover:text-blue-900 mr-3"
-                      title="View PEC Conditions">
+                      title="View PEC Conditions"
+                    >
                       <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
@@ -822,30 +767,18 @@
                       *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
                       (click)="showDependentFormDialog(dependent)"
                       class="text-indigo-600 hover:text-indigo-900 mr-3"
-                      title="Edit">
+                      title="Edit"
+                    >
                       <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                       </svg>
                     </button>
                     <button
                       *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
-                      (click)="toggleDependentActive(dependent)"
-                      [title]="dependent.is_active ? 'Deactivate' : 'Activate'"
-                      class="mr-3"
-                      [ngClass]="{
-                        'text-green-600 hover:text-green-900': !dependent.is_active,
-                        'text-orange-600 hover:text-orange-900': dependent.is_active
-                      }">
-                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" *ngIf="!dependent.is_active"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" *ngIf="dependent.is_active"/>
-                      </svg>
-                    </button>
-                    <button
-                      *hasPermission="PERMISSIONS.MANAGE_DEPENDENTS"
                       (click)="deleteDependent(dependent)"
                       class="text-red-600 hover:text-red-900"
-                      title="Delete">
+                      title="Delete"
+                    >
                       <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                       </svg>
@@ -862,85 +795,68 @@
             <form #dependentForm="ngForm" (ngSubmit)="saveDependent(dependentForm)">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <!-- Full Name -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="full_name"
-                    [(ngModel)]="dependentFormData.full_name"
-                    required
-                    placeholder="Enter dependent's full name"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
-                </div>
+                <app-text-input
+                  label="Full Name"
+                  name="full_name"
+                  [(ngModel)]="dependentFormData.full_name"
+                  placeholder="Enter dependent's full name"
+                  [required]="true"
+                ></app-text-input>
 
                 <!-- IC Number -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">IC Number <span class="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="ic_no"
-                    [(ngModel)]="dependentFormData.ic_no"
-                    required
-                    placeholder="e.g., 900101011234"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
-                </div>
+                <app-text-input
+                  label="IC Number"
+                  name="ic_no"
+                  [(ngModel)]="dependentFormData.ic_no"
+                  placeholder="e.g., 900101011234"
+                  [required]="true"
+                ></app-text-input>
 
                 <!-- Relationship -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Relationship</label>
-                  <select
-                    name="relationship_id"
-                    [(ngModel)]="dependentFormData.relationship_id"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  >
-                    <option [ngValue]="null">Select Relationship</option>
-                    <option *ngFor="let rel of relationships$ | async" [ngValue]="rel.lookup_id">{{ rel.lookup_value }}</option>
-                  </select>
-                </div>
+                <app-dropdown
+                  label="Relationship"
+                  name="relationship_id"
+                  [(ngModel)]="dependentFormData.relationship_id"
+                  [options]="(relationshipOptions$ | async) || []"
+                  placeholder="Select Relationship"
+                ></app-dropdown>
 
                 <!-- Date of Birth -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
-                  <input
-                    type="date"
-                    name="dob"
-                    [(ngModel)]="dependentFormData.dob"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
-                </div>
+                <app-date-picker
+                  label="Date of Birth"
+                  name="dob"
+                  [(ngModel)]="dependentFormData.dob"
+                  [maxDate]="todayDate"
+                ></app-date-picker>
 
                 <!-- Is Active -->
-                <div class="flex items-end">
-                  <label class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      [(ngModel)]="dependentFormData.is_active"
-                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Active</span>
-                  </label>
+                <div class="flex items-end pb-2">
+                  <app-checkbox
+                    label="Active"
+                    name="is_active"
+                    [(ngModel)]="dependentFormData.is_active"
+                  ></app-checkbox>
                 </div>
               </div>
 
               <!-- Form Actions -->
               <div class="mt-6 flex gap-3">
-                <button
+                <app-button
                   type="button"
+                  variant="secondary"
                   (click)="cancelDependentForm()"
-                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  class="flex-1"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
                   type="submit"
-                  [disabled]="dependentForm.invalid"
-                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  variant="primary"
+                  [disabled]="!!dependentForm.invalid"
+                  class="flex-1"
                 >
                   {{ editingDependent ? 'Update' : 'Save' }} Dependent
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
@@ -968,16 +884,14 @@
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-900">Pre-Existing Conditions</h3>
             <ng-container *ngIf="!showPECForm">
-              <button
+              <app-button
                 *hasPermission="PERMISSIONS.MANAGE_PEC"
+                variant="primary"
+                iconLeft="fas fa-plus"
                 (click)="showPECFormDialog()"
-                class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm text-white transition hover:opacity-90"
               >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
                 Add PEC
-              </button>
+              </app-button>
             </ng-container>
           </div>
 
@@ -1013,12 +927,12 @@
                   <td class="px-6 py-4 text-sm text-gray-900">{{ pec.condition_name || '-' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ pec.diagnosis_date ? (pec.diagnosis_date | date:'dd/MM/yyyy') : '-' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <span *ngIf="!pec.is_excluded" class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                      Included
-                    </span>
-                    <span *ngIf="pec.is_excluded" class="inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
-                      Excluded
-                    </span>
+                    <app-toggle
+                      [isActive]="!pec.is_excluded"
+                      activeLabel="Included"
+                      inactiveLabel="Excluded"
+                      (toggle)="togglePECExcluded(pec)"
+                    ></app-toggle>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
@@ -1028,20 +942,6 @@
                       title="Edit">
                       <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                      </svg>
-                    </button>
-                    <button
-                      *hasPermission="PERMISSIONS.MANAGE_PEC"
-                      (click)="togglePECExcluded(pec)"
-                      [title]="pec.is_excluded ? 'Include in coverage' : 'Exclude from coverage'"
-                      class="mr-3"
-                      [ngClass]="{
-                        'text-green-600 hover:text-green-900': pec.is_excluded,
-                        'text-orange-600 hover:text-orange-900': !pec.is_excluded
-                      }">
-                      <svg class="h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" *ngIf="pec.is_excluded"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" *ngIf="!pec.is_excluded"/>
                       </svg>
                     </button>
                     <button
@@ -1065,28 +965,21 @@
             <form #pecForm="ngForm" (ngSubmit)="savePEC(pecForm)">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <!-- Condition Code -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Condition Code <span class="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="condition_code"
-                    [(ngModel)]="pecFormData.condition_code"
-                    required
-                    placeholder="e.g., ICD10 code"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
-                </div>
+                <app-text-input
+                  label="Condition Code"
+                  name="condition_code"
+                  [(ngModel)]="pecFormData.condition_code"
+                  placeholder="e.g., ICD10 code"
+                  [required]="true"
+                ></app-text-input>
 
                 <!-- Diagnosis Date -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Diagnosis Date</label>
-                  <input
-                    type="date"
-                    name="diagnosis_date"
-                    [(ngModel)]="pecFormData.diagnosis_date"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-                  />
-                </div>
+                <app-date-picker
+                  label="Diagnosis Date"
+                  name="diagnosis_date"
+                  [(ngModel)]="pecFormData.diagnosis_date"
+                  [maxDate]="todayDate"
+                ></app-date-picker>
 
                 <!-- Condition Name -->
                 <div class="md:col-span-2">
@@ -1113,40 +1006,498 @@
                 </div>
 
                 <!-- Is Excluded -->
-                <div class="flex items-end">
-                  <label class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="is_excluded"
-                      [(ngModel)]="pecFormData.is_excluded"
-                      class="h-4 w-4 rounded border-gray-300 text-[#1e3c72]"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Exclude from coverage</span>
-                  </label>
+                <div class="flex items-end pb-2">
+                  <app-checkbox
+                    label="Exclude from coverage"
+                    name="is_excluded"
+                    [(ngModel)]="pecFormData.is_excluded"
+                  ></app-checkbox>
                 </div>
               </div>
 
               <!-- Form Actions -->
               <div class="mt-6 flex gap-3">
-                <button
+                <app-button
                   type="button"
+                  variant="secondary"
                   (click)="cancelPECForm()"
-                  class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  class="flex-1"
                 >
                   Cancel
-                </button>
-                <button
+                </app-button>
+                <app-button
                   type="submit"
-                  [disabled]="pecForm.invalid"
-                  class="flex-1 rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  variant="primary"
+                  [disabled]="!!pecForm.invalid"
+                  class="flex-1"
                 >
                   {{ editingPEC ? 'Update' : 'Save' }} Condition
-                </button>
+                </app-button>
               </div>
             </form>
           </div>
         </div>
       </div>
     </div>
+
+  <!-- Status Change Dialog -->
+  <div
+    *ngIf="showStatusChangeDialog"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    aria-labelledby="status-change-modal"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+      <!-- Background overlay -->
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        (click)="cancelStatusChange()"
+      ></div>
+
+      <!-- Center modal -->
+      <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <!-- Icon -->
+            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </div>
+            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
+              <h3 class="text-lg font-semibold leading-6 text-gray-900" id="status-change-modal">
+                Change Member Status
+              </h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500">
+                  Update status for <span class="font-medium text-gray-900">{{ member.full_name }}</span>
+                </p>
+              </div>
+
+              <!-- Status Options -->
+              <div class="mt-4 space-y-2">
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-green-500]="newMemberStatus === 'ACTIVE'"
+                  [class.bg-green-50]="newMemberStatus === 'ACTIVE'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="ACTIVE"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Active</span>
+                    <span class="text-sm text-gray-600">Member is active</span>
+                  </span>
+                </label>
+
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-gray-500]="newMemberStatus === 'INACTIVE'"
+                  [class.bg-gray-50]="newMemberStatus === 'INACTIVE'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="INACTIVE"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800">Inactive</span>
+                    <span class="text-sm text-gray-600">Member is temporarily inactive</span>
+                  </span>
+                </label>
+
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-yellow-500]="newMemberStatus === 'SUSPENDED'"
+                  [class.bg-yellow-50]="newMemberStatus === 'SUSPENDED'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="SUSPENDED"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">Suspended</span>
+                    <span class="text-sm text-gray-600">Member account is suspended</span>
+                  </span>
+                </label>
+
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-red-500]="newMemberStatus === 'TERMINATED'"
+                  [class.bg-red-50]="newMemberStatus === 'TERMINATED'">
+                  <input
+                    type="radio"
+                    name="member_status"
+                    value="TERMINATED"
+                    [(ngModel)]="newMemberStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">Terminated</span>
+                    <span class="text-sm text-gray-600">Member account is terminated</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-3">
+          <button
+            type="button"
+            (click)="changeMemberStatus(newMemberStatus)"
+            class="inline-flex w-full justify-center rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 sm:w-auto"
+          >
+            Update Status
+          </button>
+          <button
+            type="button"
+            (click)="cancelStatusChange()"
+            class="mt-3 inline-flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
+  </div>
+
+  <!-- Policy Status Change Dialog -->
+  <div
+    *ngIf="showPolicyStatusChangeDialog"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    aria-labelledby="policy-status-change-modal"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+      <!-- Background overlay -->
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        (click)="cancelPolicyStatusChange()"
+      ></div>
+
+      <!-- Center modal -->
+      <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <!-- Icon -->
+            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
+              <h3 class="text-lg font-semibold leading-6 text-gray-900" id="policy-status-change-modal">
+                Change Policy Status
+              </h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500">
+                  Update status for <span class="font-medium text-gray-900">Policy {{ policyToChangeStatus?.policy_no || 'N/A' }}</span>
+                </p>
+              </div>
+
+              <!-- Status Options -->
+              <div class="mt-4 space-y-2 max-h-96 overflow-y-auto">
+                <!-- ACTIVE -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-green-500]="newPolicyStatus === 'ACTIVE'"
+                  [class.bg-green-50]="newPolicyStatus === 'ACTIVE'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="ACTIVE"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Active</span>
+                    <span class="text-sm text-gray-600">Policy is currently active</span>
+                  </span>
+                </label>
+
+                <!-- INFORCE -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-green-500]="newPolicyStatus === 'INFORCE'"
+                  [class.bg-green-50]="newPolicyStatus === 'INFORCE'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="INFORCE"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">In Force</span>
+                    <span class="text-sm text-gray-600">Policy is in force and valid</span>
+                  </span>
+                </label>
+
+                <!-- INACTIVE -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-gray-500]="newPolicyStatus === 'INACTIVE'"
+                  [class.bg-gray-50]="newPolicyStatus === 'INACTIVE'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="INACTIVE"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800">Inactive</span>
+                    <span class="text-sm text-gray-600">Policy is not currently active</span>
+                  </span>
+                </label>
+
+                <!-- SUSPENDED -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-yellow-500]="newPolicyStatus === 'SUSPENDED'"
+                  [class.bg-yellow-50]="newPolicyStatus === 'SUSPENDED'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="SUSPENDED"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">Suspended</span>
+                    <span class="text-sm text-gray-600">Policy is temporarily suspended</span>
+                  </span>
+                </label>
+
+                <!-- CANCELLED -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-red-500]="newPolicyStatus === 'CANCELLED'"
+                  [class.bg-red-50]="newPolicyStatus === 'CANCELLED'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="CANCELLED"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">Cancelled</span>
+                    <span class="text-sm text-gray-600">Policy has been cancelled</span>
+                  </span>
+                </label>
+
+                <!-- EXPIRED -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-gray-500]="newPolicyStatus === 'EXPIRED'"
+                  [class.bg-gray-50]="newPolicyStatus === 'EXPIRED'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="EXPIRED"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800">Expired</span>
+                    <span class="text-sm text-gray-600">Policy has expired</span>
+                  </span>
+                </label>
+
+                <!-- PENDING -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-yellow-500]="newPolicyStatus === 'PENDING'"
+                  [class.bg-yellow-50]="newPolicyStatus === 'PENDING'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="PENDING"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">Pending</span>
+                    <span class="text-sm text-gray-600">Policy is pending activation</span>
+                  </span>
+                </label>
+
+                <!-- TRANSFERRED -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-blue-500]="newPolicyStatus === 'TRANSFERRED'"
+                  [class.bg-blue-50]="newPolicyStatus === 'TRANSFERRED'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="TRANSFERRED"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">Transferred</span>
+                    <span class="text-sm text-gray-600">Policy has been transferred</span>
+                  </span>
+                </label>
+
+                <!-- LAPSED -->
+                <label class="flex items-center cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  [class.border-gray-500]="newPolicyStatus === 'LAPSED'"
+                  [class.bg-gray-50]="newPolicyStatus === 'LAPSED'">
+                  <input
+                    type="radio"
+                    name="policy_status"
+                    value="LAPSED"
+                    [(ngModel)]="newPolicyStatus"
+                    class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-3 flex items-center gap-2">
+                    <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800">Lapsed</span>
+                    <span class="text-sm text-gray-600">Policy has lapsed</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-3">
+          <button
+            type="button"
+            (click)="changePolicyStatus(newPolicyStatus)"
+            class="inline-flex w-full justify-center rounded-lg bg-gradient-to-r from-[#1e3c72] to-[#2a5298] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 sm:w-auto"
+          >
+            Update Status
+          </button>
+          <button
+            type="button"
+            (click)="cancelPolicyStatusChange()"
+            class="mt-3 inline-flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Address Primary Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showAddressPrimaryConfirm"
+    [isOpen]="showAddressPrimaryConfirm"
+    title="Set Primary Address"
+    [message]="'Are you sure you want to set this address as primary?'"
+    confirmLabel="Set Primary"
+    cancelLabel="Cancel"
+    variant="primary"
+    (confirmed)="confirmAddressPrimaryToggle()"
+    (cancelled)="cancelAddressPrimaryToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Address Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showAddressDeleteConfirm"
+    [isOpen]="showAddressDeleteConfirm"
+    title="Confirm Address Delete"
+    message="Are you sure you want to delete this address? This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmAddressDelete()"
+    (cancelled)="cancelAddressDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Contact Primary Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showContactPrimaryConfirm"
+    [isOpen]="showContactPrimaryConfirm"
+    title="Set Primary Contact"
+    [message]="'Are you sure you want to set this contact as primary?'"
+    confirmLabel="Set Primary"
+    cancelLabel="Cancel"
+    variant="primary"
+    (confirmed)="confirmContactPrimaryToggle()"
+    (cancelled)="cancelContactPrimaryToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Contact Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showContactDeleteConfirm"
+    [isOpen]="showContactDeleteConfirm"
+    title="Confirm Contact Delete"
+    message="Are you sure you want to delete this contact? This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmContactDelete()"
+    (cancelled)="cancelContactDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Dependent Active Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showDependentActiveConfirm"
+    [isOpen]="showDependentActiveConfirm"
+    [title]="dependentToToggle?.is_active ? 'Activate Dependent' : 'Deactivate Dependent'"
+    [message]="dependentToToggle?.is_active 
+      ? 'Are you sure you want to activate this dependent?' 
+      : 'Are you sure you want to deactivate this dependent?'"
+    [confirmLabel]="dependentToToggle?.is_active ? 'Activate' : 'Deactivate'"
+    cancelLabel="Cancel"
+    [variant]="dependentToToggle?.is_active ? 'primary' : 'danger'"
+    (confirmed)="confirmDependentActiveToggle()"
+    (cancelled)="cancelDependentActiveToggle()"
+  ></app-confirm-dialog>
+
+  <!-- Dependent Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showDependentDeleteConfirm"
+    [isOpen]="showDependentDeleteConfirm"
+    title="Confirm Dependent Delete"
+    message="Are you sure you want to delete this dependent? This will also delete all associated PEC conditions. This action cannot be undone."
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmDependentDelete()"
+    (cancelled)="cancelDependentDelete()"
+  ></app-confirm-dialog>
+
+  <!-- Policy Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showPolicyDeleteConfirm"
+    [isOpen]="showPolicyDeleteConfirm"
+    title="Confirm Policy Delete"
+    [message]="'Are you sure you want to delete Policy ' + (policyToDelete?.policy_no || 'N/A') + '? This action cannot be undone.'"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmPolicyDelete()"
+    (cancelled)="cancelPolicyDelete()"
+  ></app-confirm-dialog>
+
+  <!-- PEC Coverage Toggle Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showPECToggleConfirm"
+    [isOpen]="showPECToggleConfirm"
+    [title]="(pecToToggle?.is_excluded ? 'Include' : 'Exclude') + ' PEC Condition'"
+    [message]="'Are you sure you want to ' + (pecToToggle?.is_excluded ? 'include' : 'exclude') + ' PEC condition ' + (pecToToggle?.condition_code || 'N/A') + ' ' + (pecToToggle?.is_excluded ? 'in' : 'from') + ' coverage?'"
+    [confirmLabel]="pecToToggle?.is_excluded ? 'Include' : 'Exclude'"
+    cancelLabel="Cancel"
+    [variant]="pecToToggle?.is_excluded ? 'primary' : 'warn'"
+    (confirmed)="confirmPECToggle()"
+    (cancelled)="cancelPECToggle()"
+  ></app-confirm-dialog>
+
+  <!-- PEC Delete Confirmation Dialog -->
+  <app-confirm-dialog
+    *ngIf="showPECDeleteConfirm"
+    [isOpen]="showPECDeleteConfirm"
+    title="Confirm PEC Delete"
+    [message]="'Are you sure you want to delete PEC condition ' + (pecToDelete?.condition_code || 'N/A') + '? This action cannot be undone.'"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="danger"
+    (confirmed)="confirmPECDelete()"
+    (cancelled)="cancelPECDelete()"
+  ></app-confirm-dialog>
 </div>
