@@ -37,28 +37,22 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
     await hospitalFormPage.fillHospitalForm({
       hospitalName: testHospitalName,
       hospitalCode: testHospitalCode,
-      hospitalType: 'Private',
-      isPanel: true
+      hospitalType: 'Private'
     });
 
     await hospitalFormPage.submit();
     await hospitalListPage.waitForPageLoad();
 
-    // Get hospital ID
+    // Search for the hospital and navigate to view page to get ID
     await hospitalListPage.search(testHospitalCode);
-    await authenticatedPage.waitForTimeout(1000);
-    
-    const viewButton = authenticatedPage.locator(`tr:has-text("${testHospitalCode}") button:has-text("View")`).first();
-    await viewButton.click();
-    await authenticatedPage.waitForTimeout(1000);
-    
+    await authenticatedPage.waitForTimeout(600);
+    await hospitalListPage.clickView(testHospitalCode);
+    await authenticatedPage.waitForTimeout(800);
+
     const url = authenticatedPage.url();
     const match = url.match(/\/hospitals\/view\/(\d+)/);
-    if (match) {
-      hospitalId = match[1];
-    }
-    
-    expect(hospitalId).toBeDefined();
+    hospitalId = match ? match[1] : '';
+    expect(hospitalId).toBeTruthy();
   });
 
   test('CREATE: should add a new service fee to hospital', async ({ authenticatedPage }) => {
@@ -69,7 +63,7 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
     await hospitalViewPage.waitForPageLoad();
 
     // Navigate to Fees tab
-    await hospitalViewPage.clickFeesTab();
+    await hospitalViewPage.clickFeeSchedulesTab();
 
     // Click Add Fee
     await hospitalViewPage.clickAddFee();
@@ -77,13 +71,10 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
 
     // Fill fee form
     await feeFormPage.fillFeeForm({
-      serviceType: 'Consultation',
+      feeType: 'Consultation Fee',
       description: testFeeDescription,
-      feeAmount: '150.00',
-      currency: 'MYR',
-      effectiveDate: '2024-01-01',
-      isActive: true,
-      remarks: 'E2E test fee'
+      amount: '150.00',
+      isActive: true
     });
 
     await feeFormPage.submit();
@@ -100,7 +91,7 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
 
     await hospitalViewPage.goto(hospitalId);
     await hospitalViewPage.waitForPageLoad();
-    await hospitalViewPage.clickFeesTab();
+    await hospitalViewPage.clickFeeSchedulesTab();
 
     await hospitalViewPage.clickAddFee();
     await feeFormPage.waitForPageLoad();
@@ -116,7 +107,7 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
 
     await hospitalViewPage.goto(hospitalId);
     await hospitalViewPage.waitForPageLoad();
-    await hospitalViewPage.clickFeesTab();
+    await hospitalViewPage.clickFeeSchedulesTab();
 
     await hospitalViewPage.clickAddFee();
     await feeFormPage.waitForPageLoad();
@@ -124,11 +115,9 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
     // Add second fee - Lab Test
     const secondFeeDescription = `E2E Lab Fee ${timestamp}`;
     await feeFormPage.fillFeeForm({
-      serviceType: 'Laboratory',
+      feeType: 'TPA Fee',
       description: secondFeeDescription,
-      feeAmount: '80.00',
-      currency: 'MYR',
-      effectiveDate: '2024-01-01',
+      amount: '80.00',
       isActive: true
     });
 
@@ -145,7 +134,7 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
 
     await hospitalViewPage.goto(hospitalId);
     await hospitalViewPage.waitForPageLoad();
-    await hospitalViewPage.clickFeesTab();
+    await hospitalViewPage.clickFeeSchedulesTab();
 
     // Verify fees are displayed with amounts
     await hospitalViewPage.expectFeeVisible(testFeeDescription);
@@ -159,7 +148,7 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
 
     await hospitalViewPage.goto(hospitalId);
     await hospitalViewPage.waitForPageLoad();
-    await hospitalViewPage.clickFeesTab();
+    await hospitalViewPage.clickFeeSchedulesTab();
 
     // Edit the fee
     await hospitalViewPage.editFee(testFeeDescription);
@@ -167,14 +156,14 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
 
     // Verify current values
     const currentDescription = await feeFormPage.getDescription();
-    const currentAmount = await feeFormPage.getFeeAmount();
+    const currentAmount = await feeFormPage.getAmount();
     expect(currentDescription).toBe(testFeeDescription);
     expect(currentAmount).toBe('150.00');
 
     // Update fee
     await feeFormPage.fillFeeForm({
       description: updatedFeeDescription,
-      feeAmount: '200.00'
+      amount: '200.00'
     });
 
     await feeFormPage.submit();
@@ -190,7 +179,7 @@ test.describe.serial('Hospital Fees - CRUD Operations', () => {
 
     await hospitalViewPage.goto(hospitalId);
     await hospitalViewPage.waitForPageLoad();
-    await hospitalViewPage.clickFeesTab();
+    await hospitalViewPage.clickFeeSchedulesTab();
 
     // Verify fee exists before delete
     const row = authenticatedPage.locator(`tr:has-text("${updatedFeeDescription}")`);

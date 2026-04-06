@@ -3,10 +3,11 @@ import { BasePage } from '../base.page';
 
 /**
  * Product Form Page Object
- * Represents the product create/edit modal/form for e2e testing
+ * Represents the product create/edit full-page form at /products/create or /products/edit/:id
+ * The form uses app-text-input (name attr on inner input) and app-button for submit.
  */
 export class ProductFormPage extends BasePage {
-  readonly modalTitle: Locator;
+  readonly pageTitle: Locator;
   readonly planCodeInput: Locator;
   readonly planNameInput: Locator;
   readonly insurerNameInput: Locator;
@@ -16,17 +17,17 @@ export class ProductFormPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.modalTitle = page.locator('[role="dialog"] h3, .modal-title').filter({ hasText: /product|policy/i });
-    this.planCodeInput = page.getByLabel(/plan code/i);
-    this.planNameInput = page.getByLabel(/plan name/i);
-    this.insurerNameInput = page.getByLabel(/insurer/i);
-    this.isActiveCheckbox = page.getByLabel(/active/i);
-    this.saveButton = page.getByRole('button', { name: /save|submit/i });
-    this.cancelButton = page.getByRole('button', { name: /cancel/i });
+    this.pageTitle = page.locator('h1').filter({ hasText: /create product|edit product/i });
+    this.planCodeInput = page.locator('input[name="plan_code"]');
+    this.planNameInput = page.locator('input[name="plan_name"]');
+    this.insurerNameInput = page.locator('input[name="insurer_name"]');
+    this.isActiveCheckbox = page.getByRole('checkbox', { name: /active/i });
+    this.saveButton = page.getByRole('button', { name: /create product|update product/i });
+    this.cancelButton = page.getByRole('button', { name: /^cancel$/i });
   }
 
   async waitForPageLoad(): Promise<void> {
-    await expect(this.modalTitle).toBeVisible({ timeout: 10000 });
+    await expect(this.pageTitle).toBeVisible({ timeout: 15000 });
   }
 
   async fillProductForm(data: {

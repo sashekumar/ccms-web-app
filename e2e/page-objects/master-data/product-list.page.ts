@@ -3,22 +3,18 @@ import { BasePage } from '../base.page';
 
 /**
  * Product List Page Object
- * Represents the Products management page for e2e testing
+ * Represents the Policy Management (Products) list page at /products
  */
 export class ProductListPage extends BasePage {
   readonly pageTitle: Locator;
   readonly createButton: Locator;
   readonly searchInput: Locator;
-  readonly dataTable: Locator;
-  readonly noDataMessage: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.pageTitle = page.locator('h1, h2').filter({ hasText: /product|policy/i });
-    this.createButton = page.getByRole('button', { name: /create|add.*(product|policy)/i });
-    this.searchInput = page.getByPlaceholder(/search/i);
-    this.dataTable = page.locator('table').first();
-    this.noDataMessage = page.getByText(/no.*product.*found/i);
+    this.pageTitle = page.locator('h1').filter({ hasText: /policy management/i });
+    this.createButton = page.getByRole('button', { name: /create product/i });
+    this.searchInput = page.getByPlaceholder('Plan code or name...');
   }
 
   async goto(): Promise<void> {
@@ -32,42 +28,48 @@ export class ProductListPage extends BasePage {
 
   async clickCreateProduct(): Promise<void> {
     await this.createButton.click();
+    await this.page.waitForLoadState('networkidle');
   }
 
   async search(searchTerm: string): Promise<void> {
     await this.searchInput.fill(searchTerm);
-    await this.page.waitForTimeout(500);
+    await this.page.waitForTimeout(600);
+  }
+
+  async clearSearch(): Promise<void> {
+    await this.searchInput.fill('');
+    await this.page.waitForTimeout(600);
   }
 
   getRow(identifier: string): Locator {
     return this.page.locator(`tr:has-text("${identifier}")`);
   }
 
+  async clickView(identifier: string): Promise<void> {
+    const row = this.getRow(identifier);
+    await expect(row).toBeVisible({ timeout: 10000 });
+    await row.locator('button[title*="View"]').first().click();
+    await this.page.waitForLoadState('networkidle');
+  }
+
   async clickEdit(identifier: string): Promise<void> {
     const row = this.getRow(identifier);
     await expect(row).toBeVisible({ timeout: 10000 });
-    const editButton = row.locator('button:has-text("Edit"), button[title*="Edit"]').first();
-    await editButton.click();
+    await row.locator('button[title*="Edit"]').first().click();
+    await this.page.waitForLoadState('networkidle');
   }
 
   async clickDelete(identifier: string): Promise<void> {
     const row = this.getRow(identifier);
     await expect(row).toBeVisible({ timeout: 10000 });
-    const deleteButton = row.locator('button:has-text("Delete"), button[title*="Delete"]').first();
-    await deleteButton.click();
+    await row.locator('button[title*="Delete"]').first().click();
   }
 
   async expectProductVisible(identifier: string): Promise<void> {
-    const row = this.getRow(identifier);
-    await expect(row).toBeVisible({ timeout: 10000 });
+    await expect(this.getRow(identifier)).toBeVisible({ timeout: 10000 });
   }
 
   async expectProductNotVisible(identifier: string): Promise<void> {
-    const row = this.getRow(identifier);
-    await expect(row).not.toBeVisible({ timeout: 5000 });
-  }
-
-  async isNoDataVisible(): Promise<boolean> {
-    return await this.noDataMessage.isVisible();
+    await expect(this.getRow(identifier)).not.toBeVisible({ timeout: 5000 });
   }
 }

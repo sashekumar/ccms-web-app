@@ -3,76 +3,67 @@ import { BasePage } from '../base.page';
 
 /**
  * Product Limit Form Page Object
- * Represents the product coverage limit create/edit modal/form for e2e testing
+ * Represents the coverage limit modal overlay in the Limits tab of product-view.
+ * Modal: div.fixed.inset-0 > div.w-full.max-w-lg > h3 "Add Limit" / "Edit Limit"
+ * Fields: limit_type (app-dropdown), limit_amount (app-text-input currency), is_active (app-checkbox)
+ * Buttons: "Cancel" and "Create" / "Update"
  */
 export class ProductLimitFormPage extends BasePage {
   readonly modalTitle: Locator;
-  readonly limitTypeSelect: Locator;
-  readonly limitDescriptionInput: Locator;
+  readonly limitTypeDropdown: Locator;
   readonly limitAmountInput: Locator;
-  readonly currencySelect: Locator;
-  readonly periodTypeSelect: Locator;
-  readonly isUnlimitedCheckbox: Locator;
-  readonly remarksInput: Locator;
+  readonly isActiveCheckbox: Locator;
   readonly saveButton: Locator;
   readonly cancelButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.modalTitle = page.locator('[role="dialog"] h3, .modal-title').filter({ hasText: /limit/i });
-    this.limitTypeSelect = page.getByLabel(/limit.*type|type/i);
-    this.limitDescriptionInput = page.getByLabel(/description/i);
-    this.limitAmountInput = page.getByLabel(/limit.*amount|amount/i);
-    this.currencySelect = page.getByLabel(/currency/i);
-    this.periodTypeSelect = page.getByLabel(/period.*type|period/i);
-    this.isUnlimitedCheckbox = page.getByLabel(/unlimited/i);
-    this.remarksInput = page.getByLabel(/remarks|notes/i);
-    this.saveButton = page.getByRole('button', { name: /save|submit/i });
-    this.cancelButton = page.getByRole('button', { name: /cancel/i });
+    this.modalTitle = page.locator('h3').filter({ hasText: /add limit|edit limit/i });
+    this.limitTypeDropdown = page.locator('[name="limit_type"]');
+    this.limitAmountInput = page.locator('input[name="limit_amount"]');
+    this.isActiveCheckbox = page.getByRole('checkbox', { name: /^active$/i });
+    this.saveButton = page.getByRole('button', { name: /^create$|^update$/i });
+    this.cancelButton = page.getByRole('button', { name: /^cancel$/i });
   }
 
   async waitForPageLoad(): Promise<void> {
     await expect(this.modalTitle).toBeVisible({ timeout: 10000 });
   }
 
+  /**
+   * Fill currency input by pressing digit keys.
+   * Currency input is readonly; digis are accumulated as cents.
+   * e.g. amount="150.00" → type digits "15000"
+   */
+  async fillCurrencyAmount(amount: string): Promise<void> {
+    await this.limitAmountInput.click();
+    // Clear existing value
+    for (let i = 0; i < 15; i++) {
+      await this.page.keyboard.press('Backspace');
+    }
+    // Strip non-digits and type
+    const digits = amount.replace(/[^0-9]/g, '');
+    await this.page.keyboard.type(digits);
+  }
+
   async fillLimitForm(data: {
     limitType?: string;
-    description?: string;
     limitAmount?: string;
-    currency?: string;
-    periodType?: string;
-    isUnlimited?: boolean;
-    remarks?: string;
+    isActive?: boolean;
   }): Promise<void> {
     if (data.limitType !== undefined) {
-      await this.limitTypeSelect.selectOption(data.limitType);
+      await this.limitTypeDropdown.click();
+      await this.page.getByRole('option', { name: data.limitType }).click();
+      await this.page.waitForTimeout(200);
     }
-    
-    if (data.description !== undefined) {
-      await this.limitDescriptionInput.fill(data.description);
-    }
-    
     if (data.limitAmount !== undefined) {
-      await this.limitAmountInput.fill(data.limitAmount);
+      await this.fillCurrencyAmount(data.limitAmount);
     }
-    
-    if (data.currency !== undefined) {
-      await this.currencySelect.selectOption(data.currency);
-    }
-    
-    if (data.periodType !== undefined) {
-      await this.periodTypeSelect.selectOption(data.periodType);
-    }
-    
-    if (data.isUnlimited !== undefined) {
-      const isChecked = await this.isUnlimitedCheckbox.isChecked();
-      if (data.isUnlimited !== isChecked) {
-        await this.isUnlimitedCheckbox.click();
+    if (data.isActive !== undefined) {
+      const isChecked = await this.isActiveCheckbox.isChecked();
+      if (data.isActive !== isChecked) {
+        await this.isActiveCheckbox.click();
       }
-    }
-    
-    if (data.remarks !== undefined) {
-      await this.remarksInput.fill(data.remarks);
     }
   }
 
@@ -91,9 +82,5 @@ export class ProductLimitFormPage extends BasePage {
 
   async getLimitAmount(): Promise<string> {
     return await this.limitAmountInput.inputValue();
-  }
-
-  async getDescription(): Promise<string> {
-    return await this.limitDescriptionInput.inputValue();
   }
 }

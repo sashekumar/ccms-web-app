@@ -3,90 +3,87 @@ import { BasePage } from '../base.page';
 
 /**
  * Product Copay Form Page Object
- * Represents the product co-payment create/edit modal/form for e2e testing
+ * Represents the copay modal overlay in the Copay tab of product-view.
+ * Modal: div.fixed.inset-0 > div.w-full.max-w-lg > h3 "Add Copay" / "Edit Copay"
+ * Fields:
+ *   - copay_type (app-dropdown, required)
+ *   - copay_value (app-text-input currency, when not percentage)
+ *   - copay_value_percentage (app-text-input decimal, when percentage type)
+ *   - applies_to (app-dropdown)
+ *   - copay_is_active (app-checkbox)
+ * Buttons: "Cancel" and "Create" / "Update"
  */
 export class ProductCopayFormPage extends BasePage {
   readonly modalTitle: Locator;
-  readonly copayTypeSelect: Locator;
-  readonly copayDescriptionInput: Locator;
-  readonly copayPercentInput: Locator;
-  readonly copayFixedAmountInput: Locator;
-  readonly minAmountInput: Locator;
-  readonly maxAmountInput: Locator;
-  readonly currencySelect: Locator;
+  readonly copayTypeDropdown: Locator;
+  readonly copayValueInput: Locator;
+  readonly copayValuePercentageInput: Locator;
+  readonly appliesToDropdown: Locator;
   readonly isActiveCheckbox: Locator;
-  readonly remarksInput: Locator;
   readonly saveButton: Locator;
   readonly cancelButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.modalTitle = page.locator('[role="dialog"] h3, .modal-title').filter({ hasText: /copay|co-payment/i });
-    this.copayTypeSelect = page.getByLabel(/copay.*type|type/i);
-    this.copayDescriptionInput = page.getByLabel(/description/i);
-    this.copayPercentInput = page.getByLabel(/percent|percentage/i);
-    this.copayFixedAmountInput = page.getByLabel(/fixed.*amount|amount/i);
-    this.minAmountInput = page.getByLabel(/min.*amount|minimum/i);
-    this.maxAmountInput = page.getByLabel(/max.*amount|maximum/i);
-    this.currencySelect = page.getByLabel(/currency/i);
-    this.isActiveCheckbox = page.getByLabel(/active|is active/i);
-    this.remarksInput = page.getByLabel(/remarks|notes/i);
-    this.saveButton = page.getByRole('button', { name: /save|submit/i });
-    this.cancelButton = page.getByRole('button', { name: /cancel/i });
+    this.modalTitle = page.locator('h3').filter({ hasText: /add copay|edit copay/i });
+    this.copayTypeDropdown = page.locator('[name="copay_type"]');
+    this.copayValueInput = page.locator('input[name="copay_value"]');
+    this.copayValuePercentageInput = page.locator('input[name="copay_value_percentage"]');
+    this.appliesToDropdown = page.locator('[name="applies_to"]');
+    this.isActiveCheckbox = page.getByRole('checkbox', { name: /^active$/i });
+    this.saveButton = page.getByRole('button', { name: /^create$|^update$/i });
+    this.cancelButton = page.getByRole('button', { name: /^cancel$/i });
   }
 
   async waitForPageLoad(): Promise<void> {
     await expect(this.modalTitle).toBeVisible({ timeout: 10000 });
   }
 
+  /**
+   * Fill currency input for fixed amount copay.
+   * Currency input is readonly; digits are accumulated as cents.
+   * e.g. amount="50.00" → type digits "5000"
+   */
+  async fillCurrencyAmount(amount: string): Promise<void> {
+    await this.copayValueInput.click();
+    for (let i = 0; i < 15; i++) {
+      await this.page.keyboard.press('Backspace');
+    }
+    const digits = amount.replace(/[^0-9]/g, '');
+    await this.page.keyboard.type(digits);
+  }
+
   async fillCopayForm(data: {
     copayType?: string;
-    description?: string;
-    copayPercent?: string;
-    copayFixedAmount?: string;
-    minAmount?: string;
-    maxAmount?: string;
-    currency?: string;
+    copayValue?: string;
+    appliesTo?: string;
     isActive?: boolean;
-    remarks?: string;
   }): Promise<void> {
     if (data.copayType !== undefined) {
-      await this.copayTypeSelect.selectOption(data.copayType);
+      await this.copayTypeDropdown.click();
+      await this.page.getByRole('option', { name: data.copayType }).click();
+      await this.page.waitForTimeout(300);
     }
-    
-    if (data.description !== undefined) {
-      await this.copayDescriptionInput.fill(data.description);
+    if (data.copayValue !== undefined) {
+      // Check if percentage type is selected (shows percentage input)
+      const percentInput = this.copayValuePercentageInput;
+      const percentVisible = await percentInput.isVisible().catch(() => false);
+      if (percentVisible) {
+        await percentInput.fill(data.copayValue);
+      } else {
+        await this.fillCurrencyAmount(data.copayValue);
+      }
     }
-    
-    if (data.copayPercent !== undefined) {
-      await this.copayPercentInput.fill(data.copayPercent);
+    if (data.appliesTo !== undefined) {
+      await this.appliesToDropdown.click();
+      await this.page.getByRole('option', { name: data.appliesTo }).click();
+      await this.page.waitForTimeout(200);
     }
-    
-    if (data.copayFixedAmount !== undefined) {
-      await this.copayFixedAmountInput.fill(data.copayFixedAmount);
-    }
-    
-    if (data.minAmount !== undefined) {
-      await this.minAmountInput.fill(data.minAmount);
-    }
-    
-    if (data.maxAmount !== undefined) {
-      await this.maxAmountInput.fill(data.maxAmount);
-    }
-    
-    if (data.currency !== undefined) {
-      await this.currencySelect.selectOption(data.currency);
-    }
-    
     if (data.isActive !== undefined) {
       const isChecked = await this.isActiveCheckbox.isChecked();
       if (data.isActive !== isChecked) {
         await this.isActiveCheckbox.click();
       }
-    }
-    
-    if (data.remarks !== undefined) {
-      await this.remarksInput.fill(data.remarks);
     }
   }
 
@@ -101,13 +98,5 @@ export class ProductCopayFormPage extends BasePage {
 
   async isSubmitDisabled(): Promise<boolean> {
     return await this.saveButton.isDisabled();
-  }
-
-  async getCopayPercent(): Promise<string> {
-    return await this.copayPercentInput.inputValue();
-  }
-
-  async getDescription(): Promise<string> {
-    return await this.copayDescriptionInput.inputValue();
   }
 }

@@ -31,8 +31,7 @@ test.describe.serial('Hospital Management - CRUD Operations', () => {
     await hospitalFormPage.fillHospitalForm({
       hospitalName: testHospitalName,
       hospitalCode: testHospitalCode,
-      hospitalType: 'Private',
-      isPanel: true
+      hospitalType: 'Private'
     });
 
     await hospitalFormPage.submit();
@@ -110,16 +109,14 @@ test.describe.serial('Hospital Management - CRUD Operations', () => {
     await hospitalListPage.search(testHospitalCode);
     await authenticatedPage.waitForTimeout(500);
 
-    // Verify test data exists before delete
     const row = authenticatedPage.locator(`tr:has-text("${testHospitalCode}")`);
     await expect(row).toBeVisible({ timeout: 10000 });
 
-    authenticatedPage.on('dialog', dialog => dialog.accept());
+    await hospitalListPage.clickDelete(testHospitalCode);
 
-    const deleteButton = row.locator('button:has-text("Delete"), button[title*="Delete"]').first();
-    await deleteButton.click();
-
-    await authenticatedPage.waitForTimeout(1000);
+    // Confirm the Angular ConfirmDialogComponent modal
+    await authenticatedPage.locator('app-confirm-dialog').getByRole('button', { name: 'Delete' }).click();
+    await authenticatedPage.waitForLoadState('networkidle');
 
     await hospitalListPage.expectHospitalNotVisible(testHospitalCode);
   });

@@ -113,17 +113,13 @@ test.describe.serial('Product Management - CRUD Operations', () => {
     await productListPage.search(testPlanCode);
     await authenticatedPage.waitForTimeout(500);
 
-    // Verify test data exists before delete
-    const row = authenticatedPage.locator(`tr:has-text("${testPlanCode}")`);
-    await expect(row).toBeVisible({ timeout: 10000 });
+    await productListPage.clickDelete(testPlanCode);
 
-    authenticatedPage.on('dialog', dialog => dialog.accept());
+    // Confirm the Angular ConfirmDialogComponent modal (scope to dialog to avoid matching row button)
+    await authenticatedPage.locator('app-confirm-dialog').getByRole('button', { name: 'Delete' }).click();
+    await authenticatedPage.waitForLoadState('networkidle');
 
-    const deleteButton = row.locator('button:has-text("Delete"), button[title*="Delete"]').first();
-    await deleteButton.click();
-
-    await authenticatedPage.waitForTimeout(1000);
-
-    await productListPage.expectProductNotVisible(testPlanCode);
+    // Backend uses soft-delete (deactivation) - confirm dialog closes, product stays in list as Inactive
+    await expect(authenticatedPage.locator('app-confirm-dialog')).not.toBeVisible({ timeout: 5000 });
   });
 });

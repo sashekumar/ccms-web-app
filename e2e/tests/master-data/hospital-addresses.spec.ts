@@ -2,30 +2,30 @@ import { test, expect } from '../../fixtures/auth.fixture';
 import { HospitalListPage } from '../../page-objects/master-data/hospital-list.page';
 import { HospitalFormPage } from '../../page-objects/master-data/hospital-form.page';
 import { HospitalViewPage } from '../../page-objects/master-data/hospital-view.page';
-import { HospitalCodeFormPage } from '../../page-objects/master-data/hospital-code-form.page';
+import { HospitalAddressFormPage } from '../../page-objects/master-data/hospital-address-form.page';
 
 /**
- * Hospital Codes - Sub-form CRUD Operations E2E Tests
+ * Hospital Addresses - Sub-form CRUD Operations E2E Tests
  *
- * Tests hospital coding system management including:
- * - Creating hospital codes (ICD-10, CPT, etc.)
- * - Updating code details
- * - Deleting codes
- * - Code system categorization
- * - Code type classification
+ * Tests hospital address management including:
+ * - Adding hospital addresses (multiple address types)
+ * - Setting primary address
+ * - Updating address details
+ * - Deleting addresses
+ * - Address type categorization
  *
- * Card-based UI Pattern: Codes render as div.rounded-lg cards in grid layout
+ * Card-based UI Pattern: Addresses render as div.rounded-lg cards in grid layout
  * Form Pattern: Inline forms toggled via *ngIf visibility
  * Dialog Pattern: Angular ConfirmDialogComponent with confirmLabel binding
  */
 
-test.describe.serial('Hospital Codes - CRUD Operations', () => {
+test.describe.serial('Hospital Addresses - CRUD Operations', () => {
   const timestamp = Date.now();
   const tsShort = timestamp.toString().slice(-12);
-  const testHospitalName = `E2E Hospital Codes ${tsShort}`;
-  const testHospitalCode = `HCOD${tsShort}`;
-  const testCodeValue = `E2E-${tsShort}`;
-  const updatedCodeValue = `E2E-UPD-${tsShort}`;
+  const testHospitalName = `E2E Hospital Addresses ${tsShort}`;
+  const testHospitalCode = `HADDR${tsShort}`;
+  const testStreet1 = `123 Medical Lane ${tsShort}`;
+  const updatedStreet1 = `456 Healthcare Ave ${tsShort}`;
 
   let hospitalId: string;
 
@@ -68,165 +68,167 @@ test.describe.serial('Hospital Codes - CRUD Operations', () => {
   // -----------------------------------------------------------------------
   test('VALIDATION: should not allow submit without required fields', async ({ authenticatedPage }) => {
     const viewPage = new HospitalViewPage(authenticatedPage);
-    const codeFormPage = new HospitalCodeFormPage(authenticatedPage);
+    const addrFormPage = new HospitalAddressFormPage(authenticatedPage);
 
     await viewPage.goto(hospitalId);
     await viewPage.waitForPageLoad();
-    await viewPage.clickCodesTab();
-    await viewPage.clickAddCode();
-    await codeFormPage.waitForFormVisible();
+    await viewPage.clickAddressesTab();
+    await viewPage.clickAddAddress();
+    await addrFormPage.waitForFormVisible();
 
     // Try to submit without filling required fields
-    const isDisabled = await codeFormPage.isSubmitDisabled();
+    const isDisabled = await addrFormPage.isSubmitDisabled();
     expect(isDisabled).toBe(true);
   });
 
   // -----------------------------------------------------------------------
-  // ADD CODE
+  // ADD ADDRESS
   // -----------------------------------------------------------------------
-  test('ADD_CODE: should add a new code successfully', async ({ authenticatedPage }) => {
+  test('ADD_ADDRESS: should add a new address successfully', async ({ authenticatedPage }) => {
     const viewPage = new HospitalViewPage(authenticatedPage);
-    const codeFormPage = new HospitalCodeFormPage(authenticatedPage);
+    const addrFormPage = new HospitalAddressFormPage(authenticatedPage);
 
     await viewPage.goto(hospitalId);
     await viewPage.waitForPageLoad();
-    await viewPage.clickCodesTab();
-    await viewPage.clickAddCode();
-    await codeFormPage.waitForFormVisible();
+    await viewPage.clickAddressesTab();
+    await viewPage.clickAddAddress();
+    await addrFormPage.waitForFormVisible();
 
-    await codeFormPage.fillCodeForm({
-      codeType: 'FWD Hospital Code',
-      codeValue: testCodeValue,
-      isActive: true,
+    await addrFormPage.fillAddressForm({
+      addressType: 'Official',
+      streetLine1: testStreet1,
+      city: 'Kuala Lumpur',
+      state: 'Federal Territory',
+      country: 'Malaysia',
+      isPrimary: true,
     });
 
-    await codeFormPage.submit();
+    await addrFormPage.submit();
     await authenticatedPage.waitForTimeout(600);
 
-    // Verify code card is visible
-    await viewPage.expectCodeVisible(testCodeValue);
-  });
-
-  // -----------------------------------------------------------------------
-  // ADD SECOND CODE
-  // -----------------------------------------------------------------------
-  test('ADD_SECOND: should add a second code for testing toggle/delete', async ({ authenticatedPage }) => {
-    const viewPage = new HospitalViewPage(authenticatedPage);
-    const codeFormPage = new HospitalCodeFormPage(authenticatedPage);
-
-    await viewPage.goto(hospitalId);
-    await viewPage.waitForPageLoad();
-    await viewPage.clickCodesTab();
-    await viewPage.clickAddCode();
-    await codeFormPage.waitForFormVisible();
-
-    const secondCodeValue = `CPT-${tsShort}`;
-    await codeFormPage.fillCodeForm({
-      codeType: 'CPT',
-      codeValue: secondCodeValue,
-      isActive: true,
-    });
-
-    await codeFormPage.submit();
-    await authenticatedPage.waitForTimeout(600);
-
-    await viewPage.expectCodeVisible(secondCodeValue);
+    // Verify address card is visible
+    await viewPage.expectAddressVisible(testStreet1);
   });
 
   // -----------------------------------------------------------------------
   // READ
   // -----------------------------------------------------------------------
-  test('READ: should display code details correctly', async ({ authenticatedPage }) => {
+  test('READ: should display address details correctly', async ({ authenticatedPage }) => {
     const viewPage = new HospitalViewPage(authenticatedPage);
 
     await viewPage.goto(hospitalId);
     await viewPage.waitForPageLoad();
-    await viewPage.clickCodesTab();
+    await viewPage.clickAddressesTab();
 
-    // Verify first code is visible
-    await viewPage.expectCodeVisible(testCodeValue);
-
-    // Verify second code is visible
-    const secondCodeValue = `CPT-${tsShort}`;
-    await viewPage.expectCodeVisible(secondCodeValue);
+    // Verify address is visible
+    await viewPage.expectAddressVisible(testStreet1);
   });
 
   // -----------------------------------------------------------------------
-  // ACTIVE TOGGLE
+  // PRIMARY TOGGLE
   // -----------------------------------------------------------------------
-  test('ACTIVE_TOGGLE: should toggle code active status via confirm dialog', async ({ authenticatedPage }) => {
+  test('PRIMARY_TOGGLE: should toggle primary address status via confirm dialog', async ({ authenticatedPage }) => {
     const viewPage = new HospitalViewPage(authenticatedPage);
 
     await viewPage.goto(hospitalId);
     await viewPage.waitForPageLoad();
-    await viewPage.clickCodesTab();
+    await viewPage.clickAddressesTab();
 
-    // Toggle active status of first code
-    await viewPage.toggleCodeActive(testCodeValue);
+    // Toggle primary status
+    await viewPage.toggleAddressPrimary(testStreet1);
     // Confirm via Angular ConfirmDialogComponent (confirmLabel="Confirm")
     await viewPage.confirmDialog();
 
     await authenticatedPage.waitForTimeout(600);
 
-    // Verify the toggle was successful (card still visible but with inactive state)
-    await viewPage.expectCodeVisible(testCodeValue);
+    // Verify the toggle was successful (address still visible)
+    await viewPage.expectAddressVisible(testStreet1);
+  });
+
+  // -----------------------------------------------------------------------
+  // ADD SECOND ADDRESS
+  // -----------------------------------------------------------------------
+  test('ADD_SECOND: should add a second address for edit/delete', async ({ authenticatedPage }) => {
+    const viewPage = new HospitalViewPage(authenticatedPage);
+    const addrFormPage = new HospitalAddressFormPage(authenticatedPage);
+
+    await viewPage.goto(hospitalId);
+    await viewPage.waitForPageLoad();
+    await viewPage.clickAddressesTab();
+    await viewPage.clickAddAddress();
+    await addrFormPage.waitForFormVisible();
+
+    const secondStreet = `999 Alternative Street ${tsShort}`;
+    await addrFormPage.fillAddressForm({
+      addressType: 'Billing',
+      streetLine1: secondStreet,
+      city: 'Petaling Jaya',
+      state: 'Selangor',
+      country: 'Malaysia',
+      isPrimary: false,
+    });
+
+    await addrFormPage.submit();
+    await authenticatedPage.waitForTimeout(600);
+
+    await viewPage.expectAddressVisible(secondStreet);
   });
 
   // -----------------------------------------------------------------------
   // EDIT
   // -----------------------------------------------------------------------
-  test('EDIT: should update code value successfully', async ({ authenticatedPage }) => {
+  test('EDIT: should update address details successfully', async ({ authenticatedPage }) => {
     const viewPage = new HospitalViewPage(authenticatedPage);
-    const codeFormPage = new HospitalCodeFormPage(authenticatedPage);
+    const addrFormPage = new HospitalAddressFormPage(authenticatedPage);
 
     await viewPage.goto(hospitalId);
     await viewPage.waitForPageLoad();
-    await viewPage.clickCodesTab();
+    await viewPage.clickAddressesTab();
 
-    // Edit first code
-    await viewPage.editCode(testCodeValue);
-    await codeFormPage.waitForFormVisible();
+    // Edit first address
+    await viewPage.editAddress(testStreet1);
+    await addrFormPage.waitForFormVisible();
 
     // Verify pre-filled value
-    const currentValue = await codeFormPage.getCodeValue();
-    expect(currentValue).toContain(testCodeValue.substr(0, 5));
+    const currentStreet = await addrFormPage.getStreetLine1();
+    expect(currentStreet).toContain(testStreet1.substr(0, 5));
 
-    // Update code value
-    await codeFormPage.fillCodeForm({
-      codeValue: updatedCodeValue,
+    // Update address
+    await addrFormPage.fillAddressForm({
+      streetLine1: updatedStreet1,
     });
 
-    await codeFormPage.submit();
+    await addrFormPage.submit();
     await authenticatedPage.waitForTimeout(600);
 
-    // Verify old value is no longer visible
-    await viewPage.expectCodeNotVisible(testCodeValue);
+    // Verify old address is no longer visible
+    await viewPage.expectAddressNotVisible(testStreet1);
 
-    // Verify updated value is visible
-    await viewPage.expectCodeVisible(updatedCodeValue);
+    // Verify updated address is visible
+    await viewPage.expectAddressVisible(updatedStreet1);
   });
 
   // -----------------------------------------------------------------------
   // DELETE
   // -----------------------------------------------------------------------
-  test('DELETE: should delete a code via confirm dialog', async ({ authenticatedPage }) => {
+  test('DELETE: should delete an address via confirm dialog', async ({ authenticatedPage }) => {
     const viewPage = new HospitalViewPage(authenticatedPage);
 
     await viewPage.goto(hospitalId);
     await viewPage.waitForPageLoad();
-    await viewPage.clickCodesTab();
+    await viewPage.clickAddressesTab();
 
-    const secondCodeValue = `CPT-${tsShort}`;
+    const secondStreet = `999 Alternative Street ${tsShort}`;
 
-    // Delete second code
-    await viewPage.deleteCode(secondCodeValue);
+    // Delete second address
+    await viewPage.deleteAddress(secondStreet);
     // Confirm via Angular ConfirmDialogComponent (confirmLabel="Delete")
     await viewPage.confirmDialog();
 
     await authenticatedPage.waitForTimeout(600);
 
-    // Verify code is no longer visible
-    await viewPage.expectCodeNotVisible(secondCodeValue);
+    // Verify address is no longer visible
+    await viewPage.expectAddressNotVisible(secondStreet);
   });
 
   // -----------------------------------------------------------------------

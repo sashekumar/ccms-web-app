@@ -37,28 +37,22 @@ test.describe.serial('Hospital Staff - CRUD Operations', () => {
     await hospitalFormPage.fillHospitalForm({
       hospitalName: testHospitalName,
       hospitalCode: testHospitalCode,
-      hospitalType: 'Private',
-      isPanel: true
+      hospitalType: 'Private'
     });
 
     await hospitalFormPage.submit();
     await hospitalListPage.waitForPageLoad();
 
-    // Get hospital ID
+    // Search for the hospital and navigate to view page to get ID
     await hospitalListPage.search(testHospitalCode);
-    await authenticatedPage.waitForTimeout(1000);
-    
-    const viewButton = authenticatedPage.locator(`tr:has-text("${testHospitalCode}") button:has-text("View")`).first();
-    await viewButton.click();
-    await authenticatedPage.waitForTimeout(1000);
-    
+    await authenticatedPage.waitForTimeout(600);
+    await hospitalListPage.clickView(testHospitalCode);
+    await authenticatedPage.waitForTimeout(800);
+
     const url = authenticatedPage.url();
     const match = url.match(/\/hospitals\/view\/(\d+)/);
-    if (match) {
-      hospitalId = match[1];
-    }
-    
-    expect(hospitalId).toBeDefined();
+    hospitalId = match ? match[1] : '';
+    expect(hospitalId).toBeTruthy();
   });
 
   test('CREATE: should add a new staff member to hospital', async ({ authenticatedPage }) => {
@@ -78,12 +72,8 @@ test.describe.serial('Hospital Staff - CRUD Operations', () => {
     // Fill staff form
     await staffFormPage.fillStaffForm({
       staffName: testStaffName,
-      position: 'Cardiologist',
-      department: 'Cardiology',
-      specialization: 'Interventional Cardiology',
-      email: `staff${timestamp}@hospital.com`,
-      phone: `+6012${timestamp.toString().slice(-7)}`,
-      licenseNumber: `MED-${timestamp}`,
+      staffType: 'Doctor',
+      specialty: 'Cardiology',
       isActive: true
     });
 
@@ -142,8 +132,8 @@ test.describe.serial('Hospital Staff - CRUD Operations', () => {
     // Update staff
     await staffFormPage.fillStaffForm({
       staffName: updatedStaffName,
-      position: 'Senior Cardiologist',
-      department: 'Cardiology - ICU'
+      staffType: 'Senior Cardiologist',
+      specialty: 'Cardiology - ICU'
     });
 
     await staffFormPage.submit();
